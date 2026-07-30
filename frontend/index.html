@@ -686,10 +686,26 @@ function renderLeaderboard(leaderboard) {
       ${p.finished
         ? `<span class="score">${p.score} / ${p.total} ✅</span>`
         : `<span class="status">${quizHasStarted ? 'لسا يذاكر...' : 'بانتظار الاختبار...'}</span>`}
+      ${isHost && p.sid !== socket.id
+        ? `<button class="ghost kick-btn" data-sid="${p.sid}" style="padding:5px 12px; font-size:12.5px;">🚫 طرد</button>`
+        : ''}
     </div>
   `).join('');
+
+  if (isHost) {
+    container.querySelectorAll('.kick-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        socket.emit('kick_participant', { room_code: currentRoomCode, sid: btn.dataset.sid });
+      });
+    });
+  }
 }
 socket.on('leaderboard_update', data => renderLeaderboard(data.leaderboard));
+
+socket.on('kicked', () => {
+  alert('تم طردك من الغرفة من قبل المضيف');
+  location.reload();
+});
 
 // ---------- شات الغرفة ----------
 socket.on('chat_message', data => {

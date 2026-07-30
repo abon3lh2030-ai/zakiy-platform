@@ -8,6 +8,7 @@ from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 import pdfplumber
 from google import genai
+from google.genai import errors as genai_errors
 
 # تحميل متغيرات البيئة من .env
 load_dotenv()
@@ -21,9 +22,28 @@ UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-# عميل الذكاء الاصطناعي - يقرأ المفتاح من .env
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+# عملاء الذكاء الاصطناعي - عدة مفاتيح لتفادي حد الباقة المجانية (429)
 GEMINI_MODEL = "gemini-3.6-flash"
+_gemini_keys = [
+    os.getenv("GEMINI_API_KEY"),
+    os.getenv("GEMINI_API_KEY_2"),
+    os.getenv("GEMINI_API_KEY_3"),
+]
+gemini_clients = [genai.Client(api_key=k) for k in _gemini_keys if k]
+
+
+def create_interaction(**kwargs):
+    """ينشئ interaction، ولو مفتاح معين تجاوز حصته (429) يجرب المفتاح اللي بعده."""
+    last_error = None
+    for gemini_client in gemini_clients:
+        try:
+            return gemini_client.interactions.create(**kwargs)
+        except genai_errors.APIError as e:
+            if e.code == 429:
+                last_error = e
+                continue
+            raise
+    raise last_error
 
 
 # ---------- فحص إن السيرفر شغال ----------
@@ -89,7 +109,7 @@ def summarize():
         return jsonify({"error": "لازم ترسل نص"}), 400
 
     try:
-        interaction = client.interactions.create(
+        interaction = create_interaction(
             model=GEMINI_MODEL,
             input=(
                 "لخّص المحتوى التالي بشكل مرتب ونقاط واضحة باللغة العربية. "
@@ -126,7 +146,7 @@ def generate_quiz():
 المحتوى:
 {text}"""
 
-        interaction = client.interactions.create(
+        interaction = create_interaction(
             model=GEMINI_MODEL,
             input=prompt,
             # نفس السبب: thinking_level منخفض عشان ما ياكل من حد max_output_tokens
@@ -170,7 +190,7 @@ def chat():
         if interaction_id:
             kwargs["previous_interaction_id"] = interaction_id
 
-        interaction = client.interactions.create(**kwargs)
+        interaction = create_interaction(**kwargs)
         return jsonify(
             {"reply": interaction.output_text, "interaction_id": interaction.id}
         ), 200
@@ -205,7 +225,10 @@ def generate_room_code():
 
 
 def get_leaderboard(room_code):
-    participants = list(rooms[room_code]["participants"].values())
+    participants = [
+        {**data, "sid": sid}
+        for sid, data in rooms[room_code]["participants"].items()
+    ]
     participants.sort(key=lambda p: (-p["score"] if p["finished"] else 1, p["name"]))
     return participants
 
@@ -320,6 +343,28 @@ def handle_chat_message(data):
         {"name": name, "message": message, "ts": time.time()},
         to=room_code,
     )
+
+
+@socketio.on("kick_participant")
+def handle_kick_participant(data):
+    room_code = (data.get("room_code") or "").strip().upper()
+    target_sid = data.get("sid")
+
+    if room_code not in rooms:
+        return
+
+    room = rooms[room_code]
+    # الهوست بس يقدر يطرد، وما يقدر يطرد نفسه
+    if request.sid != room["host_sid"] or target_sid == room["host_sid"]:
+        return
+    if target_sid not in room["participants"]:
+        return
+
+    del room["participants"][target_sid]
+    leave_room(room_code, sid=target_sid)
+
+    emit("kicked", {}, to=target_sid)
+    emit("leaderboard_update", {"leaderboard": get_leaderboard(room_code)}, to=room_code)
 
 
 @socketio.on("submit_score")

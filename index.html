@@ -343,6 +343,14 @@
   .chat-bubble.other { align-self: flex-end; background: var(--paper-dim); color: var(--ink); }
   .chat-bubble.ai { align-self: flex-start; background: var(--teal-dim); color: var(--ink); border: 1px solid var(--teal); }
 
+  .typing-indicator {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    font-style: italic;
+    min-height: 18px;
+    margin-bottom: 6px;
+  }
+
   footer {
     text-align: center;
     color: var(--ink-soft);
@@ -482,12 +490,19 @@
 
     <div id="participantsSection">
       <div class="podium hidden" id="podiumContainer"></div>
+
+      <div id="sharedSummaryBox" class="hidden" style="margin-bottom:20px;">
+        <h3 class="sub-heading">📚 ملخص المضيف</h3>
+        <div class="summary-block" id="sharedSummaryText"></div>
+      </div>
+
       <h3 class="sub-heading">👥 المشاركين</h3>
       <div class="leaderboard" id="leaderboardContainer"></div>
 
       <div id="roomChatBox" style="margin-top:24px;">
         <h3 class="sub-heading">💬 شات الغرفة</h3>
         <div class="chat-messages" id="chatMessages"></div>
+        <div class="typing-indicator" id="typingIndicator"></div>
         <div class="actions">
           <input type="text" id="chatInput" class="text-input" placeholder="اكتب رسالة لزملائك...">
           <button class="ghost" id="chatSendBtn">إرسال</button>
@@ -564,6 +579,7 @@
         <input type="number" id="numQuestionsInput" class="text-input" value="5" min="5" max="20" style="width:80px;">
       </label>
       <button class="primary" id="quizBtn">ولّد اختبار من هذا المحتوى</button>
+      <button class="ghost hidden" id="shareSummaryBtn">📤 شارك الملخص مع الطلاب</button>
     </div>
     <div id="quizError"></div>
   </section>
@@ -772,6 +788,8 @@ socket.on('room_state', data => {
   }
   // ملاحظة: لو quizHasStarted أصلًا شغال محليًا، ما نعيد استدعاء handleQuizStarted
   // عند إعادة الاتصال عشان ما نمسح إجابات المستخدم أو نعيد المؤقت من الصفر
+
+  if (data.shared_summary) showSharedSummary(data.shared_summary);
 });
 
 function startRoomElapsedTimer() {
@@ -861,11 +879,68 @@ function sendRoomChat() {
   if (!message || !currentRoomCode) return;
   socket.emit('chat_message', { room_code: currentRoomCode, message });
   input.value = '';
+  clearTimeout(typingTimeoutId);
+  socket.emit('stop_typing', { room_code: currentRoomCode });
 }
 document.getElementById('chatSendBtn').addEventListener('click', sendRoomChat);
 document.getElementById('chatInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') sendRoomChat();
 });
+
+// ---------- مؤشر "فلان يكتب الآن..." بشات الغرفة ----------
+let typingTimeoutId = null;
+const typingPeers = new Map(); // الاسم -> معرّف مؤقت انتهاء الصلاحية (احتياط لو ما وصل stop_typing)
+
+function renderTypingIndicator() {
+  const el = document.getElementById('typingIndicator');
+  const names = [...typingPeers.keys()];
+  if (!names.length) { el.textContent = ''; return; }
+  el.textContent = names.length === 1
+    ? `${names[0]} يكتب الآن...`
+    : `${names.join('، ')} يكتبون الآن...`;
+}
+
+document.getElementById('chatInput').addEventListener('input', () => {
+  if (!currentRoomCode) return;
+  socket.emit('typing', { room_code: currentRoomCode });
+  clearTimeout(typingTimeoutId);
+  typingTimeoutId = setTimeout(() => {
+    socket.emit('stop_typing', { room_code: currentRoomCode });
+  }, 2000);
+});
+
+socket.on('user_typing', data => {
+  clearTimeout(typingPeers.get(data.name));
+  typingPeers.set(data.name, setTimeout(() => {
+    typingPeers.delete(data.name);
+    renderTypingIndicator();
+  }, 3000));
+  renderTypingIndicator();
+});
+
+socket.on('user_stop_typing', data => {
+  clearTimeout(typingPeers.get(data.name));
+  typingPeers.delete(data.name);
+  renderTypingIndicator();
+});
+
+// ---------- الهوست: مشاركة الملخص مع المنضمين ----------
+document.getElementById('shareSummaryBtn').addEventListener('click', () => {
+  const summary = document.getElementById('summaryText').textContent;
+  if (!summary || !currentRoomCode) return;
+  socket.emit('share_summary', { room_code: currentRoomCode, summary });
+
+  const btn = document.getElementById('shareSummaryBtn');
+  const original = btn.textContent;
+  btn.textContent = '✅ تمت المشاركة';
+  setTimeout(() => { btn.textContent = original; }, 2000);
+});
+
+function showSharedSummary(summary) {
+  document.getElementById('sharedSummaryText').textContent = summary;
+  show('sharedSummaryBox');
+}
+socket.on('summary_shared', data => showSharedSummary(data.summary));
 
 // ---------- Step 1: Upload (فردي أو الهوست) ----------
 const dropzone = document.getElementById('dropzone');
@@ -994,6 +1069,7 @@ summarizeBtn.addEventListener('click', async () => {
 
     document.getElementById('summaryText').textContent = data.summary;
     show('step-summary');
+    if (appMode === 'room-host') show('shareSummaryBtn');
     document.getElementById('step-summary').scrollIntoView({ behavior: 'smooth' });
   } catch (err) {
     showError('summarizeError', err.message || 'صار خطأ غير متوقع');

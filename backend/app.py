@@ -255,6 +255,7 @@ def create_room():
         "quiz": None,
         "quiz_started_at": None,
         "duration_minutes": None,
+        "shared_summary": None,
         "participants": {},
     }
     return jsonify({"room_code": room_code}), 200
@@ -316,9 +317,27 @@ def handle_join_room(data):
             "quiz": room["quiz"],
             "quiz_started_at": room["quiz_started_at"],
             "duration_minutes": room["duration_minutes"],
+            "shared_summary": room["shared_summary"],
         },
     )
     emit("leaderboard_update", {"leaderboard": get_leaderboard(room_code)}, to=room_code)
+
+
+@socketio.on("share_summary")
+def handle_share_summary(data):
+    room_code = (data.get("room_code") or "").strip().upper()
+    summary = (data.get("summary") or "").strip()
+
+    if room_code not in rooms:
+        return
+
+    room = rooms[room_code]
+    # الهوست بس يقدر يشارك الملخص مع باقي المنضمين
+    if request.sid != room["host_sid"] or not summary:
+        return
+
+    room["shared_summary"] = summary
+    emit("summary_shared", {"summary": summary}, to=room_code)
 
 
 @socketio.on("start_quiz")
@@ -373,6 +392,24 @@ def handle_chat_message(data):
         {"name": name, "message": message, "ts": time.time()},
         to=room_code,
     )
+
+
+@socketio.on("typing")
+def handle_typing(data):
+    room_code = (data.get("room_code") or "").strip().upper()
+    if room_code not in rooms or request.sid not in rooms[room_code]["participants"]:
+        return
+    name = rooms[room_code]["participants"][request.sid]["name"]
+    emit("user_typing", {"name": name}, to=room_code, include_self=False)
+
+
+@socketio.on("stop_typing")
+def handle_stop_typing(data):
+    room_code = (data.get("room_code") or "").strip().upper()
+    if room_code not in rooms or request.sid not in rooms[room_code]["participants"]:
+        return
+    name = rooms[room_code]["participants"][request.sid]["name"]
+    emit("user_stop_typing", {"name": name}, to=room_code, include_self=False)
 
 
 @socketio.on("kick_participant")

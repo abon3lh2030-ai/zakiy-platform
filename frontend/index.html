@@ -422,6 +422,62 @@
   /* ---------- الحساب ولوحة الأداء ---------- */
   select.text-input { cursor: pointer; }
 
+  .auth-card {
+    max-width: 420px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 44px 36px;
+  }
+  .auth-card .auth-logo {
+    font-family: 'Almarai', sans-serif;
+    font-weight: 800;
+    font-size: 30px;
+    color: var(--ink);
+    position: relative;
+    display: inline-block;
+    margin-bottom: 10px;
+  }
+  .auth-card .auth-logo::after {
+    content: "";
+    position: absolute;
+    right: 0; left: 0; bottom: 2px;
+    height: 10px;
+    background: var(--highlighter);
+    z-index: -1;
+    opacity: .75;
+    transform: skewX(-8deg);
+  }
+  .auth-card h2 { text-align: center; }
+  .auth-card .desc { text-align: center; }
+
+  .auth-fields { display: flex; flex-direction: column; gap: 14px; margin: 22px 0; }
+  .auth-fields .text-input, .auth-levels .text-input {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 15px;
+  }
+  .auth-levels {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 22px;
+    text-align: right;
+  }
+  .auth-levels label {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+  }
+  .auth-actions-stack { display: flex; flex-direction: column; gap: 10px; }
+  .auth-actions-stack button.primary,
+  .auth-actions-stack button.ghost {
+    width: 100%;
+    padding: 15px;
+    font-size: 15.5px;
+  }
+
   .stat-row { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
   .stat-tile {
     flex: 1;
@@ -474,37 +530,42 @@
   </div>
 
   <!-- بوابة الحساب: تسجيل دخول / إنشاء حساب / استمرار بدون حساب -->
-  <section class="card" id="auth-gate">
+  <section class="card auth-card" id="auth-gate">
+    <span class="auth-logo">ذكيّ</span>
     <h2>سجّل حساب يحفظ تقدمك</h2>
-    <p class="desc">يحلل نقاط ضعفك بعد كل اختبار — أو استمر بدون حساب زي أي وقت</p>
-    <div class="actions">
+    <p class="desc">يحلل نقاط ضعفك بعد كل اختبار</p>
+    <div class="auth-actions-stack">
       <button class="primary" id="showLoginBtn">🔑 تسجيل الدخول</button>
       <button class="primary" id="showSignupBtn">🆕 إنشاء حساب</button>
       <button class="ghost" id="continueGuestBtn">➡️ استمر بدون حساب</button>
     </div>
   </section>
 
-  <section class="card hidden" id="login-form">
-    <span class="step-label">🔑 تسجيل الدخول</span>
-    <h2>سجّل دخولك</h2>
-    <div class="actions">
+  <section class="card hidden auth-card" id="login-form">
+    <span class="auth-logo">ذكيّ</span>
+    <h2>تسجيل الدخول</h2>
+    <p class="desc">أدخل بياناتك للمتابعة</p>
+    <div class="auth-fields">
       <input type="email" id="loginEmail" class="text-input" placeholder="الإيميل">
       <input type="password" id="loginPassword" class="text-input" placeholder="كلمة المرور">
+    </div>
+    <div class="auth-actions-stack">
       <button class="primary" id="loginSubmitBtn">دخول</button>
       <button class="ghost" id="backToAuthGateBtn1">« رجوع</button>
     </div>
     <div id="loginError"></div>
   </section>
 
-  <section class="card hidden" id="signup-form">
-    <span class="step-label">🆕 إنشاء حساب</span>
-    <h2>سوّي حساب جديد</h2>
-    <div class="actions">
+  <section class="card hidden auth-card" id="signup-form">
+    <span class="auth-logo">ذكيّ</span>
+    <h2>إنشاء حساب جديد</h2>
+    <p class="desc">يحفظ تقدمك ويحلل نقاط ضعفك بعد كل اختبار</p>
+    <div class="auth-fields">
       <input type="email" id="signupEmail" class="text-input" placeholder="الإيميل">
       <input type="password" id="signupPassword" class="text-input" placeholder="كلمة المرور (٦ أحرف عالأقل)">
     </div>
-    <div class="actions">
-      <label style="display:flex; flex-direction:column; gap:6px; font-size:14px;">
+    <div class="auth-levels">
+      <label>
         المرحلة الدراسية
         <select id="signupEducationLevel" class="text-input">
           <option value="ابتدائي">ابتدائي</option>
@@ -513,7 +574,7 @@
           <option value="جامعي">جامعي</option>
         </select>
       </label>
-      <label style="display:flex; flex-direction:column; gap:6px; font-size:14px;">
+      <label>
         مستواك
         <select id="signupProficiencyLevel" class="text-input">
           <option value="ضعيف">ضعيف</option>
@@ -523,7 +584,7 @@
         </select>
       </label>
     </div>
-    <div class="actions">
+    <div class="auth-actions-stack">
       <button class="primary" id="signupSubmitBtn">إنشاء الحساب</button>
       <button class="ghost" id="backToAuthGateBtn2">« رجوع</button>
     </div>

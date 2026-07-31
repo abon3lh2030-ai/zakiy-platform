@@ -7,6 +7,8 @@ eventlet.monkey_patch()
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit, join_room, leave_room
+from functools import wraps
+from collections import Counter
 import os
 import random
 import time
@@ -15,6 +17,7 @@ from dotenv import load_dotenv
 from pypdf import PdfReader
 from google import genai
 from google.genai import errors as genai_errors
+from supabase import create_client, Client
 
 # تحميل متغيرات البيئة من .env
 load_dotenv()
@@ -50,6 +53,42 @@ def create_interaction(**kwargs):
                 continue
             raise
     raise last_error
+
+
+# ---------- حسابات الطلاب (Supabase) ----------
+# اختياري بالكامل: لو المفاتيح مو موجودة، الـ endpoints المحمية ترجع 503
+# بدل ما تكسر تشغيل بقية المشروع (نفس نمط التعامل المتساهل مع مفاتيح Gemini)
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+supabase_admin: Client | None = None
+if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
+    supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+
+def require_auth(f):
+    """يتحقق من Authorization: Bearer <jwt> عبر Supabase ويحط request.user_id."""
+
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if supabase_admin is None:
+            return jsonify({"error": "نظام الحسابات مو مفعّل حاليًا بالسيرفر"}), 503
+
+        auth_header = request.headers.get("Authorization", "")
+        token = auth_header.replace("Bearer ", "").strip()
+        if not token:
+            return jsonify({"error": "لازم تسجل الدخول"}), 401
+
+        try:
+            user_response = supabase_admin.auth.get_user(token)
+            if not user_response or not user_response.user:
+                raise ValueError("invalid token")
+            request.user_id = user_response.user.id
+        except Exception:
+            return jsonify({"error": "جلسة غير صالحة، سجل الدخول من جديد"}), 401
+
+        return f(*args, **kwargs)
+
+    return wrapper
 
 
 # ---------- فحص إن السيرفر شغال ----------
@@ -146,8 +185,11 @@ def generate_quiz():
         prompt = f"""بناءً على المحتوى التالي، سوّي اختبار مكون من {num_questions} أسئلة اختيار من متعدد.
 رجّع النتيجة بصيغة JSON فقط بدون أي نص إضافي، بهذا الشكل بالضبط:
 [
-  {{"question": "نص السؤال", "options": ["أ", "ب", "ج", "د"], "correct_answer": "أ"}}
+  {{"question": "نص السؤال", "options": ["أ", "ب", "ج", "د"], "correct_answer": "أ", "topic": "اسم قصير للموضوع الفرعي اللي يقيسه السؤال"}}
 ]
+
+حقل "topic" لازم يكون تصنيف قصير (كلمتين إلى ثلاث كلمات) للموضوع الفرعي من المحتوى
+اللي يختبره السؤال بالتحديد، مو وصف عام - نستخدمه لاحقًا نعرف الطالب ضعيف بأي جزء.
 
 المحتوى:
 {text}"""
@@ -204,6 +246,54 @@ def chat():
         return jsonify(
             {"reply": interaction.output_text, "interaction_id": interaction.id}
         ), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------- تسجيل نتائج الاختبار وتحليل نقاط الضعف (حسابات اختيارية) ----------
+@app.route("/api/quiz-attempt", methods=["POST"])
+@require_auth
+def record_quiz_attempt():
+    data = request.get_json()
+    try:
+        supabase_admin.table("quiz_attempts").insert(
+            {
+                "user_id": request.user_id,
+                "mode": data.get("mode", "solo"),
+                "score": data.get("score", 0),
+                "total": data.get("total", 0),
+                "time_taken": data.get("time_taken", 0),
+                "wrong_topics": data.get("wrong_topics", []),
+            }
+        ).execute()
+        return jsonify({"ok": True}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/performance", methods=["GET"])
+@require_auth
+def get_performance():
+    try:
+        res = (
+            supabase_admin.table("quiz_attempts")
+            .select("*")
+            .eq("user_id", request.user_id)
+            .order("created_at")
+            .execute()
+        )
+        attempts = res.data
+
+        topic_counter = Counter()
+        for attempt in attempts:
+            for topic in attempt.get("wrong_topics") or []:
+                topic_counter[topic] += 1
+        weak_topics = [
+            {"topic": topic, "count": count}
+            for topic, count in topic_counter.most_common(10)
+        ]
+
+        return jsonify({"attempts": attempts, "weak_topics": weak_topics}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

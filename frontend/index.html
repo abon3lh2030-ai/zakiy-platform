@@ -418,6 +418,41 @@
     font-weight: 800;
     color: var(--highlighter);
   }
+
+  /* ---------- الحساب ولوحة الأداء ---------- */
+  select.text-input { cursor: pointer; }
+
+  .stat-row { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+  .stat-tile {
+    flex: 1;
+    min-width: 120px;
+    background: var(--paper-dim);
+    border-radius: 12px;
+    padding: 18px;
+    text-align: center;
+  }
+  .stat-tile .stat-value {
+    font-family: 'Almarai', sans-serif;
+    font-weight: 800;
+    font-size: 28px;
+    color: var(--ink);
+  }
+  .stat-tile .stat-label { font-size: 12.5px; color: var(--ink-soft); margin-top: 4px; }
+
+  .weak-topic-row { margin-bottom: 12px; }
+  .weak-topic-row .wt-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13.5px;
+    margin-bottom: 4px;
+  }
+  .weak-topic-row .wt-bar-bg {
+    background: var(--paper-dim);
+    border-radius: 6px;
+    height: 10px;
+    overflow: hidden;
+  }
+  .weak-topic-row .wt-bar-fill { background: var(--danger); height: 100%; border-radius: 6px; }
 </style>
 </head>
 <body>
@@ -425,7 +460,12 @@
 
   <header>
     <span class="logo">ذكيّ</span>
-    <span class="badge">مشروع تخرج — أكاديمية طويق</span>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <span class="badge hidden" id="accountBadge"></span>
+      <button class="ghost hidden" id="performanceBtn" style="padding:6px 14px; font-size:13px;">📊 أدائي</button>
+      <button class="ghost hidden" id="logoutBtn" style="padding:6px 14px; font-size:13px;">خروج</button>
+      <span class="badge">مشروع تخرج — أكاديمية طويق</span>
+    </div>
   </header>
 
   <div class="hero">
@@ -433,8 +473,99 @@
     <p>ارفع ملزمة أو أوراق عمل بصيغة PDF، وخلّ ذكيّ يلخصها ويحول محتواها لاختبار تفاعلي يقيس فهمك.</p>
   </div>
 
+  <!-- بوابة الحساب: تسجيل دخول / إنشاء حساب / استمرار بدون حساب -->
+  <section class="card" id="auth-gate">
+    <h2>سجّل حساب يحفظ تقدمك</h2>
+    <p class="desc">يحلل نقاط ضعفك بعد كل اختبار — أو استمر بدون حساب زي أي وقت</p>
+    <div class="actions">
+      <button class="primary" id="showLoginBtn">🔑 تسجيل الدخول</button>
+      <button class="primary" id="showSignupBtn">🆕 إنشاء حساب</button>
+      <button class="ghost" id="continueGuestBtn">➡️ استمر بدون حساب</button>
+    </div>
+  </section>
+
+  <section class="card hidden" id="login-form">
+    <span class="step-label">🔑 تسجيل الدخول</span>
+    <h2>سجّل دخولك</h2>
+    <div class="actions">
+      <input type="email" id="loginEmail" class="text-input" placeholder="الإيميل">
+      <input type="password" id="loginPassword" class="text-input" placeholder="كلمة المرور">
+      <button class="primary" id="loginSubmitBtn">دخول</button>
+      <button class="ghost" id="backToAuthGateBtn1">« رجوع</button>
+    </div>
+    <div id="loginError"></div>
+  </section>
+
+  <section class="card hidden" id="signup-form">
+    <span class="step-label">🆕 إنشاء حساب</span>
+    <h2>سوّي حساب جديد</h2>
+    <div class="actions">
+      <input type="email" id="signupEmail" class="text-input" placeholder="الإيميل">
+      <input type="password" id="signupPassword" class="text-input" placeholder="كلمة المرور (٦ أحرف عالأقل)">
+    </div>
+    <div class="actions">
+      <label style="display:flex; flex-direction:column; gap:6px; font-size:14px;">
+        المرحلة الدراسية
+        <select id="signupEducationLevel" class="text-input">
+          <option value="ابتدائي">ابتدائي</option>
+          <option value="متوسط">متوسط</option>
+          <option value="ثانوي">ثانوي</option>
+          <option value="جامعي">جامعي</option>
+        </select>
+      </label>
+      <label style="display:flex; flex-direction:column; gap:6px; font-size:14px;">
+        مستواك
+        <select id="signupProficiencyLevel" class="text-input">
+          <option value="ضعيف">ضعيف</option>
+          <option value="متوسط">متوسط</option>
+          <option value="متمكن">متمكن</option>
+          <option value="ما يدرس">ما يدرس</option>
+        </select>
+      </label>
+    </div>
+    <div class="actions">
+      <button class="primary" id="signupSubmitBtn">إنشاء الحساب</button>
+      <button class="ghost" id="backToAuthGateBtn2">« رجوع</button>
+    </div>
+    <div id="signupError"></div>
+  </section>
+
+  <!-- لوحة تحليل الأداء (تظهر بأي وقت للمسجّلين عبر زر "📊 أدائي") -->
+  <section class="card hidden" id="step-performance">
+    <span class="step-label">📊 أدائي</span>
+    <h2>لوحة تحليل أدائك</h2>
+    <p class="desc" id="performanceEmptyState">لسا ما حليت أي اختبار وأنت مسجّل دخول.</p>
+
+    <div id="performanceContent" class="hidden">
+      <div class="stat-row">
+        <div class="stat-tile">
+          <div class="stat-value" id="statAttempts">0</div>
+          <div class="stat-label">عدد المحاولات</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value" id="statAvg">٠٪</div>
+          <div class="stat-label">متوسط الدرجة</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value" id="statBest">٠٪</div>
+          <div class="stat-label">أفضل نتيجة</div>
+        </div>
+      </div>
+
+      <h3 class="sub-heading">📈 تطور درجاتك</h3>
+      <svg id="trendChart" width="100%" height="120" style="overflow:visible; margin-bottom:24px;"></svg>
+
+      <h3 class="sub-heading">🎯 نقاط تحتاج مراجعة</h3>
+      <div id="weakTopicsList"></div>
+    </div>
+
+    <div class="actions">
+      <button class="ghost" id="performanceBackBtn">« رجوع</button>
+    </div>
+  </section>
+
   <!-- اختيار الوضع: فردي أو غرفة جماعية -->
-  <section class="card" id="mode-select">
+  <section class="card hidden" id="mode-select">
     <h2>وش تبي تسوي اليوم؟</h2>
     <p class="desc">اختر طريقة المذاكرة عشان نبدأ</p>
     <div class="actions">
@@ -606,9 +737,17 @@
 </div>
 
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const API_BASE = "https://zakiy-platform.onrender.com";
 const socket = io(API_BASE);
+
+const SUPABASE_URL = "https://qwlbufcailgpxxatgyez.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3bGJ1ZmNhaWxncHh4YXRneWV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1MTY1NTgsImV4cCI6MjEwMTA5MjU1OH0.ApKmMBSdZNIbSNFF0prm_cUUc2flIuVdtaGE97gonyQ";
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentAccessToken = null;
+let currentUserEmail = null;
 
 let appMode = null; // 'solo' | 'room-host' | 'room-join'
 let uploadedFilename = null;
@@ -685,6 +824,201 @@ document.querySelectorAll('.exam-overlay button').forEach(btn => {
     }
   });
 });
+
+// ---------- الحساب (اختياري) ----------
+function proceedToApp() {
+  hide('auth-gate'); hide('login-form'); hide('signup-form');
+  show('mode-select');
+}
+
+function onAuthSuccess(session) {
+  currentAccessToken = session.access_token;
+  currentUserEmail = session.user.email;
+
+  const badge = document.getElementById('accountBadge');
+  badge.textContent = `👤 ${currentUserEmail}`;
+  show('accountBadge');
+  show('performanceBtn');
+  show('logoutBtn');
+
+  proceedToApp();
+}
+
+// Supabase يجدد access_token تلقائيًا بالخلفية - نتابع آخر نسخة عشان الطلبات
+// المحمية (تسجيل نتيجة اختبار، جلب الأداء) ما تفشل بجلسة قديمة منتهية
+supabaseClient.auth.onAuthStateChange((_event, session) => {
+  if (session) currentAccessToken = session.access_token;
+});
+
+supabaseClient.auth.getSession().then(({ data }) => {
+  if (data.session) onAuthSuccess(data.session);
+});
+
+document.getElementById('showLoginBtn').addEventListener('click', () => {
+  hide('auth-gate'); show('login-form');
+});
+document.getElementById('showSignupBtn').addEventListener('click', () => {
+  hide('auth-gate'); show('signup-form');
+});
+document.getElementById('continueGuestBtn').addEventListener('click', proceedToApp);
+document.getElementById('backToAuthGateBtn1').addEventListener('click', () => {
+  hide('login-form'); show('auth-gate');
+});
+document.getElementById('backToAuthGateBtn2').addEventListener('click', () => {
+  hide('signup-form'); show('auth-gate');
+});
+
+document.getElementById('loginSubmitBtn').addEventListener('click', async () => {
+  clearError('loginError');
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!email || !password) { showError('loginError', 'لازم تكتب الإيميل وكلمة المرور'); return; }
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (error) { showError('loginError', 'الإيميل أو كلمة المرور غلط'); return; }
+  onAuthSuccess(data.session);
+});
+
+document.getElementById('signupSubmitBtn').addEventListener('click', async () => {
+  clearError('signupError');
+  const email = document.getElementById('signupEmail').value.trim();
+  const password = document.getElementById('signupPassword').value;
+  const education_level = document.getElementById('signupEducationLevel').value;
+  const proficiency_level = document.getElementById('signupProficiencyLevel').value;
+  if (!email || !password) { showError('signupError', 'لازم تكتب الإيميل وكلمة المرور'); return; }
+  if (password.length < 6) { showError('signupError', 'كلمة المرور لازم ٦ أحرف عالأقل'); return; }
+
+  const { data, error } = await supabaseClient.auth.signUp({
+    email, password,
+    options: { data: { education_level, proficiency_level } },
+  });
+  if (error) { showError('signupError', error.message || 'تعذر إنشاء الحساب'); return; }
+
+  if (data.session) {
+    onAuthSuccess(data.session);
+  } else {
+    showError('signupError', 'تم إنشاء الحساب! تحقق من إيميلك لتفعيله ثم سجّل دخولك.');
+  }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await supabaseClient.auth.signOut();
+  location.reload();
+});
+
+// ---------- لوحة تحليل الأداء ----------
+function showPerformanceDashboard() {
+  ['auth-gate', 'login-form', 'signup-form', 'mode-select', 'room-mode-select', 'room-create-form',
+   'room-join-form', 'step-room', 'step-upload', 'step-text', 'step-chat', 'step-summary', 'step-quiz']
+    .forEach(hide);
+  show('step-performance');
+}
+
+document.getElementById('performanceBtn').addEventListener('click', async () => {
+  showPerformanceDashboard();
+  try {
+    const res = await fetch(`${API_BASE}/api/performance`, {
+      headers: { 'Authorization': `Bearer ${currentAccessToken}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'تعذر جلب بيانات الأداء');
+    renderPerformance(data);
+  } catch (err) {
+    document.getElementById('performanceEmptyState').textContent = err.message || 'صار خطأ غير متوقع';
+    show('performanceEmptyState');
+    hide('performanceContent');
+  }
+});
+document.getElementById('performanceBackBtn').addEventListener('click', () => location.reload());
+
+function renderPerformance(data) {
+  const attempts = data.attempts || [];
+  const weakTopics = data.weak_topics || [];
+
+  if (!attempts.length) {
+    document.getElementById('performanceEmptyState').textContent = 'لسا ما حليت أي اختبار وأنت مسجّل دخول.';
+    show('performanceEmptyState');
+    hide('performanceContent');
+    return;
+  }
+  hide('performanceEmptyState');
+  show('performanceContent');
+
+  const pct = a => (a.total ? Math.round((a.score / a.total) * 100) : 0);
+  const scores = attempts.map(pct);
+
+  document.getElementById('statAttempts').textContent = attempts.length;
+  document.getElementById('statAvg').textContent =
+    `${Math.round(scores.reduce((s, v) => s + v, 0) / scores.length)}%`;
+  document.getElementById('statBest').textContent = `${Math.max(...scores)}%`;
+
+  renderTrendChart(scores);
+  renderWeakTopics(weakTopics);
+}
+
+function renderTrendChart(scoresIn) {
+  const svg = document.getElementById('trendChart');
+  const w = svg.clientWidth || 600;
+  const h = 120;
+  const padding = 18;
+  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  svg.innerHTML = '';
+
+  const scores = scoresIn.length === 1 ? [scoresIn[0], scoresIn[0]] : scoresIn;
+  const stepX = (w - padding * 2) / (scores.length - 1);
+  const toY = v => h - padding - (v / 100) * (h - padding * 2);
+  const points = scores.map((v, i) => [padding + i * stepX, toY(v)]);
+
+  const svgNS = 'http://www.w3.org/2000/svg';
+
+  const baseline = document.createElementNS(svgNS, 'line');
+  baseline.setAttribute('x1', padding); baseline.setAttribute('x2', w - padding);
+  baseline.setAttribute('y1', h - padding); baseline.setAttribute('y2', h - padding);
+  baseline.setAttribute('stroke', '#E2DFD4'); baseline.setAttribute('stroke-width', '1');
+  svg.appendChild(baseline);
+
+  const line = document.createElementNS(svgNS, 'polyline');
+  line.setAttribute('points', points.map(p => p.join(',')).join(' '));
+  line.setAttribute('fill', 'none');
+  line.setAttribute('stroke', '#2E8B77');
+  line.setAttribute('stroke-width', '2');
+  line.setAttribute('stroke-linecap', 'round');
+  line.setAttribute('stroke-linejoin', 'round');
+  svg.appendChild(line);
+
+  points.forEach(([x, y], i) => {
+    const dot = document.createElementNS(svgNS, 'circle');
+    dot.setAttribute('cx', x); dot.setAttribute('cy', y); dot.setAttribute('r', 4);
+    dot.setAttribute('fill', '#2E8B77');
+    const title = document.createElementNS(svgNS, 'title');
+    title.textContent = `محاولة ${i + 1}: ${scoresIn[i]}%`;
+    dot.appendChild(title);
+    svg.appendChild(dot);
+  });
+
+  const [lastX, lastY] = points[points.length - 1];
+  const label = document.createElementNS(svgNS, 'text');
+  label.setAttribute('x', lastX); label.setAttribute('y', Math.max(12, lastY - 10));
+  label.setAttribute('text-anchor', 'end');
+  label.setAttribute('font-size', '12'); label.setAttribute('fill', '#1B2A4A'); label.setAttribute('font-weight', '700');
+  label.textContent = `${scoresIn[scoresIn.length - 1]}%`;
+  svg.appendChild(label);
+}
+
+function renderWeakTopics(weakTopics) {
+  const container = document.getElementById('weakTopicsList');
+  if (!weakTopics.length) {
+    container.innerHTML = `<p class="desc">ما فيه نقاط ضعف متكررة لحد الحين — استمر كذا 👏</p>`;
+    return;
+  }
+  const max = Math.max(...weakTopics.map(t => t.count));
+  container.innerHTML = weakTopics.map(t => `
+    <div class="weak-topic-row">
+      <div class="wt-label"><span>${t.topic}</span><span>${t.count} ${t.count === 1 ? 'مرة' : 'مرات'}</span></div>
+      <div class="wt-bar-bg"><div class="wt-bar-fill" style="width:${(t.count / max) * 100}%"></div></div>
+    </div>
+  `).join('');
+}
 
 // ---------- اختيار الوضع ----------
 document.getElementById('modeSoloBtn').addEventListener('click', () => {
@@ -1208,6 +1542,7 @@ function finishQuiz() {
   if (quizCountdownIntervalId) clearInterval(quizCountdownIntervalId);
 
   let correct = 0;
+  const wrongTopics = [];
   document.querySelectorAll('.options').forEach((group, i) => {
     const selected = group.querySelector('.option.selected');
     const correctAnswer = quizData[i].correct_answer;
@@ -1216,10 +1551,29 @@ function finishQuiz() {
       if (opt.dataset.value === correctAnswer) opt.classList.add('correct');
       else if (opt === selected) opt.classList.add('wrong');
     });
-    if (selected && selected.dataset.value === correctAnswer) correct++;
+    if (selected && selected.dataset.value === correctAnswer) {
+      correct++;
+    } else if (quizData[i].topic) {
+      wrongTopics.push(quizData[i].topic);
+    }
   });
 
   const timeTaken = quizStartTime ? Math.max(0, Math.floor(Date.now() / 1000 - quizStartTime)) : 0;
+
+  if (currentAccessToken) {
+    // تسجيل نتيجة المحاولة لتحليل الأداء - ما نكسر تجربة المستخدم لو فشل الطلب
+    fetch(`${API_BASE}/api/quiz-attempt`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentAccessToken}` },
+      body: JSON.stringify({
+        mode: currentRoomCode ? 'room' : 'solo',
+        score: correct,
+        total: quizData.length,
+        time_taken: timeTaken,
+        wrong_topics: wrongTopics,
+      }),
+    }).catch(() => {});
+  }
 
   if (currentRoomCode) {
     socket.emit('submit_score', { room_code: currentRoomCode, score: correct, total: quizData.length, time_taken: timeTaken });

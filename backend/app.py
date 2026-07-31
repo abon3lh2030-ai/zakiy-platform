@@ -150,8 +150,12 @@ def generate_quiz():
             model=GEMINI_MODEL,
             input=prompt,
             # نفس السبب: thinking_level منخفض عشان ما ياكل من حد max_output_tokens
-            # ويقطع الـ JSON قبل ما يكمل (صار يصير هذا بالضبط مع 5 أسئلة قبل التعديل)
-            generation_config={"max_output_tokens": 3000, "thinking_level": "minimal"},
+            # ويقطع الـ JSON قبل ما يكمل. الحد يتناسب مع عدد الأسئلة (لحد 20) عشان
+            # ما ينقطع الرد مع الاختبارات الطويلة
+            generation_config={
+                "max_output_tokens": num_questions * 700 + 1000,
+                "thinking_level": "minimal",
+            },
         )
         quiz_text = interaction.output_text
         return jsonify({"quiz_raw": quiz_text}), 200

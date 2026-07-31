@@ -487,6 +487,10 @@
     <h2>ملخص ذكيّ</h2>
     <div class="summary-block" id="summaryText"></div>
     <div class="actions">
+      <label style="display:flex; align-items:center; gap:8px; font-size:14px;">
+        عدد الأسئلة (٥-٢٠):
+        <input type="number" id="numQuestionsInput" class="text-input" value="5" min="5" max="20" style="width:80px;">
+      </label>
       <button class="primary" id="quizBtn">ولّد اختبار من هذا المحتوى</button>
     </div>
     <div id="quizError"></div>
@@ -519,7 +523,7 @@
 
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script>
-const API_BASE = "https://zakiy-platform.onrender.com";
+const API_BASE = "http://127.0.0.1:5001";
 const socket = io(API_BASE);
 
 let appMode = null; // 'solo' | 'room-host' | 'room-join'
@@ -867,10 +871,14 @@ quizBtn.addEventListener('click', async () => {
   setLoading(quizBtn, true, 'ولّد اختبار من هذا المحتوى');
 
   try {
+    let numQuestions = parseInt(document.getElementById('numQuestionsInput').value, 10);
+    if (isNaN(numQuestions)) numQuestions = 5;
+    numQuestions = Math.min(20, Math.max(5, numQuestions));
+
     const res = await fetch(`${API_BASE}/api/generate-quiz`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: extractedText, num_questions: 5 })
+      body: JSON.stringify({ text: extractedText, num_questions: numQuestions })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'فشل توليد الاختبار');

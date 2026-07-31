@@ -349,6 +349,67 @@
     font-size: 13px;
     margin-top: 40px;
   }
+
+  /* ---------- تغبيش وقت الاختبار (فردي) ---------- */
+  .blur-wrap { position: relative; }
+  .blur-target.blurred { filter: blur(7px); user-select: none; pointer-events: none; }
+  .exam-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(250, 249, 245, 0.55);
+    border-radius: 10px;
+    z-index: 2;
+  }
+  .exam-overlay button {
+    background: var(--danger);
+    color: white;
+    border: none;
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* ---------- التوب 3 ---------- */
+  .podium {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .podium-card {
+    flex: 1;
+    min-width: 130px;
+    text-align: center;
+    background: var(--paper-dim);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px 10px;
+  }
+  .podium-card .medal { font-size: 26px; margin-bottom: 6px; }
+  .podium-card .p-name { font-weight: 700; font-size: 14.5px; margin-bottom: 4px; }
+  .podium-card .p-score { color: var(--teal); font-weight: 700; font-size: 14px; }
+  .podium-card .p-time { color: var(--ink-soft); font-size: 12.5px; margin-top: 2px; }
+
+  .my-result-banner {
+    text-align: center;
+    padding: 22px;
+    border-radius: var(--radius);
+    background: var(--ink);
+    color: white;
+    margin-bottom: 20px;
+  }
+  .my-result-banner .big {
+    font-family: 'Almarai', sans-serif;
+    font-size: 34px;
+    font-weight: 800;
+    color: var(--highlighter);
+  }
 </style>
 </head>
 <body>
@@ -417,18 +478,23 @@
 
     <div class="room-code-badge hidden" id="quizCountdownBadge" style="background:var(--highlighter-soft); color:#8a6d00; font-size:18px;"></div>
 
-    <h3 class="sub-heading">👥 المشاركين</h3>
-    <div class="leaderboard" id="leaderboardContainer"></div>
+    <div id="myResultBox" class="hidden"></div>
 
-    <div id="roomChatBox" style="margin-top:24px;">
-      <h3 class="sub-heading">💬 شات الغرفة</h3>
-      <div class="chat-messages" id="chatMessages"></div>
-      <div class="actions">
-        <input type="text" id="chatInput" class="text-input" placeholder="اكتب رسالة لزملائك...">
-        <button class="ghost" id="chatSendBtn">إرسال</button>
+    <div id="participantsSection">
+      <div class="podium hidden" id="podiumContainer"></div>
+      <h3 class="sub-heading">👥 المشاركين</h3>
+      <div class="leaderboard" id="leaderboardContainer"></div>
+
+      <div id="roomChatBox" style="margin-top:24px;">
+        <h3 class="sub-heading">💬 شات الغرفة</h3>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="actions">
+          <input type="text" id="chatInput" class="text-input" placeholder="اكتب رسالة لزملائك...">
+          <button class="ghost" id="chatSendBtn">إرسال</button>
+        </div>
       </div>
     </div>
-    <div id="chatDisabledNote" class="hidden" style="margin-top:16px; color:var(--ink-soft); font-size:13.5px;">🔇 الشات متوقف أثناء الاختبار.</div>
+    <div id="inQuizNote" class="hidden" style="margin-top:16px; color:var(--ink-soft); font-size:13.5px;">🔒 الشات وقائمة المشاركين تظهر لك بعد ما تسلّم الاختبار.</div>
   </section>
 
   <!-- Step 1: Upload (فردي أو الهوست داخل الغرفة) -->
@@ -461,7 +527,10 @@
     <span class="step-label">٢ — النص المستخرج</span>
     <h2>محتوى الملف</h2>
     <p class="desc">هذا النص المستخرج من الملف قبل التلخيص</p>
-    <div class="text-block" id="extractedText"></div>
+    <div class="blur-wrap">
+      <div class="text-block blur-target" id="extractedText"></div>
+      <div class="exam-overlay hidden" id="extractedTextOverlay"><button data-target="extractedText">🔒 أنت في اختبار</button></div>
+    </div>
     <div class="actions">
       <button class="primary" id="summarizeBtn">لخّص المحتوى</button>
     </div>
@@ -485,7 +554,10 @@
   <section class="card hidden" id="step-summary">
     <span class="step-label">٣ — الملخص</span>
     <h2>ملخص ذكيّ</h2>
-    <div class="summary-block" id="summaryText"></div>
+    <div class="blur-wrap">
+      <div class="summary-block blur-target" id="summaryText"></div>
+      <div class="exam-overlay hidden" id="summaryTextOverlay"><button data-target="summaryText">🔒 أنت في اختبار</button></div>
+    </div>
     <div class="actions">
       <label style="display:flex; align-items:center; gap:8px; font-size:14px;">
         عدد الأسئلة (٥-٢٠):
@@ -509,10 +581,6 @@
 
     <div class="actions hidden" id="hostQuizControls">
       <input type="number" id="quizDurationInput" class="text-input" placeholder="مدة الاختبار (دقائق)" min="1" style="max-width:200px;">
-      <label style="display:flex; align-items:center; gap:6px; font-size:14px;">
-        <input type="checkbox" id="chatDuringQuizToggle" checked>
-        خلّي شات الغرفة شغال أثناء الاختبار
-      </label>
       <button class="primary" id="hostStartQuizBtn">🚀 ابدأ الاختبار للجميع</button>
     </div>
     <div id="hostStartQuizError"></div>
@@ -538,7 +606,7 @@ let myName = "";
 let roomCreatedAt = null;
 let quizHasStarted = false;
 let quizDeadline = null;
-let chatEnabledDuringQuiz = true;
+let quizStartTime = null; // بالثواني (Unix)، يُستخدم لحساب وقت الحل
 let joinErrorTarget = 'roomJoinError';
 let roomElapsedIntervalId = null;
 let quizCountdownIntervalId = null;
@@ -577,6 +645,26 @@ function appendChatBubble(containerId, whoLabel, text, cls) {
   container.appendChild(bubble);
   container.scrollTop = container.scrollHeight;
 }
+
+// ---------- تغبيش المحتوى وقت اختبار الفردي ----------
+function blurForExam() {
+  document.querySelectorAll('.blur-target').forEach(el => el.classList.add('blurred'));
+  document.querySelectorAll('.exam-overlay').forEach(el => el.classList.remove('hidden'));
+}
+function unblurAfterExam() {
+  document.querySelectorAll('.blur-target').forEach(el => el.classList.remove('blurred'));
+  document.querySelectorAll('.exam-overlay').forEach(el => el.classList.add('hidden'));
+}
+document.querySelectorAll('.exam-overlay button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const reveal = confirm('أنت داخل الاختبار الحين. كشف المحتوى وقت الاختبار يعتبر نوع من الغش على نفسك ويأثر على تقييمك الحقيقي لفهمك. تبي تكشفه بكل الأحوال؟');
+    if (reveal) {
+      const targetId = btn.dataset.target;
+      document.getElementById(targetId).classList.remove('blurred');
+      btn.closest('.exam-overlay').classList.add('hidden');
+    }
+  });
+});
 
 // ---------- اختيار الوضع ----------
 document.getElementById('modeSoloBtn').addEventListener('click', () => {
@@ -651,7 +739,6 @@ socket.on('room_state', data => {
   currentRoomCode = data.room_code;
   isHost = data.is_host;
   roomCreatedAt = data.created_at;
-  chatEnabledDuringQuiz = data.chat_enabled_during_quiz;
 
   hide('mode-select'); hide('room-mode-select'); hide('room-create-form'); hide('room-join-form');
   show('step-room');
@@ -664,7 +751,6 @@ socket.on('room_state', data => {
       quiz: data.quiz,
       started_at: data.quiz_started_at,
       duration_minutes: data.duration_minutes,
-      chat_enabled_during_quiz: data.chat_enabled_during_quiz,
     });
   } else if (isHost) {
     appMode = 'room-host';
@@ -681,14 +767,32 @@ function startRoomElapsedTimer() {
 }
 
 // ---------- لوحة الصدارة / المشاركين ----------
+const MEDALS = ['🥇', '🥈', '🥉'];
+function renderPodium(leaderboard) {
+  const podium = document.getElementById('podiumContainer');
+  const top3 = leaderboard.filter(p => p.finished).slice(0, 3);
+  if (!top3.length) { podium.classList.add('hidden'); podium.innerHTML = ''; return; }
+
+  podium.classList.remove('hidden');
+  podium.innerHTML = top3.map((p, i) => `
+    <div class="podium-card">
+      <div class="medal">${MEDALS[i]}</div>
+      <div class="p-name">${p.name}</div>
+      <div class="p-score">${p.score} / ${p.total}</div>
+      <div class="p-time">⏱️ ${formatTime(p.time_taken)}</div>
+    </div>
+  `).join('');
+}
+
 function renderLeaderboard(leaderboard) {
+  renderPodium(leaderboard);
   const container = document.getElementById('leaderboardContainer');
   container.innerHTML = leaderboard.map((p, i) => `
     <div class="leaderboard-row ${p.finished ? 'finished' : ''}">
       <span class="rank">${i + 1}</span>
       <span class="name">${p.name}</span>
       ${p.finished
-        ? `<span class="score">${p.score} / ${p.total} ✅</span>`
+        ? `<span class="score">${p.score} / ${p.total} ✅ — ⏱️ ${formatTime(p.time_taken)}</span>`
         : `<span class="status">${quizHasStarted ? 'لسا يذاكر...' : 'بانتظار الاختبار...'}</span>`}
       ${isHost && p.sid !== socket.id
         ? `<button class="ghost kick-btn" data-sid="${p.sid}" style="padding:5px 12px; font-size:12.5px;">🚫 طرد</button>`
@@ -704,7 +808,25 @@ function renderLeaderboard(leaderboard) {
     });
   }
 }
-socket.on('leaderboard_update', data => renderLeaderboard(data.leaderboard));
+socket.on('leaderboard_update', data => {
+  renderLeaderboard(data.leaderboard);
+  if (quizFinished && currentRoomCode) updateMyResultBox(data.leaderboard);
+});
+
+function updateMyResultBox(leaderboard) {
+  const myIndex = leaderboard.findIndex(p => p.sid === socket.id);
+  if (myIndex === -1) return;
+  const me = leaderboard[myIndex];
+  const box = document.getElementById('myResultBox');
+  box.classList.remove('hidden');
+  box.innerHTML = `
+    <div class="my-result-banner">
+      <div>نتيجتك</div>
+      <div class="big">${me.score} / ${me.total}</div>
+      <div>⏱️ الوقت: ${formatTime(me.time_taken)} — ترتيبك: #${myIndex + 1}</div>
+    </div>
+  `;
+}
 
 socket.on('kicked', () => {
   alert('تم طردك من الغرفة من قبل المضيف');
@@ -890,6 +1012,10 @@ quizBtn.addEventListener('click', async () => {
     renderQuiz();
     show('step-quiz');
     if (appMode === 'room-host') show('hostQuizControls');
+    if (appMode === 'solo') {
+      quizStartTime = Date.now() / 1000;
+      blurForExam();
+    }
     document.getElementById('step-quiz').scrollIntoView({ behavior: 'smooth' });
   } catch (err) {
     showError('quizError', 'صار خطأ بتوليد الاختبار أو قراءة النتيجة، جرب مرة ثانية');
@@ -926,7 +1052,6 @@ function renderQuiz() {
 // ---------- الهوست: بدء الاختبار للجميع ----------
 document.getElementById('hostStartQuizBtn').addEventListener('click', () => {
   const duration = parseFloat(document.getElementById('quizDurationInput').value);
-  const chatToggle = document.getElementById('chatDuringQuizToggle').checked;
   clearError('hostStartQuizError');
 
   if (!duration || duration <= 0) {
@@ -938,7 +1063,6 @@ document.getElementById('hostStartQuizBtn').addEventListener('click', () => {
     room_code: currentRoomCode,
     quiz: quizData,
     duration_minutes: duration,
-    chat_enabled_during_quiz: chatToggle,
   });
 });
 
@@ -947,7 +1071,7 @@ function handleQuizStarted(data) {
   quizData = data.quiz;
   quizHasStarted = true;
   quizFinished = false;
-  chatEnabledDuringQuiz = data.chat_enabled_during_quiz;
+  quizStartTime = data.started_at;
   quizDeadline = data.started_at + data.duration_minutes * 60;
 
   renderQuiz();
@@ -958,13 +1082,10 @@ function handleQuizStarted(data) {
   show('quizCountdownBadge');
   startQuizCountdown();
 
-  if (!chatEnabledDuringQuiz) {
-    hide('roomChatBox');
-    show('chatDisabledNote');
-  } else {
-    show('roomChatBox');
-    hide('chatDisabledNote');
-  }
+  // بالجماعي: الشات وقائمة المشاركين تختفي بالكامل وقت ما الشخص نفسه يحل، وترجع له بعد ما يسلّم
+  hide('participantsSection');
+  show('inQuizNote');
+  document.getElementById('myResultBox').classList.add('hidden');
 
   document.getElementById('step-quiz').scrollIntoView({ behavior: 'smooth' });
 }
@@ -1006,13 +1127,20 @@ function finishQuiz() {
     if (selected && selected.dataset.value === correctAnswer) correct++;
   });
 
+  const timeTaken = quizStartTime ? Math.max(0, Math.floor(Date.now() / 1000 - quizStartTime)) : 0;
+
   if (currentRoomCode) {
-    socket.emit('submit_score', { room_code: currentRoomCode, score: correct, total: quizData.length });
+    socket.emit('submit_score', { room_code: currentRoomCode, score: correct, total: quizData.length, time_taken: timeTaken });
+    // ترجع له الشات وقائمة المشاركين والبودّيوم بعد ما يسلّم
+    show('participantsSection');
+    hide('inQuizNote');
+  } else {
+    unblurAfterExam();
   }
 
   const banner = document.createElement('div');
   banner.className = 'score-banner';
-  banner.innerHTML = `<div>نتيجتك</div><div class="big">${correct} / ${quizData.length}</div>`;
+  banner.innerHTML = `<div>نتيجتك</div><div class="big">${correct} / ${quizData.length}</div><div>⏱️ الوقت المستغرق: ${formatTime(timeTaken)}</div>`;
   document.getElementById('quizContainer').prepend(banner);
   document.getElementById('checkBtn').disabled = true;
 }

@@ -219,8 +219,7 @@ rooms = {}
 #   "quiz": list | None,
 #   "quiz_started_at": float | None,
 #   "duration_minutes": float | None,
-#   "chat_enabled_during_quiz": bool,
-#   "participants": {sid: {"name", "score", "total", "finished"}},
+#   "participants": {sid: {"name", "score", "total", "finished", "time_taken"}},
 # }
 
 ROOM_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # بدون أحرف/أرقام تتشابه بالشكل
@@ -239,7 +238,10 @@ def get_leaderboard(room_code):
         {**data, "sid": sid}
         for sid, data in rooms[room_code]["participants"].items()
     ]
-    participants.sort(key=lambda p: (-p["score"] if p["finished"] else 1, p["name"]))
+    # الدرجة أولاً (الأعلى فوق)، والوقت يفصل بين المتساوين بالدرجة (الأسرع فوق)
+    participants.sort(
+        key=lambda p: (-p["score"], p["time_taken"]) if p["finished"] else (1, p["name"])
+    )
     return participants
 
 
@@ -252,7 +254,6 @@ def create_room():
         "quiz": None,
         "quiz_started_at": None,
         "duration_minutes": None,
-        "chat_enabled_during_quiz": True,
         "participants": {},
     }
     return jsonify({"room_code": room_code}), 200
@@ -282,6 +283,7 @@ def handle_join_room(data):
         "score": 0,
         "total": 0,
         "finished": False,
+        "time_taken": 0,
     }
 
     emit(
@@ -293,7 +295,6 @@ def handle_join_room(data):
             "quiz": room["quiz"],
             "quiz_started_at": room["quiz_started_at"],
             "duration_minutes": room["duration_minutes"],
-            "chat_enabled_during_quiz": room["chat_enabled_during_quiz"],
         },
     )
     emit("leaderboard_update", {"leaderboard": get_leaderboard(room_code)}, to=room_code)
@@ -304,7 +305,6 @@ def handle_start_quiz(data):
     room_code = (data.get("room_code") or "").strip().upper()
     quiz = data.get("quiz")
     duration_minutes = data.get("duration_minutes")
-    chat_enabled_during_quiz = bool(data.get("chat_enabled_during_quiz", True))
 
     if room_code not in rooms:
         return
@@ -317,7 +317,6 @@ def handle_start_quiz(data):
     room["quiz"] = quiz
     room["quiz_started_at"] = time.time()
     room["duration_minutes"] = duration_minutes
-    room["chat_enabled_during_quiz"] = chat_enabled_during_quiz
 
     emit(
         "quiz_started",
@@ -325,7 +324,6 @@ def handle_start_quiz(data):
             "quiz": quiz,
             "started_at": room["quiz_started_at"],
             "duration_minutes": duration_minutes,
-            "chat_enabled_during_quiz": chat_enabled_during_quiz,
         },
         to=room_code,
     )
@@ -343,11 +341,12 @@ def handle_chat_message(data):
     if request.sid not in room["participants"]:
         return
 
-    # الهوست يقدر يوقف الشات أثناء الاختبار الفعلي
-    if room["quiz_started_at"] and not room["chat_enabled_during_quiz"]:
+    participant = room["participants"][request.sid]
+    # ما يقدر يسولف بالشات وهو لسا يحل الاختبار (بعد ما بدأ وقبل ما يسلّم)
+    if room["quiz_started_at"] and not participant["finished"]:
         return
 
-    name = room["participants"][request.sid]["name"]
+    name = participant["name"]
     emit(
         "chat_message",
         {"name": name, "message": message, "ts": time.time()},
@@ -388,6 +387,7 @@ def handle_submit_score(data):
         {
             "score": data.get("score", 0),
             "total": data.get("total", 0),
+            "time_taken": data.get("time_taken", 0),
             "finished": True,
         }
     )

@@ -603,6 +603,10 @@ let quizFinished = false;
 let currentRoomCode = null;
 let isHost = false;
 let myName = "";
+// معرّف ثابت لهذا التبويب طول عمر الجلسة، يستخدم عشان لو النت انقطع لحظيًا
+// و socket.io سوى إعادة اتصال تلقائي بـ sid جديد، نقدر نطابق نفس المشارك
+// ونحافظ على درجته وصفة الهوست بدل ما يفقدهم بصمت
+const clientId = (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`);
 let roomCreatedAt = null;
 let quizHasStarted = false;
 let quizDeadline = null;
@@ -716,7 +720,7 @@ document.getElementById('hostCreateBtn').addEventListener('click', async () => {
 
     myName = name;
     joinErrorTarget = 'roomCreateError';
-    socket.emit('join_room', { room_code: data.room_code, name });
+    socket.emit('join_room', { room_code: data.room_code, name, client_id: clientId });
   } catch (err) {
     showError('roomCreateError', err.message || 'صار خطأ غير متوقع');
   }
@@ -730,10 +734,19 @@ document.getElementById('joinRoomBtn').addEventListener('click', () => {
 
   myName = name;
   joinErrorTarget = 'roomJoinError';
-  socket.emit('join_room', { room_code: code, name });
+  socket.emit('join_room', { room_code: code, name, client_id: clientId });
 });
 
 socket.on('join_error', data => showError(joinErrorTarget, data.error));
+
+// لو socket.io انقطع وأعاد الاتصال تلقائيًا (نت متقطع، Render إلخ)، نرجع
+// ننضم لنفس الغرفة بنفس clientId عشان السيرفر يربط sid الجديد بمشاركتنا القديمة -
+// وإلا كل رسائل الشات والتسليم بعده بترفض بصمت لأن الـ sid القديم صار ميت
+socket.on('connect', () => {
+  if (currentRoomCode) {
+    socket.emit('join_room', { room_code: currentRoomCode, name: myName, client_id: clientId });
+  }
+});
 
 socket.on('room_state', data => {
   currentRoomCode = data.room_code;
@@ -745,17 +758,20 @@ socket.on('room_state', data => {
   document.getElementById('roomCodeBadge').textContent = currentRoomCode;
   startRoomElapsedTimer();
 
-  if (data.quiz) {
-    // انضم بعد ما الاختبار بدأ فعليًا (حالة نادرة) - نعامله كأن الحدث وصله الحين
+  if (data.quiz && !quizHasStarted) {
+    // انضم بعد ما الاختبار بدأ فعليًا (حالة نادرة)، أو رجع بعد إعادة اتصال ولسا
+    // ما بدأ الاختبار عنده محليًا - نعامله كأن الحدث وصله الحين
     handleQuizStarted({
       quiz: data.quiz,
       started_at: data.quiz_started_at,
       duration_minutes: data.duration_minutes,
     });
-  } else if (isHost) {
+  } else if (!data.quiz && isHost && !uploadedFilename) {
     appMode = 'room-host';
     show('step-upload');
   }
+  // ملاحظة: لو quizHasStarted أصلًا شغال محليًا، ما نعيد استدعاء handleQuizStarted
+  // عند إعادة الاتصال عشان ما نمسح إجابات المستخدم أو نعيد المؤقت من الصفر
 });
 
 function startRoomElapsedTimer() {

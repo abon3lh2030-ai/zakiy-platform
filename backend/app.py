@@ -250,6 +250,7 @@ def create_room():
     room_code = generate_room_code()
     rooms[room_code] = {
         "host_sid": None,
+        "host_client_id": None,
         "created_at": time.time(),
         "quiz": None,
         "quiz_started_at": None,
@@ -263,6 +264,7 @@ def create_room():
 def handle_join_room(data):
     room_code = (data.get("room_code") or "").strip().upper()
     name = (data.get("name") or "").strip()
+    client_id = (data.get("client_id") or "").strip()
 
     if room_code not in rooms:
         emit("join_error", {"error": "الغرفة غير موجودة، تأكد من الكود"})
@@ -273,18 +275,37 @@ def handle_join_room(data):
 
     room = rooms[room_code]
 
-    # أول من ينضم للغرفة (بعد إنشائها) يصير الهوست
-    if room["host_sid"] is None:
-        room["host_sid"] = request.sid
+    # socket.io يسوي إعادة اتصال تلقائية بعد أي انقطاع بسيط بالنت، وكل reconnect
+    # يجيب sid جديد. لو نفس المتصفح (نفس client_id) يرجع ينضم، نلقى مشاركته
+    # القديمة ونربطها بالـ sid الجديد بدل ما نصفّرها - وإلا كل انقطاع بسيط
+    # بيوقف الشات والتسليم بصمت لأن sid القديم صار ميت
+    existing_sid = next(
+        (
+            sid
+            for sid, p in room["participants"].items()
+            if client_id and p.get("client_id") == client_id and sid != request.sid
+        ),
+        None,
+    )
 
+    if existing_sid:
+        participant = room["participants"].pop(existing_sid)
+        participant["name"] = name
+    else:
+        participant = {"name": name, "score": 0, "total": 0, "finished": False, "time_taken": 0}
+
+    participant["client_id"] = client_id
     join_room(room_code)
-    room["participants"][request.sid] = {
-        "name": name,
-        "score": 0,
-        "total": 0,
-        "finished": False,
-        "time_taken": 0,
-    }
+    room["participants"][request.sid] = participant
+
+    # صفة الهوست مربوطة بـ client_id ثابت مو بالـ sid المتغيّر، عشان الهوست ما
+    # يفقد صلاحياته لو النت انقطع عنده لحظيًا (الـ disconnect ينحذف قبل ما
+    # يرجع ينضم، فمطابقة sid وحدها ما تكفي لاسترجاع صفة الهوست)
+    if room["host_client_id"] is None:
+        room["host_client_id"] = client_id
+        room["host_sid"] = request.sid
+    elif client_id and client_id == room["host_client_id"]:
+        room["host_sid"] = request.sid
 
     emit(
         "room_state",
@@ -394,6 +415,16 @@ def handle_submit_score(data):
     emit("leaderboard_update", {"leaderboard": get_leaderboard(room_code)}, to=room_code)
 
 
+ROOM_EMPTY_GRACE_SECONDS = 30  # مهلة قبل حذف الغرفة الفاضية، عشان انقطاع نت مؤقت ما يمسحها قبل ما الكل يرجع يتصل
+
+
+def _delete_room_if_still_empty(room_code):
+    socketio.sleep(ROOM_EMPTY_GRACE_SECONDS)
+    room = rooms.get(room_code)
+    if room and not room["participants"]:
+        del rooms[room_code]
+
+
 @socketio.on("disconnect")
 def handle_disconnect():
     for room_code, room in list(rooms.items()):
@@ -406,7 +437,7 @@ def handle_disconnect():
         if room["participants"]:
             emit("leaderboard_update", {"leaderboard": get_leaderboard(room_code)}, to=room_code)
         else:
-            del rooms[room_code]
+            socketio.start_background_task(_delete_room_if_still_empty, room_code)
         break
 
 

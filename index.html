@@ -247,6 +247,17 @@
   .option.correct { border-color: var(--teal); background: var(--teal-dim); font-weight: 600; }
   .option.wrong { border-color: var(--danger); background: #FBEAE8; font-weight: 600; }
 
+  .explanation {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: var(--teal-dim);
+    border-right: 3px solid var(--teal);
+    border-radius: 0 8px 8px 0;
+    font-size: 13.5px;
+    color: var(--ink);
+    line-height: 1.7;
+  }
+
   .score-banner {
     text-align: center;
     padding: 28px;
@@ -356,6 +367,85 @@
     color: var(--ink-soft);
     font-size: 13px;
     margin-top: 40px;
+  }
+
+  /* ---------- مؤقت بومودورو (فردي بس) ---------- */
+  .pomodoro-widget {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    width: 220px;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: 0 6px 20px rgba(27,42,74,0.15);
+    z-index: 500;
+    overflow: hidden;
+  }
+  .pomodoro-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--ink);
+    color: white;
+    font-weight: 700;
+    font-size: 13.5px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .pomodoro-header .pomodoro-toggle {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+  }
+  .pomodoro-body { padding: 16px; }
+  .pomodoro-widget.collapsed .pomodoro-body { display: none; }
+
+  .pomodoro-phase {
+    text-align: center;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--teal);
+    margin-bottom: 4px;
+  }
+  .pomodoro-phase.break { color: #B8860B; }
+  .pomodoro-time {
+    text-align: center;
+    font-family: 'Almarai', sans-serif;
+    font-weight: 800;
+    font-size: 34px;
+    color: var(--ink);
+    margin-bottom: 14px;
+    letter-spacing: 1px;
+  }
+  .pomodoro-settings { display: flex; gap: 8px; margin-bottom: 14px; }
+  .pomodoro-settings label {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+  .pomodoro-settings input.text-input { padding: 6px 8px; font-size: 13px; }
+  .pomodoro-controls { display: flex; gap: 8px; }
+  .pomodoro-controls button { flex: 1; padding: 9px; font-size: 12.5px; }
+  .pomodoro-alert {
+    margin-top: 14px;
+    padding: 12px;
+    background: var(--highlighter-soft);
+    border-radius: 10px;
+    text-align: center;
+  }
+  .pomodoro-alert p { font-size: 12.5px; font-weight: 600; margin-bottom: 10px; }
+
+  @media (max-width: 560px) {
+    .pomodoro-widget { left: 12px; bottom: 12px; width: 190px; }
   }
 
   /* ---------- تغبيش وقت الاختبار (فردي) ---------- */
@@ -810,6 +900,38 @@
   <footer>ذكيّ — منصة دراسية بمساعدة الذكاء الاصطناعي</footer>
 </div>
 
+<!-- مؤقت بومودورو: يظهر بالوضع الفردي بس -->
+<div class="pomodoro-widget hidden" id="pomodoroWidget">
+  <div class="pomodoro-header" id="pomodoroHeader">
+    <span>🍅 بومودورو</span>
+    <button class="pomodoro-toggle" id="pomodoroToggleBtn">−</button>
+  </div>
+  <div class="pomodoro-body" id="pomodoroBody">
+    <div class="pomodoro-phase" id="pomodoroPhaseLabel">🧠 مذاكرة</div>
+    <div class="pomodoro-time" id="pomodoroTimeDisplay">25:00</div>
+    <div class="pomodoro-settings">
+      <label>مذاكرة (د)
+        <input type="number" id="pomodoroFocusInput" class="text-input" value="25" min="1" max="120">
+      </label>
+      <label>راحة (د)
+        <input type="number" id="pomodoroBreakInput" class="text-input" value="5" min="1" max="60">
+      </label>
+    </div>
+    <div class="pomodoro-controls">
+      <button class="primary" id="pomodoroStartBtn">▶️ تشغيل</button>
+      <button class="ghost hidden" id="pomodoroPauseBtn">⏸️ إيقاف</button>
+      <button class="ghost" id="pomodoroResetBtn">🔄 تصفير</button>
+    </div>
+    <div class="pomodoro-alert hidden" id="pomodoroAlert">
+      <p id="pomodoroAlertText"></p>
+      <div class="pomodoro-controls">
+        <button class="primary" id="pomodoroNextBtn"></button>
+        <button class="ghost" id="pomodoroDismissBtn">🔕 إيقاف المنبه</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -1094,6 +1216,7 @@ document.getElementById('modeSoloBtn').addEventListener('click', () => {
   appMode = 'solo';
   hide('mode-select');
   show('step-upload');
+  show('pomodoroWidget');
 });
 
 document.getElementById('modeRoomBtn').addEventListener('click', () => {
@@ -1531,6 +1654,7 @@ function renderQuiz() {
       <div class="options" data-qindex="${i}">
         ${q.options.map(opt => `<div class="option" data-value="${opt}">${opt}</div>`).join('')}
       </div>
+      <div class="explanation hidden" id="explanation-${i}"></div>
     `;
     container.appendChild(qDiv);
   });
@@ -1625,6 +1749,12 @@ function finishQuiz() {
     } else if (quizData[i].topic) {
       wrongTopics.push(quizData[i].topic);
     }
+
+    if (quizData[i].explanation) {
+      const explanationEl = document.getElementById(`explanation-${i}`);
+      explanationEl.textContent = `💡 ${quizData[i].explanation}`;
+      explanationEl.classList.remove('hidden');
+    }
   });
 
   const timeTaken = quizStartTime ? Math.max(0, Math.floor(Date.now() / 1000 - quizStartTime)) : 0;
@@ -1663,6 +1793,128 @@ document.getElementById('checkBtn').addEventListener('click', finishQuiz);
 
 // ---------- Restart ----------
 document.getElementById('restartBtn').addEventListener('click', () => location.reload());
+
+// ---------- مؤقت بومودورو (وضع فردي بس) ----------
+let pomodoroIntervalId = null;
+let pomodoroRemaining = 25 * 60; // بالثواني
+let pomodoroPhase = 'focus'; // 'focus' | 'break'
+let pomodoroRunning = false;
+
+function pomodoroDurations() {
+  const focusMin = Math.max(1, parseInt(document.getElementById('pomodoroFocusInput').value, 10) || 25);
+  const breakMin = Math.max(1, parseInt(document.getElementById('pomodoroBreakInput').value, 10) || 5);
+  return { focus: focusMin * 60, break: breakMin * 60 };
+}
+
+function updatePomodoroDisplay() {
+  document.getElementById('pomodoroTimeDisplay').textContent = formatTime(pomodoroRemaining);
+  const label = document.getElementById('pomodoroPhaseLabel');
+  label.textContent = pomodoroPhase === 'focus' ? '🧠 مذاكرة' : '☕ راحة';
+  label.classList.toggle('break', pomodoroPhase === 'break');
+}
+
+// نغمة تنبيه بسيطة بدون ملف صوت خارجي - Web Audio API
+function playPomodoroSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [0, 0.5].forEach(delay => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.15, ctx.currentTime + delay);
+      osc.start(ctx.currentTime + delay);
+      osc.stop(ctx.currentTime + delay + 0.35);
+    });
+  } catch (err) { /* المتصفح ما يدعم Web Audio - نتجاهل بصمت */ }
+}
+
+function showPomodoroAlert() {
+  const wasFocus = pomodoroPhase === 'focus';
+  document.getElementById('pomodoroAlertText').textContent =
+    wasFocus ? '🎉 خلصت فترة المذاكرة! وقت الراحة' : '💪 خلصت الراحة! نرجع نذاكر؟';
+  document.getElementById('pomodoroNextBtn').textContent = wasFocus ? '☕ ابدأ الراحة' : '🧠 ابدأ المذاكرة';
+  show('pomodoroAlert');
+}
+
+function pomodoroTick() {
+  pomodoroRemaining--;
+  if (pomodoroRemaining <= 0) {
+    clearInterval(pomodoroIntervalId);
+    pomodoroIntervalId = null;
+    pomodoroRunning = false;
+    updatePomodoroDisplay();
+    document.getElementById('pomodoroStartBtn').classList.remove('hidden');
+    document.getElementById('pomodoroPauseBtn').classList.add('hidden');
+    playPomodoroSound();
+    showPomodoroAlert();
+    return;
+  }
+  updatePomodoroDisplay();
+}
+
+function pomodoroStart() {
+  if (pomodoroRunning) return;
+  pomodoroRunning = true;
+  hide('pomodoroAlert');
+  document.getElementById('pomodoroStartBtn').classList.add('hidden');
+  document.getElementById('pomodoroPauseBtn').classList.remove('hidden');
+  pomodoroIntervalId = setInterval(pomodoroTick, 1000);
+}
+
+function pomodoroPause() {
+  pomodoroRunning = false;
+  clearInterval(pomodoroIntervalId);
+  pomodoroIntervalId = null;
+  document.getElementById('pomodoroStartBtn').classList.remove('hidden');
+  document.getElementById('pomodoroPauseBtn').classList.add('hidden');
+}
+
+function pomodoroReset() {
+  pomodoroPause();
+  pomodoroPhase = 'focus';
+  pomodoroRemaining = pomodoroDurations().focus;
+  updatePomodoroDisplay();
+  hide('pomodoroAlert');
+}
+
+function pomodoroSwitchPhase() {
+  const durations = pomodoroDurations();
+  pomodoroPhase = pomodoroPhase === 'focus' ? 'break' : 'focus';
+  pomodoroRemaining = durations[pomodoroPhase];
+  updatePomodoroDisplay();
+  hide('pomodoroAlert');
+  pomodoroStart();
+}
+
+document.getElementById('pomodoroStartBtn').addEventListener('click', pomodoroStart);
+document.getElementById('pomodoroPauseBtn').addEventListener('click', pomodoroPause);
+document.getElementById('pomodoroResetBtn').addEventListener('click', pomodoroReset);
+document.getElementById('pomodoroNextBtn').addEventListener('click', pomodoroSwitchPhase);
+document.getElementById('pomodoroDismissBtn').addEventListener('click', () => hide('pomodoroAlert'));
+
+// تعديل مدة المذاكرة/الراحة يدويًا (بس إذا المؤقت واقف على نفس المرحلة) ينعكس فورًا
+document.getElementById('pomodoroFocusInput').addEventListener('change', () => {
+  if (!pomodoroRunning && pomodoroPhase === 'focus') {
+    pomodoroRemaining = pomodoroDurations().focus;
+    updatePomodoroDisplay();
+  }
+});
+document.getElementById('pomodoroBreakInput').addEventListener('change', () => {
+  if (!pomodoroRunning && pomodoroPhase === 'break') {
+    pomodoroRemaining = pomodoroDurations().break;
+    updatePomodoroDisplay();
+  }
+});
+
+document.getElementById('pomodoroHeader').addEventListener('click', () => {
+  const widget = document.getElementById('pomodoroWidget');
+  widget.classList.toggle('collapsed');
+  document.getElementById('pomodoroToggleBtn').textContent = widget.classList.contains('collapsed') ? '+' : '−';
+});
+
+updatePomodoroDisplay();
 </script>
 </body>
 </html>

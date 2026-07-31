@@ -478,6 +478,24 @@
     font-size: 15.5px;
   }
 
+  .auth-switch {
+    margin-top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .link-btn {
+    background: none;
+    border: none;
+    color: var(--teal);
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px;
+  }
+  .link-btn:hover { text-decoration: underline; }
+
   .stat-row { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
   .stat-tile {
     flex: 1;
@@ -529,31 +547,23 @@
     <p>ارفع ملزمة أو أوراق عمل بصيغة PDF، وخلّ ذكيّ يلخصها ويحول محتواها لاختبار تفاعلي يقيس فهمك.</p>
   </div>
 
-  <!-- بوابة الحساب: تسجيل دخول / إنشاء حساب / استمرار بدون حساب -->
-  <section class="card auth-card" id="auth-gate">
-    <span class="auth-logo">ذكيّ</span>
-    <h2>سجّل حساب يحفظ تقدمك</h2>
-    <p class="desc">يحلل نقاط ضعفك بعد كل اختبار</p>
-    <div class="auth-actions-stack">
-      <button class="primary" id="showLoginBtn">🔑 تسجيل الدخول</button>
-      <button class="primary" id="showSignupBtn">🆕 إنشاء حساب</button>
-      <button class="ghost" id="continueGuestBtn">➡️ استمر بدون حساب</button>
-    </div>
-  </section>
-
-  <section class="card hidden auth-card" id="login-form">
+  <!-- تسجيل الدخول: الشاشة الافتراضية عند الدخول، مع إمكانية التبديل لإنشاء حساب أو المتابعة بدون حساب -->
+  <section class="card auth-card" id="login-form">
     <span class="auth-logo">ذكيّ</span>
     <h2>تسجيل الدخول</h2>
-    <p class="desc">أدخل بياناتك للمتابعة</p>
+    <p class="desc">أدخل بياناتك للمتابعة، أو سوّي حساب يحفظ تقدمك</p>
     <div class="auth-fields">
       <input type="email" id="loginEmail" class="text-input" placeholder="الإيميل">
       <input type="password" id="loginPassword" class="text-input" placeholder="كلمة المرور">
     </div>
     <div class="auth-actions-stack">
       <button class="primary" id="loginSubmitBtn">دخول</button>
-      <button class="ghost" id="backToAuthGateBtn1">« رجوع</button>
     </div>
     <div id="loginError"></div>
+    <div class="auth-switch">
+      <button class="link-btn" id="goToSignupBtn">🆕 ما عندك حساب؟ أنشئ واحد</button>
+      <button class="link-btn" id="guestFromLoginBtn">➡️ استمر بدون حساب</button>
+    </div>
   </section>
 
   <section class="card hidden auth-card" id="signup-form">
@@ -586,9 +596,12 @@
     </div>
     <div class="auth-actions-stack">
       <button class="primary" id="signupSubmitBtn">إنشاء الحساب</button>
-      <button class="ghost" id="backToAuthGateBtn2">« رجوع</button>
     </div>
     <div id="signupError"></div>
+    <div class="auth-switch">
+      <button class="link-btn" id="goToLoginBtn">🔑 عندك حساب؟ سجّل دخولك</button>
+      <button class="link-btn" id="guestFromSignupBtn">➡️ استمر بدون حساب</button>
+    </div>
   </section>
 
   <!-- لوحة تحليل الأداء (تظهر بأي وقت للمسجّلين عبر زر "📊 أدائي") -->
@@ -888,7 +901,7 @@ document.querySelectorAll('.exam-overlay button').forEach(btn => {
 
 // ---------- الحساب (اختياري) ----------
 function proceedToApp() {
-  hide('auth-gate'); hide('login-form'); hide('signup-form');
+  hide('login-form'); hide('signup-form');
   show('mode-select');
 }
 
@@ -915,19 +928,14 @@ supabaseClient.auth.getSession().then(({ data }) => {
   if (data.session) onAuthSuccess(data.session);
 });
 
-document.getElementById('showLoginBtn').addEventListener('click', () => {
-  hide('auth-gate'); show('login-form');
+document.getElementById('goToSignupBtn').addEventListener('click', () => {
+  hide('login-form'); show('signup-form');
 });
-document.getElementById('showSignupBtn').addEventListener('click', () => {
-  hide('auth-gate'); show('signup-form');
+document.getElementById('goToLoginBtn').addEventListener('click', () => {
+  hide('signup-form'); show('login-form');
 });
-document.getElementById('continueGuestBtn').addEventListener('click', proceedToApp);
-document.getElementById('backToAuthGateBtn1').addEventListener('click', () => {
-  hide('login-form'); show('auth-gate');
-});
-document.getElementById('backToAuthGateBtn2').addEventListener('click', () => {
-  hide('signup-form'); show('auth-gate');
-});
+document.getElementById('guestFromLoginBtn').addEventListener('click', proceedToApp);
+document.getElementById('guestFromSignupBtn').addEventListener('click', proceedToApp);
 
 document.getElementById('loginSubmitBtn').addEventListener('click', async () => {
   clearError('loginError');
@@ -969,7 +977,7 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
 
 // ---------- لوحة تحليل الأداء ----------
 function showPerformanceDashboard() {
-  ['auth-gate', 'login-form', 'signup-form', 'mode-select', 'room-mode-select', 'room-create-form',
+  ['login-form', 'signup-form', 'mode-select', 'room-mode-select', 'room-create-form',
    'room-join-form', 'step-room', 'step-upload', 'step-text', 'step-chat', 'step-summary', 'step-quiz']
     .forEach(hide);
   show('step-performance');

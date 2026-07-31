@@ -1,3 +1,9 @@
+import eventlet
+
+# لازم يصير أول شي بالملف قبل أي استيراد ثاني - وإلا يصير تعارض بين
+# مقابس SSL العادية ومقابس eventlet "الخضراء" وقت التشغيل بـ gunicorn+eventlet
+eventlet.monkey_patch()
+
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit, join_room, leave_room

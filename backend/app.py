@@ -6,7 +6,7 @@ import random
 import time
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
-import pdfplumber
+from pypdf import PdfReader
 from google import genai
 from google.genai import errors as genai_errors
 
@@ -72,11 +72,11 @@ def upload_file():
 # ---------- استخراج النص من PDF ----------
 def extract_text_from_pdf(filepath):
     text = ""
-    with pdfplumber.open(filepath) as pdf:
-        for page in pdf.pages:
-            page_text = page.extract_text()
-            if page_text:
-                text += page_text + "\n"
+    reader = PdfReader(filepath)
+    for page in reader.pages:
+        page_text = page.extract_text()
+        if page_text:
+            text += page_text + "\n"
     return text.strip()
 
 

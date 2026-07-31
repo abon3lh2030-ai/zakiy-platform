@@ -3,7 +3,7 @@ flask-cors==4.0.1
 flask-socketio==5.4.1
 simple-websocket==1.1.0
 python-dotenv==1.0.1
-pdfplumber==0.11.4
+pypdf==6.14.2
 google-genai==2.16.0
 gunicorn==23.0.0
 eventlet==0.40.3

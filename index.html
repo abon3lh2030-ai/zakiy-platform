@@ -626,6 +626,7 @@
     <span class="logo">ذكيّ</span>
     <div style="display:flex; align-items:center; gap:10px;">
       <span class="badge hidden" id="accountBadge"></span>
+      <button class="link-btn hidden" id="editUsernameBtn" style="padding:4px;">✏️ عدّل اسمك</button>
       <button class="ghost hidden" id="performanceBtn" style="padding:6px 14px; font-size:13px;">📊 أدائي</button>
       <button class="ghost hidden" id="logoutBtn" style="padding:6px 14px; font-size:13px;">خروج</button>
       <span class="badge">مشروع تخرج — أكاديمية طويق</span>
@@ -1043,24 +1044,47 @@ function proceedToApp() {
   show('mode-select');
 }
 
+function refreshAccountUI() {
+  const badge = document.getElementById('accountBadge');
+  badge.textContent = `👤 ${currentUsername}`;
+  const greeting = document.getElementById('welcomeGreeting');
+  greeting.textContent = `أهلاً ${currentUsername} 👋`;
+}
+
+async function promptForUsername(initialMessage) {
+  const newName = prompt(initialMessage, currentUsername || '');
+  if (!newName || !newName.trim()) return;
+  const { error } = await supabaseClient.auth.updateUser({ data: { username: newName.trim() } });
+  if (error) { alert('تعذر حفظ الاسم، جرب مرة ثانية'); return; }
+  currentUsername = newName.trim();
+  refreshAccountUI();
+}
+
 function onAuthSuccess(session) {
   currentAccessToken = session.access_token;
   currentUserEmail = session.user.email;
-  // حسابات قديمة من قبل ميزة اليوزرنيم ما فيها هذا الحقل - نرجع للإيميل حينها
+  const hasStoredUsername = !!session.user.user_metadata?.username;
+  // حسابات قديمة من قبل ميزة اليوزرنيم ما فيها هذا الحقل - نرجع للإيميل مؤقتًا
   currentUsername = session.user.user_metadata?.username || currentUserEmail;
 
-  const badge = document.getElementById('accountBadge');
-  badge.textContent = `👤 ${currentUsername}`;
   show('accountBadge');
+  show('editUsernameBtn');
   show('performanceBtn');
   show('logoutBtn');
-
-  const greeting = document.getElementById('welcomeGreeting');
-  greeting.textContent = `أهلاً ${currentUsername} 👋`;
   show('welcomeGreeting');
+  refreshAccountUI();
 
   proceedToApp();
+
+  // حساب قديم بدون اسم محفوظ - نطلبه مرة وحدة (يقدر يلغيها ويبقى بالإيميل)
+  if (!hasStoredUsername) {
+    promptForUsername('لاحظنا حسابك بدون اسم محفوظ. وش اسمك؟ (يطلع بدل الإيميل بالموقع)');
+  }
 }
+
+document.getElementById('editUsernameBtn').addEventListener('click', () => {
+  promptForUsername('عدّل اسمك:');
+});
 
 // Supabase يجدد access_token تلقائيًا بالخلفية - نتابع آخر نسخة عشان الطلبات
 // المحمية (تسجيل نتيجة اختبار، جلب الأداء) ما تفشل بجلسة قديمة منتهية

@@ -221,6 +221,7 @@ def chat():
     message = data.get("message")
     interaction_id = data.get("interaction_id")
     context = data.get("context")
+    name = data.get("name")
 
     if not message:
         return jsonify({"error": "لازم ترسل رسالة"}), 400
@@ -229,11 +230,14 @@ def chat():
         if interaction_id:
             input_text = message
         else:
+            name_line = f"اسم الطالب: {name}\n" if name else ""
             input_text = (
                 "هذا نص ملف دراسي رفعه الطالب:\n\n"
                 f"{context}\n\n"
+                f"{name_line}"
                 "جاوب على أسئلة الطالب المتعلقة بهذا المحتوى فقط، بوضوح واختصار "
-                "باللغة العربية، بدون رموز Markdown.\n\n"
+                "باللغة العربية، بدون رموز Markdown. لو معروف اسم الطالب خاطبه "
+                "باسمه بشكل طبيعي بردك الأول.\n\n"
                 f"سؤال الطالب: {message}"
             )
 

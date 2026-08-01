@@ -661,6 +661,7 @@
     <h2>إنشاء حساب جديد</h2>
     <p class="desc">يحفظ تقدمك ويحلل نقاط ضعفك بعد كل اختبار</p>
     <div class="auth-fields">
+      <input type="text" id="signupUsername" class="text-input" placeholder="اسمك (يطلع بدل الإيميل بالموقع)">
       <input type="email" id="signupEmail" class="text-input" placeholder="الإيميل">
       <input type="password" id="signupPassword" class="text-input" placeholder="كلمة المرور (٦ أحرف عالأقل)">
     </div>
@@ -697,7 +698,7 @@
   <!-- لوحة تحليل الأداء (تظهر بأي وقت للمسجّلين عبر زر "📊 أدائي") -->
   <section class="card hidden" id="step-performance">
     <span class="step-label">📊 أدائي</span>
-    <h2>لوحة تحليل أدائك</h2>
+    <h2 id="performanceHeading">لوحة تحليل أدائك</h2>
     <p class="desc" id="performanceEmptyState">لسا ما حليت أي اختبار وأنت مسجّل دخول.</p>
 
     <div id="performanceContent" class="hidden">
@@ -730,6 +731,7 @@
 
   <!-- اختيار الوضع: فردي أو غرفة جماعية -->
   <section class="card hidden" id="mode-select">
+    <p class="desc hidden" id="welcomeGreeting" style="font-weight:700; color:var(--teal); margin-bottom:2px;"></p>
     <h2>وش تبي تسوي اليوم؟</h2>
     <p class="desc">اختر طريقة المذاكرة عشان نبدأ</p>
     <div class="actions">
@@ -955,6 +957,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 
 let currentAccessToken = null;
 let currentUserEmail = null;
+let currentUsername = null;
 
 let appMode = null; // 'solo' | 'room-host' | 'room-join'
 let uploadedFilename = null;
@@ -1043,12 +1046,18 @@ function proceedToApp() {
 function onAuthSuccess(session) {
   currentAccessToken = session.access_token;
   currentUserEmail = session.user.email;
+  // حسابات قديمة من قبل ميزة اليوزرنيم ما فيها هذا الحقل - نرجع للإيميل حينها
+  currentUsername = session.user.user_metadata?.username || currentUserEmail;
 
   const badge = document.getElementById('accountBadge');
-  badge.textContent = `👤 ${currentUserEmail}`;
+  badge.textContent = `👤 ${currentUsername}`;
   show('accountBadge');
   show('performanceBtn');
   show('logoutBtn');
+
+  const greeting = document.getElementById('welcomeGreeting');
+  greeting.textContent = `أهلاً ${currentUsername} 👋`;
+  show('welcomeGreeting');
 
   proceedToApp();
 }
@@ -1085,16 +1094,18 @@ document.getElementById('loginSubmitBtn').addEventListener('click', async () => 
 
 document.getElementById('signupSubmitBtn').addEventListener('click', async () => {
   clearError('signupError');
+  const username = document.getElementById('signupUsername').value.trim();
   const email = document.getElementById('signupEmail').value.trim();
   const password = document.getElementById('signupPassword').value;
   const education_level = document.getElementById('signupEducationLevel').value;
   const proficiency_level = document.getElementById('signupProficiencyLevel').value;
+  if (!username) { showError('signupError', 'لازم تكتب اسمك'); return; }
   if (!email || !password) { showError('signupError', 'لازم تكتب الإيميل وكلمة المرور'); return; }
   if (password.length < 6) { showError('signupError', 'كلمة المرور لازم ٦ أحرف عالأقل'); return; }
 
   const { data, error } = await supabaseClient.auth.signUp({
     email, password,
-    options: { data: { education_level, proficiency_level } },
+    options: { data: { username, education_level, proficiency_level } },
   });
   if (error) { showError('signupError', error.message || 'تعذر إنشاء الحساب'); return; }
 
@@ -1120,6 +1131,9 @@ function showPerformanceDashboard() {
 
 document.getElementById('performanceBtn').addEventListener('click', async () => {
   showPerformanceDashboard();
+  if (currentUsername) {
+    document.getElementById('performanceHeading').textContent = `لوحة تحليل أداء ${currentUsername}`;
+  }
   try {
     const res = await fetch(`${API_BASE}/api/performance`, {
       headers: { 'Authorization': `Bearer ${currentAccessToken}` },
@@ -1599,8 +1613,12 @@ async function sendAIChat() {
 
   try {
     const body = { message };
-    if (chatInteractionId) body.interaction_id = chatInteractionId;
-    else body.context = extractedText;
+    if (chatInteractionId) {
+      body.interaction_id = chatInteractionId;
+    } else {
+      body.context = extractedText;
+      if (currentUsername) body.name = currentUsername;
+    }
 
     const res = await fetch(`${API_BASE}/api/chat`, {
       method: 'POST',

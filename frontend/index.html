@@ -626,7 +626,6 @@
     <span class="logo">ذكيّ</span>
     <div style="display:flex; align-items:center; gap:10px;">
       <span class="badge hidden" id="accountBadge"></span>
-      <button class="link-btn hidden" id="editUsernameBtn" style="padding:4px;">✏️ عدّل اسمك</button>
       <button class="ghost hidden" id="performanceBtn" style="padding:6px 14px; font-size:13px;">📊 أدائي</button>
       <button class="ghost hidden" id="logoutBtn" style="padding:6px 14px; font-size:13px;">خروج</button>
       <span class="badge">مشروع تخرج — أكاديمية طويق</span>
@@ -662,7 +661,7 @@
     <h2>إنشاء حساب جديد</h2>
     <p class="desc">يحفظ تقدمك ويحلل نقاط ضعفك بعد كل اختبار</p>
     <div class="auth-fields">
-      <input type="text" id="signupUsername" class="text-input" placeholder="اسمك (يطلع بدل الإيميل بالموقع)">
+      <input type="text" id="signupUsername" class="text-input" placeholder="الأسم الكريم">
       <input type="email" id="signupEmail" class="text-input" placeholder="الإيميل">
       <input type="password" id="signupPassword" class="text-input" placeholder="كلمة المرور (٦ أحرف عالأقل)">
     </div>
@@ -1068,7 +1067,6 @@ function onAuthSuccess(session) {
   currentUsername = session.user.user_metadata?.username || currentUserEmail;
 
   show('accountBadge');
-  show('editUsernameBtn');
   show('performanceBtn');
   show('logoutBtn');
   show('welcomeGreeting');
@@ -1081,10 +1079,6 @@ function onAuthSuccess(session) {
     promptForUsername('لاحظنا حسابك بدون اسم محفوظ. وش اسمك؟ (يطلع بدل الإيميل بالموقع)');
   }
 }
-
-document.getElementById('editUsernameBtn').addEventListener('click', () => {
-  promptForUsername('عدّل اسمك:');
-});
 
 // Supabase يجدد access_token تلقائيًا بالخلفية - نتابع آخر نسخة عشان الطلبات
 // المحمية (تسجيل نتيجة اختبار، جلب الأداء) ما تفشل بجلسة قديمة منتهية

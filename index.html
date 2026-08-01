@@ -803,6 +803,17 @@
           <button class="ghost" id="chatSendBtn">إرسال</button>
         </div>
       </div>
+
+      <div id="voiceChatBox" style="margin-top:24px;">
+        <h3 class="sub-heading">🎙️ الصوت الجماعي</h3>
+        <p class="desc" style="margin-bottom:12px;">صوت مباشر بينك وبين زملائك بالغرفة، اختياري تمامًا</p>
+        <div class="actions">
+          <button class="primary" id="voiceJoinBtn">🎙️ انضم للصوت</button>
+          <button class="ghost hidden" id="voiceMuteBtn">🔇 كتم المايك</button>
+          <button class="ghost hidden" id="voiceLeaveBtn">📴 غادر الصوت</button>
+        </div>
+        <div id="voiceError"></div>
+      </div>
     </div>
     <div id="inQuizNote" class="hidden" style="margin-top:16px; color:var(--ink-soft); font-size:13.5px;">🔒 الشات وقائمة المشاركين تظهر لك بعد ما تسلّم الاختبار.</div>
   </section>
@@ -953,6 +964,8 @@ let quizFinished = false;
 
 let currentRoomCode = null;
 let isHost = false;
+// الهوست الأصلي أو أي منضم منحه الهوست صلاحية الرفع/التوليد/بدء الاختبار
+let canManageContent = false;
 let myName = "";
 // معرّف ثابت لهذا التبويب طول عمر الجلسة، يستخدم عشان لو النت انقطع لحظيًا
 // و socket.io سوى إعادة اتصال تلقائي بـ sid جديد، نقدر نطابق نفس المشارك
@@ -1293,6 +1306,7 @@ socket.on('connect', () => {
 socket.on('room_state', data => {
   currentRoomCode = data.room_code;
   isHost = data.is_host;
+  canManageContent = data.can_manage_content;
   roomCreatedAt = data.created_at;
 
   hide('mode-select'); hide('room-mode-select'); hide('room-create-form'); hide('room-join-form');
@@ -1308,8 +1322,8 @@ socket.on('room_state', data => {
       started_at: data.quiz_started_at,
       duration_minutes: data.duration_minutes,
     });
-  } else if (!data.quiz && isHost && !uploadedFilename) {
-    appMode = 'room-host';
+  } else if (!data.quiz && canManageContent && !uploadedFilename) {
+    if (isHost) appMode = 'room-host';
     show('step-upload');
   }
   // ملاحظة: لو quizHasStarted أصلًا شغال محليًا، ما نعيد استدعاء handleQuizStarted
@@ -1350,10 +1364,13 @@ function renderLeaderboard(leaderboard) {
   container.innerHTML = leaderboard.map((p, i) => `
     <div class="leaderboard-row ${p.finished ? 'finished' : ''}">
       <span class="rank">${i + 1}</span>
-      <span class="name">${p.name}</span>
+      <span class="name">${p.name}${p.is_co_host ? ' 🔑' : ''}${p.in_voice ? ' 🎙️' : ''}</span>
       ${p.finished
         ? `<span class="score">${p.score} / ${p.total} ✅ — ⏱️ ${formatTime(p.time_taken)}</span>`
         : `<span class="status">${quizHasStarted ? 'لسا يذاكر...' : 'بانتظار الاختبار...'}</span>`}
+      ${isHost && p.sid !== socket.id && !quizHasStarted
+        ? `<button class="ghost grant-btn" data-sid="${p.sid}" data-granted="${p.is_co_host}" style="padding:5px 10px; font-size:12px;">${p.is_co_host ? '🔒 سحب الصلاحية' : '🔑 امنح صلاحية'}</button>`
+        : ''}
       ${isHost && p.sid !== socket.id
         ? `<button class="ghost kick-btn" data-sid="${p.sid}" style="padding:5px 12px; font-size:12.5px;">🚫 طرد</button>`
         : ''}
@@ -1364,6 +1381,12 @@ function renderLeaderboard(leaderboard) {
     container.querySelectorAll('.kick-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         socket.emit('kick_participant', { room_code: currentRoomCode, sid: btn.dataset.sid });
+      });
+    });
+    container.querySelectorAll('.grant-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const event = btn.dataset.granted === 'true' ? 'revoke_permission' : 'grant_permission';
+        socket.emit(event, { room_code: currentRoomCode, sid: btn.dataset.sid });
       });
     });
   }
@@ -1391,6 +1414,22 @@ function updateMyResultBox(leaderboard) {
 socket.on('kicked', () => {
   alert('تم طردك من الغرفة من قبل المضيف');
   location.reload();
+});
+
+// ---------- منح/سحب صلاحية الرفع والتوليد وبدء الاختبار ----------
+socket.on('permission_granted', () => {
+  canManageContent = true;
+  if (!uploadedFilename && !quizHasStarted) {
+    show('step-upload');
+    document.getElementById('step-upload').scrollIntoView({ behavior: 'smooth' });
+  }
+});
+socket.on('permission_revoked', () => {
+  canManageContent = false;
+  if (!isHost && !quizHasStarted) {
+    hide('step-upload'); hide('step-text'); hide('step-chat'); hide('step-summary');
+    hide('step-quiz'); hide('hostQuizControls'); hide('shareSummaryBtn');
+  }
 });
 
 // ---------- شات الغرفة ----------
@@ -1595,7 +1634,7 @@ summarizeBtn.addEventListener('click', async () => {
 
     document.getElementById('summaryText').textContent = data.summary;
     show('step-summary');
-    if (appMode === 'room-host') show('shareSummaryBtn');
+    if (canManageContent && currentRoomCode) show('shareSummaryBtn');
     document.getElementById('step-summary').scrollIntoView({ behavior: 'smooth' });
   } catch (err) {
     showError('summarizeError', err.message || 'صار خطأ غير متوقع');
@@ -1629,7 +1668,7 @@ quizBtn.addEventListener('click', async () => {
 
     renderQuiz();
     show('step-quiz');
-    if (appMode === 'room-host') show('hostQuizControls');
+    if (canManageContent && currentRoomCode) show('hostQuizControls');
     if (appMode === 'solo') {
       quizStartTime = Date.now() / 1000;
       blurForExam();
@@ -1705,6 +1744,9 @@ function handleQuizStarted(data) {
   hide('participantsSection');
   show('inQuizNote');
   document.getElementById('myResultBox').classList.add('hidden');
+
+  // كتم المايك إجباريًا وقت الاختبار عشان محد يقدر يسولف إجابات صوتيًا
+  forceMuteVoiceForExam();
 
   document.getElementById('step-quiz').scrollIntoView({ behavior: 'smooth' });
 }
@@ -1793,6 +1835,137 @@ document.getElementById('checkBtn').addEventListener('click', finishQuiz);
 
 // ---------- Restart ----------
 document.getElementById('restartBtn').addEventListener('click', () => location.reload());
+
+// ---------- الصوت الجماعي (WebRTC، صوت مباشر بين المتصفحات) ----------
+// السيرفر ما يمر عليه أي صوت - يسوي بس "إشارة" (signaling): تبادل عروض SDP
+// ومرشحات ICE بين المتصفحات عشان تكوّن اتصال مباشر مع بعض. يشتغل بنمط mesh
+// (كل مشارك يتصل مباشرة بكل مشارك ثاني بالصوت) - مناسب لعدد صغير كغرفة مذاكرة.
+// يعتمد على سيرفر STUN عام من قوقل (مجاني، بدون تسجيل)، ما فيه TURN، فبعض
+// الشبكات المقيدة جدًا (بعض شبكات الشركات/الجامعات) ممكن ما تكمل الاتصال.
+const ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }];
+let localVoiceStream = null;
+let inVoiceChat = false;
+let voiceMuted = false;
+const voicePeerConnections = new Map(); // sid -> RTCPeerConnection
+const voiceAudioElements = new Map(); // sid -> <audio>
+
+function updateVoiceUI() {
+  if (inVoiceChat) {
+    hide('voiceJoinBtn'); show('voiceLeaveBtn'); show('voiceMuteBtn');
+    document.getElementById('voiceMuteBtn').textContent = voiceMuted ? '🎙️ شغّل المايك' : '🔇 كتم المايك';
+  } else {
+    show('voiceJoinBtn'); hide('voiceLeaveBtn'); hide('voiceMuteBtn');
+  }
+}
+
+function createVoicePeerConnection(peerSid) {
+  const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+  localVoiceStream.getTracks().forEach(track => pc.addTrack(track, localVoiceStream));
+
+  pc.onicecandidate = e => {
+    if (e.candidate) {
+      socket.emit('voice_ice_candidate', { to_sid: peerSid, candidate: e.candidate });
+    }
+  };
+
+  pc.ontrack = e => {
+    let audioEl = voiceAudioElements.get(peerSid);
+    if (!audioEl) {
+      audioEl = document.createElement('audio');
+      audioEl.autoplay = true;
+      document.body.appendChild(audioEl);
+      voiceAudioElements.set(peerSid, audioEl);
+    }
+    audioEl.srcObject = e.streams[0];
+  };
+
+  voicePeerConnections.set(peerSid, pc);
+  return pc;
+}
+
+async function initiateVoiceOfferTo(peerSid) {
+  const pc = createVoicePeerConnection(peerSid);
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  socket.emit('voice_offer', { to_sid: peerSid, offer });
+}
+
+function cleanupVoicePeer(sid) {
+  const pc = voicePeerConnections.get(sid);
+  if (pc) { pc.close(); voicePeerConnections.delete(sid); }
+  const audioEl = voiceAudioElements.get(sid);
+  if (audioEl) { audioEl.remove(); voiceAudioElements.delete(sid); }
+}
+
+document.getElementById('voiceJoinBtn').addEventListener('click', async () => {
+  clearError('voiceError');
+  try {
+    localVoiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    showError('voiceError', 'ما قدرنا نوصل للمايك، تأكد من صلاحيات المتصفح');
+    return;
+  }
+  inVoiceChat = true;
+  voiceMuted = false;
+  updateVoiceUI();
+  socket.emit('voice_join', { room_code: currentRoomCode });
+});
+
+document.getElementById('voiceLeaveBtn').addEventListener('click', () => {
+  inVoiceChat = false;
+  if (localVoiceStream) {
+    localVoiceStream.getTracks().forEach(t => t.stop());
+    localVoiceStream = null;
+  }
+  voicePeerConnections.forEach((_pc, sid) => cleanupVoicePeer(sid));
+  updateVoiceUI();
+  socket.emit('voice_leave', { room_code: currentRoomCode });
+});
+
+document.getElementById('voiceMuteBtn').addEventListener('click', () => {
+  if (!localVoiceStream) return;
+  voiceMuted = !voiceMuted;
+  localVoiceStream.getAudioTracks().forEach(t => t.enabled = !voiceMuted);
+  updateVoiceUI();
+});
+
+// وقت الاختبار: نكتم المايك إجباريًا بدل ما نطرد المستخدم من الصوت بالكامل -
+// يرجع يشغّله بنفسه يدويًا بعد ما يسلّم لو ودّه
+function forceMuteVoiceForExam() {
+  if (inVoiceChat && localVoiceStream && !voiceMuted) {
+    voiceMuted = true;
+    localVoiceStream.getAudioTracks().forEach(t => t.enabled = false);
+    updateVoiceUI();
+  }
+}
+
+socket.on('voice_existing_peers', async data => {
+  for (const peer of data.peers) {
+    await initiateVoiceOfferTo(peer.sid);
+  }
+});
+
+socket.on('voice_offer', async data => {
+  const pc = createVoicePeerConnection(data.from_sid);
+  await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+  const answer = await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+  socket.emit('voice_answer', { to_sid: data.from_sid, answer });
+});
+
+socket.on('voice_answer', async data => {
+  const pc = voicePeerConnections.get(data.from_sid);
+  if (pc) await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+});
+
+socket.on('voice_ice_candidate', async data => {
+  const pc = voicePeerConnections.get(data.from_sid);
+  if (pc && data.candidate) {
+    try { await pc.addIceCandidate(new RTCIceCandidate(data.candidate)); } catch (err) { /* تجاهل */ }
+  }
+});
+
+socket.on('voice_peer_left', data => cleanupVoicePeer(data.sid));
 
 // ---------- مؤقت بومودورو (وضع فردي بس) ----------
 let pomodoroIntervalId = null;

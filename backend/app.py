@@ -312,6 +312,8 @@ rooms = {}
 #   "quiz": list | None,
 #   "quiz_started_at": float | None,
 #   "duration_minutes": float | None,
+#   "co_host_client_ids": [str],  # منضمين منحهم الهوست صلاحية الرفع/التوليد/البدء
+#   "voice_participants": {sid},  # مشاركين متصلين بالصوت الجماعي حاليًا
 #   "participants": {sid: {"name", "score", "total", "finished", "time_taken"}},
 # }
 
@@ -327,15 +329,32 @@ def generate_room_code():
 
 
 def get_leaderboard(room_code):
+    room = rooms[room_code]
+    co_hosts = room["co_host_client_ids"]
+    voice = room["voice_participants"]
     participants = [
-        {**data, "sid": sid}
-        for sid, data in rooms[room_code]["participants"].items()
+        {
+            **data,
+            "sid": sid,
+            "is_co_host": data.get("client_id") in co_hosts,
+            "in_voice": sid in voice,
+        }
+        for sid, data in room["participants"].items()
     ]
     # الدرجة أولاً (الأعلى فوق)، والوقت يفصل بين المتساوين بالدرجة (الأسرع فوق)
     participants.sort(
         key=lambda p: (-p["score"], p["time_taken"]) if p["finished"] else (1, p["name"])
     )
     return participants
+
+
+def can_manage_content(room, sid):
+    """يتحقق هل هذا الـ sid يقدر يرفع/يولّد/يبدأ الاختبار - الهوست الأصلي أو
+    أي منضم منحه الهوست صلاحية صريحة."""
+    if sid == room["host_sid"]:
+        return True
+    participant = room["participants"].get(sid)
+    return bool(participant and participant.get("client_id") in room["co_host_client_ids"])
 
 
 @app.route("/api/room/create", methods=["POST"])
@@ -349,6 +368,8 @@ def create_room():
         "quiz_started_at": None,
         "duration_minutes": None,
         "shared_summary": None,
+        "co_host_client_ids": [],
+        "voice_participants": set(),
         "participants": {},
     }
     return jsonify({"room_code": room_code}), 200
@@ -411,8 +432,50 @@ def handle_join_room(data):
             "quiz_started_at": room["quiz_started_at"],
             "duration_minutes": room["duration_minutes"],
             "shared_summary": room["shared_summary"],
+            "can_manage_content": can_manage_content(room, request.sid),
         },
     )
+    emit("leaderboard_update", {"leaderboard": get_leaderboard(room_code)}, to=room_code)
+
+
+@socketio.on("grant_permission")
+def handle_grant_permission(data):
+    room_code = (data.get("room_code") or "").strip().upper()
+    target_sid = data.get("sid")
+
+    if room_code not in rooms:
+        return
+
+    room = rooms[room_code]
+    # الهوست الأصلي بس يقدر يمنح الصلاحية (مو أي حد عنده صلاحية أصلًا)
+    if request.sid != room["host_sid"] or target_sid not in room["participants"]:
+        return
+
+    target_client_id = room["participants"][target_sid].get("client_id")
+    if target_client_id and target_client_id not in room["co_host_client_ids"]:
+        room["co_host_client_ids"].append(target_client_id)
+
+    emit("permission_granted", {}, to=target_sid)
+    emit("leaderboard_update", {"leaderboard": get_leaderboard(room_code)}, to=room_code)
+
+
+@socketio.on("revoke_permission")
+def handle_revoke_permission(data):
+    room_code = (data.get("room_code") or "").strip().upper()
+    target_sid = data.get("sid")
+
+    if room_code not in rooms:
+        return
+
+    room = rooms[room_code]
+    if request.sid != room["host_sid"] or target_sid not in room["participants"]:
+        return
+
+    target_client_id = room["participants"][target_sid].get("client_id")
+    if target_client_id in room["co_host_client_ids"]:
+        room["co_host_client_ids"].remove(target_client_id)
+
+    emit("permission_revoked", {}, to=target_sid)
     emit("leaderboard_update", {"leaderboard": get_leaderboard(room_code)}, to=room_code)
 
 
@@ -425,8 +488,8 @@ def handle_share_summary(data):
         return
 
     room = rooms[room_code]
-    # الهوست بس يقدر يشارك الملخص مع باقي المنضمين
-    if request.sid != room["host_sid"] or not summary:
+    # الهوست أو أي منضم منحه الهوست صلاحية يقدر يشارك الملخص
+    if not can_manage_content(room, request.sid) or not summary:
         return
 
     room["shared_summary"] = summary
@@ -443,8 +506,8 @@ def handle_start_quiz(data):
         return
 
     room = rooms[room_code]
-    # الهوست بس يقدر يبدأ الاختبار للجميع
-    if request.sid != room["host_sid"] or not quiz or not duration_minutes:
+    # الهوست أو أي منضم منحه الهوست صلاحية يقدر يبدأ الاختبار للجميع
+    if not can_manage_content(room, request.sid) or not quiz or not duration_minutes:
         return
 
     room["quiz"] = quiz
@@ -523,8 +586,76 @@ def handle_kick_participant(data):
     del room["participants"][target_sid]
     leave_room(room_code, sid=target_sid)
 
+    if target_sid in room["voice_participants"]:
+        room["voice_participants"].discard(target_sid)
+        emit("voice_peer_left", {"sid": target_sid}, to=room_code)
+
     emit("kicked", {}, to=target_sid)
     emit("leaderboard_update", {"leaderboard": get_leaderboard(room_code)}, to=room_code)
+
+
+# ---------- الصوت الجماعي (WebRTC، السيرفر يسوي إشارة signaling بس) ----------
+# ما فيه أي صوت يمر على السيرفر - هذي أحداث تنسيق بس (تبادل عروض/إجابات SDP
+# ومرشحات ICE) بين المتصفحات مباشرة عبر اتصال WebRTC مباشر (mesh topology،
+# مناسب لعدد صغير من المشاركين بغرفة مذاكرة)
+@socketio.on("voice_join")
+def handle_voice_join(data):
+    room_code = (data.get("room_code") or "").strip().upper()
+    if room_code not in rooms or request.sid not in rooms[room_code]["participants"]:
+        return
+
+    room = rooms[room_code]
+    name = room["participants"][request.sid]["name"]
+
+    existing_peers = [
+        {"sid": sid, "name": room["participants"][sid]["name"]}
+        for sid in room["voice_participants"]
+        if sid != request.sid and sid in room["participants"]
+    ]
+    room["voice_participants"].add(request.sid)
+
+    emit("voice_existing_peers", {"peers": existing_peers})
+    emit("voice_peer_joined", {"sid": request.sid, "name": name}, to=room_code, include_self=False)
+    emit("leaderboard_update", {"leaderboard": get_leaderboard(room_code)}, to=room_code)
+
+
+@socketio.on("voice_leave")
+def handle_voice_leave(data):
+    room_code = (data.get("room_code") or "").strip().upper()
+    if room_code not in rooms:
+        return
+    room = rooms[room_code]
+    room["voice_participants"].discard(request.sid)
+    emit("voice_peer_left", {"sid": request.sid}, to=room_code, include_self=False)
+    emit("leaderboard_update", {"leaderboard": get_leaderboard(room_code)}, to=room_code)
+
+
+@socketio.on("voice_offer")
+def handle_voice_offer(data):
+    target_sid = data.get("to_sid")
+    if not target_sid:
+        return
+    emit("voice_offer", {"from_sid": request.sid, "offer": data.get("offer")}, to=target_sid)
+
+
+@socketio.on("voice_answer")
+def handle_voice_answer(data):
+    target_sid = data.get("to_sid")
+    if not target_sid:
+        return
+    emit("voice_answer", {"from_sid": request.sid, "answer": data.get("answer")}, to=target_sid)
+
+
+@socketio.on("voice_ice_candidate")
+def handle_voice_ice_candidate(data):
+    target_sid = data.get("to_sid")
+    if not target_sid:
+        return
+    emit(
+        "voice_ice_candidate",
+        {"from_sid": request.sid, "candidate": data.get("candidate")},
+        to=target_sid,
+    )
 
 
 @socketio.on("submit_score")
@@ -563,6 +694,10 @@ def handle_disconnect():
 
         del room["participants"][request.sid]
         leave_room(room_code)
+
+        if request.sid in room["voice_participants"]:
+            room["voice_participants"].discard(request.sid)
+            emit("voice_peer_left", {"sid": request.sid}, to=room_code)
 
         if room["participants"]:
             emit("leaderboard_update", {"leaderboard": get_leaderboard(room_code)}, to=room_code)

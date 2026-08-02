@@ -792,15 +792,7 @@
     background: var(--teal-dim); color: var(--teal); padding: 3px 10px; border-radius: 999px;
   }
 
-  /* ---------- تبويبات شاشة الأداء ---------- */
-  .perf-tabs { display: flex; gap: 6px; margin-bottom: 20px; border-bottom: 1px solid var(--line); }
-  .perf-tab-btn {
-    background: none; border: none; padding: 10px 16px; font-family: inherit; font-size: 14px;
-    font-weight: 700; color: var(--ink-soft); cursor: pointer; border-bottom: 2px solid transparent;
-  }
-  .perf-tab-btn.active { color: var(--ink); border-bottom-color: var(--emphasis-bg); }
-  .perf-tab-panel.hidden { display: none; }
-  .stat-card.study-hours { background: var(--highlighter-soft); }
+  .stat-tile.study-hours { background: var(--highlighter-soft); }
 
   /* ---------- الكلاس المباشر (سبورة، رفع يد، لفة حظ) ---------- */
   .classroom-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
@@ -961,62 +953,64 @@
     <span class="step-label">📊 أدائي</span>
     <h2 id="performanceHeading">لوحة تحليل أدائك</h2>
 
-    <div class="perf-tabs">
-      <button class="perf-tab-btn active" id="perfTabBtnStats" data-tab="stats">📊 الأداء</button>
-      <button class="perf-tab-btn" id="perfTabBtnArchive" data-tab="archive">📂 الأرشيف</button>
-      <button class="perf-tab-btn" id="perfTabBtnFriends" data-tab="friends">👥 الأصدقاء</button>
-    </div>
+    <p class="desc" id="performanceEmptyState">لسا ما حليت أي اختبار وأنت مسجّل دخول.</p>
 
-    <div class="perf-tab-panel" id="perfTabPanelStats">
-      <p class="desc" id="performanceEmptyState">لسا ما حليت أي اختبار وأنت مسجّل دخول.</p>
-
-      <div id="performanceContent" class="hidden">
-        <div class="stat-row">
-          <div class="stat-tile">
-            <div class="stat-value" id="statAttempts">0</div>
-            <div class="stat-label">عدد المحاولات</div>
-          </div>
-          <div class="stat-tile">
-            <div class="stat-value" id="statAvg">٠٪</div>
-            <div class="stat-label">متوسط الدرجة</div>
-          </div>
-          <div class="stat-tile">
-            <div class="stat-value" id="statBest">٠٪</div>
-            <div class="stat-label">أفضل نتيجة</div>
-          </div>
-          <div class="stat-tile study-hours">
-            <div class="stat-value" id="statStudyMinutes">٠</div>
-            <div class="stat-label">⏱️ دقائق مذاكرة</div>
-          </div>
+    <div id="performanceContent" class="hidden">
+      <div class="stat-row">
+        <div class="stat-tile">
+          <div class="stat-value" id="statAttempts">0</div>
+          <div class="stat-label">عدد المحاولات</div>
         </div>
-
-        <h3 class="sub-heading">📈 تطور درجاتك</h3>
-        <svg id="trendChart" width="100%" height="120" style="overflow:visible; margin-bottom:24px;"></svg>
-
-        <h3 class="sub-heading">🎯 نقاط تحتاج مراجعة</h3>
-        <div id="weakTopicsList"></div>
+        <div class="stat-tile">
+          <div class="stat-value" id="statAvg">٠٪</div>
+          <div class="stat-label">متوسط الدرجة</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value" id="statBest">٠٪</div>
+          <div class="stat-label">أفضل نتيجة</div>
+        </div>
+        <div class="stat-tile study-hours">
+          <div class="stat-value" id="statStudyMinutes">٠</div>
+          <div class="stat-label">⏱️ دقائق مذاكرة</div>
+        </div>
       </div>
+
+      <h3 class="sub-heading">📈 تطور درجاتك</h3>
+      <svg id="trendChart" width="100%" height="120" style="overflow:visible; margin-bottom:24px;"></svg>
+
+      <h3 class="sub-heading">🎯 نقاط تحتاج مراجعة</h3>
+      <div id="weakTopicsList"></div>
     </div>
+  </section>
 
-    <div class="perf-tab-panel hidden" id="perfTabPanelArchive">
-      <p class="desc" id="archiveEmptyState">ما فيه جلسات جماعية أو كلاسات بأرشيفك لحد الحين.</p>
-      <div id="archiveList"></div>
+  <!-- أرشيف الجلسات الجماعية/الكلاسات - شاشة مستقلة (تظهر عبر زر "📂 الأرشيف" بالسايد بار) -->
+  <section class="card hidden" id="step-archive">
+    <span class="step-label">📂 الأرشيف</span>
+    <h2>أرشيف جلساتك الجماعية</h2>
+    <p class="desc" id="archiveEmptyState">ما فيه جلسات جماعية أو كلاسات بأرشيفك لحد الحين.</p>
+    <div id="archiveList"></div>
+  </section>
+
+  <!-- الأصدقاء - شاشة مستقلة (تظهر عبر زر "👥 الأصدقاء" بالسايد بار) -->
+  <section class="card hidden" id="step-friends">
+    <span class="step-label">👥 الأصدقاء</span>
+    <h2>أصدقاؤك</h2>
+
+    <button class="ghost" id="showFriendQrBtn">📱 QR يضيفك كصديق</button>
+    <p class="desc" style="margin-top:8px;">وريه لصديقك يمسحه بجواله، بيضيفك فورًا زي لو دوّر على اسمك بالضبط</p>
+
+    <h3 class="sub-heading" style="margin-top:22px;">🔍 دور على صديق</h3>
+    <div class="actions">
+      <input type="text" id="friendSearchInput" class="text-input" placeholder="اسم المستخدم...">
+      <button class="ghost" id="friendSearchBtn">بحث</button>
     </div>
+    <div class="friend-search-results" id="friendSearchResults"></div>
 
-    <div class="perf-tab-panel hidden" id="perfTabPanelFriends">
-      <h3 class="sub-heading">🔍 دور على صديق</h3>
-      <div class="actions">
-        <input type="text" id="friendSearchInput" class="text-input" placeholder="اسم المستخدم...">
-        <button class="ghost" id="friendSearchBtn">بحث</button>
-      </div>
-      <div class="friend-search-results" id="friendSearchResults"></div>
+    <h3 class="sub-heading" style="margin-top:22px;">📨 طلبات الصداقة</h3>
+    <div id="friendRequestsList"><p class="desc">ما فيه طلبات جديدة</p></div>
 
-      <h3 class="sub-heading" style="margin-top:22px;">📨 طلبات الصداقة</h3>
-      <div id="friendRequestsList"><p class="desc">ما فيه طلبات جديدة</p></div>
-
-      <h3 class="sub-heading" style="margin-top:22px;">👥 أصدقاؤك</h3>
-      <div id="friendsList"><p class="desc">ما ضفت أصدقاء لحد الحين</p></div>
-    </div>
+    <h3 class="sub-heading" style="margin-top:22px;">👥 أصدقاؤك</h3>
+    <div id="friendsList"><p class="desc">ما ضفت أصدقاء لحد الحين</p></div>
   </section>
 
   <!-- مكتبة الكتب الشخصية (تظهر بأي وقت للمسجّلين عبر زر "📚 مكتبتي") -->
@@ -1354,6 +1348,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 let currentAccessToken = null;
 let currentUserEmail = null;
 let currentUsername = null;
+let currentUserId = null;
 
 let appMode = null; // 'solo' | 'room-host' | 'room-join'
 let uploadedFilename = null;
@@ -1389,7 +1384,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
 const TOP_LEVEL_SCREENS = [
   'mode-select', 'room-mode-select', 'room-create-form', 'room-join-form',
   'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary',
-  'step-quiz', 'step-performance', 'step-library',
+  'step-quiz', 'step-performance', 'step-archive', 'step-friends', 'step-library',
 ];
 const BACK_BUTTON_HIDDEN_ON = ['mode-select', 'login-form', 'signup-form', 'step-quiz'];
 let navHistory = [];
@@ -1500,6 +1495,19 @@ function proceedToApp() {
     document.getElementById('joinRoomCode').value = joinCode.toUpperCase();
     updateGlobalBackButton();
   }
+
+  // إضافة صديق سريعة عبر رابط QR (?addfriend=USER_ID) - محتاج تسجيل دخول
+  // فعلي؛ لو ضيف، نسيب الباراميتر بالرابط عشان يتفحص تلقائيًا بعد ما يسجل
+  // دخول (proceedToApp تُستدعى برضو من onAuthSuccess)
+  const addFriendId = new URLSearchParams(location.search).get('addfriend');
+  if (addFriendId) {
+    if (currentAccessToken) {
+      history.replaceState(null, '', location.pathname);
+      handleAddFriendFromQr(addFriendId);
+    } else {
+      alert('لازم تسجل دخول أو تنشئ حساب عشان تضيف هذا الشخص كصديق');
+    }
+  }
 }
 
 function refreshAccountUI() {
@@ -1521,6 +1529,7 @@ async function promptForUsername(initialMessage) {
 function onAuthSuccess(session) {
   currentAccessToken = session.access_token;
   currentUserEmail = session.user.email;
+  currentUserId = session.user.id;
   const hasStoredUsername = !!session.user.user_metadata?.username;
   // حسابات قديمة من قبل ميزة اليوزرنيم ما فيها هذا الحقل - نرجع للإيميل مؤقتًا
   currentUsername = session.user.user_metadata?.username || currentUserEmail;
@@ -1649,22 +1658,20 @@ document.getElementById('guestLoginPromptBtn').addEventListener('click', () => {
   updateGlobalBackButton();
 });
 
-// ---------- لوحة تحليل الأداء ----------
-function showPerformanceDashboard() {
+// ---------- شاشات الحساب (أدائي / الأرشيف / الأصدقاء / مكتبتي) - كل وحدة
+// مستقلة بزر سايد بار خاص فيها، بدل ما تكون تبويبات جوا شاشة وحدة ----------
+const ACCOUNT_SCREENS = ['step-performance', 'step-archive', 'step-friends', 'step-library'];
+function showAccountScreen(id) {
   ['login-form', 'signup-form', 'mode-select', 'room-mode-select', 'room-create-form',
    'room-join-form', 'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary', 'step-quiz',
-   'step-library']
+   ...ACCOUNT_SCREENS]
     .forEach(hide);
-  show('step-performance');
+  show(id);
 }
-
-function showLibraryScreen() {
-  ['login-form', 'signup-form', 'mode-select', 'room-mode-select', 'room-create-form',
-   'room-join-form', 'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary', 'step-quiz',
-   'step-performance']
-    .forEach(hide);
-  show('step-library');
-}
+function showPerformanceDashboard() { showAccountScreen('step-performance'); }
+function showLibraryScreen() { showAccountScreen('step-library'); }
+function showArchiveScreen() { showAccountScreen('step-archive'); }
+function showFriendsScreen() { showAccountScreen('step-friends'); }
 
 document.getElementById('performanceBtn').addEventListener('click', async () => {
   if (!requireAuthOrPrompt()) return;
@@ -1688,34 +1695,19 @@ document.getElementById('performanceBtn').addEventListener('click', async () => 
   }
 });
 
-// اختصارات مباشرة من السايد بار لتبويبي الأرشيف والأصدقاء (نفس شاشة "أدائي"،
-// بس تدخل مباشرة على التبويب المطلوب بدل ما يضطر يدور عليه بعد ما يفتح أدائي)
 document.getElementById('archiveBtn').addEventListener('click', () => {
   if (!requireAuthOrPrompt()) return;
   pushNavSnapshot();
-  showPerformanceDashboard();
+  showArchiveScreen();
   updateGlobalBackButton();
-  document.getElementById('perfTabBtnArchive').click();
+  loadArchive();
 });
 document.getElementById('friendsBtn').addEventListener('click', () => {
   if (!requireAuthOrPrompt()) return;
   pushNavSnapshot();
-  showPerformanceDashboard();
+  showFriendsScreen();
   updateGlobalBackButton();
-  document.getElementById('perfTabBtnFriends').click();
-});
-
-// ---------- تبويبات شاشة الأداء (الأداء / الأرشيف / الأصدقاء) ----------
-document.querySelectorAll('.perf-tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.perf-tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('perfTabPanelStats').classList.toggle('hidden', btn.dataset.tab !== 'stats');
-    document.getElementById('perfTabPanelArchive').classList.toggle('hidden', btn.dataset.tab !== 'archive');
-    document.getElementById('perfTabPanelFriends').classList.toggle('hidden', btn.dataset.tab !== 'friends');
-    if (btn.dataset.tab === 'archive') loadArchive();
-    if (btn.dataset.tab === 'friends') loadFriends();
-  });
+  loadFriends();
 });
 
 async function loadArchive() {
@@ -3679,19 +3671,58 @@ function renderQrToCanvas(text, container) {
   container.appendChild(canvas);
 }
 
-function openQrModal(roomCode) {
-  const url = `${location.origin}${location.pathname}?join=${roomCode}`;
+function openQrModalWithText(payloadText, captionText) {
   try {
-    renderQrToCanvas(url, document.getElementById('qrCanvasContainer'));
-    document.getElementById('qrRoomCodeText').textContent = `كود الغرفة: ${roomCode}`;
+    renderQrToCanvas(payloadText, document.getElementById('qrCanvasContainer'));
+    document.getElementById('qrRoomCodeText').textContent = captionText;
     show('qrModal');
   } catch (err) {
     alert('تعذر توليد رمز QR');
   }
 }
+function openQrModal(roomCode) {
+  const url = `${location.origin}${location.pathname}?join=${roomCode}`;
+  openQrModalWithText(url, `كود الغرفة: ${roomCode}`);
+}
 document.getElementById('showQrBtn').addEventListener('click', () => openQrModal(currentRoomCode));
 document.getElementById('showQrBtnClassroom').addEventListener('click', () => openQrModal(currentRoomCode));
 document.getElementById('qrModalCloseBtn').addEventListener('click', () => hide('qrModal'));
+
+// ---------- QR شخصي "أضفني كصديق" (يفتح من شاشة الأصدقاء) ----------
+function openFriendQrModal() {
+  if (!currentUserId) return;
+  const url = `${location.origin}${location.pathname}?addfriend=${currentUserId}`;
+  openQrModalWithText(url, `شارك هذا الكود عشان يضيفونك كصديق (${currentUsername})`);
+}
+document.getElementById('showFriendQrBtn').addEventListener('click', openFriendQrModal);
+
+async function handleAddFriendFromQr(userId) {
+  if (userId === currentUserId) {
+    alert('هذا رمزك أنت 🙂 وريه لصديق عشان يضيفك');
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/api/profile/${userId}`, {
+      headers: { 'Authorization': `Bearer ${currentAccessToken}` },
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.error || 'ما لقينا هذا المستخدم'); return; }
+
+    if (!confirm(`تبي ترسل طلب صداقة لـ ${data.username}؟`)) return;
+
+    const reqRes = await fetch(`${API_BASE}/api/friends/request`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentAccessToken}` },
+      body: JSON.stringify({ to_user_id: userId }),
+    });
+    const reqData = await reqRes.json();
+    if (!reqRes.ok) { alert(reqData.error || 'تعذر إرسال طلب الصداقة'); return; }
+
+    alert(`تم إرسال طلب الصداقة لـ ${data.username} ✅`);
+  } catch (err) {
+    alert('صار خطأ غير متوقع، جرب مرة ثانية');
+  }
+}
 </script>
 </body>
 </html>

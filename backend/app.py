@@ -556,6 +556,26 @@ def sync_profile():
 
 
 # ---------- نظام الأصدقاء ----------
+# يجيب اسم مستخدم معيّن من user_id - يخدم QR "أضفني كصديق" (الماسح يعرف اسم
+# صاحب الرمز قبل ما يرسل طلب الصداقة، بدل ما يرسل طلب أعمى لمعرّف مجهول)
+@app.route("/api/profile/<user_id>", methods=["GET"])
+@require_auth
+def get_profile(user_id):
+    try:
+        res = (
+            supabase_admin.table("profiles")
+            .select("user_id, username")
+            .eq("user_id", user_id)
+            .limit(1)
+            .execute()
+        )
+        if not res.data:
+            return jsonify({"error": "المستخدم مو موجود"}), 404
+        return jsonify(res.data[0]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/friends/search", methods=["GET"])
 @require_auth
 def search_friends():

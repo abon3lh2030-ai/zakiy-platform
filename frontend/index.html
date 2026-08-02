@@ -369,6 +369,25 @@
     margin-top: 40px;
   }
 
+  /* ---------- زر رجوع عام ---------- */
+  .global-back-btn {
+    position: fixed;
+    top: 18px;
+    left: 18px;
+    z-index: 600;
+    background: white;
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 9px 18px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(27,42,74,0.1);
+  }
+  .global-back-btn:hover { border-color: var(--ink); }
+
   /* ---------- مؤقت بومودورو (فردي بس) ---------- */
   .pomodoro-widget {
     position: fixed;
@@ -620,6 +639,7 @@
 </style>
 </head>
 <body>
+<button class="global-back-btn hidden" id="globalBackBtn">⬅ رجوع</button>
 <div class="wrap">
 
   <header>
@@ -723,10 +743,6 @@
       <h3 class="sub-heading">🎯 نقاط تحتاج مراجعة</h3>
       <div id="weakTopicsList"></div>
     </div>
-
-    <div class="actions">
-      <button class="ghost" id="performanceBackBtn">« رجوع</button>
-    </div>
   </section>
 
   <!-- اختيار الوضع: فردي أو غرفة جماعية -->
@@ -746,7 +762,6 @@
     <div class="actions">
       <button class="primary" id="roomCreateChooseBtn">➕ أنشئ غرفة جديدة</button>
       <button class="ghost" id="roomJoinChooseBtn">🔑 عندي كود غرفة</button>
-      <button class="ghost" id="backToModeSelectBtn">« رجوع</button>
     </div>
   </section>
 
@@ -757,7 +772,6 @@
     <div class="actions">
       <input type="text" id="hostNameInput" class="text-input" placeholder="اسمك">
       <button class="primary" id="hostCreateBtn">إنشاء الغرفة</button>
-      <button class="ghost" id="backToRoomModeBtn1">« رجوع</button>
     </div>
     <div id="roomCreateError"></div>
   </section>
@@ -769,7 +783,6 @@
       <input type="text" id="joinRoomCode" class="text-input" placeholder="كود الغرفة">
       <input type="text" id="joinName" class="text-input" placeholder="اسمك">
       <button class="primary" id="joinRoomBtn">ادخل الغرفة</button>
-      <button class="ghost" id="backToRoomModeBtn2">« رجوع</button>
     </div>
     <div id="roomJoinError"></div>
   </section>
@@ -987,6 +1000,36 @@ let chatInteractionId = null;
 function show(id) { document.getElementById(id).classList.remove('hidden'); }
 function hide(id) { document.getElementById(id).classList.add('hidden'); }
 
+// ---------- زر الرجوع العام (يظهر بكل مكان إلا الواجهة الرئيسية وتسجيل
+// الدخول والاختبار) - نحفظ "لقطة" لكل الشاشات الظاهرة وقت كل تنقل رئيسي،
+// وزر الرجوع يرجّع آخر لقطة محفوظة بالضبط بدل ما يخمّن شاشة وحدة ثابتة
+const TOP_LEVEL_SCREENS = [
+  'mode-select', 'room-mode-select', 'room-create-form', 'room-join-form',
+  'step-room', 'step-upload', 'step-text', 'step-chat', 'step-summary',
+  'step-quiz', 'step-performance',
+];
+const BACK_BUTTON_HIDDEN_ON = ['mode-select', 'login-form', 'signup-form', 'step-quiz'];
+let navHistory = [];
+
+function currentVisibleTopLevelScreens() {
+  return TOP_LEVEL_SCREENS.filter(id => !document.getElementById(id).classList.contains('hidden'));
+}
+function pushNavSnapshot() {
+  navHistory.push(currentVisibleTopLevelScreens());
+}
+function updateGlobalBackButton() {
+  const visible = currentVisibleTopLevelScreens();
+  const shouldShow = navHistory.length > 0 && !visible.some(id => BACK_BUTTON_HIDDEN_ON.includes(id));
+  document.getElementById('globalBackBtn').classList.toggle('hidden', !shouldShow);
+}
+document.getElementById('globalBackBtn').addEventListener('click', () => {
+  const prev = navHistory.pop();
+  if (!prev) return;
+  TOP_LEVEL_SCREENS.forEach(hide);
+  prev.forEach(show);
+  updateGlobalBackButton();
+});
+
 function showError(id, msg) {
   document.getElementById(id).innerHTML = `<div class="error-msg">⚠️ ${msg}</div>`;
 }
@@ -1041,6 +1084,8 @@ document.querySelectorAll('.exam-overlay button').forEach(btn => {
 function proceedToApp() {
   hide('login-form'); hide('signup-form');
   show('mode-select');
+  navHistory = [];
+  updateGlobalBackButton();
 }
 
 function refreshAccountUI() {
@@ -1148,7 +1193,9 @@ function showPerformanceDashboard() {
 }
 
 document.getElementById('performanceBtn').addEventListener('click', async () => {
+  pushNavSnapshot();
   showPerformanceDashboard();
+  updateGlobalBackButton();
   if (currentUsername) {
     document.getElementById('performanceHeading').textContent = `لوحة تحليل أداء ${currentUsername}`;
   }
@@ -1165,7 +1212,6 @@ document.getElementById('performanceBtn').addEventListener('click', async () => 
     hide('performanceContent');
   }
 });
-document.getElementById('performanceBackBtn').addEventListener('click', () => location.reload());
 
 function renderPerformance(data) {
   const attempts = data.attempts || [];
@@ -1258,40 +1304,33 @@ function renderWeakTopics(weakTopics) {
 
 // ---------- اختيار الوضع ----------
 document.getElementById('modeSoloBtn').addEventListener('click', () => {
+  pushNavSnapshot();
   appMode = 'solo';
   hide('mode-select');
   show('step-upload');
   show('pomodoroWidget');
+  updateGlobalBackButton();
 });
 
 document.getElementById('modeRoomBtn').addEventListener('click', () => {
+  pushNavSnapshot();
   hide('mode-select');
   show('room-mode-select');
-});
-
-document.getElementById('backToModeSelectBtn').addEventListener('click', () => {
-  hide('room-mode-select');
-  show('mode-select');
+  updateGlobalBackButton();
 });
 
 document.getElementById('roomCreateChooseBtn').addEventListener('click', () => {
+  pushNavSnapshot();
   hide('room-mode-select');
   show('room-create-form');
+  updateGlobalBackButton();
 });
 
 document.getElementById('roomJoinChooseBtn').addEventListener('click', () => {
+  pushNavSnapshot();
   hide('room-mode-select');
   show('room-join-form');
-});
-
-document.getElementById('backToRoomModeBtn1').addEventListener('click', () => {
-  hide('room-create-form');
-  show('room-mode-select');
-});
-
-document.getElementById('backToRoomModeBtn2').addEventListener('click', () => {
-  hide('room-join-form');
-  show('room-mode-select');
+  updateGlobalBackButton();
 });
 
 // ---------- إنشاء / الانضمام لغرفة ----------
@@ -1341,10 +1380,16 @@ socket.on('room_state', data => {
   canManageContent = data.can_manage_content;
   roomCreatedAt = data.created_at;
 
+  // نسجّل خطوة تنقّل بس أول مرة يدخل الغرفة فعليًا - مو كل مرة يعيد الاتصال
+  // (reconnect) بعد انقطاع نت، عشان زر الرجوع ما يتراكم بخطوات وهمية
+  const enteringRoomForFirstTime = document.getElementById('step-room').classList.contains('hidden');
+  if (enteringRoomForFirstTime) pushNavSnapshot();
+
   hide('mode-select'); hide('room-mode-select'); hide('room-create-form'); hide('room-join-form');
   show('step-room');
   document.getElementById('roomCodeBadge').textContent = currentRoomCode;
   startRoomElapsedTimer();
+  updateGlobalBackButton();
 
   if (data.quiz && !quizHasStarted) {
     // انضم بعد ما الاختبار بدأ فعليًا (حالة نادرة)، أو رجع بعد إعادة اتصال ولسا
@@ -1704,6 +1749,7 @@ quizBtn.addEventListener('click', async () => {
 
     renderQuiz();
     show('step-quiz');
+    updateGlobalBackButton();
     if (canManageContent && currentRoomCode) show('hostQuizControls');
     if (appMode === 'solo') {
       quizStartTime = Date.now() / 1000;
@@ -1771,6 +1817,7 @@ function handleQuizStarted(data) {
   renderQuiz();
   hide('step-upload'); hide('step-text'); hide('step-chat'); hide('step-summary'); hide('hostQuizControls');
   show('step-quiz');
+  updateGlobalBackButton();
   document.getElementById('checkBtn').disabled = false;
 
   show('quizCountdownBadge');

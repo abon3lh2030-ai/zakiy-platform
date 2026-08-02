@@ -857,6 +857,8 @@
   <div class="sidebar-logo">ذكيّ</div>
   <nav class="sidebar-nav">
     <button class="sidebar-btn" id="performanceBtn"><span class="sidebar-icon">📊</span><span class="label">أدائي</span></button>
+    <button class="sidebar-btn" id="archiveBtn"><span class="sidebar-icon">📂</span><span class="label">الأرشيف</span></button>
+    <button class="sidebar-btn" id="friendsBtn"><span class="sidebar-icon">👥</span><span class="label">الأصدقاء</span></button>
     <button class="sidebar-btn" id="sidebarLibraryBtn"><span class="sidebar-icon">📚</span><span class="label">مكتبتي</span></button>
     <button class="sidebar-btn" id="sidebarAiHelpBtn"><span class="sidebar-icon">🤖</span><span class="label">مساعد ذكيّ</span></button>
   </nav>
@@ -1684,6 +1686,23 @@ document.getElementById('performanceBtn').addEventListener('click', async () => 
     show('performanceEmptyState');
     hide('performanceContent');
   }
+});
+
+// اختصارات مباشرة من السايد بار لتبويبي الأرشيف والأصدقاء (نفس شاشة "أدائي"،
+// بس تدخل مباشرة على التبويب المطلوب بدل ما يضطر يدور عليه بعد ما يفتح أدائي)
+document.getElementById('archiveBtn').addEventListener('click', () => {
+  if (!requireAuthOrPrompt()) return;
+  pushNavSnapshot();
+  showPerformanceDashboard();
+  updateGlobalBackButton();
+  document.getElementById('perfTabBtnArchive').click();
+});
+document.getElementById('friendsBtn').addEventListener('click', () => {
+  if (!requireAuthOrPrompt()) return;
+  pushNavSnapshot();
+  showPerformanceDashboard();
+  updateGlobalBackButton();
+  document.getElementById('perfTabBtnFriends').click();
 });
 
 // ---------- تبويبات شاشة الأداء (الأداء / الأرشيف / الأصدقاء) ----------

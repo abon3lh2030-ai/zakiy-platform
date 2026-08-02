@@ -17,8 +17,30 @@
     --teal: #2E8B77;
     --teal-dim: #E4F2EE;
     --danger: #C7554A;
+    --danger-soft: #FBEAE8;
     --line: #E2DFD4;
+    --surface: #FFFFFF;
+    /* لوحات تمييز داكنة ثابتة (زر أساسي، نتيجة، فقاعة "أنت") - ما تنعكس مع
+       الثيم عشان النص الأبيض فوقها يضل مقروء دائمًا بغض النظر عن الوضع */
+    --emphasis-bg: #1B2A4A;
+    --emphasis-text: #FFFFFF;
     --radius: 14px;
+    --sidebar-width: 220px;
+  }
+
+  [data-theme="dark"] {
+    --paper: #14181F;
+    --paper-dim: #1C222C;
+    --ink: #E8EAF0;
+    --ink-soft: #98A2B3;
+    --highlighter: #FFC93C;
+    --highlighter-soft: #3A3220;
+    --teal: #4FC3A1;
+    --teal-dim: #163B32;
+    --danger: #D2665A;
+    --danger-soft: #3A2020;
+    --line: #2A313D;
+    --surface: #1B212B;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -33,6 +55,7 @@
       linear-gradient(var(--line) 1px, transparent 1px);
     background-size: 100% 42px;
     background-attachment: local;
+    transition: background-color .2s, color .2s;
   }
 
   .wrap { max-width: 880px; margin: 0 auto; padding: 48px 24px 100px; }
@@ -68,7 +91,7 @@
     border: 1px solid var(--line);
     padding: 6px 14px;
     border-radius: 999px;
-    background: white;
+    background: var(--surface);
   }
 
   /* ---------- Hero ---------- */
@@ -88,7 +111,7 @@
 
   /* ---------- Cards / Sections ---------- */
   .card {
-    background: white;
+    background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--radius);
     padding: 32px;
@@ -152,8 +175,8 @@
 
   /* ---------- Buttons ---------- */
   button.primary {
-    background: var(--ink);
-    color: white;
+    background: var(--emphasis-bg);
+    color: var(--emphasis-text);
     border: none;
     padding: 13px 26px;
     border-radius: 10px;
@@ -245,7 +268,7 @@
   .option:hover { background: var(--paper-dim); }
   .option.selected { border-color: var(--ink); background: var(--paper-dim); font-weight: 600; }
   .option.correct { border-color: var(--teal); background: var(--teal-dim); font-weight: 600; }
-  .option.wrong { border-color: var(--danger); background: #FBEAE8; font-weight: 600; }
+  .option.wrong { border-color: var(--danger); background: var(--danger-soft); font-weight: 600; }
 
   .explanation {
     margin-top: 12px;
@@ -262,8 +285,8 @@
     text-align: center;
     padding: 28px;
     border-radius: var(--radius);
-    background: var(--ink);
-    color: white;
+    background: var(--emphasis-bg);
+    color: var(--emphasis-text);
     margin-bottom: 24px;
   }
   .score-banner .big {
@@ -277,7 +300,7 @@
   .hidden { display: none !important; }
   .error-msg {
     color: var(--danger);
-    background: #FBEAE8;
+    background: var(--danger-soft);
     border-radius: 8px;
     padding: 12px 16px;
     font-size: 14px;
@@ -349,7 +372,7 @@
     word-wrap: break-word;
   }
   .chat-bubble .who { display: block; font-weight: 700; font-size: 12px; margin-bottom: 3px; }
-  .chat-bubble.me { align-self: flex-start; background: var(--ink); color: white; }
+  .chat-bubble.me { align-self: flex-start; background: var(--emphasis-bg); color: var(--emphasis-text); }
   .chat-bubble.me .who { color: var(--highlighter); }
   .chat-bubble.other { align-self: flex-end; background: var(--paper-dim); color: var(--ink); }
   .chat-bubble.ai { align-self: flex-start; background: var(--teal-dim); color: var(--ink); border: 1px solid var(--teal); }
@@ -369,13 +392,13 @@
     margin-top: 40px;
   }
 
-  /* ---------- زر رجوع عام ---------- */
+  /* ---------- زر رجوع عام (ملاصق يمين السايد بار دائمًا) ---------- */
   .global-back-btn {
     position: fixed;
     top: 18px;
-    left: 18px;
+    left: calc(var(--sidebar-width) + 18px);
     z-index: 600;
-    background: white;
+    background: var(--surface);
     border: 1px solid var(--line);
     color: var(--ink);
     padding: 9px 18px;
@@ -392,9 +415,9 @@
   .pomodoro-widget {
     position: fixed;
     bottom: 20px;
-    left: 20px;
+    left: calc(var(--sidebar-width) + 20px);
     width: 220px;
-    background: white;
+    background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--radius);
     box-shadow: 0 6px 20px rgba(27,42,74,0.15);
@@ -406,8 +429,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 10px 14px;
-    background: var(--ink);
-    color: white;
+    background: var(--emphasis-bg);
+    color: var(--emphasis-text);
     font-weight: 700;
     font-size: 13.5px;
     cursor: pointer;
@@ -433,6 +456,7 @@
     margin-bottom: 4px;
   }
   .pomodoro-phase.break { color: #B8860B; }
+  [data-theme="dark"] .pomodoro-phase.break { color: #E0B84D; }
   .pomodoro-time {
     text-align: center;
     font-family: 'Almarai', sans-serif;
@@ -464,7 +488,7 @@
   .pomodoro-alert p { font-size: 12.5px; font-weight: 600; margin-bottom: 10px; }
 
   @media (max-width: 560px) {
-    .pomodoro-widget { left: 12px; bottom: 12px; width: 190px; }
+    .pomodoro-widget { left: calc(var(--sidebar-width) + 12px); bottom: 12px; width: 190px; }
   }
 
   /* ---------- تغبيش وقت الاختبار (فردي) ---------- */
@@ -480,6 +504,7 @@
     border-radius: 10px;
     z-index: 2;
   }
+  [data-theme="dark"] .exam-overlay { background: rgba(20, 24, 31, 0.7); }
   .exam-overlay button {
     background: var(--danger);
     color: white;
@@ -517,8 +542,8 @@
     text-align: center;
     padding: 22px;
     border-radius: var(--radius);
-    background: var(--ink);
-    color: white;
+    background: var(--emphasis-bg);
+    color: var(--emphasis-text);
     margin-bottom: 20px;
   }
   .my-result-banner .big {
@@ -636,9 +661,125 @@
     overflow: hidden;
   }
   .weak-topic-row .wt-bar-fill { background: var(--danger); height: 100%; border-radius: 6px; }
+
+  /* ---------- السايد بار ---------- */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-width);
+    background: var(--surface);
+    border-right: 1px solid var(--line);
+    z-index: 700;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 14px;
+    overflow-y: auto;
+  }
+  .sidebar-logo {
+    font-family: 'Almarai', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--ink);
+    text-align: center;
+    margin-bottom: 26px;
+  }
+  .sidebar-nav { display: flex; flex-direction: column; gap: 6px; }
+  .sidebar-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--ink);
+    padding: 11px 12px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: right;
+  }
+  .sidebar-btn:hover { background: var(--paper-dim); }
+  .sidebar-btn .sidebar-icon { font-size: 16px; }
+  .sidebar-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 6px; padding-top: 14px; }
+
+  body { padding-left: var(--sidebar-width); }
+
+  @media (max-width: 720px) {
+    :root { --sidebar-width: 60px; }
+    .sidebar { padding: 16px 6px; }
+    .sidebar-logo { font-size: 0; }
+    .sidebar-logo::first-letter { font-size: 20px; }
+    .sidebar-btn { justify-content: center; padding: 12px 4px; }
+    .sidebar-btn .label { display: none; }
+  }
+
+  /* ---------- لوحة مساعد الموقع الذكي العائمة ---------- */
+  .ai-help-panel {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 320px;
+    max-height: 480px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: 0 6px 20px rgba(27,42,74,0.15);
+    z-index: 800;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .ai-help-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--emphasis-bg);
+    color: var(--emphasis-text);
+    font-weight: 700;
+    font-size: 14px;
+  }
+  .ai-help-close {
+    background: none;
+    border: none;
+    color: var(--emphasis-text);
+    font-size: 16px;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .ai-help-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+  .ai-help-body .chat-messages { max-height: 280px; margin-bottom: 0; }
+
+  @media (max-width: 560px) {
+    .ai-help-panel { right: 12px; left: 12px; width: auto; bottom: 12px; }
+  }
 </style>
 </head>
 <body>
+<script>
+  // نطبّق الثيم المحفوظ فورًا (قبل أي رندر محسوس) عشان نتفادى "ومضة" لون
+  // خاطئ لما الصفحة تفتح بالدارك مود
+  (function () {
+    var saved = localStorage.getItem('zakiy-theme');
+    if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+  })();
+</script>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">ذكيّ</div>
+  <nav class="sidebar-nav">
+    <button class="sidebar-btn hidden" id="performanceBtn"><span class="sidebar-icon">📊</span><span class="label">أدائي</span></button>
+    <button class="sidebar-btn hidden" id="sidebarLibraryBtn"><span class="sidebar-icon">📚</span><span class="label">مكتبتي</span></button>
+    <button class="sidebar-btn" id="sidebarAiHelpBtn"><span class="sidebar-icon">🤖</span><span class="label">مساعد ذكيّ</span></button>
+  </nav>
+  <div class="sidebar-bottom">
+    <button class="sidebar-btn hidden" id="logoutBtn"><span class="sidebar-icon">🚪</span><span class="label">تسجيل خروج</span></button>
+    <button class="sidebar-btn" id="darkModeToggleBtn"><span class="sidebar-icon" id="darkModeIcon">🌙</span><span class="label" id="darkModeLabel">الوضع الليلي</span></button>
+  </div>
+</aside>
+
 <button class="global-back-btn hidden" id="globalBackBtn">⬅ رجوع</button>
 <div class="wrap">
 
@@ -646,8 +787,6 @@
     <span class="logo">ذكيّ</span>
     <div style="display:flex; align-items:center; gap:10px;">
       <span class="badge hidden" id="accountBadge"></span>
-      <button class="ghost hidden" id="performanceBtn" style="padding:6px 14px; font-size:13px;">📊 أدائي</button>
-      <button class="ghost hidden" id="logoutBtn" style="padding:6px 14px; font-size:13px;">خروج</button>
       <span class="badge">مشروع تخرج — أكاديمية طويق</span>
     </div>
   </header>
@@ -745,6 +884,34 @@
     </div>
   </section>
 
+  <!-- مكتبة الكتب الشخصية (تظهر بأي وقت للمسجّلين عبر زر "📚 مكتبتي") -->
+  <section class="card hidden" id="step-library">
+    <span class="step-label">📚 مكتبتي</span>
+    <h2>مكتبة كتبك</h2>
+    <p class="desc">كتب حفظتها قبل - تقدر تستخدمها بأي جلسة بدون ما ترفعها من جديد</p>
+
+    <div id="libraryList"></div>
+    <p class="desc hidden" id="libraryEmptyState">مكتبتك فاضية لحد الحين - ضيف كتاب من تحت.</p>
+
+    <h3 class="sub-heading">➕ ضيف كتاب جديد</h3>
+    <div class="dropzone" id="libraryDropzone">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#5C6B7A" stroke-width="1.6"><path d="M12 16V4M12 4l-4 4M12 4l4 4M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>
+      <div class="main-text">اسحب ملف PDF هنا أو اضغط للاختيار</div>
+      <div class="sub-text">حتى 20 صفحة تقريبًا</div>
+      <input type="file" id="libraryFileInput" accept="application/pdf">
+    </div>
+    <div class="file-chip" id="libraryFileChip">
+      <span>📄</span>
+      <span class="name" id="libraryFileName"></span>
+      <button class="ghost" id="libraryRemoveFile" style="padding:4px 12px;">إزالة</button>
+    </div>
+    <div class="actions">
+      <input type="text" id="libraryTitleInput" class="text-input" placeholder="اسم الكتاب بمكتبتك">
+      <button class="primary" id="libraryAddBtn" disabled>احفظ بالمكتبة</button>
+    </div>
+    <div id="libraryError"></div>
+  </section>
+
   <!-- اختيار الوضع: فردي أو غرفة جماعية -->
   <section class="card hidden" id="mode-select">
     <p class="desc hidden" id="welcomeGreeting" style="font-weight:700; color:var(--teal); margin-bottom:2px;"></p>
@@ -839,21 +1006,31 @@
     <h2>ارفع ملفك</h2>
     <p class="desc">يدعم النظام حاليًا ملفات PDF فقط</p>
 
-    <div class="dropzone" id="dropzone">
-      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#5C6B7A" stroke-width="1.6"><path d="M12 16V4M12 4l-4 4M12 4l4 4M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>
-      <div class="main-text">اسحب الملف هنا أو اضغط للاختيار</div>
-      <div class="sub-text">PDF — حتى 20 صفحة تقريبًا</div>
-      <input type="file" id="fileInput" accept="application/pdf">
+    <div id="uploadFromLibrarySection" class="hidden">
+      <h3 class="sub-heading">📚 اختر من مكتبتك</h3>
+      <div id="uploadLibraryList"></div>
+      <p class="desc hidden" id="uploadLibraryEmptyState">مكتبتك فاضية - ارفع ملف جديد من جهازك بالأسفل.</p>
+      <button class="link-btn" id="switchToDeviceUploadBtn">📱 أو ارفع ملف جديد من جهازك</button>
     </div>
 
-    <div class="file-chip" id="fileChip">
-      <span>📄</span>
-      <span class="name" id="fileName"></span>
-      <button class="ghost" id="removeFile" style="padding:4px 12px;">إزالة</button>
-    </div>
+    <div id="uploadFromDeviceSection">
+      <div class="dropzone" id="dropzone">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#5C6B7A" stroke-width="1.6"><path d="M12 16V4M12 4l-4 4M12 4l4 4M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>
+        <div class="main-text">اسحب الملف هنا أو اضغط للاختيار</div>
+        <div class="sub-text">PDF — حتى 20 صفحة تقريبًا</div>
+        <input type="file" id="fileInput" accept="application/pdf">
+      </div>
 
-    <div class="actions">
-      <button class="primary" id="uploadBtn" disabled>رفع ومعالجة الملف</button>
+      <div class="file-chip" id="fileChip">
+        <span>📄</span>
+        <span class="name" id="fileName"></span>
+        <button class="ghost" id="removeFile" style="padding:4px 12px;">إزالة</button>
+      </div>
+
+      <div class="actions">
+        <button class="primary" id="uploadBtn" disabled>رفع ومعالجة الملف</button>
+      </div>
+      <button class="link-btn hidden" id="switchToLibraryBtn">📚 أو اختر من مكتبتك</button>
     </div>
     <div id="uploadError"></div>
   </section>
@@ -869,6 +1046,7 @@
     </div>
     <div class="actions">
       <button class="primary" id="summarizeBtn">لخّص المحتوى</button>
+      <button class="ghost hidden" id="saveToLibraryBtn">💾 احفظ بمكتبتك</button>
     </div>
     <div id="summarizeError"></div>
   </section>
@@ -958,6 +1136,22 @@
   </div>
 </div>
 
+<!-- مساعد ذكيّ يشرح الموقع - يفتح من السايد بار، متاح من أي شاشة -->
+<div class="ai-help-panel hidden" id="aiHelpPanel">
+  <div class="ai-help-header">
+    <span>🤖 مساعد ذكيّ</span>
+    <button class="ai-help-close" id="aiHelpCloseBtn">✕</button>
+  </div>
+  <div class="ai-help-body">
+    <div class="chat-messages" id="siteHelpMessages"></div>
+    <div class="actions" style="margin-top:0;">
+      <input type="text" id="siteHelpInput" class="text-input" placeholder="اسأل عن الموقع...">
+      <button class="primary" id="siteHelpSendBtn">إرسال</button>
+    </div>
+    <div id="siteHelpError"></div>
+  </div>
+</div>
+
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -1006,7 +1200,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
 const TOP_LEVEL_SCREENS = [
   'mode-select', 'room-mode-select', 'room-create-form', 'room-join-form',
   'step-room', 'step-upload', 'step-text', 'step-chat', 'step-summary',
-  'step-quiz', 'step-performance',
+  'step-quiz', 'step-performance', 'step-library',
 ];
 const BACK_BUTTON_HIDDEN_ON = ['mode-select', 'login-form', 'signup-form', 'step-quiz'];
 let navHistory = [];
@@ -1029,6 +1223,25 @@ document.getElementById('globalBackBtn').addEventListener('click', () => {
   prev.forEach(show);
   updateGlobalBackButton();
 });
+
+// ---------- الوضع الليلي/النهاري (دارك مود) ----------
+function updateDarkModeButtonLabel() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.getElementById('darkModeIcon').textContent = isDark ? '☀️' : '🌙';
+  document.getElementById('darkModeLabel').textContent = isDark ? 'الوضع النهاري' : 'الوضع الليلي';
+}
+document.getElementById('darkModeToggleBtn').addEventListener('click', () => {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  if (isDark) {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('zakiy-theme', 'light');
+  } else {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    localStorage.setItem('zakiy-theme', 'dark');
+  }
+  updateDarkModeButtonLabel();
+});
+updateDarkModeButtonLabel(); // يعكس الثيم اللي طُبّق مسبقًا بالسكربت المبكر أول الصفحة
 
 function showError(id, msg) {
   document.getElementById(id).innerHTML = `<div class="error-msg">⚠️ ${msg}</div>`;
@@ -1113,6 +1326,7 @@ function onAuthSuccess(session) {
 
   show('accountBadge');
   show('performanceBtn');
+  show('sidebarLibraryBtn');
   show('logoutBtn');
   show('welcomeGreeting');
   refreshAccountUI();
@@ -1187,9 +1401,18 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
 // ---------- لوحة تحليل الأداء ----------
 function showPerformanceDashboard() {
   ['login-form', 'signup-form', 'mode-select', 'room-mode-select', 'room-create-form',
-   'room-join-form', 'step-room', 'step-upload', 'step-text', 'step-chat', 'step-summary', 'step-quiz']
+   'room-join-form', 'step-room', 'step-upload', 'step-text', 'step-chat', 'step-summary', 'step-quiz',
+   'step-library']
     .forEach(hide);
   show('step-performance');
+}
+
+function showLibraryScreen() {
+  ['login-form', 'signup-form', 'mode-select', 'room-mode-select', 'room-create-form',
+   'room-join-form', 'step-room', 'step-upload', 'step-text', 'step-chat', 'step-summary', 'step-quiz',
+   'step-performance']
+    .forEach(hide);
+  show('step-library');
 }
 
 document.getElementById('performanceBtn').addEventListener('click', async () => {
@@ -1210,6 +1433,245 @@ document.getElementById('performanceBtn').addEventListener('click', async () => 
     document.getElementById('performanceEmptyState').textContent = err.message || 'صار خطأ غير متوقع';
     show('performanceEmptyState');
     hide('performanceContent');
+  }
+});
+
+// ---------- مكتبة الكتب الشخصية ----------
+async function fetchLibraryBooks() {
+  const res = await fetch(`${API_BASE}/api/library`, {
+    headers: { 'Authorization': `Bearer ${currentAccessToken}` },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'تعذر جلب المكتبة');
+  return data.books;
+}
+
+function renderLibraryManageList(books) {
+  const container = document.getElementById('libraryList');
+  if (!books.length) {
+    container.innerHTML = '';
+    show('libraryEmptyState');
+    return;
+  }
+  hide('libraryEmptyState');
+  container.innerHTML = books.map(b => `
+    <div class="leaderboard-row">
+      <span class="name">${b.title}</span>
+      <button class="ghost rename-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">✏️ إعادة تسمية</button>
+      <button class="ghost delete-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">🗑️ حذف</button>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.rename-book-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const newTitle = prompt('الاسم الجديد:');
+      if (!newTitle || !newTitle.trim()) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/library/${btn.dataset.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentAccessToken}` },
+          body: JSON.stringify({ title: newTitle.trim() }),
+        });
+        if (!res.ok) throw new Error();
+        loadLibraryManageScreen();
+      } catch { alert('تعذر إعادة التسمية'); }
+    });
+  });
+
+  container.querySelectorAll('.delete-book-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('متأكد تبي تحذف هذا الكتاب من مكتبتك؟')) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/library/${btn.dataset.id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${currentAccessToken}` },
+        });
+        if (!res.ok) throw new Error();
+        loadLibraryManageScreen();
+      } catch { alert('تعذر الحذف'); }
+    });
+  });
+}
+
+async function loadLibraryManageScreen() {
+  try {
+    const books = await fetchLibraryBooks();
+    renderLibraryManageList(books);
+  } catch (err) {
+    showError('libraryError', err.message || 'صار خطأ غير متوقع');
+  }
+}
+
+document.getElementById('sidebarLibraryBtn').addEventListener('click', () => {
+  pushNavSnapshot();
+  showLibraryScreen();
+  updateGlobalBackButton();
+  clearError('libraryError');
+  loadLibraryManageScreen();
+});
+
+// ---------- إضافة كتاب جديد بالمكتبة (من شاشة المكتبة نفسها) ----------
+const libraryDropzone = document.getElementById('libraryDropzone');
+const libraryFileInput = document.getElementById('libraryFileInput');
+const libraryFileChip = document.getElementById('libraryFileChip');
+const libraryFileName = document.getElementById('libraryFileName');
+const libraryAddBtn = document.getElementById('libraryAddBtn');
+const libraryRemoveFile = document.getElementById('libraryRemoveFile');
+const libraryTitleInput = document.getElementById('libraryTitleInput');
+let librarySelectedFile = null;
+
+libraryDropzone.addEventListener('click', () => libraryFileInput.click());
+libraryDropzone.addEventListener('dragover', e => { e.preventDefault(); libraryDropzone.classList.add('drag'); });
+libraryDropzone.addEventListener('dragleave', () => libraryDropzone.classList.remove('drag'));
+libraryDropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  libraryDropzone.classList.remove('drag');
+  if (e.dataTransfer.files.length) handleLibraryFile(e.dataTransfer.files[0]);
+});
+libraryFileInput.addEventListener('change', e => {
+  if (e.target.files.length) handleLibraryFile(e.target.files[0]);
+});
+
+function handleLibraryFile(file) {
+  if (file.type !== 'application/pdf') {
+    showError('libraryError', 'الملف لازم يكون PDF');
+    return;
+  }
+  librarySelectedFile = file;
+  libraryFileName.textContent = file.name;
+  libraryFileChip.classList.add('show');
+  if (!libraryTitleInput.value.trim()) libraryTitleInput.value = file.name.replace(/\.pdf$/i, '');
+  updateLibraryAddBtnState();
+  clearError('libraryError');
+}
+
+libraryRemoveFile.addEventListener('click', () => {
+  librarySelectedFile = null;
+  libraryFileInput.value = '';
+  libraryFileChip.classList.remove('show');
+  updateLibraryAddBtnState();
+});
+
+libraryTitleInput.addEventListener('input', updateLibraryAddBtnState);
+function updateLibraryAddBtnState() {
+  libraryAddBtn.disabled = !(librarySelectedFile && libraryTitleInput.value.trim());
+}
+
+libraryAddBtn.addEventListener('click', async () => {
+  if (!librarySelectedFile) return;
+  clearError('libraryError');
+  setLoading(libraryAddBtn, true, 'احفظ بالمكتبة');
+  try {
+    const formData = new FormData();
+    formData.append('file', librarySelectedFile);
+    const uploadRes = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: formData });
+    const uploadData = await uploadRes.json();
+    if (!uploadRes.ok) throw new Error(uploadData.error || 'فشل رفع الملف');
+
+    const extractRes = await fetch(`${API_BASE}/api/extract`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename: uploadData.filename }),
+    });
+    const extractData = await extractRes.json();
+    if (!extractRes.ok) throw new Error(extractData.error || 'فشل استخراج النص');
+
+    const saveRes = await fetch(`${API_BASE}/api/library`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentAccessToken}` },
+      body: JSON.stringify({ title: libraryTitleInput.value.trim(), extracted_text: extractData.text }),
+    });
+    const saveData = await saveRes.json();
+    if (!saveRes.ok) throw new Error(saveData.error || 'فشل الحفظ بالمكتبة');
+
+    librarySelectedFile = null;
+    libraryFileInput.value = '';
+    libraryFileChip.classList.remove('show');
+    libraryTitleInput.value = '';
+    updateLibraryAddBtnState();
+    loadLibraryManageScreen();
+  } catch (err) {
+    showError('libraryError', err.message || 'صار خطأ غير متوقع');
+  } finally {
+    setLoading(libraryAddBtn, false, 'احفظ بالمكتبة');
+  }
+});
+
+// ---------- دمج اختيار المكتبة بخطوة الرفع (فردي/هوست/مفوّض له صلاحية) ----------
+async function loadUploadLibraryPicker() {
+  if (!currentAccessToken) {
+    hide('uploadFromLibrarySection');
+    show('uploadFromDeviceSection');
+    return;
+  }
+  try {
+    const books = await fetchLibraryBooks();
+    const listEl = document.getElementById('uploadLibraryList');
+    if (!books.length) {
+      listEl.innerHTML = '';
+      show('uploadLibraryEmptyState');
+    } else {
+      hide('uploadLibraryEmptyState');
+      listEl.innerHTML = books.map(b => `
+        <div class="leaderboard-row">
+          <span class="name">${b.title}</span>
+          <button class="primary use-library-book-btn" data-id="${b.id}" style="padding:6px 14px; font-size:12.5px;">استخدم هذا</button>
+        </div>
+      `).join('');
+      listEl.querySelectorAll('.use-library-book-btn').forEach(btn => {
+        btn.addEventListener('click', () => useLibraryBookForSession(btn.dataset.id));
+      });
+    }
+    show('uploadFromLibrarySection');
+    hide('uploadFromDeviceSection');
+  } catch (err) {
+    // فشل جلب المكتبة؟ ما نكسر التجربة - نرجع لخيار الرفع من الجهاز
+    hide('uploadFromLibrarySection');
+    show('uploadFromDeviceSection');
+  }
+}
+
+async function useLibraryBookForSession(bookId) {
+  clearError('uploadError');
+  try {
+    const res = await fetch(`${API_BASE}/api/library/${bookId}`, {
+      headers: { 'Authorization': `Bearer ${currentAccessToken}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'تعذر جلب الكتاب');
+
+    extractedText = data.extracted_text;
+    document.getElementById('extractedText').textContent = extractedText;
+    show('step-text');
+    if (appMode === 'solo') show('step-chat');
+    hide('saveToLibraryBtn'); // موجود بالمكتبة أصلًا، ما يحتاج حفظ من جديد
+    document.getElementById('step-text').scrollIntoView({ behavior: 'smooth' });
+  } catch (err) {
+    showError('uploadError', err.message || 'صار خطأ غير متوقع');
+  }
+}
+
+document.getElementById('switchToDeviceUploadBtn').addEventListener('click', () => {
+  hide('uploadFromLibrarySection');
+  show('uploadFromDeviceSection');
+  show('switchToLibraryBtn');
+});
+document.getElementById('switchToLibraryBtn').addEventListener('click', loadUploadLibraryPicker);
+
+document.getElementById('saveToLibraryBtn').addEventListener('click', async () => {
+  const defaultTitle = uploadedFilename ? uploadedFilename.replace(/\.pdf$/i, '') : '';
+  const title = prompt('اسم الكتاب بمكتبتك:', defaultTitle);
+  if (!title || !title.trim()) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/library`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentAccessToken}` },
+      body: JSON.stringify({ title: title.trim(), extracted_text: extractedText }),
+    });
+    if (!res.ok) throw new Error();
+    alert('تم الحفظ بمكتبتك ✅');
+  } catch {
+    alert('تعذر الحفظ بالمكتبة');
   }
 });
 
@@ -1310,6 +1772,7 @@ document.getElementById('modeSoloBtn').addEventListener('click', () => {
   show('step-upload');
   show('pomodoroWidget');
   updateGlobalBackButton();
+  loadUploadLibraryPicker();
 });
 
 document.getElementById('modeRoomBtn').addEventListener('click', () => {
@@ -1402,6 +1865,7 @@ socket.on('room_state', data => {
   } else if (!data.quiz && canManageContent && !uploadedFilename) {
     if (isHost) appMode = 'room-host';
     show('step-upload');
+    loadUploadLibraryPicker();
   }
   // ملاحظة: لو quizHasStarted أصلًا شغال محليًا، ما نعيد استدعاء handleQuizStarted
   // عند إعادة الاتصال عشان ما نمسح إجابات المستخدم أو نعيد المؤقت من الصفر
@@ -1498,6 +1962,7 @@ socket.on('permission_granted', () => {
   canManageContent = true;
   if (!uploadedFilename && !quizHasStarted) {
     show('step-upload');
+    loadUploadLibraryPicker();
     document.getElementById('step-upload').scrollIntoView({ behavior: 'smooth' });
   }
 });
@@ -1652,6 +2117,7 @@ uploadBtn.addEventListener('click', async () => {
     document.getElementById('extractedText').textContent = extractedText || 'ما قدرنا نستخرج نص من هذا الملف';
     show('step-text');
     if (appMode === 'solo') show('step-chat');
+    if (currentAccessToken) show('saveToLibraryBtn');
     document.getElementById('step-text').scrollIntoView({ behavior: 'smooth' });
   } catch (err) {
     showError('uploadError', err.message || 'صار خطأ غير متوقع، تأكد إن السيرفر شغال');
@@ -1695,6 +2161,46 @@ async function sendAIChat() {
     appendChatBubble('aiChatMessages', 'ذكيّ', data.reply, 'ai');
   } catch (err) {
     showError('aiChatError', err.message || 'صار خطأ غير متوقع');
+  }
+}
+
+// ---------- مساعد ذكيّ يشرح الموقع (لوحة عائمة، متاح من أي شاشة) ----------
+let siteHelpInteractionId = null;
+
+document.getElementById('sidebarAiHelpBtn').addEventListener('click', () => {
+  document.getElementById('aiHelpPanel').classList.toggle('hidden');
+});
+document.getElementById('aiHelpCloseBtn').addEventListener('click', () => hide('aiHelpPanel'));
+
+document.getElementById('siteHelpSendBtn').addEventListener('click', sendSiteHelpMessage);
+document.getElementById('siteHelpInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendSiteHelpMessage();
+});
+
+async function sendSiteHelpMessage() {
+  const input = document.getElementById('siteHelpInput');
+  const message = input.value.trim();
+  if (!message) return;
+  clearError('siteHelpError');
+  appendChatBubble('siteHelpMessages', 'أنت', message, 'me');
+  input.value = '';
+
+  try {
+    const body = { message };
+    if (siteHelpInteractionId) body.interaction_id = siteHelpInteractionId;
+
+    const res = await fetch(`${API_BASE}/api/site-help`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'صار خطأ بالمحادثة');
+
+    siteHelpInteractionId = data.interaction_id;
+    appendChatBubble('siteHelpMessages', 'ذكيّ', data.reply, 'ai');
+  } catch (err) {
+    showError('siteHelpError', err.message || 'صار خطأ غير متوقع');
   }
 }
 

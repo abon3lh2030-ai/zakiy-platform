@@ -257,6 +257,66 @@ def chat():
         return jsonify({"error": str(e)}), 500
 
 
+# ---------- مساعد ذكيّ يشرح الموقع نفسه (متاح للجميع بدون تسجيل دخول) ----------
+SITE_HELP_SYSTEM_PROMPT = """أنت مساعد داخل منصة "ذكيّ" (Zakiy) - منصة دراسية سعودية تحوّل ملفات PDF
+الدراسية لملخصات واختبارات تفاعلية بمساعدة الذكاء الاصطناعي. مهمتك تشرح للطالب
+كيف يستخدم الموقع بوضوح واختصار، بالعربية، بدون رموز Markdown.
+
+هذي ميزات الموقع اللي تقدر تشرحها:
+
+**الوضع الفردي**: يرفع الطالب ملف PDF، الموقع يستخرج نصه، يلخّصه، ويولّد منه
+اختبار اختيار من متعدد (يحدد الطالب عدد الأسئلة من 5 إلى 20). فيه شات ذكاء
+اصطناعي يقدر يسأله عن محتوى الملف. بعد كل سؤال بالاختبار يطلع شرح ليه الإجابة
+صحيحة. وقت الاختبار يصير تغبيش على الملخص والنص عشان يركّز، مع زر يقدر يكشفه
+بتحذير. فيه مؤقت بومودورو اختياري (25 دقيقة مذاكرة / 5 دقائق راحة).
+
+**الغرفة الجماعية**: طالب ينشئ غرفة يطلع له كود، وزملاءه ينضمون بنفس الكود.
+أول من ينضم يصير "الهوست" وهو اللي يرفع الملف ويولّد الاختبار ويحدد مدته
+ويبدأه للجميع بنفس الوقت. الهوست يقدر يمنح أي منضم صلاحية يرفع ويبدأ الاختبار
+بدلًا عنه. فيه شات نصي بين الأعضاء وصوت جماعي مباشر (اختياري)، يوقفون
+تلقائيًا وقت الاختبار عشان محد يغش. بعد كل واحد يسلّم يشوف نتيجته وترتيبه،
+وأفضل 3 يطلعون بميداليات.
+
+**الحساب (اختياري)**: يقدر الطالب يسجل حساب بإيميل وكلمة مرور واسم يختاره،
+مع مرحلته الدراسية ومستواه. يعطيه هذا: لوحة "أدائي" تتتبع نتائجه ونقاط ضعفه
+عبر الوقت، ومكتبة شخصية تحفظ الملفات اللي رفعها قبل عشان يعيد استخدامها
+بدون ما يرفعها من جديد كل مرة. بدون حساب يقدر يستخدم كل شي عادي بس بدون حفظ.
+
+جاوب بس عن أسئلة تخص الموقع وكيفية استخدامه. لو سُئلت عن شي مو متعلق بالموقع،
+وضّح بلطف إنك مختص بمساعدة الطلاب يفهمون المنصة بس."""
+
+
+@app.route("/api/site-help", methods=["POST"])
+def site_help():
+    data = request.get_json()
+    message = data.get("message")
+    interaction_id = data.get("interaction_id")
+
+    if not message:
+        return jsonify({"error": "لازم ترسل رسالة"}), 400
+
+    try:
+        if interaction_id:
+            input_text = message
+        else:
+            input_text = f"{SITE_HELP_SYSTEM_PROMPT}\n\nسؤال الطالب: {message}"
+
+        kwargs = {
+            "model": GEMINI_MODEL,
+            "input": input_text,
+            "generation_config": {"max_output_tokens": 600, "thinking_level": "minimal"},
+        }
+        if interaction_id:
+            kwargs["previous_interaction_id"] = interaction_id
+
+        interaction = create_interaction(**kwargs)
+        return jsonify(
+            {"reply": interaction.output_text, "interaction_id": interaction.id}
+        ), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # ---------- تسجيل نتائج الاختبار وتحليل نقاط الضعف (حسابات اختيارية) ----------
 @app.route("/api/quiz-attempt", methods=["POST"])
 @require_auth
@@ -301,6 +361,106 @@ def get_performance():
         ]
 
         return jsonify({"attempts": attempts, "weak_topics": weak_topics}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------- مكتبة الكتب الشخصية (حسابات مسجّلة بس) ----------
+# نخزّن النص المستخرج بس، مو الملف نفسه - التطبيق أصلًا ما يحتاج الـ PDF
+# بعد استخراج نصه، وهذا يغنينا عن إعداد تخزين ملفات منفصل بالكامل
+@app.route("/api/library", methods=["GET"])
+@require_auth
+def list_library_books():
+    try:
+        res = (
+            supabase_admin.table("library_books")
+            .select("id, title, created_at")
+            .eq("user_id", request.user_id)
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return jsonify({"books": res.data}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/library/<book_id>", methods=["GET"])
+@require_auth
+def get_library_book(book_id):
+    try:
+        res = (
+            supabase_admin.table("library_books")
+            .select("title, extracted_text")
+            .eq("id", book_id)
+            .eq("user_id", request.user_id)
+            .limit(1)
+            .execute()
+        )
+        if not res.data:
+            return jsonify({"error": "الكتاب مو موجود"}), 404
+        return jsonify(res.data[0]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/library", methods=["POST"])
+@require_auth
+def create_library_book():
+    data = request.get_json()
+    title = (data.get("title") or "").strip()
+    extracted_text = data.get("extracted_text") or ""
+
+    if not title or not extracted_text:
+        return jsonify({"error": "لازم عنوان ونص مستخرج"}), 400
+
+    try:
+        res = (
+            supabase_admin.table("library_books")
+            .insert({"user_id": request.user_id, "title": title, "extracted_text": extracted_text})
+            .execute()
+        )
+        return jsonify({"id": res.data[0]["id"]}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/library/<book_id>", methods=["PATCH"])
+@require_auth
+def rename_library_book(book_id):
+    data = request.get_json()
+    title = (data.get("title") or "").strip()
+    if not title:
+        return jsonify({"error": "لازم عنوان"}), 400
+
+    try:
+        res = (
+            supabase_admin.table("library_books")
+            .update({"title": title})
+            .eq("id", book_id)
+            .eq("user_id", request.user_id)
+            .execute()
+        )
+        if not res.data:
+            return jsonify({"error": "الكتاب مو موجود"}), 404
+        return jsonify({"ok": True}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/library/<book_id>", methods=["DELETE"])
+@require_auth
+def delete_library_book(book_id):
+    try:
+        res = (
+            supabase_admin.table("library_books")
+            .delete()
+            .eq("id", book_id)
+            .eq("user_id", request.user_id)
+            .execute()
+        )
+        if not res.data:
+            return jsonify({"error": "الكتاب مو موجود"}), 404
+        return jsonify({"ok": True}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

@@ -755,6 +755,92 @@
   @media (max-width: 560px) {
     .ai-help-panel { right: 12px; left: 12px; width: auto; bottom: 12px; }
   }
+
+  /* ---------- مودال "الميزة تحتاج حساب" ---------- */
+  .login-required-modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    z-index: 900; display: flex; align-items: center; justify-content: center;
+  }
+  .login-required-box {
+    position: relative;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 32px 26px; width: 320px; max-width: 90vw; text-align: center;
+    display: flex; flex-direction: column; gap: 10px; align-items: center;
+  }
+  .login-required-box .ai-help-close { position: absolute; top: 10px; left: 10px; color: var(--ink-soft); }
+  .login-required-box .actions { flex-direction: column; width: 100%; margin-top: 6px; }
+
+  /* ---------- شارة الستريك ---------- */
+  .streak-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, #FF6B35, #FFC93C);
+    color: #fff; font-weight: 800; font-size: 15px;
+    padding: 8px 18px; border-radius: 999px; margin-bottom: 14px;
+    box-shadow: 0 4px 14px rgba(255,107,53,0.35);
+  }
+  .streak-badge .flame { font-size: 20px; display: inline-block; animation: streak-pulse 1.4s ease-in-out infinite; }
+  @keyframes streak-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.18); }
+  }
+
+  /* ---------- تقييم الجلسة التلقائي ---------- */
+  .session-rating { margin-top: 10px; font-size: 15px; }
+  .session-rating .stars { color: #FFC93C; letter-spacing: 2px; font-size: 18px; }
+  .session-rating .fast-badge {
+    display: inline-block; margin-inline-start: 8px; font-size: 12px; font-weight: 700;
+    background: var(--teal-dim); color: var(--teal); padding: 3px 10px; border-radius: 999px;
+  }
+
+  /* ---------- تبويبات شاشة الأداء ---------- */
+  .perf-tabs { display: flex; gap: 6px; margin-bottom: 20px; border-bottom: 1px solid var(--line); }
+  .perf-tab-btn {
+    background: none; border: none; padding: 10px 16px; font-family: inherit; font-size: 14px;
+    font-weight: 700; color: var(--ink-soft); cursor: pointer; border-bottom: 2px solid transparent;
+  }
+  .perf-tab-btn.active { color: var(--ink); border-bottom-color: var(--emphasis-bg); }
+  .perf-tab-panel.hidden { display: none; }
+  .stat-card.study-hours { background: var(--highlighter-soft); }
+
+  /* ---------- الكلاس المباشر (سبورة، رفع يد، لفة حظ) ---------- */
+  .classroom-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .classroom-color-swatch {
+    width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); cursor: pointer; padding: 0;
+  }
+  .classroom-color-swatch.active { border-color: var(--ink); box-shadow: 0 0 0 2px var(--paper); }
+  #classroomCanvas {
+    width: 100%; max-width: 100%; aspect-ratio: 16/9; background: #fff; border: 1px solid var(--line);
+    border-radius: var(--radius); touch-action: none; cursor: crosshair; display: block;
+  }
+  .hand-raised-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 6px;
+  }
+  .lucky-draw-display {
+    text-align: center; font-size: 20px; font-weight: 800; padding: 18px; margin: 10px 0;
+    background: var(--highlighter-soft); border-radius: var(--radius); transition: background .2s, color .2s;
+  }
+  .lucky-draw-display.winner { background: var(--teal-dim); color: var(--teal); }
+
+  /* ---------- مودال QR ---------- */
+  .qr-modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 900;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .qr-modal-box {
+    position: relative; background: var(--surface); border-radius: var(--radius); padding: 26px;
+    text-align: center; width: 300px; max-width: 90vw;
+  }
+  .qr-modal-box .ai-help-close { position: absolute; top: 10px; left: 10px; color: var(--ink-soft); }
+  #qrCanvasContainer { display: flex; justify-content: center; margin: 14px 0; }
+  #qrCanvasContainer canvas { border-radius: 8px; }
+
+  /* ---------- الأصدقاء والأرشيف ---------- */
+  .friend-row, .friend-request-row, .archive-row {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px;
+  }
+  .friend-search-results { margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -770,15 +856,29 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">ذكيّ</div>
   <nav class="sidebar-nav">
-    <button class="sidebar-btn hidden" id="performanceBtn"><span class="sidebar-icon">📊</span><span class="label">أدائي</span></button>
-    <button class="sidebar-btn hidden" id="sidebarLibraryBtn"><span class="sidebar-icon">📚</span><span class="label">مكتبتي</span></button>
+    <button class="sidebar-btn" id="performanceBtn"><span class="sidebar-icon">📊</span><span class="label">أدائي</span></button>
+    <button class="sidebar-btn" id="sidebarLibraryBtn"><span class="sidebar-icon">📚</span><span class="label">مكتبتي</span></button>
     <button class="sidebar-btn" id="sidebarAiHelpBtn"><span class="sidebar-icon">🤖</span><span class="label">مساعد ذكيّ</span></button>
   </nav>
   <div class="sidebar-bottom">
+    <button class="sidebar-btn" id="guestLoginPromptBtn"><span class="sidebar-icon">🔑</span><span class="label">تسجيل الدخول</span></button>
     <button class="sidebar-btn hidden" id="logoutBtn"><span class="sidebar-icon">🚪</span><span class="label">تسجيل خروج</span></button>
     <button class="sidebar-btn" id="darkModeToggleBtn"><span class="sidebar-icon" id="darkModeIcon">🌙</span><span class="label" id="darkModeLabel">الوضع الليلي</span></button>
   </div>
 </aside>
+
+<div class="login-required-modal hidden" id="loginRequiredModal">
+  <div class="login-required-box">
+    <button class="ai-help-close" id="loginRequiredCloseBtn">✕</button>
+    <div style="font-size:32px;">🔒</div>
+    <h3>هذي الميزة تحتاج حساب</h3>
+    <p class="desc">سجل الدخول أو أنشئ حساب مجاني عشان تقدر تستخدمها</p>
+    <div class="actions">
+      <button class="primary" id="loginRequiredLoginBtn">تسجيل الدخول</button>
+      <button class="ghost" id="loginRequiredSignupBtn">إنشاء حساب</button>
+    </div>
+  </div>
+</div>
 
 <button class="global-back-btn hidden" id="globalBackBtn">⬅ رجوع</button>
 <div class="wrap">
@@ -858,29 +958,62 @@
   <section class="card hidden" id="step-performance">
     <span class="step-label">📊 أدائي</span>
     <h2 id="performanceHeading">لوحة تحليل أدائك</h2>
-    <p class="desc" id="performanceEmptyState">لسا ما حليت أي اختبار وأنت مسجّل دخول.</p>
 
-    <div id="performanceContent" class="hidden">
-      <div class="stat-row">
-        <div class="stat-tile">
-          <div class="stat-value" id="statAttempts">0</div>
-          <div class="stat-label">عدد المحاولات</div>
+    <div class="perf-tabs">
+      <button class="perf-tab-btn active" id="perfTabBtnStats" data-tab="stats">📊 الأداء</button>
+      <button class="perf-tab-btn" id="perfTabBtnArchive" data-tab="archive">📂 الأرشيف</button>
+      <button class="perf-tab-btn" id="perfTabBtnFriends" data-tab="friends">👥 الأصدقاء</button>
+    </div>
+
+    <div class="perf-tab-panel" id="perfTabPanelStats">
+      <p class="desc" id="performanceEmptyState">لسا ما حليت أي اختبار وأنت مسجّل دخول.</p>
+
+      <div id="performanceContent" class="hidden">
+        <div class="stat-row">
+          <div class="stat-tile">
+            <div class="stat-value" id="statAttempts">0</div>
+            <div class="stat-label">عدد المحاولات</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-value" id="statAvg">٠٪</div>
+            <div class="stat-label">متوسط الدرجة</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-value" id="statBest">٠٪</div>
+            <div class="stat-label">أفضل نتيجة</div>
+          </div>
+          <div class="stat-tile study-hours">
+            <div class="stat-value" id="statStudyMinutes">٠</div>
+            <div class="stat-label">⏱️ دقائق مذاكرة</div>
+          </div>
         </div>
-        <div class="stat-tile">
-          <div class="stat-value" id="statAvg">٠٪</div>
-          <div class="stat-label">متوسط الدرجة</div>
-        </div>
-        <div class="stat-tile">
-          <div class="stat-value" id="statBest">٠٪</div>
-          <div class="stat-label">أفضل نتيجة</div>
-        </div>
+
+        <h3 class="sub-heading">📈 تطور درجاتك</h3>
+        <svg id="trendChart" width="100%" height="120" style="overflow:visible; margin-bottom:24px;"></svg>
+
+        <h3 class="sub-heading">🎯 نقاط تحتاج مراجعة</h3>
+        <div id="weakTopicsList"></div>
       </div>
+    </div>
 
-      <h3 class="sub-heading">📈 تطور درجاتك</h3>
-      <svg id="trendChart" width="100%" height="120" style="overflow:visible; margin-bottom:24px;"></svg>
+    <div class="perf-tab-panel hidden" id="perfTabPanelArchive">
+      <p class="desc" id="archiveEmptyState">ما فيه جلسات جماعية أو كلاسات بأرشيفك لحد الحين.</p>
+      <div id="archiveList"></div>
+    </div>
 
-      <h3 class="sub-heading">🎯 نقاط تحتاج مراجعة</h3>
-      <div id="weakTopicsList"></div>
+    <div class="perf-tab-panel hidden" id="perfTabPanelFriends">
+      <h3 class="sub-heading">🔍 دور على صديق</h3>
+      <div class="actions">
+        <input type="text" id="friendSearchInput" class="text-input" placeholder="اسم المستخدم...">
+        <button class="ghost" id="friendSearchBtn">بحث</button>
+      </div>
+      <div class="friend-search-results" id="friendSearchResults"></div>
+
+      <h3 class="sub-heading" style="margin-top:22px;">📨 طلبات الصداقة</h3>
+      <div id="friendRequestsList"><p class="desc">ما فيه طلبات جديدة</p></div>
+
+      <h3 class="sub-heading" style="margin-top:22px;">👥 أصدقاؤك</h3>
+      <div id="friendsList"><p class="desc">ما ضفت أصدقاء لحد الحين</p></div>
     </div>
   </section>
 
@@ -914,18 +1047,20 @@
 
   <!-- اختيار الوضع: فردي أو غرفة جماعية -->
   <section class="card hidden" id="mode-select">
+    <div class="streak-badge hidden" id="streakBadge"><span class="flame">🔥</span><span id="streakBadgeText"></span></div>
     <p class="desc hidden" id="welcomeGreeting" style="font-weight:700; color:var(--teal); margin-bottom:2px;"></p>
     <h2>وش تبي تسوي اليوم؟</h2>
     <p class="desc">اختر طريقة المذاكرة عشان نبدأ</p>
     <div class="actions">
       <button class="primary" id="modeSoloBtn">🧑‍🎓 مذاكرة فردية</button>
       <button class="primary" id="modeRoomBtn">👥 غرفة جماعية</button>
+      <button class="primary" id="modeClassroomBtn">🖍️ درس مباشر</button>
     </div>
   </section>
 
   <section class="card hidden" id="room-mode-select">
-    <span class="step-label">👥 غرفة جماعية</span>
-    <h2>وش تبي تسوي بالغرفة؟</h2>
+    <span class="step-label" id="roomModeSelectLabel">👥 غرفة جماعية</span>
+    <h2 id="roomModeSelectHeading">وش تبي تسوي بالغرفة؟</h2>
     <div class="actions">
       <button class="primary" id="roomCreateChooseBtn">➕ أنشئ غرفة جديدة</button>
       <button class="ghost" id="roomJoinChooseBtn">🔑 عندي كود غرفة</button>
@@ -933,9 +1068,9 @@
   </section>
 
   <section class="card hidden" id="room-create-form">
-    <span class="step-label">➕ إنشاء غرفة</span>
-    <h2>اكتب اسمك (بصفتك مضيف الغرفة)</h2>
-    <p class="desc">أنت اللي بترفع الملف وتولّد الاختبار وتبدأه لباقي الطلاب</p>
+    <span class="step-label" id="roomCreateFormLabel">➕ إنشاء غرفة</span>
+    <h2 id="roomCreateFormHeading">اكتب اسمك (بصفتك مضيف الغرفة)</h2>
+    <p class="desc" id="roomCreateFormDesc">أنت اللي بترفع الملف وتولّد الاختبار وتبدأه لباقي الطلاب</p>
     <div class="actions">
       <input type="text" id="hostNameInput" class="text-input" placeholder="اسمك">
       <button class="primary" id="hostCreateBtn">إنشاء الغرفة</button>
@@ -959,6 +1094,7 @@
     <span class="step-label">🎓 غرفة المذاكرة</span>
     <h2>غرفة المذاكرة الحية</h2>
     <div class="room-code-badge" id="roomCodeBadge"></div>
+    <button class="link-btn" id="showQrBtn">📱 اعرض QR للانضمام</button>
     <p class="desc" id="roomElapsedTimer">⏱️ الغرفة مفتوحة من: 00:00</p>
 
     <div class="room-code-badge hidden" id="quizCountdownBadge" style="background:var(--highlighter-soft); color:#8a6d00; font-size:18px;"></div>
@@ -998,6 +1134,47 @@
       </div>
     </div>
     <div id="inQuizNote" class="hidden" style="margin-top:16px; color:var(--ink-soft); font-size:13.5px;">🔒 الشات وقائمة المشاركين تظهر لك بعد ما تسلّم الاختبار.</div>
+  </section>
+
+  <!-- الكلاس المباشر: نفس آلية الدخول (كود غرفة) بس محتوى مختلف تمامًا من جوا -->
+  <section class="card hidden" id="step-classroom">
+    <span class="step-label">🖍️ كلاس مباشر</span>
+    <h2>سبورة الشرح المباشرة</h2>
+    <div class="room-code-badge" id="classroomCodeBadge"></div>
+    <button class="link-btn" id="showQrBtnClassroom">📱 اعرض QR للانضمام</button>
+
+    <div id="classroomWaiting" class="hidden">
+      <p class="desc">⏳ بانتظار المدرس يبدأ الحصة...</p>
+    </div>
+
+    <button class="primary hidden" id="startClassBtn" style="margin:14px 0;">▶️ ابدأ الحصة</button>
+
+    <div id="classroomBoardArea" class="hidden">
+      <div class="classroom-toolbar hidden" id="classroomTeacherToolbar">
+        <button class="classroom-color-swatch active" data-color="#1B2A4A" style="background:#1B2A4A;"></button>
+        <button class="classroom-color-swatch" data-color="#C7554A" style="background:#C7554A;"></button>
+        <button class="classroom-color-swatch" data-color="#2E8B77" style="background:#2E8B77;"></button>
+        <button class="classroom-color-swatch" data-color="#FFC93C" style="background:#FFC93C;"></button>
+        <button class="ghost" id="classroomEraserBtn" style="padding:6px 12px;">🧽 ممحاة</button>
+        <button class="ghost" id="classroomClearBtn" style="padding:6px 12px;">🧹 امسح الكل</button>
+      </div>
+      <canvas id="classroomCanvas" width="960" height="540"></canvas>
+    </div>
+
+    <button class="ghost hidden" id="raiseHandBtn" style="margin-top:14px;">🙋 رفع الإيد</button>
+
+    <div id="luckyDrawSection" class="hidden" style="margin-top:16px;">
+      <button class="primary hidden" id="luckyDrawBtn">🎡 لفة حظ</button>
+      <div class="lucky-draw-display hidden" id="luckyDrawDisplay"></div>
+    </div>
+
+    <h3 class="sub-heading" style="margin-top:22px;">✋ رافعين الإيد</h3>
+    <div id="raisedHandsList"><p class="desc">محد رافع إيده لحد الحين</p></div>
+
+    <h3 class="sub-heading" style="margin-top:22px;">👥 المشاركين</h3>
+    <div id="classroomParticipantsList"></div>
+
+    <div id="classroomVoiceSlot" style="margin-top:24px;"></div>
   </section>
 
   <!-- Step 1: Upload (فردي أو الهوست داخل الغرفة) -->
@@ -1152,6 +1329,16 @@
   </div>
 </div>
 
+<!-- مودال QR للانضمام السريع للغرفة/الكلاس - يفتح من step-room و step-classroom كلاهما -->
+<div class="qr-modal hidden" id="qrModal">
+  <div class="qr-modal-box">
+    <button class="ai-help-close" id="qrModalCloseBtn">✕</button>
+    <h3>امسح الكود عشان تنضم</h3>
+    <div id="qrCanvasContainer"></div>
+    <p class="desc" id="qrRoomCodeText"></p>
+  </div>
+</div>
+
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -1199,7 +1386,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
 // وزر الرجوع يرجّع آخر لقطة محفوظة بالضبط بدل ما يخمّن شاشة وحدة ثابتة
 const TOP_LEVEL_SCREENS = [
   'mode-select', 'room-mode-select', 'room-create-form', 'room-join-form',
-  'step-room', 'step-upload', 'step-text', 'step-chat', 'step-summary',
+  'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary',
   'step-quiz', 'step-performance', 'step-library',
 ];
 const BACK_BUTTON_HIDDEN_ON = ['mode-select', 'login-form', 'signup-form', 'step-quiz'];
@@ -1299,6 +1486,18 @@ function proceedToApp() {
   show('mode-select');
   navHistory = [];
   updateGlobalBackButton();
+
+  // انضمام سريع عبر رابط QR (?join=CODE) - نعبّي فورم الانضمام تلقائيًا أول
+  // ما يوصل المستخدم للواجهة الرئيسية (بعد الدخول أو المتابعة كضيف)
+  const joinCode = new URLSearchParams(location.search).get('join');
+  if (joinCode) {
+    history.replaceState(null, '', location.pathname); // نشيل الباراميتر عشان ما يتكرر التعبئة
+    pushNavSnapshot();
+    hide('mode-select');
+    show('room-join-form');
+    document.getElementById('joinRoomCode').value = joinCode.toUpperCase();
+    updateGlobalBackButton();
+  }
 }
 
 function refreshAccountUI() {
@@ -1325,8 +1524,7 @@ function onAuthSuccess(session) {
   currentUsername = session.user.user_metadata?.username || currentUserEmail;
 
   show('accountBadge');
-  show('performanceBtn');
-  show('sidebarLibraryBtn');
+  hide('guestLoginPromptBtn');
   show('logoutBtn');
   show('welcomeGreeting');
   refreshAccountUI();
@@ -1337,6 +1535,24 @@ function onAuthSuccess(session) {
   if (!hasStoredUsername) {
     promptForUsername('لاحظنا حسابك بدون اسم محفوظ. وش اسمك؟ (يطلع بدل الإيميل بالموقع)');
   }
+
+  // نزامن اسم المستخدم بجدول profiles القابل للبحث - يخدم ميزة الأصدقاء
+  fetch(`${API_BASE}/api/profile/sync`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentAccessToken}` },
+    body: JSON.stringify({ username: currentUsername }),
+  }).catch(() => {});
+
+  // شارة الستريك بالشاشة الرئيسية - تظهر بس من ٣ أيام متتالية فأكثر
+  fetch(`${API_BASE}/api/performance`, { headers: { 'Authorization': `Bearer ${currentAccessToken}` } })
+    .then(res => res.json())
+    .then(data => {
+      if (data.current_streak >= 3) {
+        document.getElementById('streakBadgeText').textContent = `${data.current_streak} أيام متتالية`;
+        show('streakBadge');
+      }
+    })
+    .catch(() => {});
 }
 
 // Supabase يجدد access_token تلقائيًا بالخلفية - نتابع آخر نسخة عشان الطلبات
@@ -1398,10 +1614,43 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   location.reload();
 });
 
+// ---------- قفل الميزات الحسابية عن الضيوف ----------
+// الأزرار تظهر دائمًا (حتى للضيوف) - الضغط عليها كضيف يفتح مودال "سجل / أنشئ
+// حساب" بدل ما يوديه للميزة نفسها أو يخفي الزر بالكامل
+function requireAuthOrPrompt() {
+  if (currentAccessToken) return true;
+  show('loginRequiredModal');
+  return false;
+}
+document.getElementById('loginRequiredCloseBtn').addEventListener('click', () => hide('loginRequiredModal'));
+document.getElementById('loginRequiredLoginBtn').addEventListener('click', () => {
+  hide('loginRequiredModal');
+  pushNavSnapshot();
+  TOP_LEVEL_SCREENS.forEach(hide);
+  hide('signup-form');
+  show('login-form');
+  updateGlobalBackButton();
+});
+document.getElementById('loginRequiredSignupBtn').addEventListener('click', () => {
+  hide('loginRequiredModal');
+  pushNavSnapshot();
+  TOP_LEVEL_SCREENS.forEach(hide);
+  hide('login-form');
+  show('signup-form');
+  updateGlobalBackButton();
+});
+document.getElementById('guestLoginPromptBtn').addEventListener('click', () => {
+  pushNavSnapshot();
+  TOP_LEVEL_SCREENS.forEach(hide);
+  hide('signup-form');
+  show('login-form');
+  updateGlobalBackButton();
+});
+
 // ---------- لوحة تحليل الأداء ----------
 function showPerformanceDashboard() {
   ['login-form', 'signup-form', 'mode-select', 'room-mode-select', 'room-create-form',
-   'room-join-form', 'step-room', 'step-upload', 'step-text', 'step-chat', 'step-summary', 'step-quiz',
+   'room-join-form', 'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary', 'step-quiz',
    'step-library']
     .forEach(hide);
   show('step-performance');
@@ -1409,13 +1658,14 @@ function showPerformanceDashboard() {
 
 function showLibraryScreen() {
   ['login-form', 'signup-form', 'mode-select', 'room-mode-select', 'room-create-form',
-   'room-join-form', 'step-room', 'step-upload', 'step-text', 'step-chat', 'step-summary', 'step-quiz',
+   'room-join-form', 'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary', 'step-quiz',
    'step-performance']
     .forEach(hide);
   show('step-library');
 }
 
 document.getElementById('performanceBtn').addEventListener('click', async () => {
+  if (!requireAuthOrPrompt()) return;
   pushNavSnapshot();
   showPerformanceDashboard();
   updateGlobalBackButton();
@@ -1434,6 +1684,182 @@ document.getElementById('performanceBtn').addEventListener('click', async () => 
     show('performanceEmptyState');
     hide('performanceContent');
   }
+});
+
+// ---------- تبويبات شاشة الأداء (الأداء / الأرشيف / الأصدقاء) ----------
+document.querySelectorAll('.perf-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.perf-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('perfTabPanelStats').classList.toggle('hidden', btn.dataset.tab !== 'stats');
+    document.getElementById('perfTabPanelArchive').classList.toggle('hidden', btn.dataset.tab !== 'archive');
+    document.getElementById('perfTabPanelFriends').classList.toggle('hidden', btn.dataset.tab !== 'friends');
+    if (btn.dataset.tab === 'archive') loadArchive();
+    if (btn.dataset.tab === 'friends') loadFriends();
+  });
+});
+
+async function loadArchive() {
+  try {
+    const res = await fetch(`${API_BASE}/api/sessions`, {
+      headers: { 'Authorization': `Bearer ${currentAccessToken}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    renderArchive(data.sessions || []);
+  } catch (err) {
+    document.getElementById('archiveList').innerHTML = '';
+  }
+}
+
+function renderArchive(sessions) {
+  if (!sessions.length) {
+    show('archiveEmptyState');
+    document.getElementById('archiveList').innerHTML = '';
+    return;
+  }
+  hide('archiveEmptyState');
+  document.getElementById('archiveList').innerHTML = sessions.map(s => {
+    const typeLabel = s.room_type === 'classroom' ? '🖍️ كلاس مباشر' : '👥 غرفة جماعية';
+    const date = s.created_at ? new Date(s.created_at).toLocaleDateString('ar-SA') : '';
+    const names = (s.participants || []).map(p => p.name).filter(Boolean).join('، ');
+    return `
+      <div class="archive-row" style="flex-direction:column; align-items:flex-start;">
+        <div style="display:flex; justify-content:space-between; width:100%;">
+          <strong>${typeLabel} — ${s.room_code}</strong>
+          <span class="desc">${date}</span>
+        </div>
+        <span class="desc">المضيف: ${s.host_name || 'غير معروف'}</span>
+        <span class="desc">المشاركين: ${names || 'لا أحد'}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+// ---------- الأصدقاء ----------
+async function loadFriends() {
+  try {
+    const res = await fetch(`${API_BASE}/api/friends`, {
+      headers: { 'Authorization': `Bearer ${currentAccessToken}` },
+    });
+    const data = await res.json();
+    renderFriendsList(data.friends || []);
+  } catch { /* تجاهل */ }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/friends/requests`, {
+      headers: { 'Authorization': `Bearer ${currentAccessToken}` },
+    });
+    const data = await res.json();
+    renderFriendRequests(data.incoming || []);
+  } catch { /* تجاهل */ }
+}
+
+function renderFriendsList(friends) {
+  const container = document.getElementById('friendsList');
+  if (!friends.length) {
+    container.innerHTML = `<p class="desc">ما ضفت أصدقاء لحد الحين</p>`;
+    return;
+  }
+  container.innerHTML = friends.map(f => `
+    <div class="friend-row">
+      <span class="name">${f.username}</span>
+      <button class="ghost remove-friend-btn" data-id="${f.user_id}" style="padding:5px 10px; font-size:12px;">🗑️ إزالة</button>
+    </div>
+  `).join('');
+  container.querySelectorAll('.remove-friend-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('متأكد تبي تحذف هذا الصديق؟')) return;
+      await fetch(`${API_BASE}/api/friends/${btn.dataset.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${currentAccessToken}` },
+      }).catch(() => {});
+      loadFriends();
+    });
+  });
+}
+
+function renderFriendRequests(incoming) {
+  const container = document.getElementById('friendRequestsList');
+  if (!incoming.length) {
+    container.innerHTML = `<p class="desc">ما فيه طلبات جديدة</p>`;
+    return;
+  }
+  container.innerHTML = incoming.map(r => `
+    <div class="friend-request-row">
+      <span class="name">${r.username}</span>
+      <div style="display:flex; gap:6px;">
+        <button class="primary accept-friend-btn" data-id="${r.id}" style="padding:5px 12px; font-size:12px;">✅ قبول</button>
+        <button class="ghost reject-friend-btn" data-id="${r.id}" style="padding:5px 12px; font-size:12px;">❌ رفض</button>
+      </div>
+    </div>
+  `).join('');
+  container.querySelectorAll('.accept-friend-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await fetch(`${API_BASE}/api/friends/accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentAccessToken}` },
+        body: JSON.stringify({ request_id: parseInt(btn.dataset.id, 10) }),
+      }).catch(() => {});
+      loadFriends();
+    });
+  });
+  container.querySelectorAll('.reject-friend-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await fetch(`${API_BASE}/api/friends/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentAccessToken}` },
+        body: JSON.stringify({ request_id: parseInt(btn.dataset.id, 10) }),
+      }).catch(() => {});
+      loadFriends();
+    });
+  });
+}
+
+document.getElementById('friendSearchBtn').addEventListener('click', async () => {
+  const q = document.getElementById('friendSearchInput').value.trim();
+  const container = document.getElementById('friendSearchResults');
+  if (!q) { container.innerHTML = ''; return; }
+  try {
+    const res = await fetch(`${API_BASE}/api/friends/search?q=${encodeURIComponent(q)}`, {
+      headers: { 'Authorization': `Bearer ${currentAccessToken}` },
+    });
+    const data = await res.json();
+    const results = data.results || [];
+    if (!results.length) {
+      container.innerHTML = `<p class="desc">ما فيه نتائج</p>`;
+      return;
+    }
+    container.innerHTML = results.map(u => `
+      <div class="friend-row">
+        <span class="name">${u.username}</span>
+        <button class="ghost add-friend-btn" data-id="${u.user_id}" style="padding:5px 10px; font-size:12px;">➕ إضافة</button>
+      </div>
+    `).join('');
+    container.querySelectorAll('.add-friend-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        try {
+          const r = await fetch(`${API_BASE}/api/friends/request`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentAccessToken}` },
+            body: JSON.stringify({ to_user_id: btn.dataset.id }),
+          });
+          const d = await r.json();
+          if (!r.ok) throw new Error(d.error);
+          btn.textContent = '✅ تم الإرسال';
+        } catch (err) {
+          btn.disabled = false;
+          alert(err.message || 'تعذر إرسال الطلب');
+        }
+      });
+    });
+  } catch {
+    container.innerHTML = `<p class="desc">صار خطأ بالبحث</p>`;
+  }
+});
+document.getElementById('friendSearchInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('friendSearchBtn').click();
 });
 
 // ---------- مكتبة الكتب الشخصية ----------
@@ -1503,6 +1929,7 @@ async function loadLibraryManageScreen() {
 }
 
 document.getElementById('sidebarLibraryBtn').addEventListener('click', () => {
+  if (!requireAuthOrPrompt()) return;
   pushNavSnapshot();
   showLibraryScreen();
   updateGlobalBackButton();
@@ -1695,6 +2122,7 @@ function renderPerformance(data) {
   document.getElementById('statAvg').textContent =
     `${Math.round(scores.reduce((s, v) => s + v, 0) / scores.length)}%`;
   document.getElementById('statBest').textContent = `${Math.max(...scores)}%`;
+  document.getElementById('statStudyMinutes').textContent = data.total_study_minutes || 0;
 
   renderTrendChart(scores);
   renderWeakTopics(weakTopics);
@@ -1765,6 +2193,8 @@ function renderWeakTopics(weakTopics) {
 }
 
 // ---------- اختيار الوضع ----------
+let roomKind = 'quiz'; // 'quiz' | 'classroom' - يحدد نوع الغرفة اللي راح تُنشأ/تُنضم
+
 document.getElementById('modeSoloBtn').addEventListener('click', () => {
   pushNavSnapshot();
   appMode = 'solo';
@@ -1775,12 +2205,25 @@ document.getElementById('modeSoloBtn').addEventListener('click', () => {
   loadUploadLibraryPicker();
 });
 
-document.getElementById('modeRoomBtn').addEventListener('click', () => {
+function openRoomModeSelect(kind) {
+  roomKind = kind;
+  const isClassroom = kind === 'classroom';
+  document.getElementById('roomModeSelectLabel').textContent = isClassroom ? '🖍️ كلاس مباشر' : '👥 غرفة جماعية';
+  document.getElementById('roomModeSelectHeading').textContent = isClassroom ? 'وش تبي تسوي بالكلاس؟' : 'وش تبي تسوي بالغرفة؟';
+  document.getElementById('roomCreateFormLabel').textContent = isClassroom ? '➕ إنشاء كلاس' : '➕ إنشاء غرفة';
+  document.getElementById('roomCreateFormHeading').textContent = isClassroom
+    ? 'اكتب اسمك (بصفتك المدرس)' : 'اكتب اسمك (بصفتك مضيف الغرفة)';
+  document.getElementById('roomCreateFormDesc').textContent = isClassroom
+    ? 'أنت اللي تشرح على السبورة وتتحكم بالحصة' : 'أنت اللي بترفع الملف وتولّد الاختبار وتبدأه لباقي الطلاب';
+
   pushNavSnapshot();
   hide('mode-select');
   show('room-mode-select');
   updateGlobalBackButton();
-});
+}
+
+document.getElementById('modeRoomBtn').addEventListener('click', () => openRoomModeSelect('quiz'));
+document.getElementById('modeClassroomBtn').addEventListener('click', () => openRoomModeSelect('classroom'));
 
 document.getElementById('roomCreateChooseBtn').addEventListener('click', () => {
   pushNavSnapshot();
@@ -1803,13 +2246,17 @@ document.getElementById('hostCreateBtn').addEventListener('click', async () => {
   if (!name) { showError('roomCreateError', 'لازم تكتب اسمك'); return; }
 
   try {
-    const res = await fetch(`${API_BASE}/api/room/create`, { method: 'POST' });
+    const res = await fetch(`${API_BASE}/api/room/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ room_type: roomKind }),
+    });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'تعذر إنشاء الغرفة');
 
     myName = name;
     joinErrorTarget = 'roomCreateError';
-    socket.emit('join_room', { room_code: data.room_code, name, client_id: clientId });
+    socket.emit('join_room', { room_code: data.room_code, name, client_id: clientId, token: currentAccessToken });
   } catch (err) {
     showError('roomCreateError', err.message || 'صار خطأ غير متوقع');
   }
@@ -1823,7 +2270,7 @@ document.getElementById('joinRoomBtn').addEventListener('click', () => {
 
   myName = name;
   joinErrorTarget = 'roomJoinError';
-  socket.emit('join_room', { room_code: code, name, client_id: clientId });
+  socket.emit('join_room', { room_code: code, name, client_id: clientId, token: currentAccessToken });
 });
 
 socket.on('join_error', data => showError(joinErrorTarget, data.error));
@@ -1833,7 +2280,7 @@ socket.on('join_error', data => showError(joinErrorTarget, data.error));
 // وإلا كل رسائل الشات والتسليم بعده بترفض بصمت لأن الـ sid القديم صار ميت
 socket.on('connect', () => {
   if (currentRoomCode) {
-    socket.emit('join_room', { room_code: currentRoomCode, name: myName, client_id: clientId });
+    socket.emit('join_room', { room_code: currentRoomCode, name: myName, client_id: clientId, token: currentAccessToken });
   }
 });
 
@@ -1842,17 +2289,31 @@ socket.on('room_state', data => {
   isHost = data.is_host;
   canManageContent = data.can_manage_content;
   roomCreatedAt = data.created_at;
+  roomKind = data.room_type || 'quiz';
 
   // نسجّل خطوة تنقّل بس أول مرة يدخل الغرفة فعليًا - مو كل مرة يعيد الاتصال
   // (reconnect) بعد انقطاع نت، عشان زر الرجوع ما يتراكم بخطوات وهمية
-  const enteringRoomForFirstTime = document.getElementById('step-room').classList.contains('hidden');
+  const roomScreenId = roomKind === 'classroom' ? 'step-classroom' : 'step-room';
+  const enteringRoomForFirstTime = document.getElementById(roomScreenId).classList.contains('hidden');
   if (enteringRoomForFirstTime) pushNavSnapshot();
 
   hide('mode-select'); hide('room-mode-select'); hide('room-create-form'); hide('room-join-form');
+  updateGlobalBackButton();
+
+  if (roomKind === 'classroom') {
+    hide('step-room');
+    show('step-classroom');
+    document.getElementById('classroomCodeBadge').textContent = currentRoomCode;
+    enterClassroomVoiceSlot();
+    initClassroomState(data);
+    return;
+  }
+
+  hide('step-classroom');
   show('step-room');
+  enterRoomVoiceSlot();
   document.getElementById('roomCodeBadge').textContent = currentRoomCode;
   startRoomElapsedTimer();
-  updateGlobalBackButton();
 
   if (data.quiz && !quizHasStarted) {
     // انضم بعد ما الاختبار بدأ فعليًا (حالة نادرة)، أو رجع بعد إعادة اتصال ولسا
@@ -1880,6 +2341,242 @@ function startRoomElapsedTimer() {
     document.getElementById('roomElapsedTimer').textContent = `⏱️ الغرفة مفتوحة من: ${formatTime(elapsed)}`;
   }, 1000);
 }
+
+// ---------- الكلاس المباشر (سبورة + رفع يد + لفة حظ + كتم) ----------
+let classCurrentlyStarted = false;
+let classroomRaisedHandIds = [];
+let classroomParticipantsCache = [];
+let classroomCtx = null;
+let classroomDrawing = false;
+let classroomCurrentColor = '#1B2A4A';
+let classroomErasing = false;
+let classroomBoardStrokes = [];
+let handRaised = false;
+let luckyDrawSpinIntervalId = null;
+
+function enterClassroomVoiceSlot() {
+  const slot = document.getElementById('classroomVoiceSlot');
+  const box = document.getElementById('voiceChatBox');
+  if (box.parentElement !== slot) slot.appendChild(box);
+}
+function enterRoomVoiceSlot() {
+  const slot = document.getElementById('participantsSection');
+  const box = document.getElementById('voiceChatBox');
+  if (box.parentElement !== slot) slot.insertBefore(box, document.getElementById('inQuizNote'));
+}
+
+function initClassroomState(data) {
+  classCurrentlyStarted = !!data.class_started;
+  classroomBoardStrokes = data.board_strokes || [];
+  classroomRaisedHandIds = data.raised_hands || [];
+  handRaised = classroomRaisedHandIds.includes(clientId);
+
+  const isTeacher = canManageContent;
+  document.getElementById('startClassBtn').classList.toggle('hidden', !isTeacher || classCurrentlyStarted);
+  document.getElementById('classroomWaiting').classList.toggle('hidden', isTeacher || classCurrentlyStarted);
+  document.getElementById('classroomBoardArea').classList.toggle('hidden', !classCurrentlyStarted);
+  document.getElementById('classroomTeacherToolbar').classList.toggle('hidden', !isTeacher);
+  document.getElementById('raiseHandBtn').classList.toggle('hidden', isTeacher);
+  document.getElementById('raiseHandBtn').textContent = handRaised ? '🙅 إنزال الإيد' : '🙋 رفع الإيد';
+  document.getElementById('luckyDrawSection').classList.toggle('hidden', !isTeacher);
+  hide('luckyDrawDisplay');
+
+  if (classCurrentlyStarted) setupClassroomCanvas();
+  renderRaisedHands();
+}
+
+document.getElementById('startClassBtn').addEventListener('click', () => {
+  socket.emit('start_class', { room_code: currentRoomCode });
+});
+socket.on('class_started_event', () => {
+  classCurrentlyStarted = true;
+  hide('startClassBtn');
+  hide('classroomWaiting');
+  show('classroomBoardArea');
+  setupClassroomCanvas();
+});
+
+document.getElementById('raiseHandBtn').addEventListener('click', () => {
+  handRaised = !handRaised;
+  document.getElementById('raiseHandBtn').textContent = handRaised ? '🙅 إنزال الإيد' : '🙋 رفع الإيد';
+  socket.emit('raise_hand', { room_code: currentRoomCode });
+});
+
+socket.on('hands_update', data => {
+  classroomRaisedHandIds = (data.raised || []).map(h => h.client_id);
+  (data.raised || []).forEach(h => {
+    if (!classroomParticipantsCache.find(p => p.client_id === h.client_id)) {
+      classroomParticipantsCache.push({ client_id: h.client_id, name: h.name });
+    }
+  });
+  handRaised = classroomRaisedHandIds.includes(clientId);
+  document.getElementById('raiseHandBtn').textContent = handRaised ? '🙅 إنزال الإيد' : '🙋 رفع الإيد';
+  renderRaisedHands();
+});
+
+function renderRaisedHands() {
+  const container = document.getElementById('raisedHandsList');
+  const luckyBtn = document.getElementById('luckyDrawBtn');
+  if (!classroomRaisedHandIds.length) {
+    container.innerHTML = '<p class="desc">محد رافع إيده لحد الحين</p>';
+    if (luckyBtn) luckyBtn.classList.add('hidden');
+    return;
+  }
+  if (luckyBtn && canManageContent) luckyBtn.classList.remove('hidden');
+  container.innerHTML = classroomRaisedHandIds.map(cid => {
+    const p = classroomParticipantsCache.find(x => x.client_id === cid);
+    return `<div class="hand-raised-row"><span>🙋 ${p ? p.name : 'طالب'}</span></div>`;
+  }).join('');
+}
+
+function renderClassroomParticipants(leaderboard) {
+  classroomParticipantsCache = leaderboard;
+  const container = document.getElementById('classroomParticipantsList');
+  container.innerHTML = leaderboard.map(p => `
+    <div class="leaderboard-row">
+      <span class="name">${p.name}${p.is_co_host ? ' 🔑' : ''}${p.in_voice ? ' 🎙️' : ''}${classroomRaisedHandIds.includes(p.client_id) ? ' 🙋' : ''}</span>
+      ${isHost && p.sid !== socket.id
+        ? `<button class="ghost force-mute-btn" data-sid="${p.sid}" style="padding:5px 10px; font-size:12px;">🔇 كتم</button>`
+        : ''}
+    </div>
+  `).join('');
+  container.querySelectorAll('.force-mute-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      socket.emit('force_mute_participant', { room_code: currentRoomCode, sid: btn.dataset.sid });
+    });
+  });
+  renderRaisedHands();
+}
+
+socket.on('force_muted', () => {
+  forceMuteVoiceForExam();
+  alert('المدرس كتم المايك عندك');
+});
+
+// ---------- سبورة الرسم الحر (المدرس/المفوّض له بس يرسم) ----------
+function posFromPointerEvent(e, canvas) {
+  const rect = canvas.getBoundingClientRect();
+  return [(e.clientX - rect.left) / rect.width, (e.clientY - rect.top) / rect.height];
+}
+
+function drawStroke(stroke) {
+  if (!classroomCtx) return;
+  const canvas = document.getElementById('classroomCanvas');
+  classroomCtx.strokeStyle = stroke.color;
+  classroomCtx.lineWidth = stroke.width;
+  classroomCtx.lineCap = 'round';
+  classroomCtx.lineJoin = 'round';
+  classroomCtx.beginPath();
+  stroke.points.forEach(([x, y], i) => {
+    const px = x * canvas.width, py = y * canvas.height;
+    if (i === 0) classroomCtx.moveTo(px, py); else classroomCtx.lineTo(px, py);
+  });
+  classroomCtx.stroke();
+}
+
+function redrawClassroomBoard() {
+  if (!classroomCtx) return;
+  const canvas = document.getElementById('classroomCanvas');
+  classroomCtx.fillStyle = '#ffffff';
+  classroomCtx.fillRect(0, 0, canvas.width, canvas.height);
+  classroomBoardStrokes.forEach(drawStroke);
+}
+
+function setupClassroomCanvas() {
+  const canvas = document.getElementById('classroomCanvas');
+  classroomCtx = canvas.getContext('2d');
+  redrawClassroomBoard();
+
+  if (canvas.dataset.wired) return; // نوصل أحداث الرسم مرة وحدة بس طول عمر الصفحة
+  canvas.dataset.wired = '1';
+
+  let currentStroke = null;
+  canvas.addEventListener('pointerdown', e => {
+    if (!canManageContent) return;
+    classroomDrawing = true;
+    currentStroke = {
+      points: [posFromPointerEvent(e, canvas)],
+      color: classroomErasing ? '#FFFFFF' : classroomCurrentColor,
+      width: classroomErasing ? 18 : 3,
+      mode: classroomErasing ? 'erase' : 'draw',
+    };
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!classroomDrawing || !currentStroke) return;
+    currentStroke.points.push(posFromPointerEvent(e, canvas));
+    drawStroke(currentStroke);
+  });
+  function endStroke() {
+    if (!classroomDrawing || !currentStroke) return;
+    classroomDrawing = false;
+    if (currentStroke.points.length > 1) {
+      classroomBoardStrokes.push(currentStroke);
+      socket.emit('board_stroke', { room_code: currentRoomCode, stroke: currentStroke });
+    }
+    currentStroke = null;
+  }
+  canvas.addEventListener('pointerup', endStroke);
+  canvas.addEventListener('pointerleave', endStroke);
+}
+
+socket.on('board_stroke', data => {
+  classroomBoardStrokes.push(data.stroke);
+  drawStroke(data.stroke);
+});
+socket.on('board_clear', () => {
+  classroomBoardStrokes = [];
+  redrawClassroomBoard();
+});
+
+document.querySelectorAll('.classroom-color-swatch').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.classroom-color-swatch').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    classroomCurrentColor = btn.dataset.color;
+    classroomErasing = false;
+  });
+});
+document.getElementById('classroomEraserBtn').addEventListener('click', () => { classroomErasing = true; });
+document.getElementById('classroomClearBtn').addEventListener('click', () => {
+  if (!confirm('متأكد تبي تمسح السبورة كاملة؟')) return;
+  classroomBoardStrokes = [];
+  redrawClassroomBoard();
+  socket.emit('board_clear', { room_code: currentRoomCode });
+});
+
+// ---------- لفة الحظ ----------
+document.getElementById('luckyDrawBtn').addEventListener('click', () => {
+  if (!classroomRaisedHandIds.length) return;
+  runLuckyDrawSpin();
+  socket.emit('lucky_draw', { room_code: currentRoomCode });
+});
+
+function runLuckyDrawSpin() {
+  const display = document.getElementById('luckyDrawDisplay');
+  display.classList.remove('winner');
+  show('luckyDrawDisplay');
+  const names = classroomRaisedHandIds.map(cid => {
+    const p = classroomParticipantsCache.find(x => x.client_id === cid);
+    return p ? p.name : 'طالب';
+  });
+  let i = 0;
+  clearInterval(luckyDrawSpinIntervalId);
+  luckyDrawSpinIntervalId = setInterval(() => {
+    display.textContent = '🎡 ' + names[i % names.length];
+    i++;
+  }, 100);
+}
+socket.on('lucky_draw_result', data => {
+  clearInterval(luckyDrawSpinIntervalId);
+  const display = document.getElementById('luckyDrawDisplay');
+  display.textContent = `🎉 ${data.winner_name}`;
+  display.classList.add('winner');
+  show('luckyDrawDisplay');
+});
+socket.on('lucky_draw_error', data => {
+  clearInterval(luckyDrawSpinIntervalId);
+  alert(data.error || 'تعذر سحب الفائز');
+});
 
 // ---------- لوحة الصدارة / المشاركين ----------
 const MEDALS = ['🥇', '🥈', '🥉'];
@@ -1933,8 +2630,32 @@ function renderLeaderboard(leaderboard) {
   }
 }
 socket.on('leaderboard_update', data => {
+  if (roomKind === 'classroom') {
+    renderClassroomParticipants(data.leaderboard);
+    return;
+  }
   renderLeaderboard(data.leaderboard);
   if (quizFinished && currentRoomCode) updateMyResultBox(data.leaderboard);
+});
+
+// ---------- تقييم الجلسة التلقائي (فردي وجماعي) ----------
+function ratingHtml(rating) {
+  if (!rating || !rating.stars) return '';
+  const filled = '★'.repeat(rating.stars);
+  const empty = '☆'.repeat(5 - rating.stars);
+  return `<div class="session-rating"><span class="stars">${filled}${empty}</span> ${rating.label}${rating.fast ? '<span class="fast-badge">⚡ سريع</span>' : ''}</div>`;
+}
+
+let latestRoomRating = null;
+socket.on('session_rating', data => {
+  latestRoomRating = data;
+  const box = document.getElementById('myResultBox');
+  const banner = box.querySelector('.my-result-banner');
+  if (!box.classList.contains('hidden') && banner) {
+    const existing = box.querySelector('.session-rating');
+    if (existing) existing.remove();
+    banner.insertAdjacentHTML('beforeend', ratingHtml(latestRoomRating));
+  }
 });
 
 function updateMyResultBox(leaderboard) {
@@ -1948,6 +2669,7 @@ function updateMyResultBox(leaderboard) {
       <div>نتيجتك</div>
       <div class="big">${me.score} / ${me.total}</div>
       <div>⏱️ الوقت: ${formatTime(me.time_taken)} — ترتيبك: #${myIndex + 1}</div>
+      ${ratingHtml(latestRoomRating)}
     </div>
   `;
 }
@@ -2319,6 +3041,7 @@ function handleQuizStarted(data) {
   quizFinished = false;
   quizStartTime = data.started_at;
   quizDeadline = data.started_at + data.duration_minutes * 60;
+  latestRoomRating = null;
 
   renderQuiz();
   hide('step-upload'); hide('step-text'); hide('step-chat'); hide('step-summary'); hide('hostQuizControls');
@@ -2390,6 +3113,12 @@ function finishQuiz() {
 
   const timeTaken = quizStartTime ? Math.max(0, Math.floor(Date.now() / 1000 - quizStartTime)) : 0;
 
+  const banner = document.createElement('div');
+  banner.className = 'score-banner';
+  banner.innerHTML = `<div>نتيجتك</div><div class="big">${correct} / ${quizData.length}</div><div>⏱️ الوقت المستغرق: ${formatTime(timeTaken)}</div>`;
+  document.getElementById('quizContainer').prepend(banner);
+  document.getElementById('checkBtn').disabled = true;
+
   if (currentAccessToken) {
     // تسجيل نتيجة المحاولة لتحليل الأداء - ما نكسر تجربة المستخدم لو فشل الطلب
     fetch(`${API_BASE}/api/quiz-attempt`, {
@@ -2402,7 +3131,16 @@ function finishQuiz() {
         time_taken: timeTaken,
         wrong_topics: wrongTopics,
       }),
-    }).catch(() => {});
+    })
+      .then(res => res.json())
+      .then(data => {
+        // بالجماعي التقييم يجيك عبر socket (session_rating) مربوط بحدث submit_score
+        // نفسه - هنا نعرضه بس بالفردي عشان ما يتكرر
+        if (!currentRoomCode && data && data.rating) {
+          banner.insertAdjacentHTML('beforeend', ratingHtml(data.rating));
+        }
+      })
+      .catch(() => {});
   }
 
   if (currentRoomCode) {
@@ -2413,12 +3151,6 @@ function finishQuiz() {
   } else {
     unblurAfterExam();
   }
-
-  const banner = document.createElement('div');
-  banner.className = 'score-banner';
-  banner.innerHTML = `<div>نتيجتك</div><div class="big">${correct} / ${quizData.length}</div><div>⏱️ الوقت المستغرق: ${formatTime(timeTaken)}</div>`;
-  document.getElementById('quizContainer').prepend(banner);
-  document.getElementById('checkBtn').disabled = true;
 }
 document.getElementById('checkBtn').addEventListener('click', finishQuiz);
 
@@ -2677,6 +3409,270 @@ document.getElementById('pomodoroHeader').addEventListener('click', () => {
 });
 
 updatePomodoroDisplay();
+
+// ================= QR Code (مولّد مضمّن، بدون أي خدمة خارجية) =================
+// نسخة مبسّطة ومركّزة على الصحة: يدعم إصدارات 1-5 (سعة تصل ~106 بايت) بمستوى
+// تصحيح أخطاء L وقناع (mask) ثابت رقم 0 - يكفي بالكامل لرابط انضمام قصير،
+// ويتفادى تعقيد جداول الإصدارات الكبيرة وحساب أفضل قناع (كلاهما مصدر أخطاء
+// شائع بمولّدات QR المكتوبة يدويًا، وغير ضروريين لصحة القراءة).
+const QR_EXP_TABLE = new Array(256);
+const QR_LOG_TABLE = new Array(256);
+(function () {
+  for (let i = 0; i < 8; i++) QR_EXP_TABLE[i] = 1 << i;
+  for (let i = 8; i < 256; i++) {
+    QR_EXP_TABLE[i] = QR_EXP_TABLE[i - 4] ^ QR_EXP_TABLE[i - 5] ^ QR_EXP_TABLE[i - 6] ^ QR_EXP_TABLE[i - 8];
+  }
+  for (let i = 0; i < 255; i++) QR_LOG_TABLE[QR_EXP_TABLE[i]] = i;
+})();
+function qrGlog(n) { return QR_LOG_TABLE[n]; }
+function qrGexp(n) { n = ((n % 255) + 255) % 255; return QR_EXP_TABLE[n]; }
+
+function qrPolyMultiply(a, b) {
+  const result = new Array(a.length + b.length - 1).fill(0);
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] === 0) continue;
+    for (let j = 0; j < b.length; j++) {
+      if (b[j] === 0) continue;
+      result[i + j] ^= qrGexp(qrGlog(a[i]) + qrGlog(b[j]));
+    }
+  }
+  return result;
+}
+
+function qrGeneratorPolynomial(eccCount) {
+  let poly = [1];
+  for (let i = 0; i < eccCount; i++) poly = qrPolyMultiply(poly, [1, qrGexp(i)]);
+  return poly;
+}
+
+function qrComputeEcc(dataCodewords, eccCount) {
+  const generator = qrGeneratorPolynomial(eccCount);
+  const remainder = dataCodewords.slice();
+  remainder.push(...new Array(eccCount).fill(0));
+  for (let i = 0; i < dataCodewords.length; i++) {
+    const coeff = remainder[i];
+    if (coeff === 0) continue;
+    for (let j = 0; j < generator.length; j++) {
+      remainder[i + j] ^= qrGexp(qrGlog(generator[j]) + qrGlog(coeff));
+    }
+  }
+  return remainder.slice(dataCodewords.length);
+}
+
+// [totalDataCodewords, eccCodewordsPerBlock] لكل إصدار 1-5، مستوى تصحيح L
+// (بلوك واحد بدون تجزئة - يبدأ التجزئة بإصدارات أعلى ما نحتاجها هنا)
+const QR_VERSION_INFO = {
+  1: { size: 21, dataCodewords: 19, eccCodewords: 7, capacity: 17 },
+  2: { size: 25, dataCodewords: 34, eccCodewords: 10, capacity: 32 },
+  3: { size: 29, dataCodewords: 55, eccCodewords: 15, capacity: 53 },
+  4: { size: 33, dataCodewords: 80, eccCodewords: 20, capacity: 78 },
+  5: { size: 37, dataCodewords: 108, eccCodewords: 26, capacity: 106 },
+};
+
+function qrPickVersion(byteLength) {
+  for (let v = 1; v <= 5; v++) {
+    if (byteLength <= QR_VERSION_INFO[v].capacity) return v;
+  }
+  throw new Error('نص طويل جدًا لمولّد الـ QR المضمّن');
+}
+
+function qrBuildDataCodewords(text, version) {
+  const info = QR_VERSION_INFO[version];
+  const bytes = new TextEncoder().encode(text);
+  const bits = [];
+  const pushBits = (value, len) => { for (let i = len - 1; i >= 0; i--) bits.push((value >> i) & 1); };
+
+  pushBits(0b0100, 4); // مؤشر النمط: byte mode
+  pushBits(bytes.length, 8); // عدّاد الأحرف (8 بت كافية لإصدارات 1-9)
+  bytes.forEach(b => pushBits(b, 8));
+
+  const totalBits = info.dataCodewords * 8;
+  for (let i = 0; i < 4 && bits.length < totalBits; i++) bits.push(0); // منهي (terminator)
+  while (bits.length % 8 !== 0) bits.push(0);
+
+  const codewords = [];
+  for (let i = 0; i < bits.length; i += 8) {
+    let byte = 0;
+    for (let j = 0; j < 8; j++) byte = (byte << 1) | bits[i + j];
+    codewords.push(byte);
+  }
+  const padBytes = [0xEC, 0x11];
+  let padIndex = 0;
+  while (codewords.length < info.dataCodewords) {
+    codewords.push(padBytes[padIndex % 2]);
+    padIndex++;
+  }
+  return codewords;
+}
+
+function qrIsFunctionModule(size, version, row, col) {
+  // أنماط الباحث الثلاثة (7×7) + الفاصل حولها (تقريبًا 8×8 من كل زاوية)
+  if ((row < 8 && col < 8) || (row < 8 && col >= size - 8) || (row >= size - 8 && col < 8)) return true;
+  // خطوط التوقيت (صف/عمود 6)
+  if (row === 6 || col === 6) return true;
+  // نمط المحاذاة الوحيد (إصدارات 2-5 بس، بموقع ثابت حسب الإصدار)
+  if (version >= 2) {
+    const pos = QR_VERSION_INFO[version].size - 7; // نفس موضع مركز نمط المحاذاة الوحيد بهالإصدارات
+    if (row >= pos - 2 && row <= pos + 2 && col >= pos - 2 && col <= pos + 2) return true;
+  }
+  // النقطة الداكنة الثابتة
+  if (row === size - 8 && col === 8) return true;
+  return false;
+}
+
+function qrBuildMatrix(text) {
+  const version = qrPickVersion(new TextEncoder().encode(text).length);
+  const info = QR_VERSION_INFO[version];
+  const size = info.size;
+
+  const dataCodewords = qrBuildDataCodewords(text, version);
+  const eccCodewords = qrComputeEcc(dataCodewords, info.eccCodewords);
+  const allCodewords = dataCodewords.concat(eccCodewords);
+
+  const modules = Array.from({ length: size }, () => new Array(size).fill(null));
+
+  const setFinder = (r, c) => {
+    for (let i = -1; i <= 7; i++) {
+      for (let j = -1; j <= 7; j++) {
+        const rr = r + i, cc = c + j;
+        if (rr < 0 || rr >= size || cc < 0 || cc >= size) continue;
+        const inRing = i === -1 || i === 7 || j === -1 || j === 7;
+        const inCore = i >= 1 && i <= 5 && j >= 1 && j <= 5;
+        const inOuter = i >= 0 && i <= 6 && j >= 0 && j <= 6;
+        modules[rr][cc] = inOuter && !inRing ? (inCore ? 1 : 0) : (inRing ? 0 : 0);
+      }
+    }
+    for (let i = 0; i <= 6; i++) {
+      for (let j = 0; j <= 6; j++) {
+        const onBorder = i === 0 || i === 6 || j === 0 || j === 6;
+        const inCore = i >= 2 && i <= 4 && j >= 2 && j <= 4;
+        modules[r + i][c + j] = (onBorder || inCore) ? 1 : 0;
+      }
+    }
+  };
+  setFinder(0, 0);
+  setFinder(0, size - 7);
+  setFinder(size - 7, 0);
+
+  // خطوط التوقيت
+  for (let i = 8; i < size - 8; i++) {
+    modules[6][i] = i % 2 === 0 ? 1 : 0;
+    modules[i][6] = i % 2 === 0 ? 1 : 0;
+  }
+
+  // نمط المحاذاة الوحيد (إصدارات 2-5)
+  if (version >= 2) {
+    const pos = size - 7;
+    for (let i = -2; i <= 2; i++) {
+      for (let j = -2; j <= 2; j++) {
+        const onBorder = i === -2 || i === 2 || j === -2 || j === 2;
+        modules[pos + i][pos + j] = (onBorder || (i === 0 && j === 0)) ? 1 : 0;
+      }
+    }
+  }
+
+  // النقطة الداكنة الثابتة
+  modules[size - 8][8] = 1;
+
+  // حجز خانات معلومات التنسيق (تُملأ لاحقًا)
+  for (let i = 0; i <= 8; i++) {
+    if (modules[8][i] === null) modules[8][i] = -1;
+    if (modules[i][8] === null) modules[i][8] = -1;
+  }
+  for (let i = 0; i < 8; i++) {
+    if (modules[8][size - 1 - i] === null) modules[8][size - 1 - i] = -1;
+    if (modules[size - 1 - i][8] === null) modules[size - 1 - i][8] = -1;
+  }
+
+  // توزيع بتات البيانات بالتعرّج المعتاد (من اليمين لليسار، عمودين عمودين،
+  // بالتناوب بين اتجاه لأعلى ولأسفل، مع تخطي عمود التوقيت رقم 6)
+  const allBits = [];
+  allCodewords.forEach(byte => { for (let i = 7; i >= 0; i--) allBits.push((byte >> i) & 1); });
+  let bitIndex = 0;
+  let col = size - 1;
+  let goingUp = true;
+  while (col > 0) {
+    if (col === 6) col--; // نتخطى عمود التوقيت
+    for (let k = 0; k < size; k++) {
+      const row = goingUp ? size - 1 - k : k;
+      for (const c of [col, col - 1]) {
+        if (modules[row][c] !== null) continue; // خانة وظيفية/محجوزة
+        const bit = bitIndex < allBits.length ? allBits[bitIndex] : 0;
+        bitIndex++;
+        // قناع ثابت رقم 0: (row+col) زوجي => قلب البت
+        modules[row][c] = (row + c) % 2 === 0 ? (bit ^ 1) : bit;
+      }
+    }
+    goingUp = !goingUp;
+    col -= 2;
+  }
+
+  // معلومات التنسيق: مستوى التصحيح L (بتات "01") + رقم القناع 0 ("000")
+  const formatData = 0b01000; // 5 بتات: [ECC=01][mask=000]
+  let gen = 0b10100110111; // مولّد BCH(15,5) المعياري لمعلومات التنسيق
+  let temp = formatData << 10;
+  for (let i = 14; i >= 10; i--) {
+    if ((temp >> i) & 1) temp ^= gen << (i - 10);
+  }
+  let format = ((formatData << 10) | temp) ^ 0b101010000010010; // قناع معلومات التنسيق الثابت
+
+  // ترتيب توزيع بتات معلومات التنسيق (البت i=0 هو الأقل أهمية) - يطابق
+  // بالضبط آلية وضعها القياسية حول الباحثين (عمودي حول اليسار، أفقي حول الأعلى)
+  for (let i = 0; i < 15; i++) {
+    const bit = (format >> i) & 1;
+    if (i < 6) modules[i][8] = bit;
+    else if (i < 8) modules[i + 1][8] = bit;
+    else modules[size - 15 + i][8] = bit;
+  }
+  for (let i = 0; i < 15; i++) {
+    const bit = (format >> i) & 1;
+    if (i < 8) modules[8][size - i - 1] = bit;
+    else if (i < 9) modules[8][15 - i - 1 + 1] = bit;
+    else modules[8][15 - i - 1] = bit;
+  }
+
+  // النقطة الداكنة الثابتة تبقى 1 حتى لو انكتبت فوقها بالخطأ أعلاه
+  modules[size - 8][8] = 1;
+
+  return modules.map(row => row.map(v => v === 1));
+}
+
+function renderQrToCanvas(text, container) {
+  const matrix = qrBuildMatrix(text);
+  const size = matrix.length;
+  const QUIET_ZONE = 4; // هامش أبيض إلزامي حول رمز QR - بدونه أغلب الماسحات ما تكتشفه
+  const moduleSize = Math.max(2, Math.floor(220 / (size + QUIET_ZONE * 2)));
+  const px = moduleSize * (size + QUIET_ZONE * 2);
+  container.innerHTML = '';
+  const canvas = document.createElement('canvas');
+  canvas.width = px; canvas.height = px;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, px, px);
+  ctx.fillStyle = '#000000';
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      if (matrix[r][c]) {
+        ctx.fillRect((c + QUIET_ZONE) * moduleSize, (r + QUIET_ZONE) * moduleSize, moduleSize, moduleSize);
+      }
+    }
+  }
+  container.appendChild(canvas);
+}
+
+function openQrModal(roomCode) {
+  const url = `${location.origin}${location.pathname}?join=${roomCode}`;
+  try {
+    renderQrToCanvas(url, document.getElementById('qrCanvasContainer'));
+    document.getElementById('qrRoomCodeText').textContent = `كود الغرفة: ${roomCode}`;
+    show('qrModal');
+  } catch (err) {
+    alert('تعذر توليد رمز QR');
+  }
+}
+document.getElementById('showQrBtn').addEventListener('click', () => openQrModal(currentRoomCode));
+document.getElementById('showQrBtnClassroom').addEventListener('click', () => openQrModal(currentRoomCode));
+document.getElementById('qrModalCloseBtn').addEventListener('click', () => hide('qrModal'));
 </script>
 </body>
 </html>

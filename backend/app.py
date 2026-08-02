@@ -9,6 +9,7 @@ from flask_cors import CORS
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from functools import wraps
 from collections import Counter
+from datetime import datetime, timezone
 import os
 import random
 import time
@@ -317,23 +318,77 @@ def site_help():
         return jsonify({"error": str(e)}), 500
 
 
+# ---------- تقييم تلقائي للجلسة + حساب سلسلة الأيام المتتالية ----------
+# صيغة حتمية بسيطة (مو استدعاء ذكاء اصطناعي) بناءً على نسبة الدرجة والوقت المستغرق
+def compute_session_rating(score, total, time_taken):
+    if not total:
+        return {"stars": 0, "label": "", "fast": False}
+    pct = score / total
+    if pct >= 0.9:
+        stars, label = 5, "ممتاز! 🌟"
+    elif pct >= 0.75:
+        stars, label = 4, "جيد جدًا 👏"
+    elif pct >= 0.6:
+        stars, label = 3, "جيد 🙂"
+    elif pct >= 0.4:
+        stars, label = 2, "يحتاج مراجعة 📖"
+    else:
+        stars, label = 1, "راجع الملخص مرة ثانية 💪"
+
+    # وقت متوقع تقريبي: دقيقة لكل سؤال - لو أسرع بوضوح مع درجة كويسة، شارة "سريع"
+    expected_seconds = total * 60
+    fast = bool(time_taken) and time_taken < expected_seconds * 0.6 and pct >= 0.6
+
+    return {"stars": stars, "label": label, "fast": fast}
+
+
+# ساعات المذاكرة والستريك محسوبة من quiz_attempts الموجودة أصلًا، بدون جدول
+# منفصل - يمنع أي تضارب بين عداد مخزّن والبيانات الفعلية
+def compute_streak(dates_iso):
+    days = set()
+    for d in dates_iso:
+        try:
+            days.add(datetime.fromisoformat(d.replace("Z", "+00:00")).date())
+        except Exception:
+            continue
+    if not days:
+        return 0, 0
+
+    sorted_days = sorted(days)
+    longest = 1
+    run = 1
+    for i in range(1, len(sorted_days)):
+        diff = (sorted_days[i] - sorted_days[i - 1]).days
+        run = run + 1 if diff == 1 else 1
+        longest = max(longest, run)
+
+    today = datetime.now(timezone.utc).date()
+    gap = (today - sorted_days[-1]).days
+    current = run if gap <= 1 else 0
+    return current, longest
+
+
 # ---------- تسجيل نتائج الاختبار وتحليل نقاط الضعف (حسابات اختيارية) ----------
 @app.route("/api/quiz-attempt", methods=["POST"])
 @require_auth
 def record_quiz_attempt():
     data = request.get_json()
+    score = data.get("score", 0)
+    total = data.get("total", 0)
+    time_taken = data.get("time_taken", 0)
     try:
         supabase_admin.table("quiz_attempts").insert(
             {
                 "user_id": request.user_id,
                 "mode": data.get("mode", "solo"),
-                "score": data.get("score", 0),
-                "total": data.get("total", 0),
-                "time_taken": data.get("time_taken", 0),
+                "score": score,
+                "total": total,
+                "time_taken": time_taken,
                 "wrong_topics": data.get("wrong_topics", []),
             }
         ).execute()
-        return jsonify({"ok": True}), 200
+        rating = compute_session_rating(score, total, time_taken)
+        return jsonify({"ok": True, "rating": rating}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -352,15 +407,32 @@ def get_performance():
         attempts = res.data
 
         topic_counter = Counter()
+        total_minutes = 0.0
         for attempt in attempts:
             for topic in attempt.get("wrong_topics") or []:
                 topic_counter[topic] += 1
+            time_taken = attempt.get("time_taken") or 0
+            total_minutes += time_taken / 60
+            if attempt.get("total") and attempt.get("score") == attempt.get("total"):
+                total_minutes += 60  # بونص ساعة كاملة لكل اختبار بدرجة كاملة
         weak_topics = [
             {"topic": topic, "count": count}
             for topic, count in topic_counter.most_common(10)
         ]
 
-        return jsonify({"attempts": attempts, "weak_topics": weak_topics}), 200
+        current_streak, longest_streak = compute_streak(
+            [a["created_at"] for a in attempts if a.get("created_at")]
+        )
+
+        return jsonify(
+            {
+                "attempts": attempts,
+                "weak_topics": weak_topics,
+                "total_study_minutes": round(total_minutes),
+                "current_streak": current_streak,
+                "longest_streak": longest_streak,
+            }
+        ), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -465,6 +537,216 @@ def delete_library_book(book_id):
         return jsonify({"error": str(e)}), 500
 
 
+# ---------- ملف تعريف الطالب (username قابل للبحث - يخدم ميزة الأصدقاء) ----------
+@app.route("/api/profile/sync", methods=["POST"])
+@require_auth
+def sync_profile():
+    data = request.get_json()
+    username = (data.get("username") or "").strip()
+    if not username:
+        return jsonify({"error": "لازم اسم مستخدم"}), 400
+
+    try:
+        supabase_admin.table("profiles").upsert(
+            {"user_id": request.user_id, "username": username}
+        ).execute()
+        return jsonify({"ok": True}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------- نظام الأصدقاء ----------
+@app.route("/api/friends/search", methods=["GET"])
+@require_auth
+def search_friends():
+    q = (request.args.get("q") or "").strip()
+    if not q:
+        return jsonify({"results": []}), 200
+    try:
+        res = (
+            supabase_admin.table("profiles")
+            .select("user_id, username")
+            .ilike("username", f"%{q}%")
+            .neq("user_id", request.user_id)
+            .limit(20)
+            .execute()
+        )
+        return jsonify({"results": res.data}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/friends/request", methods=["POST"])
+@require_auth
+def send_friend_request():
+    data = request.get_json()
+    to_user_id = data.get("to_user_id")
+    if not to_user_id or to_user_id == request.user_id:
+        return jsonify({"error": "مستخدم غير صالح"}), 400
+
+    try:
+        existing = (
+            supabase_admin.table("friend_requests")
+            .select("id")
+            .or_(
+                f"and(sender_id.eq.{request.user_id},receiver_id.eq.{to_user_id}),"
+                f"and(sender_id.eq.{to_user_id},receiver_id.eq.{request.user_id})"
+            )
+            .execute()
+        )
+        if existing.data:
+            return jsonify({"error": "فيه طلب أو صداقة موجودة أصلًا"}), 400
+
+        supabase_admin.table("friend_requests").insert(
+            {"sender_id": request.user_id, "receiver_id": to_user_id, "status": "pending"}
+        ).execute()
+        return jsonify({"ok": True}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/friends/requests", methods=["GET"])
+@require_auth
+def list_friend_requests():
+    try:
+        incoming = (
+            supabase_admin.table("friend_requests")
+            .select("id, sender_id, created_at")
+            .eq("receiver_id", request.user_id)
+            .eq("status", "pending")
+            .execute()
+        ).data
+        outgoing = (
+            supabase_admin.table("friend_requests")
+            .select("id, receiver_id, created_at")
+            .eq("sender_id", request.user_id)
+            .eq("status", "pending")
+            .execute()
+        ).data
+
+        other_ids = [r["sender_id"] for r in incoming] + [r["receiver_id"] for r in outgoing]
+        names = {}
+        if other_ids:
+            profiles_res = (
+                supabase_admin.table("profiles").select("user_id, username").in_("user_id", other_ids).execute()
+            )
+            names = {p["user_id"]: p["username"] for p in profiles_res.data}
+
+        for r in incoming:
+            r["username"] = names.get(r["sender_id"], "طالب")
+        for r in outgoing:
+            r["username"] = names.get(r["receiver_id"], "طالب")
+
+        return jsonify({"incoming": incoming, "outgoing": outgoing}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/friends/accept", methods=["POST"])
+@require_auth
+def accept_friend_request():
+    data = request.get_json()
+    request_id = data.get("request_id")
+    try:
+        res = (
+            supabase_admin.table("friend_requests")
+            .update({"status": "accepted"})
+            .eq("id", request_id)
+            .eq("receiver_id", request.user_id)
+            .execute()
+        )
+        if not res.data:
+            return jsonify({"error": "الطلب مو موجود"}), 404
+        return jsonify({"ok": True}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/friends/reject", methods=["POST"])
+@require_auth
+def reject_friend_request():
+    data = request.get_json()
+    request_id = data.get("request_id")
+    try:
+        supabase_admin.table("friend_requests").delete().eq("id", request_id).eq(
+            "receiver_id", request.user_id
+        ).execute()
+        return jsonify({"ok": True}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/friends", methods=["GET"])
+@require_auth
+def list_friends():
+    try:
+        as_sender = (
+            supabase_admin.table("friend_requests")
+            .select("id, receiver_id")
+            .eq("sender_id", request.user_id)
+            .eq("status", "accepted")
+            .execute()
+        ).data
+        as_receiver = (
+            supabase_admin.table("friend_requests")
+            .select("id, sender_id")
+            .eq("receiver_id", request.user_id)
+            .eq("status", "accepted")
+            .execute()
+        ).data
+
+        friend_ids = [r["receiver_id"] for r in as_sender] + [r["sender_id"] for r in as_receiver]
+        names = {}
+        if friend_ids:
+            profiles_res = (
+                supabase_admin.table("profiles").select("user_id, username").in_("user_id", friend_ids).execute()
+            )
+            names = {p["user_id"]: p["username"] for p in profiles_res.data}
+
+        friends = [{"user_id": fid, "username": names.get(fid, "طالب")} for fid in friend_ids]
+        return jsonify({"friends": friends}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/friends/<friend_user_id>", methods=["DELETE"])
+@require_auth
+def remove_friend(friend_user_id):
+    try:
+        supabase_admin.table("friend_requests").delete().eq("status", "accepted").or_(
+            f"and(sender_id.eq.{request.user_id},receiver_id.eq.{friend_user_id}),"
+            f"and(sender_id.eq.{friend_user_id},receiver_id.eq.{request.user_id})"
+        ).execute()
+        return jsonify({"ok": True}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------- أرشيف الجلسات الجماعية/الكلاسات المنتهية ----------
+@app.route("/api/sessions", methods=["GET"])
+@require_auth
+def list_sessions():
+    try:
+        hosted = (
+            supabase_admin.table("session_archive")
+            .select("*")
+            .eq("host_user_id", request.user_id)
+            .execute()
+        ).data
+        attended = (
+            supabase_admin.table("session_archive")
+            .select("*")
+            .contains("participant_user_ids", [request.user_id])
+            .execute()
+        ).data
+
+        merged = {row["id"]: row for row in hosted + attended}
+        sessions = sorted(merged.values(), key=lambda r: r.get("created_at") or "", reverse=True)
+        return jsonify({"sessions": sessions}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # ---------- غرفة المذاكرة الجماعية (Real-time) ----------
 # تخزين الغرف بالذاكرة، كافي لمشروع تخرج بدون قاعدة بيانات.
 # الغرفة تُبنى فاضية أول شي (بدون اختبار)، أول من ينضم يصير الهوست، وهو اللي
@@ -472,13 +754,22 @@ def delete_library_book(book_id):
 rooms = {}
 # room_code -> {
 #   "host_sid": str | None,
+#   "host_client_id": str | None,
+#   "host_name": str | None,
 #   "created_at": float,
+#   "room_type": "quiz" | "classroom",
 #   "quiz": list | None,
 #   "quiz_started_at": float | None,
 #   "duration_minutes": float | None,
 #   "co_host_client_ids": [str],  # منضمين منحهم الهوست صلاحية الرفع/التوليد/البدء
 #   "voice_participants": {sid},  # مشاركين متصلين بالصوت الجماعي حاليًا
-#   "participants": {sid: {"name", "score", "total", "finished", "time_taken"}},
+#   "muted_client_ids": {str},    # طلاب كتمهم المدرس إجباريًا (كلاس)
+#   "raised_hands": [client_id],  # بترتيب الرفع (كلاس)
+#   "board_strokes": [stroke],    # سبورة الكلاس (تُبث للمنضمين المتأخرين)
+#   "class_started": bool,
+#   "participants": {sid: {"name", "score", "total", "finished", "time_taken", "client_id", "user_id"}},
+#   "ever_participants": {client_id: {"name", "user_id", "score", "total", "time_taken", "finished"}},
+#   # ↑ ما ينحذف عند الـ disconnect (بعكس participants) - يُستخدم لأرشفة الجلسة
 # }
 
 ROOM_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # بدون أحرف/أرقام تتشابه بالشكل
@@ -523,20 +814,29 @@ def can_manage_content(room, sid):
 
 @app.route("/api/room/create", methods=["POST"])
 def create_room():
+    data = request.get_json(silent=True) or {}
+    room_type = data.get("room_type") if data.get("room_type") in ("quiz", "classroom") else "quiz"
     room_code = generate_room_code()
     rooms[room_code] = {
         "host_sid": None,
         "host_client_id": None,
+        "host_name": None,
         "created_at": time.time(),
+        "room_type": room_type,
         "quiz": None,
         "quiz_started_at": None,
         "duration_minutes": None,
         "shared_summary": None,
         "co_host_client_ids": [],
         "voice_participants": set(),
+        "muted_client_ids": set(),
+        "raised_hands": [],
+        "board_strokes": [],
+        "class_started": False,
         "participants": {},
+        "ever_participants": {},
     }
-    return jsonify({"room_code": room_code}), 200
+    return jsonify({"room_code": room_code, "room_type": room_type}), 200
 
 
 @socketio.on("join_room")
@@ -544,6 +844,7 @@ def handle_join_room(data):
     room_code = (data.get("room_code") or "").strip().upper()
     name = (data.get("name") or "").strip()
     client_id = (data.get("client_id") or "").strip()
+    token = (data.get("token") or "").strip()
 
     if room_code not in rooms:
         emit("join_error", {"error": "الغرفة غير موجودة، تأكد من الكود"})
@@ -553,6 +854,17 @@ def handle_join_room(data):
         return
 
     room = rooms[room_code]
+
+    # ربط اختياري بحساب مسجّل - لو الطالب داخل الجلسة وهو مسجّل دخول، نربط
+    # نتيجته بحسابه (ساعات مذاكرة/ستريك/أرشيف) بدون ما نجبره على تسجيل دخول
+    user_id = None
+    if token and supabase_admin is not None:
+        try:
+            user_response = supabase_admin.auth.get_user(token)
+            if user_response and user_response.user:
+                user_id = user_response.user.id
+        except Exception:
+            user_id = None
 
     # socket.io يسوي إعادة اتصال تلقائية بعد أي انقطاع بسيط بالنت، وكل reconnect
     # يجيب sid جديد. لو نفس المتصفح (نفس client_id) يرجع ينضم، نلقى مشاركته
@@ -574,8 +886,16 @@ def handle_join_room(data):
         participant = {"name": name, "score": 0, "total": 0, "finished": False, "time_taken": 0}
 
     participant["client_id"] = client_id
+    participant["user_id"] = user_id
     join_room(room_code)
     room["participants"][request.sid] = participant
+
+    if client_id:
+        room["ever_participants"][client_id] = {
+            **room["ever_participants"].get(client_id, {}),
+            "name": name,
+            "user_id": user_id,
+        }
 
     # صفة الهوست مربوطة بـ client_id ثابت مو بالـ sid المتغيّر، عشان الهوست ما
     # يفقد صلاحياته لو النت انقطع عنده لحظيًا (الـ disconnect ينحذف قبل ما
@@ -583,20 +903,26 @@ def handle_join_room(data):
     if room["host_client_id"] is None:
         room["host_client_id"] = client_id
         room["host_sid"] = request.sid
+        room["host_name"] = name
     elif client_id and client_id == room["host_client_id"]:
         room["host_sid"] = request.sid
+        room["host_name"] = name
 
     emit(
         "room_state",
         {
             "room_code": room_code,
             "created_at": room["created_at"],
+            "room_type": room["room_type"],
             "is_host": room["host_sid"] == request.sid,
             "quiz": room["quiz"],
             "quiz_started_at": room["quiz_started_at"],
             "duration_minutes": room["duration_minutes"],
             "shared_summary": room["shared_summary"],
             "can_manage_content": can_manage_content(room, request.sid),
+            "board_strokes": room["board_strokes"],
+            "raised_hands": room["raised_hands"],
+            "class_started": room["class_started"],
         },
     )
     emit("leaderboard_update", {"leaderboard": get_leaderboard(room_code)}, to=room_code)
@@ -758,6 +1084,108 @@ def handle_kick_participant(data):
     emit("leaderboard_update", {"leaderboard": get_leaderboard(room_code)}, to=room_code)
 
 
+# ---------- الكلاس المباشر (سبورة + رفع يد + لفة حظ + كتم إجباري) ----------
+@socketio.on("start_class")
+def handle_start_class(data):
+    room_code = (data.get("room_code") or "").strip().upper()
+    if room_code not in rooms:
+        return
+    room = rooms[room_code]
+    if not can_manage_content(room, request.sid):
+        return
+    room["class_started"] = True
+    emit("class_started_event", {}, to=room_code)
+
+
+@socketio.on("raise_hand")
+def handle_raise_hand(data):
+    room_code = (data.get("room_code") or "").strip().upper()
+    if room_code not in rooms or request.sid not in rooms[room_code]["participants"]:
+        return
+    room = rooms[room_code]
+    client_id = room["participants"][request.sid].get("client_id")
+    if not client_id:
+        return
+    if client_id in room["raised_hands"]:
+        room["raised_hands"].remove(client_id)
+    else:
+        room["raised_hands"].append(client_id)
+
+    names = {p.get("client_id"): p.get("name") for p in room["participants"].values()}
+    hands = [{"client_id": cid, "name": names.get(cid, "طالب")} for cid in room["raised_hands"]]
+    emit("hands_update", {"raised": hands}, to=room_code)
+
+
+@socketio.on("board_stroke")
+def handle_board_stroke(data):
+    room_code = (data.get("room_code") or "").strip().upper()
+    stroke = data.get("stroke")
+    if room_code not in rooms or not stroke:
+        return
+    room = rooms[room_code]
+    if not can_manage_content(room, request.sid):
+        return
+    room["board_strokes"].append(stroke)
+    if len(room["board_strokes"]) > 1000:
+        room["board_strokes"] = room["board_strokes"][-1000:]
+    emit("board_stroke", {"stroke": stroke}, to=room_code, include_self=False)
+
+
+@socketio.on("board_clear")
+def handle_board_clear(data):
+    room_code = (data.get("room_code") or "").strip().upper()
+    if room_code not in rooms:
+        return
+    room = rooms[room_code]
+    if not can_manage_content(room, request.sid):
+        return
+    room["board_strokes"] = []
+    emit("board_clear", {}, to=room_code, include_self=False)
+
+
+@socketio.on("force_mute_participant")
+def handle_force_mute_participant(data):
+    room_code = (data.get("room_code") or "").strip().upper()
+    target_sid = data.get("sid")
+    if room_code not in rooms:
+        return
+    room = rooms[room_code]
+    if not can_manage_content(room, request.sid) or target_sid not in room["participants"]:
+        return
+    target_client_id = room["participants"][target_sid].get("client_id")
+    if target_client_id:
+        room["muted_client_ids"].add(target_client_id)
+    emit("force_muted", {}, to=target_sid)
+
+
+@socketio.on("lucky_draw")
+def handle_lucky_draw(data):
+    room_code = (data.get("room_code") or "").strip().upper()
+    if room_code not in rooms:
+        return
+    room = rooms[room_code]
+    if not can_manage_content(room, request.sid) or not room["raised_hands"]:
+        emit("lucky_draw_error", {"error": "ما فيه أحد رافع إيده"})
+        return
+
+    winner_client_id = random.choice(room["raised_hands"])
+    room["raised_hands"].remove(winner_client_id)
+
+    winner_name = next(
+        (p.get("name") for p in room["participants"].values() if p.get("client_id") == winner_client_id),
+        "طالب",
+    )
+    names = {p.get("client_id"): p.get("name") for p in room["participants"].values()}
+    hands = [{"client_id": cid, "name": names.get(cid, "طالب")} for cid in room["raised_hands"]]
+
+    emit(
+        "lucky_draw_result",
+        {"winner_client_id": winner_client_id, "winner_name": winner_name},
+        to=room_code,
+    )
+    emit("hands_update", {"raised": hands}, to=room_code)
+
+
 # ---------- الصوت الجماعي (WebRTC، السيرفر يسوي إشارة signaling بس) ----------
 # ما فيه أي صوت يمر على السيرفر - هذي أحداث تنسيق بس (تبادل عروض/إجابات SDP
 # ومرشحات ICE) بين المتصفحات مباشرة عبر اتصال WebRTC مباشر (mesh topology،
@@ -829,24 +1257,81 @@ def handle_submit_score(data):
     if room_code not in rooms or request.sid not in rooms[room_code]["participants"]:
         return
 
-    rooms[room_code]["participants"][request.sid].update(
-        {
-            "score": data.get("score", 0),
-            "total": data.get("total", 0),
-            "time_taken": data.get("time_taken", 0),
-            "finished": True,
-        }
+    room = rooms[room_code]
+    score = data.get("score", 0)
+    total = data.get("total", 0)
+    time_taken = data.get("time_taken", 0)
+
+    participant = room["participants"][request.sid]
+    participant.update(
+        {"score": score, "total": total, "time_taken": time_taken, "finished": True}
     )
+
+    client_id = participant.get("client_id")
+    if client_id and client_id in room["ever_participants"]:
+        room["ever_participants"][client_id].update(
+            {"score": score, "total": total, "time_taken": time_taken, "finished": True}
+        )
+
+    # لو الطالب داخل بحساب مسجّل، تنعد نتيجة الغرفة الجماعية بأدائه الشخصي
+    # (ساعات مذاكرة/ستريك/أرشيف) بنفس نمط الفردي - أفضل-جهد، ما يوقف الغرفة لو فشل
+    user_id = participant.get("user_id")
+    if user_id and supabase_admin is not None:
+        try:
+            supabase_admin.table("quiz_attempts").insert(
+                {
+                    "user_id": user_id,
+                    "mode": "room",
+                    "score": score,
+                    "total": total,
+                    "time_taken": time_taken,
+                    "wrong_topics": data.get("wrong_topics", []),
+                }
+            ).execute()
+        except Exception:
+            pass
+        emit("session_rating", compute_session_rating(score, total, time_taken), to=request.sid)
+
     emit("leaderboard_update", {"leaderboard": get_leaderboard(room_code)}, to=room_code)
 
 
 ROOM_EMPTY_GRACE_SECONDS = 30  # مهلة قبل حذف الغرفة الفاضية، عشان انقطاع نت مؤقت ما يمسحها قبل ما الكل يرجع يتصل
 
 
+def _archive_room(room_code, room):
+    """يحفظ الجلسة بالأرشيف لو صار فيها نشاط حقيقي (اختبار بدأ أو حصة بدأت) -
+    أفضل-جهد، ما توقف حذف الغرفة لو Supabase مو متاح أو فشل الإدراج."""
+    had_activity = room.get("quiz_started_at") is not None or room.get("class_started")
+    if not had_activity or supabase_admin is None:
+        return
+    try:
+        ever = room["ever_participants"]
+        participants_payload = [
+            {"name": p.get("name"), "user_id": p.get("user_id"), "score": p.get("score"),
+             "total": p.get("total"), "time_taken": p.get("time_taken"), "finished": p.get("finished")}
+            for p in ever.values()
+        ]
+        participant_user_ids = [p["user_id"] for p in ever.values() if p.get("user_id")]
+        supabase_admin.table("session_archive").insert(
+            {
+                "room_code": room_code,
+                "room_type": room.get("room_type", "quiz"),
+                "host_name": room.get("host_name"),
+                "host_user_id": ever.get(room.get("host_client_id"), {}).get("user_id"),
+                "participants": participants_payload,
+                "participant_user_ids": participant_user_ids,
+                "created_at": datetime.fromtimestamp(room["created_at"], tz=timezone.utc).isoformat(),
+            }
+        ).execute()
+    except Exception:
+        pass
+
+
 def _delete_room_if_still_empty(room_code):
     socketio.sleep(ROOM_EMPTY_GRACE_SECONDS)
     room = rooms.get(room_code)
     if room and not room["participants"]:
+        _archive_room(room_code, room)
         del rooms[room_code]
 
 

@@ -999,7 +999,7 @@
 
   <!-- أرشيف الجلسات الجماعية/الكلاسات - شاشة مستقلة (تظهر عبر زر "📂 الأرشيف" بالسايد بار) -->
   <section class="card hidden" id="step-archive">
-    <span class="step-label" data-i18n="nav_archive">📂 الأرشيف</span>
+    <span class="step-label" data-i18n="archive_step_label">📂 الأرشيف</span>
     <h2 data-i18n="archive_heading">أرشيف جلساتك الجماعية</h2>
     <p class="desc" id="archiveEmptyState" data-i18n="archive_empty">ما فيه جلسات جماعية أو كلاسات بأرشيفك لحد الحين.</p>
     <div id="archiveList"></div>
@@ -1007,7 +1007,7 @@
 
   <!-- الأصدقاء - شاشة مستقلة (تظهر عبر زر "👥 الأصدقاء" بالسايد بار) -->
   <section class="card hidden" id="step-friends">
-    <span class="step-label" data-i18n="nav_friends">👥 الأصدقاء</span>
+    <span class="step-label" data-i18n="friends_step_label">👥 الأصدقاء</span>
     <h2 data-i18n="friends_heading">أصدقاؤك</h2>
 
     <button class="ghost" id="showFriendQrBtn" data-i18n="friend_qr_btn">📱 QR يضيفك كصديق</button>
@@ -1023,13 +1023,13 @@
     <h3 class="sub-heading" style="margin-top:22px;" data-i18n="friend_requests_heading">📨 طلبات الصداقة</h3>
     <div id="friendRequestsList"><p class="desc" data-i18n="friend_requests_empty">ما فيه طلبات جديدة</p></div>
 
-    <h3 class="sub-heading" style="margin-top:22px;" data-i18n="nav_friends">👥 أصدقاؤك</h3>
+    <h3 class="sub-heading" style="margin-top:22px;" data-i18n="friends_list_subheading">👥 أصدقاؤك</h3>
     <div id="friendsList"><p class="desc" data-i18n="friends_list_empty">ما ضفت أصدقاء لحد الحين</p></div>
   </section>
 
   <!-- مكتبة الكتب الشخصية (تظهر بأي وقت للمسجّلين عبر زر "📚 مكتبتي") -->
   <section class="card hidden" id="step-library">
-    <span class="step-label" data-i18n="nav_library">📚 مكتبتي</span>
+    <span class="step-label" data-i18n="library_step_label">📚 مكتبتي</span>
     <h2 data-i18n="library_heading">مكتبة كتبك</h2>
     <p class="desc" data-i18n="library_desc">كتب حفظتها قبل - تقدر تستخدمها بأي جلسة بدون ما ترفعها من جديد</p>
 
@@ -1368,7 +1368,7 @@
 <!-- مساعد ذكيّ يشرح الموقع - يفتح من السايد بار، متاح من أي شاشة -->
 <div class="ai-help-panel hidden" id="aiHelpPanel">
   <div class="ai-help-header">
-    <span data-i18n="nav_ai_help">🤖 مساعد ذكيّ</span>
+    <span data-i18n="ai_help_panel_title">🤖 مساعد ذكيّ</span>
     <button class="ai-help-close" id="aiHelpCloseBtn">✕</button>
   </div>
   <div class="ai-help-body">
@@ -1437,16 +1437,16 @@ let currentLang = localStorage.getItem('zakiy-lang') || 'ar';
 
 const I18N = {
   ar: {
-    nav_performance: '📊 أدائي',
-    nav_archive: '📂 الأرشيف',
-    nav_friends: '👥 الأصدقاء',
-    nav_library: '📚 مكتبتي',
-    nav_ai_help: '🤖 مساعد ذكيّ',
-    nav_settings: '⚙️ الإعدادات',
-    nav_login: '🔑 تسجيل الدخول',
-    nav_logout: '🚪 تسجيل خروج',
-    nav_dark_mode: '🌙 الوضع الليلي',
-    nav_light_mode: '☀️ الوضع النهاري',
+    nav_performance: 'أدائي',
+    nav_archive: 'الأرشيف',
+    nav_friends: 'الأصدقاء',
+    nav_library: 'مكتبتي',
+    nav_ai_help: 'مساعد ذكيّ',
+    nav_settings: 'الإعدادات',
+    nav_login: 'تسجيل الدخول',
+    nav_logout: 'تسجيل خروج',
+    nav_dark_mode: 'الوضع الليلي',
+    nav_light_mode: 'الوضع النهاري',
     login_required_title: 'هذي الميزة تحتاج حساب',
     login_required_desc: 'سجل الدخول أو أنشئ حساب مجاني عشان تقدر تستخدمها',
     btn_login: 'تسجيل الدخول',
@@ -1714,18 +1714,23 @@ const I18N = {
     name_saved: 'تم حفظ الاسم',
     password_saved: 'تم تغيير كلمة المرور',
     phone_saved: 'تم حفظ رقم الجوال',
+    archive_step_label: '📂 الأرشيف',
+    friends_step_label: '👥 الأصدقاء',
+    friends_list_subheading: '👥 أصدقاؤك',
+    library_step_label: '📚 مكتبتي',
+    ai_help_panel_title: '🤖 مساعد ذكيّ',
   },
   en: {
-    nav_performance: '📊 My Performance',
-    nav_archive: '📂 Archive',
-    nav_friends: '👥 Friends',
-    nav_library: '📚 My Library',
-    nav_ai_help: '🤖 Site Assistant',
-    nav_settings: '⚙️ Settings',
-    nav_login: '🔑 Log In',
-    nav_logout: '🚪 Log Out',
-    nav_dark_mode: '🌙 Dark Mode',
-    nav_light_mode: '☀️ Light Mode',
+    nav_performance: 'My Performance',
+    nav_archive: 'Archive',
+    nav_friends: 'Friends',
+    nav_library: 'My Library',
+    nav_ai_help: 'Site Assistant',
+    nav_settings: 'Settings',
+    nav_login: 'Log In',
+    nav_logout: 'Log Out',
+    nav_dark_mode: 'Dark Mode',
+    nav_light_mode: 'Light Mode',
     login_required_title: 'This feature needs an account',
     login_required_desc: 'Log in or create a free account to use it',
     btn_login: 'Log In',
@@ -1993,6 +1998,11 @@ const I18N = {
     name_saved: 'Name saved',
     password_saved: 'Password changed',
     phone_saved: 'Phone number saved',
+    archive_step_label: '📂 Archive',
+    friends_step_label: '👥 Friends',
+    friends_list_subheading: '👥 Your Friends',
+    library_step_label: '📚 My Library',
+    ai_help_panel_title: '🤖 Site Assistant',
   },
 };
 

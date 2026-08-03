@@ -145,11 +145,22 @@ def extract_text():
         return jsonify({"error": str(e)}), 500
 
 
+# ---------- دعم تعدد اللغات لردود الذكاء الاصطناعي ----------
+# الواجهة تصير عربي/إنجليزي، فردود الذكاء الاصطناعي (تلخيص/اختبار/شات) لازم
+# تجي بنفس لغة الواجهة - نضيف توجيه صريح بالإنجليزي وقت الحاجة بدل ما نعيد
+# كتابة كل الـ prompts بلغتين
+def lang_directive(lang):
+    if lang == "en":
+        return "\n\nIMPORTANT: Write your entire response in English, regardless of the language of the content/question above."
+    return ""
+
+
 # ---------- تلخيص النص بالذكاء الاصطناعي ----------
 @app.route("/api/summarize", methods=["POST"])
 def summarize():
     data = request.get_json()
     text = data.get("text")
+    lang = data.get("lang", "ar")
 
     if not text:
         return jsonify({"error": "لازم ترسل نص"}), 400
@@ -161,6 +172,7 @@ def summarize():
                 "لخّص المحتوى التالي بشكل مرتب ونقاط واضحة باللغة العربية. "
                 "اكتب نص عادي فقط بدون أي رموز Markdown مثل ** أو ### أو #:\n\n"
                 f"{text}"
+                f"{lang_directive(lang)}"
             ),
             # thinking_level منخفض لأن التلخيص مهمة بسيطة، وتفكير الموديل يستهلك
             # من نفس حد max_output_tokens ويقدر يقطع الرد لو خليناه بالوضع الافتراضي
@@ -178,6 +190,7 @@ def generate_quiz():
     data = request.get_json()
     text = data.get("text")
     num_questions = data.get("num_questions", 5)
+    lang = data.get("lang", "ar")
 
     if not text:
         return jsonify({"error": "لازم ترسل نص"}), 400
@@ -194,6 +207,7 @@ def generate_quiz():
 
 حقل "explanation" لازم يكون سطر أو سطرين بالعربية بدون أي رموز Markdown، يشرح
 ليه الإجابة الصحيحة هي الصح (يفيد الطالب يفهم غلطه لو اختار إجابة ثانية).
+{lang_directive(lang)}
 
 المحتوى:
 {text}"""
@@ -223,13 +237,14 @@ def chat():
     interaction_id = data.get("interaction_id")
     context = data.get("context")
     name = data.get("name")
+    lang = data.get("lang", "ar")
 
     if not message:
         return jsonify({"error": "لازم ترسل رسالة"}), 400
 
     try:
         if interaction_id:
-            input_text = message
+            input_text = f"{message}{lang_directive(lang)}"
         else:
             name_line = f"اسم الطالب: {name}\n" if name else ""
             input_text = (
@@ -238,7 +253,8 @@ def chat():
                 f"{name_line}"
                 "جاوب على أسئلة الطالب المتعلقة بهذا المحتوى فقط، بوضوح واختصار "
                 "باللغة العربية، بدون رموز Markdown. لو معروف اسم الطالب خاطبه "
-                "باسمه بشكل طبيعي بردك الأول.\n\n"
+                "باسمه بشكل طبيعي بردك الأول."
+                f"{lang_directive(lang)}\n\n"
                 f"سؤال الطالب: {message}"
             )
 
@@ -292,15 +308,16 @@ def site_help():
     data = request.get_json()
     message = data.get("message")
     interaction_id = data.get("interaction_id")
+    lang = data.get("lang", "ar")
 
     if not message:
         return jsonify({"error": "لازم ترسل رسالة"}), 400
 
     try:
         if interaction_id:
-            input_text = message
+            input_text = f"{message}{lang_directive(lang)}"
         else:
-            input_text = f"{SITE_HELP_SYSTEM_PROMPT}\n\nسؤال الطالب: {message}"
+            input_text = f"{SITE_HELP_SYSTEM_PROMPT}{lang_directive(lang)}\n\nسؤال الطالب: {message}"
 
         kwargs = {
             "model": GEMINI_MODEL,

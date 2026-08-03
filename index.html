@@ -833,6 +833,9 @@
     padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px;
   }
   .friend-search-results { margin-top: 10px; }
+
+  /* ---------- زري اختيار اللغة بشاشة الإعدادات ---------- */
+  .lang-choice-btn.active { background: var(--emphasis-bg); color: var(--emphasis-text); border-color: var(--emphasis-bg); }
 </style>
 </head>
 <body>
@@ -843,21 +846,32 @@
     var saved = localStorage.getItem('zakiy-theme');
     if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
   })();
+  // نطبّق اتجاه الصفحة (rtl/ltr) المحفوظ فورًا برضو - يمنع "ومضة" انقلاب
+  // الاتجاه لو المستخدم مسبقًا اختار الإنجليزي (النص نفسه يترجم لاحقًا بالسكربت
+  // الرئيسي، بس الاتجاه العام للصفحة أهم شي نتفادى ومضته)
+  (function () {
+    var savedLang = localStorage.getItem('zakiy-lang');
+    if (savedLang === 'en') {
+      document.documentElement.setAttribute('lang', 'en');
+      document.documentElement.setAttribute('dir', 'ltr');
+    }
+  })();
 </script>
 
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">ذكيّ</div>
   <nav class="sidebar-nav">
-    <button class="sidebar-btn" id="performanceBtn"><span class="sidebar-icon">📊</span><span class="label">أدائي</span></button>
-    <button class="sidebar-btn" id="archiveBtn"><span class="sidebar-icon">📂</span><span class="label">الأرشيف</span></button>
-    <button class="sidebar-btn" id="friendsBtn"><span class="sidebar-icon">👥</span><span class="label">الأصدقاء</span></button>
-    <button class="sidebar-btn" id="sidebarLibraryBtn"><span class="sidebar-icon">📚</span><span class="label">مكتبتي</span></button>
-    <button class="sidebar-btn" id="sidebarAiHelpBtn"><span class="sidebar-icon">🤖</span><span class="label">مساعد ذكيّ</span></button>
+    <button class="sidebar-btn" id="performanceBtn"><span class="sidebar-icon">📊</span><span class="label" data-i18n="nav_performance">أدائي</span></button>
+    <button class="sidebar-btn" id="archiveBtn"><span class="sidebar-icon">📂</span><span class="label" data-i18n="nav_archive">الأرشيف</span></button>
+    <button class="sidebar-btn" id="friendsBtn"><span class="sidebar-icon">👥</span><span class="label" data-i18n="nav_friends">الأصدقاء</span></button>
+    <button class="sidebar-btn" id="sidebarLibraryBtn"><span class="sidebar-icon">📚</span><span class="label" data-i18n="nav_library">مكتبتي</span></button>
+    <button class="sidebar-btn" id="sidebarAiHelpBtn"><span class="sidebar-icon">🤖</span><span class="label" data-i18n="nav_ai_help">مساعد ذكيّ</span></button>
   </nav>
   <div class="sidebar-bottom">
-    <button class="sidebar-btn" id="guestLoginPromptBtn"><span class="sidebar-icon">🔑</span><span class="label">تسجيل الدخول</span></button>
-    <button class="sidebar-btn hidden" id="logoutBtn"><span class="sidebar-icon">🚪</span><span class="label">تسجيل خروج</span></button>
-    <button class="sidebar-btn" id="darkModeToggleBtn"><span class="sidebar-icon" id="darkModeIcon">🌙</span><span class="label" id="darkModeLabel">الوضع الليلي</span></button>
+    <button class="sidebar-btn" id="settingsBtn"><span class="sidebar-icon">⚙️</span><span class="label" data-i18n="nav_settings">الإعدادات</span></button>
+    <button class="sidebar-btn" id="guestLoginPromptBtn"><span class="sidebar-icon">🔑</span><span class="label" data-i18n="nav_login">تسجيل الدخول</span></button>
+    <button class="sidebar-btn hidden" id="logoutBtn"><span class="sidebar-icon">🚪</span><span class="label" data-i18n="nav_logout">تسجيل خروج</span></button>
+    <button class="sidebar-btn" id="darkModeToggleBtn"><span class="sidebar-icon" id="darkModeIcon">🌙</span><span class="label" id="darkModeLabel" data-i18n="nav_dark_mode">الوضع الليلي</span></button>
   </div>
 </aside>
 
@@ -865,192 +879,231 @@
   <div class="login-required-box">
     <button class="ai-help-close" id="loginRequiredCloseBtn">✕</button>
     <div style="font-size:32px;">🔒</div>
-    <h3>هذي الميزة تحتاج حساب</h3>
-    <p class="desc">سجل الدخول أو أنشئ حساب مجاني عشان تقدر تستخدمها</p>
+    <h3 data-i18n="login_required_title">هذي الميزة تحتاج حساب</h3>
+    <p class="desc" data-i18n="login_required_desc">سجل الدخول أو أنشئ حساب مجاني عشان تقدر تستخدمها</p>
     <div class="actions">
-      <button class="primary" id="loginRequiredLoginBtn">تسجيل الدخول</button>
-      <button class="ghost" id="loginRequiredSignupBtn">إنشاء حساب</button>
+      <button class="primary" id="loginRequiredLoginBtn" data-i18n="btn_login">تسجيل الدخول</button>
+      <button class="ghost" id="loginRequiredSignupBtn" data-i18n="btn_signup">إنشاء حساب</button>
     </div>
   </div>
 </div>
 
-<button class="global-back-btn hidden" id="globalBackBtn">⬅ رجوع</button>
+<button class="global-back-btn hidden" id="globalBackBtn" data-i18n="btn_back">⬅ رجوع</button>
 <div class="wrap">
 
   <header>
     <span class="logo">ذكيّ</span>
     <div style="display:flex; align-items:center; gap:10px;">
       <span class="badge hidden" id="accountBadge"></span>
-      <span class="badge">مشروع تخرج — أكاديمية طويق</span>
+      <span class="badge" data-i18n="header_project_badge">مشروع تخرج — أكاديمية طويق</span>
     </div>
   </header>
 
   <div class="hero">
-    <h1>حوّل أي ملف دراسي<br>إلى ملخص واختبار جاهز</h1>
-    <p>ارفع ملزمة أو أوراق عمل بصيغة PDF، وخلّ ذكيّ يلخصها ويحول محتواها لاختبار تفاعلي يقيس فهمك.</p>
+    <h1 data-i18n="hero_title">حوّل أي ملف دراسي<br>إلى ملخص واختبار جاهز</h1>
+    <p data-i18n="hero_desc">ارفع ملزمة أو أوراق عمل بصيغة PDF، وخلّ ذكيّ يلخصها ويحول محتواها لاختبار تفاعلي يقيس فهمك.</p>
   </div>
 
   <!-- تسجيل الدخول: الشاشة الافتراضية عند الدخول، مع إمكانية التبديل لإنشاء حساب أو المتابعة بدون حساب -->
   <section class="card auth-card" id="login-form">
     <span class="auth-logo">ذكيّ</span>
-    <h2>تسجيل الدخول</h2>
-    <p class="desc">أدخل بياناتك للمتابعة، أو سوّي حساب يحفظ تقدمك</p>
+    <h2 data-i18n="login_title">تسجيل الدخول</h2>
+    <p class="desc" data-i18n="login_desc">أدخل بياناتك للمتابعة، أو سوّي حساب يحفظ تقدمك</p>
     <div class="auth-fields">
-      <input type="email" id="loginEmail" class="text-input" placeholder="الإيميل">
-      <input type="password" id="loginPassword" class="text-input" placeholder="كلمة المرور">
+      <input type="email" id="loginEmail" class="text-input" placeholder="الإيميل" data-i18n-ph="ph_email">
+      <input type="password" id="loginPassword" class="text-input" placeholder="كلمة المرور" data-i18n-ph="ph_password">
     </div>
     <div class="auth-actions-stack">
-      <button class="primary" id="loginSubmitBtn">دخول</button>
+      <button class="primary" id="loginSubmitBtn" data-i18n="btn_enter">دخول</button>
     </div>
     <div id="loginError"></div>
     <div class="auth-switch">
-      <button class="link-btn" id="goToSignupBtn">🆕 ما عندك حساب؟ أنشئ واحد</button>
-      <button class="link-btn" id="guestFromLoginBtn">➡️ استمر بدون حساب</button>
+      <button class="link-btn" id="goToSignupBtn" data-i18n="link_go_signup">🆕 ما عندك حساب؟ أنشئ واحد</button>
+      <button class="link-btn" id="guestFromLoginBtn" data-i18n="link_continue_guest">➡️ استمر بدون حساب</button>
     </div>
   </section>
 
   <section class="card hidden auth-card" id="signup-form">
     <span class="auth-logo">ذكيّ</span>
-    <h2>إنشاء حساب جديد</h2>
-    <p class="desc">يحفظ تقدمك ويحلل نقاط ضعفك بعد كل اختبار</p>
+    <h2 data-i18n="signup_title">إنشاء حساب جديد</h2>
+    <p class="desc" data-i18n="signup_desc">يحفظ تقدمك ويحلل نقاط ضعفك بعد كل اختبار</p>
     <div class="auth-fields">
-      <input type="text" id="signupUsername" class="text-input" placeholder="الأسم الكريم">
-      <input type="email" id="signupEmail" class="text-input" placeholder="الإيميل">
-      <input type="password" id="signupPassword" class="text-input" placeholder="كلمة المرور (٦ أحرف عالأقل)">
+      <input type="text" id="signupUsername" class="text-input" placeholder="الأسم الكريم" data-i18n-ph="ph_username">
+      <input type="email" id="signupEmail" class="text-input" placeholder="الإيميل" data-i18n-ph="ph_email">
+      <input type="password" id="signupPassword" class="text-input" placeholder="كلمة المرور (٦ أحرف عالأقل)" data-i18n-ph="ph_password_signup">
     </div>
     <div class="auth-levels">
       <label>
-        المرحلة الدراسية
+        <span data-i18n="label_education_level">المرحلة الدراسية</span>
         <select id="signupEducationLevel" class="text-input">
-          <option value="ابتدائي">ابتدائي</option>
-          <option value="متوسط">متوسط</option>
-          <option value="ثانوي">ثانوي</option>
-          <option value="جامعي">جامعي</option>
+          <option value="ابتدائي" data-i18n="edu_elementary">ابتدائي</option>
+          <option value="متوسط" data-i18n="edu_middle">متوسط</option>
+          <option value="ثانوي" data-i18n="edu_high">ثانوي</option>
+          <option value="جامعي" data-i18n="edu_university">جامعي</option>
         </select>
       </label>
       <label>
-        مستواك
+        <span data-i18n="label_proficiency_level">مستواك</span>
         <select id="signupProficiencyLevel" class="text-input">
-          <option value="ضعيف">ضعيف</option>
-          <option value="متوسط">متوسط</option>
-          <option value="متمكن">متمكن</option>
-          <option value="ما ادرس">ما ادرس</option>
+          <option value="ضعيف" data-i18n="prof_weak">ضعيف</option>
+          <option value="متوسط" data-i18n="prof_medium">متوسط</option>
+          <option value="متمكن" data-i18n="prof_strong">متمكن</option>
+          <option value="ما ادرس" data-i18n="prof_not_studying">ما ادرس</option>
         </select>
       </label>
     </div>
     <div class="auth-actions-stack">
-      <button class="primary" id="signupSubmitBtn">إنشاء الحساب</button>
+      <button class="primary" id="signupSubmitBtn" data-i18n="btn_create_account">إنشاء الحساب</button>
     </div>
     <div id="signupError"></div>
     <div class="auth-switch">
-      <button class="link-btn" id="goToLoginBtn">🔑 عندك حساب؟ سجّل دخولك</button>
-      <button class="link-btn" id="guestFromSignupBtn">➡️ استمر بدون حساب</button>
+      <button class="link-btn" id="goToLoginBtn" data-i18n="link_go_login">🔑 عندك حساب؟ سجّل دخولك</button>
+      <button class="link-btn" id="guestFromSignupBtn" data-i18n="link_continue_guest">➡️ استمر بدون حساب</button>
     </div>
   </section>
 
   <!-- لوحة تحليل الأداء (تظهر بأي وقت للمسجّلين عبر زر "📊 أدائي") -->
   <section class="card hidden" id="step-performance">
     <span class="step-label">📊 أدائي</span>
-    <h2 id="performanceHeading">لوحة تحليل أدائك</h2>
+    <h2 id="performanceHeading" data-i18n="performance_heading_default">لوحة تحليل أدائك</h2>
 
-    <p class="desc" id="performanceEmptyState">لسا ما حليت أي اختبار وأنت مسجّل دخول.</p>
+    <p class="desc" id="performanceEmptyState" data-i18n="performance_empty">لسا ما حليت أي اختبار وأنت مسجّل دخول.</p>
 
     <div id="performanceContent" class="hidden">
       <div class="stat-row">
         <div class="stat-tile">
           <div class="stat-value" id="statAttempts">0</div>
-          <div class="stat-label">عدد المحاولات</div>
+          <div class="stat-label" data-i18n="stat_attempts">عدد المحاولات</div>
         </div>
         <div class="stat-tile">
           <div class="stat-value" id="statAvg">٠٪</div>
-          <div class="stat-label">متوسط الدرجة</div>
+          <div class="stat-label" data-i18n="stat_avg">متوسط الدرجة</div>
         </div>
         <div class="stat-tile">
           <div class="stat-value" id="statBest">٠٪</div>
-          <div class="stat-label">أفضل نتيجة</div>
+          <div class="stat-label" data-i18n="stat_best">أفضل نتيجة</div>
         </div>
         <div class="stat-tile study-hours">
           <div class="stat-value" id="statStudyMinutes">٠</div>
-          <div class="stat-label">⏱️ دقائق مذاكرة</div>
+          <div class="stat-label" data-i18n="stat_study_minutes">⏱️ دقائق مذاكرة</div>
         </div>
       </div>
 
-      <h3 class="sub-heading">📈 تطور درجاتك</h3>
+      <h3 class="sub-heading" data-i18n="performance_trend_heading">📈 تطور درجاتك</h3>
       <svg id="trendChart" width="100%" height="120" style="overflow:visible; margin-bottom:24px;"></svg>
 
-      <h3 class="sub-heading">🎯 نقاط تحتاج مراجعة</h3>
+      <h3 class="sub-heading" data-i18n="performance_weak_heading">🎯 نقاط تحتاج مراجعة</h3>
       <div id="weakTopicsList"></div>
     </div>
   </section>
 
   <!-- أرشيف الجلسات الجماعية/الكلاسات - شاشة مستقلة (تظهر عبر زر "📂 الأرشيف" بالسايد بار) -->
   <section class="card hidden" id="step-archive">
-    <span class="step-label">📂 الأرشيف</span>
-    <h2>أرشيف جلساتك الجماعية</h2>
-    <p class="desc" id="archiveEmptyState">ما فيه جلسات جماعية أو كلاسات بأرشيفك لحد الحين.</p>
+    <span class="step-label" data-i18n="nav_archive">📂 الأرشيف</span>
+    <h2 data-i18n="archive_heading">أرشيف جلساتك الجماعية</h2>
+    <p class="desc" id="archiveEmptyState" data-i18n="archive_empty">ما فيه جلسات جماعية أو كلاسات بأرشيفك لحد الحين.</p>
     <div id="archiveList"></div>
   </section>
 
   <!-- الأصدقاء - شاشة مستقلة (تظهر عبر زر "👥 الأصدقاء" بالسايد بار) -->
   <section class="card hidden" id="step-friends">
-    <span class="step-label">👥 الأصدقاء</span>
-    <h2>أصدقاؤك</h2>
+    <span class="step-label" data-i18n="nav_friends">👥 الأصدقاء</span>
+    <h2 data-i18n="friends_heading">أصدقاؤك</h2>
 
-    <button class="ghost" id="showFriendQrBtn">📱 QR يضيفك كصديق</button>
-    <p class="desc" style="margin-top:8px;">وريه لصديقك يمسحه بجواله، بيضيفك فورًا زي لو دوّر على اسمك بالضبط</p>
+    <button class="ghost" id="showFriendQrBtn" data-i18n="friend_qr_btn">📱 QR يضيفك كصديق</button>
+    <p class="desc" style="margin-top:8px;" data-i18n="friend_qr_desc">وريه لصديقك يمسحه بجواله، بيضيفك فورًا زي لو دوّر على اسمك بالضبط</p>
 
-    <h3 class="sub-heading" style="margin-top:22px;">🔍 دور على صديق</h3>
+    <h3 class="sub-heading" style="margin-top:22px;" data-i18n="friend_search_heading">🔍 دور على صديق</h3>
     <div class="actions">
-      <input type="text" id="friendSearchInput" class="text-input" placeholder="اسم المستخدم...">
-      <button class="ghost" id="friendSearchBtn">بحث</button>
+      <input type="text" id="friendSearchInput" class="text-input" placeholder="اسم المستخدم..." data-i18n-ph="ph_username_search">
+      <button class="ghost" id="friendSearchBtn" data-i18n="btn_search">بحث</button>
     </div>
     <div class="friend-search-results" id="friendSearchResults"></div>
 
-    <h3 class="sub-heading" style="margin-top:22px;">📨 طلبات الصداقة</h3>
-    <div id="friendRequestsList"><p class="desc">ما فيه طلبات جديدة</p></div>
+    <h3 class="sub-heading" style="margin-top:22px;" data-i18n="friend_requests_heading">📨 طلبات الصداقة</h3>
+    <div id="friendRequestsList"><p class="desc" data-i18n="friend_requests_empty">ما فيه طلبات جديدة</p></div>
 
-    <h3 class="sub-heading" style="margin-top:22px;">👥 أصدقاؤك</h3>
-    <div id="friendsList"><p class="desc">ما ضفت أصدقاء لحد الحين</p></div>
+    <h3 class="sub-heading" style="margin-top:22px;" data-i18n="nav_friends">👥 أصدقاؤك</h3>
+    <div id="friendsList"><p class="desc" data-i18n="friends_list_empty">ما ضفت أصدقاء لحد الحين</p></div>
   </section>
 
   <!-- مكتبة الكتب الشخصية (تظهر بأي وقت للمسجّلين عبر زر "📚 مكتبتي") -->
   <section class="card hidden" id="step-library">
-    <span class="step-label">📚 مكتبتي</span>
-    <h2>مكتبة كتبك</h2>
-    <p class="desc">كتب حفظتها قبل - تقدر تستخدمها بأي جلسة بدون ما ترفعها من جديد</p>
+    <span class="step-label" data-i18n="nav_library">📚 مكتبتي</span>
+    <h2 data-i18n="library_heading">مكتبة كتبك</h2>
+    <p class="desc" data-i18n="library_desc">كتب حفظتها قبل - تقدر تستخدمها بأي جلسة بدون ما ترفعها من جديد</p>
 
     <div id="libraryList"></div>
-    <p class="desc hidden" id="libraryEmptyState">مكتبتك فاضية لحد الحين - ضيف كتاب من تحت.</p>
+    <p class="desc hidden" id="libraryEmptyState" data-i18n="library_empty">مكتبتك فاضية لحد الحين - ضيف كتاب من تحت.</p>
 
-    <h3 class="sub-heading">➕ ضيف كتاب جديد</h3>
+    <h3 class="sub-heading" data-i18n="library_add_heading">➕ ضيف كتاب جديد</h3>
     <div class="dropzone" id="libraryDropzone">
       <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#5C6B7A" stroke-width="1.6"><path d="M12 16V4M12 4l-4 4M12 4l4 4M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>
-      <div class="main-text">اسحب ملف PDF هنا أو اضغط للاختيار</div>
-      <div class="sub-text">حتى 20 صفحة تقريبًا</div>
+      <div class="main-text" data-i18n="dropzone_main_text">اسحب ملف PDF هنا أو اضغط للاختيار</div>
+      <div class="sub-text" data-i18n="dropzone_sub_text">حتى 20 صفحة تقريبًا</div>
       <input type="file" id="libraryFileInput" accept="application/pdf">
     </div>
     <div class="file-chip" id="libraryFileChip">
       <span>📄</span>
       <span class="name" id="libraryFileName"></span>
-      <button class="ghost" id="libraryRemoveFile" style="padding:4px 12px;">إزالة</button>
+      <button class="ghost" id="libraryRemoveFile" style="padding:4px 12px;" data-i18n="btn_remove">إزالة</button>
     </div>
     <div class="actions">
-      <input type="text" id="libraryTitleInput" class="text-input" placeholder="اسم الكتاب بمكتبتك">
-      <button class="primary" id="libraryAddBtn" disabled>احفظ بالمكتبة</button>
+      <input type="text" id="libraryTitleInput" class="text-input" placeholder="اسم الكتاب بمكتبتك" data-i18n-ph="ph_book_title">
+      <button class="primary" id="libraryAddBtn" disabled data-i18n="btn_save_to_library">احفظ بالمكتبة</button>
     </div>
     <div id="libraryError"></div>
+  </section>
+
+  <!-- الإعدادات - شاشة مستقلة (زر ⚙️ بالسايد بار). اللغة متاحة للجميع، بقية
+       الحقول (اسم/كلمة مرور/جوال) تحتاج تسجيل دخول -->
+  <section class="card hidden" id="step-settings">
+    <span class="step-label" data-i18n="settings_step_label">⚙️ الإعدادات</span>
+    <h2 data-i18n="settings_heading">إعدادات حسابك</h2>
+
+    <h3 class="sub-heading" data-i18n="settings_language_heading">🌐 اللغة</h3>
+    <div class="actions">
+      <button class="ghost lang-choice-btn" id="langArBtn" data-lang="ar">🇸🇦 العربية</button>
+      <button class="ghost lang-choice-btn" id="langEnBtn" data-lang="en">🇬🇧 English</button>
+    </div>
+
+    <p class="desc hidden" id="settingsAccountGate" data-i18n="settings_guest_gate">باقي الإعدادات (الاسم، كلمة المرور، رقم الجوال) تحتاج تسجيل دخول.</p>
+
+    <div id="settingsAccountFields" class="hidden">
+      <h3 class="sub-heading" style="margin-top:22px;" data-i18n="settings_name_heading">✏️ الاسم</h3>
+      <div class="actions">
+        <input type="text" id="settingsUsernameInput" class="text-input" placeholder="اسمك" data-i18n-ph="ph_your_name">
+        <button class="primary" id="settingsSaveNameBtn" data-i18n="btn_save">حفظ</button>
+      </div>
+      <div id="settingsNameMsg"></div>
+
+      <h3 class="sub-heading" style="margin-top:22px;" data-i18n="settings_password_heading">🔒 كلمة المرور</h3>
+      <div class="actions">
+        <input type="password" id="settingsNewPassword" class="text-input" placeholder="كلمة مرور جديدة" data-i18n-ph="ph_new_password">
+        <input type="password" id="settingsConfirmPassword" class="text-input" placeholder="أعد كتابتها" data-i18n-ph="ph_confirm_password">
+        <button class="primary" id="settingsSavePasswordBtn" data-i18n="btn_save">حفظ</button>
+      </div>
+      <div id="settingsPasswordMsg"></div>
+
+      <h3 class="sub-heading" style="margin-top:22px;" data-i18n="settings_phone_heading">📱 رقم الجوال</h3>
+      <div class="actions">
+        <input type="tel" id="settingsPhoneInput" class="text-input" placeholder="05xxxxxxxx" data-i18n-ph="ph_phone">
+        <button class="primary" id="settingsSavePhoneBtn" data-i18n="btn_save">حفظ</button>
+      </div>
+      <div id="settingsPhoneMsg"></div>
+    </div>
   </section>
 
   <!-- اختيار الوضع: فردي أو غرفة جماعية -->
   <section class="card hidden" id="mode-select">
     <div class="streak-badge hidden" id="streakBadge"><span class="flame">🔥</span><span id="streakBadgeText"></span></div>
     <p class="desc hidden" id="welcomeGreeting" style="font-weight:700; color:var(--teal); margin-bottom:2px;"></p>
-    <h2>وش تبي تسوي اليوم؟</h2>
-    <p class="desc">اختر طريقة المذاكرة عشان نبدأ</p>
+    <h2 data-i18n="mode_select_heading">وش تبي تسوي اليوم؟</h2>
+    <p class="desc" data-i18n="mode_select_desc">اختر طريقة المذاكرة عشان نبدأ</p>
     <div class="actions">
-      <button class="primary" id="modeSoloBtn">🧑‍🎓 مذاكرة فردية</button>
-      <button class="primary" id="modeRoomBtn">👥 غرفة جماعية</button>
-      <button class="primary" id="modeClassroomBtn">🖍️ درس مباشر</button>
+      <button class="primary" id="modeSoloBtn" data-i18n="mode_solo">🧑‍🎓 مذاكرة فردية</button>
+      <button class="primary" id="modeRoomBtn" data-i18n="mode_room">👥 غرفة جماعية</button>
+      <button class="primary" id="modeClassroomBtn" data-i18n="mode_classroom">🖍️ درس مباشر</button>
     </div>
   </section>
 
@@ -1068,29 +1121,29 @@
     <h2 id="roomCreateFormHeading">اكتب اسمك (بصفتك مضيف الغرفة)</h2>
     <p class="desc" id="roomCreateFormDesc">أنت اللي بترفع الملف وتولّد الاختبار وتبدأه لباقي الطلاب</p>
     <div class="actions">
-      <input type="text" id="hostNameInput" class="text-input" placeholder="اسمك">
-      <button class="primary" id="hostCreateBtn">إنشاء الغرفة</button>
+      <input type="text" id="hostNameInput" class="text-input" placeholder="اسمك" data-i18n-ph="ph_your_name">
+      <button class="primary" id="hostCreateBtn" data-i18n="btn_create_room">إنشاء الغرفة</button>
     </div>
     <div id="roomCreateError"></div>
   </section>
 
   <section class="card hidden" id="room-join-form">
-    <span class="step-label">🔑 انضمام لغرفة</span>
-    <h2>اكتب كود الغرفة واسمك</h2>
+    <span class="step-label" data-i18n="room_join_label">🔑 انضمام لغرفة</span>
+    <h2 data-i18n="room_join_heading">اكتب كود الغرفة واسمك</h2>
     <div class="actions">
-      <input type="text" id="joinRoomCode" class="text-input" placeholder="كود الغرفة">
-      <input type="text" id="joinName" class="text-input" placeholder="اسمك">
-      <button class="primary" id="joinRoomBtn">ادخل الغرفة</button>
+      <input type="text" id="joinRoomCode" class="text-input" placeholder="كود الغرفة" data-i18n-ph="ph_room_code">
+      <input type="text" id="joinName" class="text-input" placeholder="اسمك" data-i18n-ph="ph_your_name">
+      <button class="primary" id="joinRoomBtn" data-i18n="btn_join_room">ادخل الغرفة</button>
     </div>
     <div id="roomJoinError"></div>
   </section>
 
   <!-- لوحة الغرفة الدائمة: تظهر بعد الانضمام وتبقى طول ما الغرفة مفتوحة -->
   <section class="card hidden" id="step-room">
-    <span class="step-label">🎓 غرفة المذاكرة</span>
-    <h2>غرفة المذاكرة الحية</h2>
+    <span class="step-label" data-i18n="room_step_label">🎓 غرفة المذاكرة</span>
+    <h2 data-i18n="room_step_heading">غرفة المذاكرة الحية</h2>
     <div class="room-code-badge" id="roomCodeBadge"></div>
-    <button class="link-btn" id="showQrBtn">📱 اعرض QR للانضمام</button>
+    <button class="link-btn" id="showQrBtn" data-i18n="btn_show_qr">📱 اعرض QR للانضمام</button>
     <p class="desc" id="roomElapsedTimer">⏱️ الغرفة مفتوحة من: 00:00</p>
 
     <div class="room-code-badge hidden" id="quizCountdownBadge" style="background:var(--highlighter-soft); color:#8a6d00; font-size:18px;"></div>
@@ -1101,49 +1154,49 @@
       <div class="podium hidden" id="podiumContainer"></div>
 
       <div id="sharedSummaryBox" class="hidden" style="margin-bottom:20px;">
-        <h3 class="sub-heading">📚 ملخص المضيف</h3>
+        <h3 class="sub-heading" data-i18n="shared_summary_heading">📚 ملخص المضيف</h3>
         <div class="summary-block" id="sharedSummaryText"></div>
       </div>
 
-      <h3 class="sub-heading">👥 المشاركين</h3>
+      <h3 class="sub-heading" data-i18n="participants_heading">👥 المشاركين</h3>
       <div class="leaderboard" id="leaderboardContainer"></div>
 
       <div id="roomChatBox" style="margin-top:24px;">
-        <h3 class="sub-heading">💬 شات الغرفة</h3>
+        <h3 class="sub-heading" data-i18n="room_chat_heading">💬 شات الغرفة</h3>
         <div class="chat-messages" id="chatMessages"></div>
         <div class="typing-indicator" id="typingIndicator"></div>
         <div class="actions">
-          <input type="text" id="chatInput" class="text-input" placeholder="اكتب رسالة لزملائك...">
-          <button class="ghost" id="chatSendBtn">إرسال</button>
+          <input type="text" id="chatInput" class="text-input" placeholder="اكتب رسالة لزملائك..." data-i18n-ph="ph_chat_message">
+          <button class="ghost" id="chatSendBtn" data-i18n="btn_send">إرسال</button>
         </div>
       </div>
 
       <div id="voiceChatBox" style="margin-top:24px;">
-        <h3 class="sub-heading">🎙️ الصوت الجماعي</h3>
-        <p class="desc" style="margin-bottom:12px;">صوت مباشر بينك وبين زملائك بالغرفة، اختياري تمامًا</p>
+        <h3 class="sub-heading" data-i18n="voice_heading">🎙️ الصوت الجماعي</h3>
+        <p class="desc" style="margin-bottom:12px;" data-i18n="voice_desc">صوت مباشر بينك وبين زملائك بالغرفة، اختياري تمامًا</p>
         <div class="actions">
-          <button class="primary" id="voiceJoinBtn">🎙️ انضم للصوت</button>
-          <button class="ghost hidden" id="voiceMuteBtn">🔇 كتم المايك</button>
-          <button class="ghost hidden" id="voiceLeaveBtn">📴 غادر الصوت</button>
+          <button class="primary" id="voiceJoinBtn" data-i18n="btn_voice_join">🎙️ انضم للصوت</button>
+          <button class="ghost hidden" id="voiceMuteBtn" data-i18n="btn_voice_mute">🔇 كتم المايك</button>
+          <button class="ghost hidden" id="voiceLeaveBtn" data-i18n="btn_voice_leave">📴 غادر الصوت</button>
         </div>
         <div id="voiceError"></div>
       </div>
     </div>
-    <div id="inQuizNote" class="hidden" style="margin-top:16px; color:var(--ink-soft); font-size:13.5px;">🔒 الشات وقائمة المشاركين تظهر لك بعد ما تسلّم الاختبار.</div>
+    <div id="inQuizNote" class="hidden" style="margin-top:16px; color:var(--ink-soft); font-size:13.5px;" data-i18n="in_quiz_note">🔒 الشات وقائمة المشاركين تظهر لك بعد ما تسلّم الاختبار.</div>
   </section>
 
   <!-- الكلاس المباشر: نفس آلية الدخول (كود غرفة) بس محتوى مختلف تمامًا من جوا -->
   <section class="card hidden" id="step-classroom">
-    <span class="step-label">🖍️ كلاس مباشر</span>
-    <h2>سبورة الشرح المباشرة</h2>
+    <span class="step-label" data-i18n="classroom_step_label">🖍️ كلاس مباشر</span>
+    <h2 data-i18n="classroom_heading">سبورة الشرح المباشرة</h2>
     <div class="room-code-badge" id="classroomCodeBadge"></div>
-    <button class="link-btn" id="showQrBtnClassroom">📱 اعرض QR للانضمام</button>
+    <button class="link-btn" id="showQrBtnClassroom" data-i18n="btn_show_qr">📱 اعرض QR للانضمام</button>
 
     <div id="classroomWaiting" class="hidden">
-      <p class="desc">⏳ بانتظار المدرس يبدأ الحصة...</p>
+      <p class="desc" data-i18n="classroom_waiting">⏳ بانتظار المدرس يبدأ الحصة...</p>
     </div>
 
-    <button class="primary hidden" id="startClassBtn" style="margin:14px 0;">▶️ ابدأ الحصة</button>
+    <button class="primary hidden" id="startClassBtn" style="margin:14px 0;" data-i18n="btn_start_class">▶️ ابدأ الحصة</button>
 
     <div id="classroomBoardArea" class="hidden">
       <div class="classroom-toolbar hidden" id="classroomTeacherToolbar">
@@ -1151,8 +1204,9 @@
         <button class="classroom-color-swatch" data-color="#C7554A" style="background:#C7554A;"></button>
         <button class="classroom-color-swatch" data-color="#2E8B77" style="background:#2E8B77;"></button>
         <button class="classroom-color-swatch" data-color="#FFC93C" style="background:#FFC93C;"></button>
-        <button class="ghost" id="classroomEraserBtn" style="padding:6px 12px;">🧽 ممحاة</button>
-        <button class="ghost" id="classroomClearBtn" style="padding:6px 12px;">🧹 امسح الكل</button>
+        <button class="ghost" id="classroomEraserBtn" style="padding:6px 12px;" data-i18n="btn_eraser">🧽 ممحاة</button>
+        <button class="ghost" id="classroomTextBtn" style="padding:6px 12px;" data-i18n="btn_text_tool">🔤 نص</button>
+        <button class="ghost" id="classroomClearBtn" style="padding:6px 12px;" data-i18n="btn_clear_board">🧹 امسح الكل</button>
       </div>
       <canvas id="classroomCanvas" width="960" height="540"></canvas>
     </div>
@@ -1160,14 +1214,14 @@
     <button class="ghost hidden" id="raiseHandBtn" style="margin-top:14px;">🙋 رفع الإيد</button>
 
     <div id="luckyDrawSection" class="hidden" style="margin-top:16px;">
-      <button class="primary hidden" id="luckyDrawBtn">🎡 لفة حظ</button>
+      <button class="primary hidden" id="luckyDrawBtn" data-i18n="btn_lucky_draw">🎡 لفة حظ</button>
       <div class="lucky-draw-display hidden" id="luckyDrawDisplay"></div>
     </div>
 
-    <h3 class="sub-heading" style="margin-top:22px;">✋ رافعين الإيد</h3>
-    <div id="raisedHandsList"><p class="desc">محد رافع إيده لحد الحين</p></div>
+    <h3 class="sub-heading" style="margin-top:22px;" data-i18n="raised_hands_heading">✋ رافعين الإيد</h3>
+    <div id="raisedHandsList"><p class="desc" data-i18n="raised_hands_empty">محد رافع إيده لحد الحين</p></div>
 
-    <h3 class="sub-heading" style="margin-top:22px;">👥 المشاركين</h3>
+    <h3 class="sub-heading" style="margin-top:22px;" data-i18n="participants_heading">👥 المشاركين</h3>
     <div id="classroomParticipantsList"></div>
 
     <div id="classroomVoiceSlot" style="margin-top:24px;"></div>
@@ -1175,135 +1229,137 @@
 
   <!-- Step 1: Upload (فردي أو الهوست داخل الغرفة) -->
   <section class="card hidden" id="step-upload">
-    <span class="step-label">١ — رفع الملف</span>
-    <h2>ارفع ملفك</h2>
-    <p class="desc">يدعم النظام حاليًا ملفات PDF فقط</p>
+    <span class="step-label" data-i18n="upload_step_label">١ — رفع الملف</span>
+    <h2 data-i18n="upload_heading">ارفع ملفك</h2>
+    <p class="desc" data-i18n="upload_desc">يدعم النظام حاليًا ملفات PDF فقط</p>
 
     <div id="uploadFromLibrarySection" class="hidden">
-      <h3 class="sub-heading">📚 اختر من مكتبتك</h3>
+      <h3 class="sub-heading" data-i18n="upload_from_library_heading">📚 اختر من مكتبتك</h3>
       <div id="uploadLibraryList"></div>
-      <p class="desc hidden" id="uploadLibraryEmptyState">مكتبتك فاضية - ارفع ملف جديد من جهازك بالأسفل.</p>
-      <button class="link-btn" id="switchToDeviceUploadBtn">📱 أو ارفع ملف جديد من جهازك</button>
+      <p class="desc hidden" id="uploadLibraryEmptyState" data-i18n="upload_library_empty">مكتبتك فاضية - ارفع ملف جديد من جهازك بالأسفل.</p>
+      <button class="link-btn" id="switchToDeviceUploadBtn" data-i18n="btn_switch_device_upload">📱 أو ارفع ملف جديد من جهازك</button>
     </div>
 
     <div id="uploadFromDeviceSection">
       <div class="dropzone" id="dropzone">
         <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#5C6B7A" stroke-width="1.6"><path d="M12 16V4M12 4l-4 4M12 4l4 4M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>
-        <div class="main-text">اسحب الملف هنا أو اضغط للاختيار</div>
-        <div class="sub-text">PDF — حتى 20 صفحة تقريبًا</div>
+        <div class="main-text" data-i18n="dropzone_main_text_file">اسحب الملف هنا أو اضغط للاختيار</div>
+        <div class="sub-text" data-i18n="dropzone_sub_text_pdf">PDF — حتى 20 صفحة تقريبًا</div>
         <input type="file" id="fileInput" accept="application/pdf">
       </div>
 
       <div class="file-chip" id="fileChip">
         <span>📄</span>
         <span class="name" id="fileName"></span>
-        <button class="ghost" id="removeFile" style="padding:4px 12px;">إزالة</button>
+        <button class="ghost" id="removeFile" style="padding:4px 12px;" data-i18n="btn_remove">إزالة</button>
       </div>
 
       <div class="actions">
-        <button class="primary" id="uploadBtn" disabled>رفع ومعالجة الملف</button>
+        <button class="primary" id="uploadBtn" disabled data-i18n="btn_upload_process">رفع ومعالجة الملف</button>
       </div>
-      <button class="link-btn hidden" id="switchToLibraryBtn">📚 أو اختر من مكتبتك</button>
+      <button class="link-btn hidden" id="switchToLibraryBtn" data-i18n="btn_switch_library">📚 أو اختر من مكتبتك</button>
     </div>
     <div id="uploadError"></div>
   </section>
 
   <!-- Step 2: Extracted text -->
   <section class="card hidden" id="step-text">
-    <span class="step-label">٢ — النص المستخرج</span>
-    <h2>محتوى الملف</h2>
-    <p class="desc">هذا النص المستخرج من الملف قبل التلخيص</p>
+    <span class="step-label" data-i18n="text_step_label">٢ — النص المستخرج</span>
+    <h2 data-i18n="text_heading">محتوى الملف</h2>
+    <p class="desc" data-i18n="text_desc">هذا النص المستخرج من الملف قبل التلخيص</p>
     <div class="blur-wrap">
       <div class="text-block blur-target" id="extractedText"></div>
-      <div class="exam-overlay hidden" id="extractedTextOverlay"><button data-target="extractedText">🔒 أنت في اختبار</button></div>
+      <div class="exam-overlay hidden" id="extractedTextOverlay"><button data-target="extractedText" data-i18n="exam_overlay_btn">🔒 أنت في اختبار</button></div>
     </div>
     <div class="actions">
-      <button class="primary" id="summarizeBtn">لخّص المحتوى</button>
-      <button class="ghost hidden" id="saveToLibraryBtn">💾 احفظ بمكتبتك</button>
+      <button class="primary" id="summarizeBtn" data-i18n="btn_summarize">لخّص المحتوى</button>
+      <button class="ghost hidden" id="saveToLibraryBtn" data-i18n="btn_save_to_library_short">💾 احفظ بمكتبتك</button>
     </div>
     <div id="summarizeError"></div>
   </section>
 
   <!-- شات مع الذكاء الاصطناعي حول الملف (وضع فردي بس) -->
   <section class="card hidden" id="step-chat">
-    <span class="step-label">💬 اسأل الذكاء الاصطناعي</span>
-    <h2>عندك سؤال عن الملف؟</h2>
-    <p class="desc">اسأل أي سؤال عن محتوى الملف اللي رفعته وبيجاوبك ذكيّ</p>
+    <span class="step-label" data-i18n="chat_step_label">💬 اسأل الذكاء الاصطناعي</span>
+    <h2 data-i18n="chat_heading">عندك سؤال عن الملف؟</h2>
+    <p class="desc" data-i18n="chat_desc">اسأل أي سؤال عن محتوى الملف اللي رفعته وبيجاوبك ذكيّ</p>
     <div class="chat-messages" id="aiChatMessages"></div>
     <div class="actions">
-      <input type="text" id="aiChatInput" class="text-input" placeholder="اكتب سؤالك...">
-      <button class="primary" id="aiChatSendBtn">إرسال</button>
+      <input type="text" id="aiChatInput" class="text-input" placeholder="اكتب سؤالك..." data-i18n-ph="ph_ask_question">
+      <button class="primary" id="aiChatSendBtn" data-i18n="btn_send">إرسال</button>
     </div>
     <div id="aiChatError"></div>
   </section>
 
   <!-- Step 3: Summary -->
   <section class="card hidden" id="step-summary">
-    <span class="step-label">٣ — الملخص</span>
-    <h2>ملخص ذكيّ</h2>
+    <span class="step-label" data-i18n="summary_step_label">٣ — الملخص</span>
+    <h2 data-i18n="summary_heading">ملخص ذكيّ</h2>
     <div class="blur-wrap">
       <div class="summary-block blur-target" id="summaryText"></div>
-      <div class="exam-overlay hidden" id="summaryTextOverlay"><button data-target="summaryText">🔒 أنت في اختبار</button></div>
+      <div class="exam-overlay hidden" id="summaryTextOverlay"><button data-target="summaryText" data-i18n="exam_overlay_btn">🔒 أنت في اختبار</button></div>
     </div>
     <div class="actions">
       <label style="display:flex; align-items:center; gap:8px; font-size:14px;">
-        عدد الأسئلة (٥-٢٠):
+        <span data-i18n="label_num_questions">عدد الأسئلة (٥-٢٠):</span>
         <input type="number" id="numQuestionsInput" class="text-input" value="5" min="5" max="20" style="width:80px;">
       </label>
-      <button class="primary" id="quizBtn">ولّد اختبار من هذا المحتوى</button>
-      <button class="ghost hidden" id="shareSummaryBtn">📤 شارك الملخص مع الطلاب</button>
+      <button class="primary" id="quizBtn" data-i18n="btn_generate_quiz">ولّد اختبار من هذا المحتوى</button>
+      <button class="ghost hidden" id="shareSummaryBtn" data-i18n="btn_share_summary">📤 شارك الملخص مع الطلاب</button>
     </div>
     <div id="quizError"></div>
   </section>
 
   <!-- Step 4: Quiz -->
   <section class="card hidden" id="step-quiz">
-    <span class="step-label">٤ — الاختبار</span>
-    <h2>اختبر فهمك</h2>
-    <p class="desc">اختر إجابة لكل سؤال ثم اضغط "تحقق من النتيجة"</p>
+    <span class="step-label" data-i18n="quiz_step_label">٤ — الاختبار</span>
+    <h2 data-i18n="quiz_heading">اختبر فهمك</h2>
+    <p class="desc" data-i18n="quiz_desc">اختر إجابة لكل سؤال ثم اضغط "تحقق من النتيجة"</p>
     <div id="quizContainer"></div>
     <div class="actions">
-      <button class="primary" id="checkBtn">تحقق من النتيجة</button>
-      <button class="ghost" id="restartBtn">ابدأ من جديد</button>
+      <button class="primary" id="checkBtn" data-i18n="btn_check_result">تحقق من النتيجة</button>
+      <button class="ghost" id="restartBtn" data-i18n="btn_restart">ابدأ من جديد</button>
     </div>
 
     <div class="actions hidden" id="hostQuizControls">
-      <input type="number" id="quizDurationInput" class="text-input" placeholder="مدة الاختبار (دقائق)" min="1" style="max-width:200px;">
-      <button class="primary" id="hostStartQuizBtn">🚀 ابدأ الاختبار للجميع</button>
+      <input type="number" id="quizDurationInput" class="text-input" placeholder="مدة الاختبار (دقائق)" min="1" style="max-width:200px;" data-i18n-ph="ph_quiz_duration">
+      <button class="primary" id="hostStartQuizBtn" data-i18n="btn_start_quiz_all">🚀 ابدأ الاختبار للجميع</button>
     </div>
     <div id="hostStartQuizError"></div>
   </section>
 
-  <footer>ذكيّ — منصة دراسية بمساعدة الذكاء الاصطناعي</footer>
+  <footer data-i18n="footer_text">ذكيّ — منصة دراسية بمساعدة الذكاء الاصطناعي</footer>
 </div>
 
 <!-- مؤقت بومودورو: يظهر بالوضع الفردي بس -->
 <div class="pomodoro-widget hidden collapsed" id="pomodoroWidget">
   <div class="pomodoro-header" id="pomodoroHeader">
-    <span>🍅 بومودورو</span>
+    <span data-i18n="pomodoro_title">🍅 بومودورو</span>
     <button class="pomodoro-toggle" id="pomodoroToggleBtn">+</button>
   </div>
   <div class="pomodoro-body" id="pomodoroBody">
-    <div class="pomodoro-phase" id="pomodoroPhaseLabel">🧠 مذاكرة</div>
+    <div class="pomodoro-phase" id="pomodoroPhaseLabel" data-i18n="pomodoro_phase_focus">🧠 مذاكرة</div>
     <div class="pomodoro-time" id="pomodoroTimeDisplay">25:00</div>
     <div class="pomodoro-settings">
-      <label>مذاكرة (د)
+      <label>
+        <span data-i18n="pomodoro_focus_label">مذاكرة (د)</span>
         <input type="number" id="pomodoroFocusInput" class="text-input" value="25" min="1" max="120">
       </label>
-      <label>راحة (د)
+      <label>
+        <span data-i18n="pomodoro_break_label">راحة (د)</span>
         <input type="number" id="pomodoroBreakInput" class="text-input" value="5" min="1" max="60">
       </label>
     </div>
     <div class="pomodoro-controls">
-      <button class="primary" id="pomodoroStartBtn">▶️ تشغيل</button>
-      <button class="ghost hidden" id="pomodoroPauseBtn">⏸️ إيقاف</button>
-      <button class="ghost" id="pomodoroResetBtn">🔄 تصفير</button>
+      <button class="primary" id="pomodoroStartBtn" data-i18n="btn_pomodoro_start">▶️ تشغيل</button>
+      <button class="ghost hidden" id="pomodoroPauseBtn" data-i18n="btn_pomodoro_pause">⏸️ إيقاف</button>
+      <button class="ghost" id="pomodoroResetBtn" data-i18n="btn_pomodoro_reset">🔄 تصفير</button>
     </div>
     <div class="pomodoro-alert hidden" id="pomodoroAlert">
       <p id="pomodoroAlertText"></p>
       <div class="pomodoro-controls">
         <button class="primary" id="pomodoroNextBtn"></button>
-        <button class="ghost" id="pomodoroDismissBtn">🔕 إيقاف المنبه</button>
+        <button class="ghost" id="pomodoroDismissBtn" data-i18n="btn_pomodoro_dismiss">🔕 إيقاف المنبه</button>
       </div>
     </div>
   </div>
@@ -1312,14 +1368,14 @@
 <!-- مساعد ذكيّ يشرح الموقع - يفتح من السايد بار، متاح من أي شاشة -->
 <div class="ai-help-panel hidden" id="aiHelpPanel">
   <div class="ai-help-header">
-    <span>🤖 مساعد ذكيّ</span>
+    <span data-i18n="nav_ai_help">🤖 مساعد ذكيّ</span>
     <button class="ai-help-close" id="aiHelpCloseBtn">✕</button>
   </div>
   <div class="ai-help-body">
     <div class="chat-messages" id="siteHelpMessages"></div>
     <div class="actions" style="margin-top:0;">
-      <input type="text" id="siteHelpInput" class="text-input" placeholder="اسأل عن الموقع...">
-      <button class="primary" id="siteHelpSendBtn">إرسال</button>
+      <input type="text" id="siteHelpInput" class="text-input" placeholder="اسأل عن الموقع..." data-i18n-ph="ph_ask_site">
+      <button class="primary" id="siteHelpSendBtn" data-i18n="btn_send">إرسال</button>
     </div>
     <div id="siteHelpError"></div>
   </div>
@@ -1329,7 +1385,7 @@
 <div class="qr-modal hidden" id="qrModal">
   <div class="qr-modal-box">
     <button class="ai-help-close" id="qrModalCloseBtn">✕</button>
-    <h3>امسح الكود عشان تنضم</h3>
+    <h3 data-i18n="qr_modal_title">امسح الكود عشان تنضم</h3>
     <div id="qrCanvasContainer"></div>
     <p class="desc" id="qrRoomCodeText"></p>
   </div>
@@ -1349,6 +1405,7 @@ let currentAccessToken = null;
 let currentUserEmail = null;
 let currentUsername = null;
 let currentUserId = null;
+let currentUserPhone = null;
 
 let appMode = null; // 'solo' | 'room-host' | 'room-join'
 let uploadedFilename = null;
@@ -1375,6 +1432,610 @@ let quizCountdownIntervalId = null;
 
 let chatInteractionId = null;
 
+// ---------- الترجمة (عربي/إنجليزي) ----------
+let currentLang = localStorage.getItem('zakiy-lang') || 'ar';
+
+const I18N = {
+  ar: {
+    nav_performance: '📊 أدائي',
+    nav_archive: '📂 الأرشيف',
+    nav_friends: '👥 الأصدقاء',
+    nav_library: '📚 مكتبتي',
+    nav_ai_help: '🤖 مساعد ذكيّ',
+    nav_settings: '⚙️ الإعدادات',
+    nav_login: '🔑 تسجيل الدخول',
+    nav_logout: '🚪 تسجيل خروج',
+    nav_dark_mode: '🌙 الوضع الليلي',
+    nav_light_mode: '☀️ الوضع النهاري',
+    login_required_title: 'هذي الميزة تحتاج حساب',
+    login_required_desc: 'سجل الدخول أو أنشئ حساب مجاني عشان تقدر تستخدمها',
+    btn_login: 'تسجيل الدخول',
+    btn_signup: 'إنشاء حساب',
+    btn_back: '⬅ رجوع',
+    header_project_badge: 'مشروع تخرج — أكاديمية طويق',
+    hero_title: 'حوّل أي ملف دراسي<br>إلى ملخص واختبار جاهز',
+    hero_desc: 'ارفع ملزمة أو أوراق عمل بصيغة PDF، وخلّ ذكيّ يلخصها ويحول محتواها لاختبار تفاعلي يقيس فهمك.',
+    login_title: 'تسجيل الدخول',
+    login_desc: 'أدخل بياناتك للمتابعة، أو سوّي حساب يحفظ تقدمك',
+    ph_email: 'الإيميل',
+    ph_password: 'كلمة المرور',
+    btn_enter: 'دخول',
+    link_go_signup: '🆕 ما عندك حساب؟ أنشئ واحد',
+    link_continue_guest: '➡️ استمر بدون حساب',
+    signup_title: 'إنشاء حساب جديد',
+    signup_desc: 'يحفظ تقدمك ويحلل نقاط ضعفك بعد كل اختبار',
+    ph_username: 'الأسم الكريم',
+    ph_password_signup: 'كلمة المرور (٦ أحرف عالأقل)',
+    label_education_level: 'المرحلة الدراسية',
+    edu_elementary: 'ابتدائي',
+    edu_middle: 'متوسط',
+    edu_high: 'ثانوي',
+    edu_university: 'جامعي',
+    label_proficiency_level: 'مستواك',
+    prof_weak: 'ضعيف',
+    prof_medium: 'متوسط',
+    prof_strong: 'متمكن',
+    prof_not_studying: 'ما ادرس',
+    btn_create_account: 'إنشاء الحساب',
+    link_go_login: '🔑 عندك حساب؟ سجّل دخولك',
+    performance_heading_default: 'لوحة تحليل أدائك',
+    performance_empty: 'لسا ما حليت أي اختبار وأنت مسجّل دخول.',
+    stat_attempts: 'عدد المحاولات',
+    stat_avg: 'متوسط الدرجة',
+    stat_best: 'أفضل نتيجة',
+    stat_study_minutes: '⏱️ دقائق مذاكرة',
+    performance_trend_heading: '📈 تطور درجاتك',
+    performance_weak_heading: '🎯 نقاط تحتاج مراجعة',
+    archive_heading: 'أرشيف جلساتك الجماعية',
+    archive_empty: 'ما فيه جلسات جماعية أو كلاسات بأرشيفك لحد الحين.',
+    friends_heading: 'أصدقاؤك',
+    friend_qr_btn: '📱 QR يضيفك كصديق',
+    friend_qr_desc: 'وريه لصديقك يمسحه بجواله، بيضيفك فورًا زي لو دوّر على اسمك بالضبط',
+    friend_search_heading: '🔍 دور على صديق',
+    ph_username_search: 'اسم المستخدم...',
+    btn_search: 'بحث',
+    friend_requests_heading: '📨 طلبات الصداقة',
+    friend_requests_empty: 'ما فيه طلبات جديدة',
+    friends_list_empty: 'ما ضفت أصدقاء لحد الحين',
+    library_heading: 'مكتبة كتبك',
+    library_desc: 'كتب حفظتها قبل - تقدر تستخدمها بأي جلسة بدون ما ترفعها من جديد',
+    library_empty: 'مكتبتك فاضية لحد الحين - ضيف كتاب من تحت.',
+    library_add_heading: '➕ ضيف كتاب جديد',
+    dropzone_main_text: 'اسحب ملف PDF هنا أو اضغط للاختيار',
+    dropzone_sub_text: 'حتى 20 صفحة تقريبًا',
+    btn_remove: 'إزالة',
+    ph_book_title: 'اسم الكتاب بمكتبتك',
+    btn_save_to_library: 'احفظ بالمكتبة',
+    settings_step_label: '⚙️ الإعدادات',
+    settings_heading: 'إعدادات حسابك',
+    settings_language_heading: '🌐 اللغة',
+    settings_guest_gate: 'باقي الإعدادات (الاسم، كلمة المرور، رقم الجوال) تحتاج تسجيل دخول.',
+    settings_name_heading: '✏️ الاسم',
+    ph_your_name: 'اسمك',
+    btn_save: 'حفظ',
+    settings_password_heading: '🔒 كلمة المرور',
+    ph_new_password: 'كلمة مرور جديدة',
+    ph_confirm_password: 'أعد كتابتها',
+    settings_phone_heading: '📱 رقم الجوال',
+    ph_phone: '05xxxxxxxx',
+    mode_select_heading: 'وش تبي تسوي اليوم؟',
+    mode_select_desc: 'اختر طريقة المذاكرة عشان نبدأ',
+    mode_solo: '🧑‍🎓 مذاكرة فردية',
+    mode_room: '👥 غرفة جماعية',
+    mode_classroom: '🖍️ درس مباشر',
+    room_mode_select_label_room: '👥 غرفة جماعية',
+    room_mode_select_label_classroom: '🖍️ كلاس مباشر',
+    room_mode_select_heading_room: 'وش تبي تسوي بالغرفة؟',
+    room_mode_select_heading_classroom: 'وش تبي تسوي بالكلاس؟',
+    btn_room_create_choose: '➕ أنشئ غرفة جديدة',
+    btn_room_join_choose: '🔑 عندي كود غرفة',
+    room_create_form_label_room: '➕ إنشاء غرفة',
+    room_create_form_label_classroom: '➕ إنشاء كلاس',
+    room_create_form_heading_room: 'اكتب اسمك (بصفتك مضيف الغرفة)',
+    room_create_form_heading_classroom: 'اكتب اسمك (بصفتك المدرس)',
+    room_create_form_desc_room: 'أنت اللي بترفع الملف وتولّد الاختبار وتبدأه لباقي الطلاب',
+    room_create_form_desc_classroom: 'أنت اللي تشرح على السبورة وتتحكم بالحصة',
+    ph_your_name2: 'اسمك',
+    btn_create_room: 'إنشاء الغرفة',
+    room_join_label: '🔑 انضمام لغرفة',
+    room_join_heading: 'اكتب كود الغرفة واسمك',
+    ph_room_code: 'كود الغرفة',
+    btn_join_room: 'ادخل الغرفة',
+    room_step_label: '🎓 غرفة المذاكرة',
+    room_step_heading: 'غرفة المذاكرة الحية',
+    btn_show_qr: '📱 اعرض QR للانضمام',
+    room_elapsed_prefix: '⏱️ الغرفة مفتوحة من: ',
+    shared_summary_heading: '📚 ملخص المضيف',
+    participants_heading: '👥 المشاركين',
+    room_chat_heading: '💬 شات الغرفة',
+    ph_chat_message: 'اكتب رسالة لزملائك...',
+    btn_send: 'إرسال',
+    voice_heading: '🎙️ الصوت الجماعي',
+    voice_desc: 'صوت مباشر بينك وبين زملائك بالغرفة، اختياري تمامًا',
+    btn_voice_join: '🎙️ انضم للصوت',
+    btn_voice_mute: '🔇 كتم المايك',
+    btn_voice_unmute: '🎙️ شغّل المايك',
+    btn_voice_leave: '📴 غادر الصوت',
+    in_quiz_note: '🔒 الشات وقائمة المشاركين تظهر لك بعد ما تسلّم الاختبار.',
+    classroom_step_label: '🖍️ كلاس مباشر',
+    classroom_heading: 'سبورة الشرح المباشرة',
+    classroom_waiting: '⏳ بانتظار المدرس يبدأ الحصة...',
+    btn_start_class: '▶️ ابدأ الحصة',
+    btn_eraser: '🧽 ممحاة',
+    btn_text_tool: '🔤 نص',
+    btn_clear_board: '🧹 امسح الكل',
+    btn_lucky_draw: '🎡 لفة حظ',
+    raised_hands_heading: '✋ رافعين الإيد',
+    raised_hands_empty: 'محد رافع إيده لحد الحين',
+    btn_raise_hand: '🙋 رفع الإيد',
+    btn_lower_hand: '🙅 إنزال الإيد',
+    upload_step_label: '١ — رفع الملف',
+    upload_heading: 'ارفع ملفك',
+    upload_desc: 'يدعم النظام حاليًا ملفات PDF فقط',
+    upload_from_library_heading: '📚 اختر من مكتبتك',
+    upload_library_empty: 'مكتبتك فاضية - ارفع ملف جديد من جهازك بالأسفل.',
+    btn_switch_device_upload: '📱 أو ارفع ملف جديد من جهازك',
+    dropzone_main_text_file: 'اسحب الملف هنا أو اضغط للاختيار',
+    dropzone_sub_text_pdf: 'PDF — حتى 20 صفحة تقريبًا',
+    btn_upload_process: 'رفع ومعالجة الملف',
+    btn_switch_library: '📚 أو اختر من مكتبتك',
+    text_step_label: '٢ — النص المستخرج',
+    text_heading: 'محتوى الملف',
+    text_desc: 'هذا النص المستخرج من الملف قبل التلخيص',
+    exam_overlay_btn: '🔒 أنت في اختبار',
+    btn_summarize: 'لخّص المحتوى',
+    btn_save_to_library_short: '💾 احفظ بمكتبتك',
+    chat_step_label: '💬 اسأل الذكاء الاصطناعي',
+    chat_heading: 'عندك سؤال عن الملف؟',
+    chat_desc: 'اسأل أي سؤال عن محتوى الملف اللي رفعته وبيجاوبك ذكيّ',
+    ph_ask_question: 'اكتب سؤالك...',
+    summary_step_label: '٣ — الملخص',
+    summary_heading: 'ملخص ذكيّ',
+    label_num_questions: 'عدد الأسئلة (٥-٢٠):',
+    btn_generate_quiz: 'ولّد اختبار من هذا المحتوى',
+    btn_share_summary: '📤 شارك الملخص مع الطلاب',
+    quiz_step_label: '٤ — الاختبار',
+    quiz_heading: 'اختبر فهمك',
+    quiz_desc: 'اختر إجابة لكل سؤال ثم اضغط "تحقق من النتيجة"',
+    btn_check_result: 'تحقق من النتيجة',
+    btn_restart: 'ابدأ من جديد',
+    ph_quiz_duration: 'مدة الاختبار (دقائق)',
+    btn_start_quiz_all: '🚀 ابدأ الاختبار للجميع',
+    footer_text: 'ذكيّ — منصة دراسية بمساعدة الذكاء الاصطناعي',
+    pomodoro_title: '🍅 بومودورو',
+    pomodoro_phase_focus: '🧠 مذاكرة',
+    pomodoro_phase_break: '☕ راحة',
+    pomodoro_focus_label: 'مذاكرة (د)',
+    pomodoro_break_label: 'راحة (د)',
+    btn_pomodoro_start: '▶️ تشغيل',
+    btn_pomodoro_pause: '⏸️ إيقاف',
+    btn_pomodoro_reset: '🔄 تصفير',
+    btn_pomodoro_dismiss: '🔕 إيقاف المنبه',
+    ph_ask_site: 'اسأل عن الموقع...',
+    qr_modal_title: 'امسح الكود عشان تنضم',
+    loading_processing: 'جارٍ المعالجة',
+    exam_reveal_confirm: 'أنت داخل الاختبار الحين. كشف المحتوى وقت الاختبار يعتبر نوع من الغش على نفسك ويأثر على تقييمك الحقيقي لفهمك. تبي تكشفه بكل الأحوال؟',
+    addfriend_guest_alert: 'لازم تسجل دخول أو تنشئ حساب عشان تضيف هذا الشخص كصديق',
+    greeting_prefix: 'أهلاً {name} 👋',
+    save_name_failed: 'تعذر حفظ الاسم، جرب مرة ثانية',
+    legacy_username_prompt: 'لاحظنا حسابك بدون اسم محفوظ. وش اسمك؟ (يطلع بدل الإيميل بالموقع)',
+    streak_days_suffix: '{n} أيام متتالية',
+    err_email_password_required: 'لازم تكتب الإيميل وكلمة المرور',
+    err_wrong_credentials: 'الإيميل أو كلمة المرور غلط',
+    err_name_required: 'لازم تكتب اسمك',
+    err_password_min: 'كلمة المرور لازم ٦ أحرف عالأقل',
+    err_signup_failed: 'تعذر إنشاء الحساب',
+    signup_verify_email: 'تم إنشاء الحساب! تحقق من إيميلك لتفعيله ثم سجّل دخولك.',
+    performance_heading_named: 'لوحة تحليل أداء {name}',
+    err_fetch_performance: 'تعذر جلب بيانات الأداء',
+    err_unexpected: 'صار خطأ غير متوقع',
+    archive_host_prefix: 'المضيف',
+    archive_unknown: 'غير معروف',
+    archive_participants_prefix: 'المشاركين',
+    archive_no_one: 'لا أحد',
+    confirm_remove_friend: 'متأكد تبي تحذف هذا الصديق؟',
+    btn_accept: 'قبول',
+    btn_reject: 'رفض',
+    friend_search_no_results: 'ما فيه نتائج',
+    btn_add: 'إضافة',
+    friend_request_sent: 'تم الإرسال',
+    err_friend_request_failed: 'تعذر إرسال الطلب',
+    err_search_failed: 'صار خطأ بالبحث',
+    err_fetch_library: 'تعذر جلب المكتبة',
+    btn_rename: 'إعادة تسمية',
+    btn_delete: 'حذف',
+    rename_prompt: 'الاسم الجديد:',
+    err_rename_failed: 'تعذر إعادة التسمية',
+    confirm_delete_book: 'متأكد تبي تحذف هذا الكتاب من مكتبتك؟',
+    err_delete_failed: 'تعذر الحذف',
+    err_must_be_pdf: 'الملف لازم يكون PDF',
+    err_upload_failed: 'فشل رفع الملف',
+    err_extract_failed: 'فشل استخراج النص',
+    err_library_save_failed: 'فشل الحفظ بالمكتبة',
+    btn_use_this: 'استخدم هذا',
+    err_fetch_book: 'تعذر جلب الكتاب',
+    save_to_library_prompt: 'اسم الكتاب بمكتبتك:',
+    save_to_library_success: 'تم الحفظ بمكتبتك ✅',
+    attempt_label: 'محاولة {n}: {pct}%',
+    weak_topics_empty: 'ما فيه نقاط ضعف متكررة لحد الحين — استمر كذا 👏',
+    time_once: 'مرة',
+    time_multiple: 'مرات',
+    err_create_room_failed: 'تعذر إنشاء الغرفة',
+    err_code_name_required: 'لازم تكتب الكود واسمك',
+    generic_student: 'طالب',
+    btn_revoke_board_permission: '🔒 سحب صلاحية الكتابة',
+    btn_grant_board_permission: '🖊️ امنح صلاحية الكتابة',
+    btn_mute_short: 'كتم',
+    force_muted_alert: 'المدرس كتم المايك عندك',
+    board_text_prompt: 'اكتب النص اللي تبي تحطه بالسبورة:',
+    confirm_clear_board: 'متأكد تبي تمسح السبورة كاملة؟',
+    err_lucky_draw_failed: 'تعذر سحب الفائز',
+    status_still_solving: 'لسا يذاكر...',
+    status_waiting_quiz: 'بانتظار الاختبار...',
+    btn_revoke_permission: '🔒 سحب الصلاحية',
+    btn_grant_permission: '🔑 امنح صلاحية',
+    btn_kick: 'طرد',
+    rating_fast: 'سريع',
+    your_score: 'نتيجتك',
+    time_label: 'الوقت',
+    your_rank: 'ترتيبك',
+    kicked_alert: 'تم طردك من الغرفة من قبل المضيف',
+    typing_one: '{name} يكتب الآن...',
+    typing_many: '{names} يكتبون الآن...',
+    summary_shared_done: 'تمت المشاركة',
+    err_no_text_extracted: 'ما قدرنا نستخرج نص من هذا الملف',
+    err_server_down: 'صار خطأ غير متوقع، تأكد إن السيرفر شغال',
+    chat_you: 'أنت',
+    chat_zakiy: 'ذكيّ',
+    err_chat_failed: 'صار خطأ بالمحادثة',
+    err_summarize_failed: 'فشل التلخيص',
+    err_quiz_gen_failed: 'فشل توليد الاختبار',
+    err_quiz_gen_parse_failed: 'صار خطأ بتوليد الاختبار أو قراءة النتيجة، جرب مرة ثانية',
+    question_label: 'السؤال {n}',
+    err_valid_duration_required: 'لازم تحدد مدة صحيحة للاختبار بالدقائق',
+    time_up: 'انتهى الوقت',
+    time_remaining: 'الوقت المتبقي',
+    time_taken_label: 'الوقت المستغرق',
+    err_mic_access: 'ما قدرنا نوصل للمايك، تأكد من صلاحيات المتصفح',
+    pomodoro_focus_done: '🎉 خلصت فترة المذاكرة! وقت الراحة',
+    pomodoro_break_done: '💪 خلصت الراحة! نرجع نذاكر؟',
+    btn_pomodoro_start_break: '☕ ابدأ الراحة',
+    btn_pomodoro_start_focus: '🧠 ابدأ المذاكرة',
+    err_qr_generation: 'تعذر توليد رمز QR',
+    qr_room_code_caption: 'كود الغرفة',
+    qr_friend_caption: 'شارك هذا الكود عشان يضيفونك كصديق ({name})',
+    qr_own_code_alert: 'هذا رمزك أنت 🙂 وريه لصديق عشان يضيفك',
+    err_user_not_found: 'ما لقينا هذا المستخدم',
+    confirm_send_friend_request: 'تبي ترسل طلب صداقة لـ {name}؟',
+    friend_request_sent_alert: 'تم إرسال طلب الصداقة لـ {name} ✅',
+    err_unexpected_retry: 'صار خطأ غير متوقع، جرب مرة ثانية',
+    page_title: 'ذكيّ — منصة المذاكرة الذكية',
+    err_password_mismatch: 'كلمتا المرور غير متطابقتين',
+    name_saved: 'تم حفظ الاسم',
+    password_saved: 'تم تغيير كلمة المرور',
+    phone_saved: 'تم حفظ رقم الجوال',
+  },
+  en: {
+    nav_performance: '📊 My Performance',
+    nav_archive: '📂 Archive',
+    nav_friends: '👥 Friends',
+    nav_library: '📚 My Library',
+    nav_ai_help: '🤖 Site Assistant',
+    nav_settings: '⚙️ Settings',
+    nav_login: '🔑 Log In',
+    nav_logout: '🚪 Log Out',
+    nav_dark_mode: '🌙 Dark Mode',
+    nav_light_mode: '☀️ Light Mode',
+    login_required_title: 'This feature needs an account',
+    login_required_desc: 'Log in or create a free account to use it',
+    btn_login: 'Log In',
+    btn_signup: 'Sign Up',
+    btn_back: '⬅ Back',
+    header_project_badge: 'Graduation Project — Tuwaiq Academy',
+    hero_title: 'Turn any study file<br>into a summary and a ready quiz',
+    hero_desc: 'Upload a PDF worksheet or handout, and let Zakiy summarize it and turn it into an interactive quiz that tests your understanding.',
+    login_title: 'Log In',
+    login_desc: 'Enter your details to continue, or make an account to save your progress',
+    ph_email: 'Email',
+    ph_password: 'Password',
+    btn_enter: 'Log In',
+    link_go_signup: "🆕 Don't have an account? Create one",
+    link_continue_guest: '➡️ Continue without an account',
+    signup_title: 'Create a New Account',
+    signup_desc: 'Saves your progress and analyzes your weak points after every quiz',
+    ph_username: 'Full Name',
+    ph_password_signup: 'Password (6+ characters)',
+    label_education_level: 'Education Level',
+    edu_elementary: 'Elementary',
+    edu_middle: 'Middle School',
+    edu_high: 'High School',
+    edu_university: 'University',
+    label_proficiency_level: 'Your Level',
+    prof_weak: 'Weak',
+    prof_medium: 'Medium',
+    prof_strong: 'Strong',
+    prof_not_studying: 'Not studying',
+    btn_create_account: 'Create Account',
+    link_go_login: '🔑 Already have an account? Log in',
+    performance_heading_default: 'Your Performance Dashboard',
+    performance_empty: "You haven't solved any quiz yet while logged in.",
+    stat_attempts: 'Attempts',
+    stat_avg: 'Average Score',
+    stat_best: 'Best Score',
+    stat_study_minutes: '⏱️ Study Minutes',
+    performance_trend_heading: '📈 Your Score Trend',
+    performance_weak_heading: '🎯 Points to Review',
+    archive_heading: 'Your Group Sessions Archive',
+    archive_empty: "No group sessions or classes in your archive yet.",
+    friends_heading: 'Your Friends',
+    friend_qr_btn: '📱 QR to Add You as a Friend',
+    friend_qr_desc: 'Show it to your friend to scan — adds you instantly, just like they searched your exact name',
+    friend_search_heading: '🔍 Search for a Friend',
+    ph_username_search: 'Username...',
+    btn_search: 'Search',
+    friend_requests_heading: '📨 Friend Requests',
+    friend_requests_empty: 'No new requests',
+    friends_list_empty: "You haven't added any friends yet",
+    library_heading: 'Your Book Library',
+    library_desc: "Books you saved before — use them in any session without re-uploading",
+    library_empty: "Your library is empty — add a book below.",
+    library_add_heading: '➕ Add a New Book',
+    dropzone_main_text: 'Drag a PDF file here or click to choose',
+    dropzone_sub_text: 'Up to 20 pages roughly',
+    btn_remove: 'Remove',
+    ph_book_title: 'Book name in your library',
+    btn_save_to_library: 'Save to Library',
+    settings_step_label: '⚙️ Settings',
+    settings_heading: 'Account Settings',
+    settings_language_heading: '🌐 Language',
+    settings_guest_gate: 'The rest of the settings (name, password, phone number) need you to log in.',
+    settings_name_heading: '✏️ Name',
+    ph_your_name: 'Your name',
+    btn_save: 'Save',
+    settings_password_heading: '🔒 Password',
+    ph_new_password: 'New password',
+    ph_confirm_password: 'Confirm it',
+    settings_phone_heading: '📱 Phone Number',
+    ph_phone: '05xxxxxxxx',
+    mode_select_heading: 'What do you want to do today?',
+    mode_select_desc: 'Choose a study mode to get started',
+    mode_solo: '🧑‍🎓 Solo Study',
+    mode_room: '👥 Group Room',
+    mode_classroom: '🖍️ Live Class',
+    room_mode_select_label_room: '👥 Group Room',
+    room_mode_select_label_classroom: '🖍️ Live Class',
+    room_mode_select_heading_room: 'What do you want to do in the room?',
+    room_mode_select_heading_classroom: 'What do you want to do in the class?',
+    btn_room_create_choose: '➕ Create a New Room',
+    btn_room_join_choose: '🔑 I Have a Room Code',
+    room_create_form_label_room: '➕ Create Room',
+    room_create_form_label_classroom: '➕ Create Class',
+    room_create_form_heading_room: 'Write your name (as the room host)',
+    room_create_form_heading_classroom: 'Write your name (as the teacher)',
+    room_create_form_desc_room: "You're the one who uploads the file, generates the quiz, and starts it for the other students",
+    room_create_form_desc_classroom: "You're the one explaining on the whiteboard and controlling the class",
+    ph_your_name2: 'Your name',
+    btn_create_room: 'Create Room',
+    room_join_label: '🔑 Join a Room',
+    room_join_heading: 'Enter the room code and your name',
+    ph_room_code: 'Room code',
+    btn_join_room: 'Enter Room',
+    room_step_label: '🎓 Study Room',
+    room_step_heading: 'Live Study Room',
+    btn_show_qr: '📱 Show QR to Join',
+    room_elapsed_prefix: '⏱️ Room open for: ',
+    shared_summary_heading: "📚 Host's Summary",
+    participants_heading: '👥 Participants',
+    room_chat_heading: '💬 Room Chat',
+    ph_chat_message: 'Write a message to your classmates...',
+    btn_send: 'Send',
+    voice_heading: '🎙️ Group Voice Chat',
+    voice_desc: 'Live voice with your classmates in the room, entirely optional',
+    btn_voice_join: '🎙️ Join Voice',
+    btn_voice_mute: '🔇 Mute Mic',
+    btn_voice_unmute: '🎙️ Unmute Mic',
+    btn_voice_leave: '📴 Leave Voice',
+    in_quiz_note: '🔒 Chat and the participants list appear again once you submit the quiz.',
+    classroom_step_label: '🖍️ Live Class',
+    classroom_heading: 'Live Explanation Whiteboard',
+    classroom_waiting: '⏳ Waiting for the teacher to start the class...',
+    btn_start_class: '▶️ Start Class',
+    btn_eraser: '🧽 Eraser',
+    btn_text_tool: '🔤 Text',
+    btn_clear_board: '🧹 Clear Board',
+    btn_lucky_draw: '🎡 Lucky Draw',
+    raised_hands_heading: '✋ Raised Hands',
+    raised_hands_empty: 'No one has raised their hand yet',
+    btn_raise_hand: '🙋 Raise Hand',
+    btn_lower_hand: '🙅 Lower Hand',
+    upload_step_label: '1 — Upload File',
+    upload_heading: 'Upload Your File',
+    upload_desc: 'The system currently supports PDF files only',
+    upload_from_library_heading: '📚 Choose From Your Library',
+    upload_library_empty: 'Your library is empty - upload a new file from your device below.',
+    btn_switch_device_upload: '📱 Or upload a new file from your device',
+    dropzone_main_text_file: 'Drag the file here or click to choose',
+    dropzone_sub_text_pdf: 'PDF — up to 20 pages roughly',
+    btn_upload_process: 'Upload and Process File',
+    btn_switch_library: '📚 Or choose from your library',
+    text_step_label: '2 — Extracted Text',
+    text_heading: 'File Content',
+    text_desc: 'This is the text extracted from the file before summarizing',
+    exam_overlay_btn: "🔒 You're in an exam",
+    btn_summarize: 'Summarize Content',
+    btn_save_to_library_short: '💾 Save to Your Library',
+    chat_step_label: '💬 Ask the AI',
+    chat_heading: 'Got a question about the file?',
+    chat_desc: "Ask any question about the file you uploaded and Zakiy will answer",
+    ph_ask_question: 'Type your question...',
+    summary_step_label: '3 — Summary',
+    summary_heading: 'Smart Summary',
+    label_num_questions: 'Number of questions (5-20):',
+    btn_generate_quiz: 'Generate a Quiz From This Content',
+    btn_share_summary: '📤 Share Summary With Students',
+    quiz_step_label: '4 — Quiz',
+    quiz_heading: 'Test Your Understanding',
+    quiz_desc: 'Choose an answer for each question then press "Check Result"',
+    btn_check_result: 'Check Result',
+    btn_restart: 'Start Over',
+    ph_quiz_duration: 'Quiz duration (minutes)',
+    btn_start_quiz_all: '🚀 Start Quiz for Everyone',
+    footer_text: 'Zakiy — an AI-powered study platform',
+    pomodoro_title: '🍅 Pomodoro',
+    pomodoro_phase_focus: '🧠 Focus',
+    pomodoro_phase_break: '☕ Break',
+    pomodoro_focus_label: 'Focus (min)',
+    pomodoro_break_label: 'Break (min)',
+    btn_pomodoro_start: '▶️ Start',
+    btn_pomodoro_pause: '⏸️ Pause',
+    btn_pomodoro_reset: '🔄 Reset',
+    btn_pomodoro_dismiss: '🔕 Dismiss Alert',
+    ph_ask_site: 'Ask about the site...',
+    qr_modal_title: 'Scan the code to join',
+    loading_processing: 'Processing',
+    exam_reveal_confirm: "You're currently in the exam. Revealing content during the exam is a form of cheating on yourself and affects the honest measurement of your understanding. Reveal it anyway?",
+    addfriend_guest_alert: 'You need to log in or create an account to add this person as a friend',
+    greeting_prefix: 'Welcome {name} 👋',
+    save_name_failed: 'Could not save the name, try again',
+    legacy_username_prompt: "We noticed your account has no saved name. What's your name? (shown instead of your email on the site)",
+    streak_days_suffix: '{n} days in a row',
+    err_email_password_required: 'You need to enter your email and password',
+    err_wrong_credentials: 'Wrong email or password',
+    err_name_required: 'You need to enter your name',
+    err_password_min: 'Password must be at least 6 characters',
+    err_signup_failed: 'Could not create the account',
+    signup_verify_email: 'Account created! Check your email to verify it, then log in.',
+    performance_heading_named: "{name}'s Performance Dashboard",
+    err_fetch_performance: 'Could not fetch performance data',
+    err_unexpected: 'An unexpected error occurred',
+    archive_host_prefix: 'Host',
+    archive_unknown: 'Unknown',
+    archive_participants_prefix: 'Participants',
+    archive_no_one: 'No one',
+    confirm_remove_friend: 'Are you sure you want to remove this friend?',
+    btn_accept: 'Accept',
+    btn_reject: 'Reject',
+    friend_search_no_results: 'No results',
+    btn_add: 'Add',
+    friend_request_sent: 'Sent',
+    err_friend_request_failed: 'Could not send the request',
+    err_search_failed: 'Search failed',
+    err_fetch_library: 'Could not fetch the library',
+    btn_rename: 'Rename',
+    btn_delete: 'Delete',
+    rename_prompt: 'New name:',
+    err_rename_failed: 'Could not rename',
+    confirm_delete_book: 'Are you sure you want to delete this book from your library?',
+    err_delete_failed: 'Could not delete',
+    err_must_be_pdf: 'The file must be a PDF',
+    err_upload_failed: 'File upload failed',
+    err_extract_failed: 'Text extraction failed',
+    err_library_save_failed: 'Failed to save to the library',
+    btn_use_this: 'Use This',
+    err_fetch_book: 'Could not fetch the book',
+    save_to_library_prompt: 'Book name in your library:',
+    save_to_library_success: 'Saved to your library ✅',
+    attempt_label: 'Attempt {n}: {pct}%',
+    weak_topics_empty: "No repeated weak points yet — keep it up 👏",
+    time_once: 'time',
+    time_multiple: 'times',
+    err_create_room_failed: 'Could not create the room',
+    err_code_name_required: 'You need to enter the code and your name',
+    generic_student: 'Student',
+    btn_revoke_board_permission: '🔒 Revoke Write Permission',
+    btn_grant_board_permission: '🖊️ Grant Write Permission',
+    btn_mute_short: 'Mute',
+    force_muted_alert: 'The teacher muted your mic',
+    board_text_prompt: 'Type the text you want to put on the board:',
+    confirm_clear_board: 'Are you sure you want to clear the whole board?',
+    err_lucky_draw_failed: 'Could not draw a winner',
+    status_still_solving: 'Still solving...',
+    status_waiting_quiz: 'Waiting for the quiz...',
+    btn_revoke_permission: '🔒 Revoke Permission',
+    btn_grant_permission: '🔑 Grant Permission',
+    btn_kick: 'Kick',
+    rating_fast: 'Fast',
+    your_score: 'Your Score',
+    time_label: 'Time',
+    your_rank: 'Your Rank',
+    kicked_alert: 'You were kicked from the room by the host',
+    typing_one: '{name} is typing...',
+    typing_many: '{names} are typing...',
+    summary_shared_done: 'Shared',
+    err_no_text_extracted: "We couldn't extract text from this file",
+    err_server_down: 'An unexpected error occurred, make sure the server is running',
+    chat_you: 'You',
+    chat_zakiy: 'Zakiy',
+    err_chat_failed: 'A chat error occurred',
+    err_summarize_failed: 'Summarizing failed',
+    err_quiz_gen_failed: 'Quiz generation failed',
+    err_quiz_gen_parse_failed: 'An error occurred generating the quiz or reading the result, try again',
+    question_label: 'Question {n}',
+    err_valid_duration_required: 'You need to set a valid quiz duration in minutes',
+    time_up: 'Time is up',
+    time_remaining: 'Time remaining',
+    time_taken_label: 'Time taken',
+    err_mic_access: "We couldn't access the mic, check your browser permissions",
+    pomodoro_focus_done: '🎉 Focus time is done! Break time',
+    pomodoro_break_done: '💪 Break is done! Back to studying?',
+    btn_pomodoro_start_break: '☕ Start Break',
+    btn_pomodoro_start_focus: '🧠 Start Focus',
+    err_qr_generation: 'Could not generate the QR code',
+    qr_room_code_caption: 'Room code',
+    qr_friend_caption: 'Share this code so people can add you as a friend ({name})',
+    qr_own_code_alert: "This is your own code 🙂 show it to a friend so they can add you",
+    err_user_not_found: 'Could not find this user',
+    confirm_send_friend_request: 'Send a friend request to {name}?',
+    friend_request_sent_alert: 'Friend request sent to {name} ✅',
+    err_unexpected_retry: 'An unexpected error occurred, try again',
+    page_title: 'Zakiy — Smart Study Platform',
+    err_password_mismatch: "The passwords don't match",
+    name_saved: 'Name saved',
+    password_saved: 'Password changed',
+    phone_saved: 'Phone number saved',
+  },
+};
+
+function t(key, vars) {
+  let str = (I18N[currentLang] && I18N[currentLang][key]) || I18N.ar[key] || key;
+  if (vars) {
+    Object.keys(vars).forEach(k => { str = str.split(`{${k}}`).join(vars[k]); });
+  }
+  return str;
+}
+
+function updateLangButtonsActiveState() {
+  const arBtn = document.getElementById('langArBtn');
+  const enBtn = document.getElementById('langEnBtn');
+  if (arBtn) arBtn.classList.toggle('active', currentLang === 'ar');
+  if (enBtn) enBtn.classList.toggle('active', currentLang === 'en');
+}
+
+// تُستدعى أول تحميل الصفحة، وكل مرة يبدّل المستخدم اللغة - تعيد ترجمة كل
+// عنصر ثابت معلّم بـ data-i18n/data-i18n-ph، وتحدّث اتجاه/عنوان الصفحة
+function applyLanguage() {
+  document.documentElement.setAttribute('lang', currentLang);
+  document.documentElement.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
+  document.title = t('page_title');
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.innerHTML = t(el.getAttribute('data-i18n')); });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.getAttribute('data-i18n-ph')); });
+  updateLangButtonsActiveState();
+  if (typeof updateDarkModeButtonLabel === 'function') updateDarkModeButtonLabel();
+}
+
+document.querySelectorAll('.lang-choice-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentLang = btn.dataset.lang;
+    localStorage.setItem('zakiy-lang', currentLang);
+    applyLanguage();
+    if (currentAccessToken) {
+      supabaseClient.auth.updateUser({ data: { language: currentLang } }).catch(() => {});
+    }
+  });
+});
+
+applyLanguage();
+
 function show(id) { document.getElementById(id).classList.remove('hidden'); }
 function hide(id) { document.getElementById(id).classList.add('hidden'); }
 
@@ -1384,7 +2045,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
 const TOP_LEVEL_SCREENS = [
   'mode-select', 'room-mode-select', 'room-create-form', 'room-join-form',
   'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary',
-  'step-quiz', 'step-performance', 'step-archive', 'step-friends', 'step-library',
+  'step-quiz', 'step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings',
 ];
 const BACK_BUTTON_HIDDEN_ON = ['mode-select', 'login-form', 'signup-form', 'step-quiz'];
 let navHistory = [];
@@ -1412,7 +2073,7 @@ document.getElementById('globalBackBtn').addEventListener('click', () => {
 function updateDarkModeButtonLabel() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   document.getElementById('darkModeIcon').textContent = isDark ? '☀️' : '🌙';
-  document.getElementById('darkModeLabel').textContent = isDark ? 'الوضع النهاري' : 'الوضع الليلي';
+  document.getElementById('darkModeLabel').textContent = t(isDark ? 'nav_light_mode' : 'nav_dark_mode');
 }
 document.getElementById('darkModeToggleBtn').addEventListener('click', () => {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -1435,7 +2096,7 @@ function clearError(id) {
 }
 function setLoading(btn, loading, textDefault) {
   btn.disabled = loading;
-  btn.innerHTML = loading ? `جارٍ المعالجة<span class="spinner"></span>` : textDefault;
+  btn.innerHTML = loading ? `${t('loading_processing')}<span class="spinner"></span>` : textDefault;
 }
 function formatTime(totalSeconds) {
   const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
@@ -1468,7 +2129,7 @@ function unblurAfterExam() {
 }
 document.querySelectorAll('.exam-overlay button').forEach(btn => {
   btn.addEventListener('click', () => {
-    const reveal = confirm('أنت داخل الاختبار الحين. كشف المحتوى وقت الاختبار يعتبر نوع من الغش على نفسك ويأثر على تقييمك الحقيقي لفهمك. تبي تكشفه بكل الأحوال؟');
+    const reveal = confirm(t('exam_reveal_confirm'));
     if (reveal) {
       const targetId = btn.dataset.target;
       document.getElementById(targetId).classList.remove('blurred');
@@ -1505,7 +2166,7 @@ function proceedToApp() {
       history.replaceState(null, '', location.pathname);
       handleAddFriendFromQr(addFriendId);
     } else {
-      alert('لازم تسجل دخول أو تنشئ حساب عشان تضيف هذا الشخص كصديق');
+      alert(t('addfriend_guest_alert'));
     }
   }
 }
@@ -1514,14 +2175,14 @@ function refreshAccountUI() {
   const badge = document.getElementById('accountBadge');
   badge.textContent = `👤 ${currentUsername}`;
   const greeting = document.getElementById('welcomeGreeting');
-  greeting.textContent = `أهلاً ${currentUsername} 👋`;
+  greeting.textContent = t('greeting_prefix', { name: currentUsername });
 }
 
 async function promptForUsername(initialMessage) {
   const newName = prompt(initialMessage, currentUsername || '');
   if (!newName || !newName.trim()) return;
   const { error } = await supabaseClient.auth.updateUser({ data: { username: newName.trim() } });
-  if (error) { alert('تعذر حفظ الاسم، جرب مرة ثانية'); return; }
+  if (error) { alert(t('save_name_failed')); return; }
   currentUsername = newName.trim();
   refreshAccountUI();
 }
@@ -1530,6 +2191,17 @@ function onAuthSuccess(session) {
   currentAccessToken = session.access_token;
   currentUserEmail = session.user.email;
   currentUserId = session.user.id;
+  currentUserPhone = session.user.user_metadata?.phone || '';
+
+  // لو الحساب عنده تفضيل لغة محفوظ (من جهاز ثاني مثلًا) وما فيه اختيار محلي
+  // بهالمتصفح بعد، نطبّقه - عشان تفضيل اللغة يرافق الحساب مو بس الجهاز
+  const savedAccountLang = session.user.user_metadata?.language;
+  if (savedAccountLang && !localStorage.getItem('zakiy-lang') && savedAccountLang !== currentLang) {
+    currentLang = savedAccountLang;
+    localStorage.setItem('zakiy-lang', currentLang);
+    applyLanguage();
+  }
+
   const hasStoredUsername = !!session.user.user_metadata?.username;
   // حسابات قديمة من قبل ميزة اليوزرنيم ما فيها هذا الحقل - نرجع للإيميل مؤقتًا
   currentUsername = session.user.user_metadata?.username || currentUserEmail;
@@ -1544,7 +2216,7 @@ function onAuthSuccess(session) {
 
   // حساب قديم بدون اسم محفوظ - نطلبه مرة وحدة (يقدر يلغيها ويبقى بالإيميل)
   if (!hasStoredUsername) {
-    promptForUsername('لاحظنا حسابك بدون اسم محفوظ. وش اسمك؟ (يطلع بدل الإيميل بالموقع)');
+    promptForUsername(t('legacy_username_prompt'));
   }
 
   // نزامن اسم المستخدم بجدول profiles القابل للبحث - يخدم ميزة الأصدقاء
@@ -1559,7 +2231,7 @@ function onAuthSuccess(session) {
     .then(res => res.json())
     .then(data => {
       if (data.current_streak >= 3) {
-        document.getElementById('streakBadgeText').textContent = `${data.current_streak} أيام متتالية`;
+        document.getElementById('streakBadgeText').textContent = t('streak_days_suffix', { n: data.current_streak });
         show('streakBadge');
       }
     })
@@ -1589,10 +2261,10 @@ document.getElementById('loginSubmitBtn').addEventListener('click', async () => 
   clearError('loginError');
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
-  if (!email || !password) { showError('loginError', 'لازم تكتب الإيميل وكلمة المرور'); return; }
+  if (!email || !password) { showError('loginError', t('err_email_password_required')); return; }
 
   const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-  if (error) { showError('loginError', 'الإيميل أو كلمة المرور غلط'); return; }
+  if (error) { showError('loginError', t('err_wrong_credentials')); return; }
   onAuthSuccess(data.session);
 });
 
@@ -1603,20 +2275,20 @@ document.getElementById('signupSubmitBtn').addEventListener('click', async () =>
   const password = document.getElementById('signupPassword').value;
   const education_level = document.getElementById('signupEducationLevel').value;
   const proficiency_level = document.getElementById('signupProficiencyLevel').value;
-  if (!username) { showError('signupError', 'لازم تكتب اسمك'); return; }
-  if (!email || !password) { showError('signupError', 'لازم تكتب الإيميل وكلمة المرور'); return; }
-  if (password.length < 6) { showError('signupError', 'كلمة المرور لازم ٦ أحرف عالأقل'); return; }
+  if (!username) { showError('signupError', t('err_name_required')); return; }
+  if (!email || !password) { showError('signupError', t('err_email_password_required')); return; }
+  if (password.length < 6) { showError('signupError', t('err_password_min')); return; }
 
   const { data, error } = await supabaseClient.auth.signUp({
     email, password,
     options: { data: { username, education_level, proficiency_level } },
   });
-  if (error) { showError('signupError', error.message || 'تعذر إنشاء الحساب'); return; }
+  if (error) { showError('signupError', error.message || t('err_signup_failed')); return; }
 
   if (data.session) {
     onAuthSuccess(data.session);
   } else {
-    showError('signupError', 'تم إنشاء الحساب! تحقق من إيميلك لتفعيله ثم سجّل دخولك.');
+    showError('signupError', t('signup_verify_email'));
   }
 });
 
@@ -1660,7 +2332,7 @@ document.getElementById('guestLoginPromptBtn').addEventListener('click', () => {
 
 // ---------- شاشات الحساب (أدائي / الأرشيف / الأصدقاء / مكتبتي) - كل وحدة
 // مستقلة بزر سايد بار خاص فيها، بدل ما تكون تبويبات جوا شاشة وحدة ----------
-const ACCOUNT_SCREENS = ['step-performance', 'step-archive', 'step-friends', 'step-library'];
+const ACCOUNT_SCREENS = ['step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings'];
 function showAccountScreen(id) {
   ['login-form', 'signup-form', 'mode-select', 'room-mode-select', 'room-create-form',
    'room-join-form', 'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary', 'step-quiz',
@@ -1672,6 +2344,7 @@ function showPerformanceDashboard() { showAccountScreen('step-performance'); }
 function showLibraryScreen() { showAccountScreen('step-library'); }
 function showArchiveScreen() { showAccountScreen('step-archive'); }
 function showFriendsScreen() { showAccountScreen('step-friends'); }
+function showSettingsScreen() { showAccountScreen('step-settings'); }
 
 document.getElementById('performanceBtn').addEventListener('click', async () => {
   if (!requireAuthOrPrompt()) return;
@@ -1679,17 +2352,17 @@ document.getElementById('performanceBtn').addEventListener('click', async () => 
   showPerformanceDashboard();
   updateGlobalBackButton();
   if (currentUsername) {
-    document.getElementById('performanceHeading').textContent = `لوحة تحليل أداء ${currentUsername}`;
+    document.getElementById('performanceHeading').textContent = t('performance_heading_named', { name: currentUsername });
   }
   try {
     const res = await fetch(`${API_BASE}/api/performance`, {
       headers: { 'Authorization': `Bearer ${currentAccessToken}` },
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'تعذر جلب بيانات الأداء');
+    if (!res.ok) throw new Error(data.error || t('err_fetch_performance'));
     renderPerformance(data);
   } catch (err) {
-    document.getElementById('performanceEmptyState').textContent = err.message || 'صار خطأ غير متوقع';
+    document.getElementById('performanceEmptyState').textContent = err.message || t('err_unexpected');
     show('performanceEmptyState');
     hide('performanceContent');
   }
@@ -1731,17 +2404,17 @@ function renderArchive(sessions) {
   }
   hide('archiveEmptyState');
   document.getElementById('archiveList').innerHTML = sessions.map(s => {
-    const typeLabel = s.room_type === 'classroom' ? '🖍️ كلاس مباشر' : '👥 غرفة جماعية';
-    const date = s.created_at ? new Date(s.created_at).toLocaleDateString('ar-SA') : '';
-    const names = (s.participants || []).map(p => p.name).filter(Boolean).join('، ');
+    const typeLabel = s.room_type === 'classroom' ? t('mode_classroom') : t('mode_room');
+    const date = s.created_at ? new Date(s.created_at).toLocaleDateString(currentLang === 'ar' ? 'ar-SA' : 'en-US') : '';
+    const names = (s.participants || []).map(p => p.name).filter(Boolean).join(currentLang === 'ar' ? '، ' : ', ');
     return `
       <div class="archive-row" style="flex-direction:column; align-items:flex-start;">
         <div style="display:flex; justify-content:space-between; width:100%;">
           <strong>${typeLabel} — ${s.room_code}</strong>
           <span class="desc">${date}</span>
         </div>
-        <span class="desc">المضيف: ${s.host_name || 'غير معروف'}</span>
-        <span class="desc">المشاركين: ${names || 'لا أحد'}</span>
+        <span class="desc">${t('archive_host_prefix')}: ${s.host_name || t('archive_unknown')}</span>
+        <span class="desc">${t('archive_participants_prefix')}: ${names || t('archive_no_one')}</span>
       </div>
     `;
   }).join('');
@@ -1769,18 +2442,18 @@ async function loadFriends() {
 function renderFriendsList(friends) {
   const container = document.getElementById('friendsList');
   if (!friends.length) {
-    container.innerHTML = `<p class="desc">ما ضفت أصدقاء لحد الحين</p>`;
+    container.innerHTML = `<p class="desc">${t('friends_list_empty')}</p>`;
     return;
   }
   container.innerHTML = friends.map(f => `
     <div class="friend-row">
       <span class="name">${f.username}</span>
-      <button class="ghost remove-friend-btn" data-id="${f.user_id}" style="padding:5px 10px; font-size:12px;">🗑️ إزالة</button>
+      <button class="ghost remove-friend-btn" data-id="${f.user_id}" style="padding:5px 10px; font-size:12px;">🗑️ ${t('btn_remove')}</button>
     </div>
   `).join('');
   container.querySelectorAll('.remove-friend-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (!confirm('متأكد تبي تحذف هذا الصديق؟')) return;
+      if (!confirm(t('confirm_remove_friend'))) return;
       await fetch(`${API_BASE}/api/friends/${btn.dataset.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${currentAccessToken}` },
@@ -1793,15 +2466,15 @@ function renderFriendsList(friends) {
 function renderFriendRequests(incoming) {
   const container = document.getElementById('friendRequestsList');
   if (!incoming.length) {
-    container.innerHTML = `<p class="desc">ما فيه طلبات جديدة</p>`;
+    container.innerHTML = `<p class="desc">${t('friend_requests_empty')}</p>`;
     return;
   }
   container.innerHTML = incoming.map(r => `
     <div class="friend-request-row">
       <span class="name">${r.username}</span>
       <div style="display:flex; gap:6px;">
-        <button class="primary accept-friend-btn" data-id="${r.id}" style="padding:5px 12px; font-size:12px;">✅ قبول</button>
-        <button class="ghost reject-friend-btn" data-id="${r.id}" style="padding:5px 12px; font-size:12px;">❌ رفض</button>
+        <button class="primary accept-friend-btn" data-id="${r.id}" style="padding:5px 12px; font-size:12px;">✅ ${t('btn_accept')}</button>
+        <button class="ghost reject-friend-btn" data-id="${r.id}" style="padding:5px 12px; font-size:12px;">❌ ${t('btn_reject')}</button>
       </div>
     </div>
   `).join('');
@@ -1838,13 +2511,13 @@ document.getElementById('friendSearchBtn').addEventListener('click', async () =>
     const data = await res.json();
     const results = data.results || [];
     if (!results.length) {
-      container.innerHTML = `<p class="desc">ما فيه نتائج</p>`;
+      container.innerHTML = `<p class="desc">${t('friend_search_no_results')}</p>`;
       return;
     }
     container.innerHTML = results.map(u => `
       <div class="friend-row">
         <span class="name">${u.username}</span>
-        <button class="ghost add-friend-btn" data-id="${u.user_id}" style="padding:5px 10px; font-size:12px;">➕ إضافة</button>
+        <button class="ghost add-friend-btn" data-id="${u.user_id}" style="padding:5px 10px; font-size:12px;">➕ ${t('btn_add')}</button>
       </div>
     `).join('');
     container.querySelectorAll('.add-friend-btn').forEach(btn => {
@@ -1858,19 +2531,76 @@ document.getElementById('friendSearchBtn').addEventListener('click', async () =>
           });
           const d = await r.json();
           if (!r.ok) throw new Error(d.error);
-          btn.textContent = '✅ تم الإرسال';
+          btn.textContent = `✅ ${t('friend_request_sent')}`;
         } catch (err) {
           btn.disabled = false;
-          alert(err.message || 'تعذر إرسال الطلب');
+          alert(err.message || t('err_friend_request_failed'));
         }
       });
     });
   } catch {
-    container.innerHTML = `<p class="desc">صار خطأ بالبحث</p>`;
+    container.innerHTML = `<p class="desc">${t('err_search_failed')}</p>`;
   }
 });
 document.getElementById('friendSearchInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('friendSearchBtn').click();
+});
+
+// ---------- الإعدادات (لغة متاحة للجميع، باقي الحقول تحتاج تسجيل دخول) ----------
+document.getElementById('settingsBtn').addEventListener('click', () => {
+  pushNavSnapshot();
+  showSettingsScreen();
+  updateGlobalBackButton();
+
+  const loggedIn = !!currentAccessToken;
+  document.getElementById('settingsAccountGate').classList.toggle('hidden', loggedIn);
+  document.getElementById('settingsAccountFields').classList.toggle('hidden', !loggedIn);
+  if (loggedIn) {
+    document.getElementById('settingsUsernameInput').value = currentUsername || '';
+    document.getElementById('settingsPhoneInput').value = currentUserPhone || '';
+    document.getElementById('settingsNewPassword').value = '';
+    document.getElementById('settingsConfirmPassword').value = '';
+    document.getElementById('settingsNameMsg').innerHTML = '';
+    document.getElementById('settingsPasswordMsg').innerHTML = '';
+    document.getElementById('settingsPhoneMsg').innerHTML = '';
+  }
+});
+
+document.getElementById('settingsSaveNameBtn').addEventListener('click', async () => {
+  const newName = document.getElementById('settingsUsernameInput').value.trim();
+  if (!newName) { showError('settingsNameMsg', t('err_name_required')); return; }
+  const { error } = await supabaseClient.auth.updateUser({ data: { username: newName } });
+  if (error) { showError('settingsNameMsg', t('save_name_failed')); return; }
+  currentUsername = newName;
+  refreshAccountUI();
+  fetch(`${API_BASE}/api/profile/sync`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentAccessToken}` },
+    body: JSON.stringify({ username: currentUsername }),
+  }).catch(() => {});
+  document.getElementById('settingsNameMsg').innerHTML = `<div class="desc">✅ ${t('name_saved')}</div>`;
+});
+
+document.getElementById('settingsSavePasswordBtn').addEventListener('click', async () => {
+  const pass1 = document.getElementById('settingsNewPassword').value;
+  const pass2 = document.getElementById('settingsConfirmPassword').value;
+  clearError('settingsPasswordMsg');
+  if (pass1.length < 6) { showError('settingsPasswordMsg', t('err_password_min')); return; }
+  if (pass1 !== pass2) { showError('settingsPasswordMsg', t('err_password_mismatch')); return; }
+  const { error } = await supabaseClient.auth.updateUser({ password: pass1 });
+  if (error) { showError('settingsPasswordMsg', error.message || t('err_unexpected')); return; }
+  document.getElementById('settingsNewPassword').value = '';
+  document.getElementById('settingsConfirmPassword').value = '';
+  document.getElementById('settingsPasswordMsg').innerHTML = `<div class="desc">✅ ${t('password_saved')}</div>`;
+});
+
+document.getElementById('settingsSavePhoneBtn').addEventListener('click', async () => {
+  const phone = document.getElementById('settingsPhoneInput').value.trim();
+  clearError('settingsPhoneMsg');
+  const { error } = await supabaseClient.auth.updateUser({ data: { phone } });
+  if (error) { showError('settingsPhoneMsg', t('err_unexpected')); return; }
+  currentUserPhone = phone;
+  document.getElementById('settingsPhoneMsg').innerHTML = `<div class="desc">✅ ${t('phone_saved')}</div>`;
 });
 
 // ---------- مكتبة الكتب الشخصية ----------
@@ -1879,7 +2609,7 @@ async function fetchLibraryBooks() {
     headers: { 'Authorization': `Bearer ${currentAccessToken}` },
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'تعذر جلب المكتبة');
+  if (!res.ok) throw new Error(data.error || t('err_fetch_library'));
   return data.books;
 }
 
@@ -1894,14 +2624,14 @@ function renderLibraryManageList(books) {
   container.innerHTML = books.map(b => `
     <div class="leaderboard-row">
       <span class="name">${b.title}</span>
-      <button class="ghost rename-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">✏️ إعادة تسمية</button>
-      <button class="ghost delete-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">🗑️ حذف</button>
+      <button class="ghost rename-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">✏️ ${t('btn_rename')}</button>
+      <button class="ghost delete-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">🗑️ ${t('btn_delete')}</button>
     </div>
   `).join('');
 
   container.querySelectorAll('.rename-book-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const newTitle = prompt('الاسم الجديد:');
+      const newTitle = prompt(t('rename_prompt'));
       if (!newTitle || !newTitle.trim()) return;
       try {
         const res = await fetch(`${API_BASE}/api/library/${btn.dataset.id}`, {
@@ -1911,13 +2641,13 @@ function renderLibraryManageList(books) {
         });
         if (!res.ok) throw new Error();
         loadLibraryManageScreen();
-      } catch { alert('تعذر إعادة التسمية'); }
+      } catch { alert(t('err_rename_failed')); }
     });
   });
 
   container.querySelectorAll('.delete-book-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (!confirm('متأكد تبي تحذف هذا الكتاب من مكتبتك؟')) return;
+      if (!confirm(t('confirm_delete_book'))) return;
       try {
         const res = await fetch(`${API_BASE}/api/library/${btn.dataset.id}`, {
           method: 'DELETE',
@@ -1925,7 +2655,7 @@ function renderLibraryManageList(books) {
         });
         if (!res.ok) throw new Error();
         loadLibraryManageScreen();
-      } catch { alert('تعذر الحذف'); }
+      } catch { alert(t('err_delete_failed')); }
     });
   });
 }
@@ -1935,7 +2665,7 @@ async function loadLibraryManageScreen() {
     const books = await fetchLibraryBooks();
     renderLibraryManageList(books);
   } catch (err) {
-    showError('libraryError', err.message || 'صار خطأ غير متوقع');
+    showError('libraryError', err.message || t('err_unexpected'));
   }
 }
 
@@ -1972,7 +2702,7 @@ libraryFileInput.addEventListener('change', e => {
 
 function handleLibraryFile(file) {
   if (file.type !== 'application/pdf') {
-    showError('libraryError', 'الملف لازم يكون PDF');
+    showError('libraryError', t('err_must_be_pdf'));
     return;
   }
   librarySelectedFile = file;
@@ -1998,13 +2728,13 @@ function updateLibraryAddBtnState() {
 libraryAddBtn.addEventListener('click', async () => {
   if (!librarySelectedFile) return;
   clearError('libraryError');
-  setLoading(libraryAddBtn, true, 'احفظ بالمكتبة');
+  setLoading(libraryAddBtn, true, t('btn_save_to_library'));
   try {
     const formData = new FormData();
     formData.append('file', librarySelectedFile);
     const uploadRes = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: formData });
     const uploadData = await uploadRes.json();
-    if (!uploadRes.ok) throw new Error(uploadData.error || 'فشل رفع الملف');
+    if (!uploadRes.ok) throw new Error(uploadData.error || t('err_upload_failed'));
 
     const extractRes = await fetch(`${API_BASE}/api/extract`, {
       method: 'POST',
@@ -2012,7 +2742,7 @@ libraryAddBtn.addEventListener('click', async () => {
       body: JSON.stringify({ filename: uploadData.filename }),
     });
     const extractData = await extractRes.json();
-    if (!extractRes.ok) throw new Error(extractData.error || 'فشل استخراج النص');
+    if (!extractRes.ok) throw new Error(extractData.error || t('err_extract_failed'));
 
     const saveRes = await fetch(`${API_BASE}/api/library`, {
       method: 'POST',
@@ -2020,7 +2750,7 @@ libraryAddBtn.addEventListener('click', async () => {
       body: JSON.stringify({ title: libraryTitleInput.value.trim(), extracted_text: extractData.text }),
     });
     const saveData = await saveRes.json();
-    if (!saveRes.ok) throw new Error(saveData.error || 'فشل الحفظ بالمكتبة');
+    if (!saveRes.ok) throw new Error(saveData.error || t('err_library_save_failed'));
 
     librarySelectedFile = null;
     libraryFileInput.value = '';
@@ -2029,9 +2759,9 @@ libraryAddBtn.addEventListener('click', async () => {
     updateLibraryAddBtnState();
     loadLibraryManageScreen();
   } catch (err) {
-    showError('libraryError', err.message || 'صار خطأ غير متوقع');
+    showError('libraryError', err.message || t('err_unexpected'));
   } finally {
-    setLoading(libraryAddBtn, false, 'احفظ بالمكتبة');
+    setLoading(libraryAddBtn, false, t('btn_save_to_library'));
   }
 });
 
@@ -2053,7 +2783,7 @@ async function loadUploadLibraryPicker() {
       listEl.innerHTML = books.map(b => `
         <div class="leaderboard-row">
           <span class="name">${b.title}</span>
-          <button class="primary use-library-book-btn" data-id="${b.id}" style="padding:6px 14px; font-size:12.5px;">استخدم هذا</button>
+          <button class="primary use-library-book-btn" data-id="${b.id}" style="padding:6px 14px; font-size:12.5px;">${t('btn_use_this')}</button>
         </div>
       `).join('');
       listEl.querySelectorAll('.use-library-book-btn').forEach(btn => {
@@ -2076,7 +2806,7 @@ async function useLibraryBookForSession(bookId) {
       headers: { 'Authorization': `Bearer ${currentAccessToken}` },
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'تعذر جلب الكتاب');
+    if (!res.ok) throw new Error(data.error || t('err_fetch_book'));
 
     extractedText = data.extracted_text;
     document.getElementById('extractedText').textContent = extractedText;
@@ -2085,7 +2815,7 @@ async function useLibraryBookForSession(bookId) {
     hide('saveToLibraryBtn'); // موجود بالمكتبة أصلًا، ما يحتاج حفظ من جديد
     document.getElementById('step-text').scrollIntoView({ behavior: 'smooth' });
   } catch (err) {
-    showError('uploadError', err.message || 'صار خطأ غير متوقع');
+    showError('uploadError', err.message || t('err_unexpected'));
   }
 }
 
@@ -2098,7 +2828,7 @@ document.getElementById('switchToLibraryBtn').addEventListener('click', loadUplo
 
 document.getElementById('saveToLibraryBtn').addEventListener('click', async () => {
   const defaultTitle = uploadedFilename ? uploadedFilename.replace(/\.pdf$/i, '') : '';
-  const title = prompt('اسم الكتاب بمكتبتك:', defaultTitle);
+  const title = prompt(t('save_to_library_prompt'), defaultTitle);
   if (!title || !title.trim()) return;
   try {
     const res = await fetch(`${API_BASE}/api/library`, {
@@ -2107,9 +2837,9 @@ document.getElementById('saveToLibraryBtn').addEventListener('click', async () =
       body: JSON.stringify({ title: title.trim(), extracted_text: extractedText }),
     });
     if (!res.ok) throw new Error();
-    alert('تم الحفظ بمكتبتك ✅');
+    alert(t('save_to_library_success'));
   } catch {
-    alert('تعذر الحفظ بالمكتبة');
+    alert(t('err_library_save_failed'));
   }
 });
 
@@ -2118,7 +2848,7 @@ function renderPerformance(data) {
   const weakTopics = data.weak_topics || [];
 
   if (!attempts.length) {
-    document.getElementById('performanceEmptyState').textContent = 'لسا ما حليت أي اختبار وأنت مسجّل دخول.';
+    document.getElementById('performanceEmptyState').textContent = t('performance_empty');
     show('performanceEmptyState');
     hide('performanceContent');
     return;
@@ -2174,7 +2904,7 @@ function renderTrendChart(scoresIn) {
     dot.setAttribute('cx', x); dot.setAttribute('cy', y); dot.setAttribute('r', 4);
     dot.setAttribute('fill', '#2E8B77');
     const title = document.createElementNS(svgNS, 'title');
-    title.textContent = `محاولة ${i + 1}: ${scoresIn[i]}%`;
+    title.textContent = t('attempt_label', { n: i + 1, pct: scoresIn[i] });
     dot.appendChild(title);
     svg.appendChild(dot);
   });
@@ -2191,14 +2921,14 @@ function renderTrendChart(scoresIn) {
 function renderWeakTopics(weakTopics) {
   const container = document.getElementById('weakTopicsList');
   if (!weakTopics.length) {
-    container.innerHTML = `<p class="desc">ما فيه نقاط ضعف متكررة لحد الحين — استمر كذا 👏</p>`;
+    container.innerHTML = `<p class="desc">${t('weak_topics_empty')}</p>`;
     return;
   }
-  const max = Math.max(...weakTopics.map(t => t.count));
-  container.innerHTML = weakTopics.map(t => `
+  const max = Math.max(...weakTopics.map(topic => topic.count));
+  container.innerHTML = weakTopics.map(topic => `
     <div class="weak-topic-row">
-      <div class="wt-label"><span>${t.topic}</span><span>${t.count} ${t.count === 1 ? 'مرة' : 'مرات'}</span></div>
-      <div class="wt-bar-bg"><div class="wt-bar-fill" style="width:${(t.count / max) * 100}%"></div></div>
+      <div class="wt-label"><span>${topic.topic}</span><span>${topic.count} ${topic.count === 1 ? t('time_once') : t('time_multiple')}</span></div>
+      <div class="wt-bar-bg"><div class="wt-bar-fill" style="width:${(topic.count / max) * 100}%"></div></div>
     </div>
   `).join('');
 }
@@ -2219,13 +2949,11 @@ document.getElementById('modeSoloBtn').addEventListener('click', () => {
 function openRoomModeSelect(kind) {
   roomKind = kind;
   const isClassroom = kind === 'classroom';
-  document.getElementById('roomModeSelectLabel').textContent = isClassroom ? '🖍️ كلاس مباشر' : '👥 غرفة جماعية';
-  document.getElementById('roomModeSelectHeading').textContent = isClassroom ? 'وش تبي تسوي بالكلاس؟' : 'وش تبي تسوي بالغرفة؟';
-  document.getElementById('roomCreateFormLabel').textContent = isClassroom ? '➕ إنشاء كلاس' : '➕ إنشاء غرفة';
-  document.getElementById('roomCreateFormHeading').textContent = isClassroom
-    ? 'اكتب اسمك (بصفتك المدرس)' : 'اكتب اسمك (بصفتك مضيف الغرفة)';
-  document.getElementById('roomCreateFormDesc').textContent = isClassroom
-    ? 'أنت اللي تشرح على السبورة وتتحكم بالحصة' : 'أنت اللي بترفع الملف وتولّد الاختبار وتبدأه لباقي الطلاب';
+  document.getElementById('roomModeSelectLabel').textContent = t(isClassroom ? 'room_mode_select_label_classroom' : 'room_mode_select_label_room');
+  document.getElementById('roomModeSelectHeading').textContent = t(isClassroom ? 'room_mode_select_heading_classroom' : 'room_mode_select_heading_room');
+  document.getElementById('roomCreateFormLabel').textContent = t(isClassroom ? 'room_create_form_label_classroom' : 'room_create_form_label_room');
+  document.getElementById('roomCreateFormHeading').textContent = t(isClassroom ? 'room_create_form_heading_classroom' : 'room_create_form_heading_room');
+  document.getElementById('roomCreateFormDesc').textContent = t(isClassroom ? 'room_create_form_desc_classroom' : 'room_create_form_desc_room');
 
   pushNavSnapshot();
   hide('mode-select');
@@ -2254,7 +2982,7 @@ document.getElementById('roomJoinChooseBtn').addEventListener('click', () => {
 document.getElementById('hostCreateBtn').addEventListener('click', async () => {
   const name = document.getElementById('hostNameInput').value.trim();
   clearError('roomCreateError');
-  if (!name) { showError('roomCreateError', 'لازم تكتب اسمك'); return; }
+  if (!name) { showError('roomCreateError', t('err_name_required')); return; }
 
   try {
     const res = await fetch(`${API_BASE}/api/room/create`, {
@@ -2263,13 +2991,13 @@ document.getElementById('hostCreateBtn').addEventListener('click', async () => {
       body: JSON.stringify({ room_type: roomKind }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'تعذر إنشاء الغرفة');
+    if (!res.ok) throw new Error(data.error || t('err_create_room_failed'));
 
     myName = name;
     joinErrorTarget = 'roomCreateError';
     socket.emit('join_room', { room_code: data.room_code, name, client_id: clientId, token: currentAccessToken });
   } catch (err) {
-    showError('roomCreateError', err.message || 'صار خطأ غير متوقع');
+    showError('roomCreateError', err.message || t('err_unexpected'));
   }
 });
 
@@ -2277,7 +3005,7 @@ document.getElementById('joinRoomBtn').addEventListener('click', () => {
   const code = document.getElementById('joinRoomCode').value.trim();
   const name = document.getElementById('joinName').value.trim();
   clearError('roomJoinError');
-  if (!code || !name) { showError('roomJoinError', 'لازم تكتب الكود واسمك'); return; }
+  if (!code || !name) { showError('roomJoinError', t('err_code_name_required')); return; }
 
   myName = name;
   joinErrorTarget = 'roomJoinError';
@@ -2349,7 +3077,7 @@ function startRoomElapsedTimer() {
   if (roomElapsedIntervalId) clearInterval(roomElapsedIntervalId);
   roomElapsedIntervalId = setInterval(() => {
     const elapsed = Math.floor(Date.now() / 1000 - roomCreatedAt);
-    document.getElementById('roomElapsedTimer').textContent = `⏱️ الغرفة مفتوحة من: ${formatTime(elapsed)}`;
+    document.getElementById('roomElapsedTimer').textContent = `${t('room_elapsed_prefix')}${formatTime(elapsed)}`;
   }, 1000);
 }
 
@@ -2361,6 +3089,7 @@ let classroomCtx = null;
 let classroomDrawing = false;
 let classroomCurrentColor = '#1B2A4A';
 let classroomErasing = false;
+let classroomTextMode = false;
 let classroomBoardStrokes = [];
 let handRaised = false;
 let luckyDrawSpinIntervalId = null;
@@ -2376,20 +3105,27 @@ function enterRoomVoiceSlot() {
   if (box.parentElement !== slot) slot.insertBefore(box, document.getElementById('inQuizNote'));
 }
 
+// تحدّث كل عناصر الواجهة اللي تعتمد على "هل أنا مدرس/مفوّض له صلاحية الكتابة
+// الحين" - تُستدعى أول ما ندخل الكلاس، وبرضو لحظيًا لو المضيف منح/سحب
+// الصلاحية وأنت بنفس الكلاس (بدون ما تحتاج تعيد الانضمام)
+function updateClassroomPermissionUI() {
+  const isTeacher = canManageContent;
+  document.getElementById('startClassBtn').classList.toggle('hidden', !isTeacher || classCurrentlyStarted);
+  document.getElementById('classroomWaiting').classList.toggle('hidden', isTeacher || classCurrentlyStarted);
+  document.getElementById('classroomTeacherToolbar').classList.toggle('hidden', !isTeacher);
+  document.getElementById('raiseHandBtn').classList.toggle('hidden', isTeacher);
+  document.getElementById('raiseHandBtn').textContent = t(handRaised ? 'btn_lower_hand' : 'btn_raise_hand');
+  document.getElementById('luckyDrawSection').classList.toggle('hidden', !isTeacher);
+}
+
 function initClassroomState(data) {
   classCurrentlyStarted = !!data.class_started;
   classroomBoardStrokes = data.board_strokes || [];
   classroomRaisedHandIds = data.raised_hands || [];
   handRaised = classroomRaisedHandIds.includes(clientId);
 
-  const isTeacher = canManageContent;
-  document.getElementById('startClassBtn').classList.toggle('hidden', !isTeacher || classCurrentlyStarted);
-  document.getElementById('classroomWaiting').classList.toggle('hidden', isTeacher || classCurrentlyStarted);
   document.getElementById('classroomBoardArea').classList.toggle('hidden', !classCurrentlyStarted);
-  document.getElementById('classroomTeacherToolbar').classList.toggle('hidden', !isTeacher);
-  document.getElementById('raiseHandBtn').classList.toggle('hidden', isTeacher);
-  document.getElementById('raiseHandBtn').textContent = handRaised ? '🙅 إنزال الإيد' : '🙋 رفع الإيد';
-  document.getElementById('luckyDrawSection').classList.toggle('hidden', !isTeacher);
+  updateClassroomPermissionUI();
   hide('luckyDrawDisplay');
 
   if (classCurrentlyStarted) setupClassroomCanvas();
@@ -2409,7 +3145,7 @@ socket.on('class_started_event', () => {
 
 document.getElementById('raiseHandBtn').addEventListener('click', () => {
   handRaised = !handRaised;
-  document.getElementById('raiseHandBtn').textContent = handRaised ? '🙅 إنزال الإيد' : '🙋 رفع الإيد';
+  document.getElementById('raiseHandBtn').textContent = t(handRaised ? 'btn_lower_hand' : 'btn_raise_hand');
   socket.emit('raise_hand', { room_code: currentRoomCode });
 });
 
@@ -2421,7 +3157,7 @@ socket.on('hands_update', data => {
     }
   });
   handRaised = classroomRaisedHandIds.includes(clientId);
-  document.getElementById('raiseHandBtn').textContent = handRaised ? '🙅 إنزال الإيد' : '🙋 رفع الإيد';
+  document.getElementById('raiseHandBtn').textContent = t(handRaised ? 'btn_lower_hand' : 'btn_raise_hand');
   renderRaisedHands();
 });
 
@@ -2429,14 +3165,14 @@ function renderRaisedHands() {
   const container = document.getElementById('raisedHandsList');
   const luckyBtn = document.getElementById('luckyDrawBtn');
   if (!classroomRaisedHandIds.length) {
-    container.innerHTML = '<p class="desc">محد رافع إيده لحد الحين</p>';
+    container.innerHTML = `<p class="desc">${t('raised_hands_empty')}</p>`;
     if (luckyBtn) luckyBtn.classList.add('hidden');
     return;
   }
   if (luckyBtn && canManageContent) luckyBtn.classList.remove('hidden');
   container.innerHTML = classroomRaisedHandIds.map(cid => {
     const p = classroomParticipantsCache.find(x => x.client_id === cid);
-    return `<div class="hand-raised-row"><span>🙋 ${p ? p.name : 'طالب'}</span></div>`;
+    return `<div class="hand-raised-row"><span>🙋 ${p ? p.name : t('generic_student')}</span></div>`;
   }).join('');
 }
 
@@ -2445,12 +3181,21 @@ function renderClassroomParticipants(leaderboard) {
   const container = document.getElementById('classroomParticipantsList');
   container.innerHTML = leaderboard.map(p => `
     <div class="leaderboard-row">
-      <span class="name">${p.name}${p.is_co_host ? ' 🔑' : ''}${p.in_voice ? ' 🎙️' : ''}${classroomRaisedHandIds.includes(p.client_id) ? ' 🙋' : ''}</span>
+      <span class="name">${p.name}${p.is_co_host ? ' 🖊️' : ''}${p.in_voice ? ' 🎙️' : ''}${classroomRaisedHandIds.includes(p.client_id) ? ' 🙋' : ''}</span>
       ${isHost && p.sid !== socket.id
-        ? `<button class="ghost force-mute-btn" data-sid="${p.sid}" style="padding:5px 10px; font-size:12px;">🔇 كتم</button>`
+        ? `<button class="ghost grant-board-btn" data-sid="${p.sid}" data-granted="${p.is_co_host}" style="padding:5px 10px; font-size:12px;">${p.is_co_host ? t('btn_revoke_board_permission') : t('btn_grant_board_permission')}</button>`
+        : ''}
+      ${isHost && p.sid !== socket.id
+        ? `<button class="ghost force-mute-btn" data-sid="${p.sid}" style="padding:5px 10px; font-size:12px;">🔇 ${t('btn_mute_short')}</button>`
         : ''}
     </div>
   `).join('');
+  container.querySelectorAll('.grant-board-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const event = btn.dataset.granted === 'true' ? 'revoke_permission' : 'grant_permission';
+      socket.emit(event, { room_code: currentRoomCode, sid: btn.dataset.sid });
+    });
+  });
   container.querySelectorAll('.force-mute-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       socket.emit('force_mute_participant', { room_code: currentRoomCode, sid: btn.dataset.sid });
@@ -2461,7 +3206,7 @@ function renderClassroomParticipants(leaderboard) {
 
 socket.on('force_muted', () => {
   forceMuteVoiceForExam();
-  alert('المدرس كتم المايك عندك');
+  alert(t('force_muted_alert'));
 });
 
 // ---------- سبورة الرسم الحر (المدرس/المفوّض له بس يرسم) ----------
@@ -2473,6 +3218,13 @@ function posFromPointerEvent(e, canvas) {
 function drawStroke(stroke) {
   if (!classroomCtx) return;
   const canvas = document.getElementById('classroomCanvas');
+  if (stroke.mode === 'text') {
+    classroomCtx.fillStyle = stroke.color;
+    classroomCtx.font = `${stroke.fontSize || 22}px 'IBM Plex Sans Arabic', sans-serif`;
+    classroomCtx.textBaseline = 'top';
+    classroomCtx.fillText(stroke.text, stroke.x * canvas.width, stroke.y * canvas.height);
+    return;
+  }
   classroomCtx.strokeStyle = stroke.color;
   classroomCtx.lineWidth = stroke.width;
   classroomCtx.lineCap = 'round';
@@ -2504,6 +3256,19 @@ function setupClassroomCanvas() {
   let currentStroke = null;
   canvas.addEventListener('pointerdown', e => {
     if (!canManageContent) return;
+
+    if (classroomTextMode) {
+      const [x, y] = posFromPointerEvent(e, canvas);
+      const text = prompt(t('board_text_prompt'));
+      if (text && text.trim()) {
+        const stroke = { mode: 'text', text: text.trim(), x, y, color: classroomCurrentColor, fontSize: 22 };
+        classroomBoardStrokes.push(stroke);
+        drawStroke(stroke);
+        socket.emit('board_stroke', { room_code: currentRoomCode, stroke });
+      }
+      return;
+    }
+
     classroomDrawing = true;
     currentStroke = {
       points: [posFromPointerEvent(e, canvas)],
@@ -2545,11 +3310,19 @@ document.querySelectorAll('.classroom-color-swatch').forEach(btn => {
     btn.classList.add('active');
     classroomCurrentColor = btn.dataset.color;
     classroomErasing = false;
+    classroomTextMode = false;
   });
 });
-document.getElementById('classroomEraserBtn').addEventListener('click', () => { classroomErasing = true; });
+document.getElementById('classroomEraserBtn').addEventListener('click', () => {
+  classroomErasing = true;
+  classroomTextMode = false;
+});
+document.getElementById('classroomTextBtn').addEventListener('click', () => {
+  classroomTextMode = true;
+  classroomErasing = false;
+});
 document.getElementById('classroomClearBtn').addEventListener('click', () => {
-  if (!confirm('متأكد تبي تمسح السبورة كاملة؟')) return;
+  if (!confirm(t('confirm_clear_board'))) return;
   classroomBoardStrokes = [];
   redrawClassroomBoard();
   socket.emit('board_clear', { room_code: currentRoomCode });
@@ -2568,7 +3341,7 @@ function runLuckyDrawSpin() {
   show('luckyDrawDisplay');
   const names = classroomRaisedHandIds.map(cid => {
     const p = classroomParticipantsCache.find(x => x.client_id === cid);
-    return p ? p.name : 'طالب';
+    return p ? p.name : t('generic_student');
   });
   let i = 0;
   clearInterval(luckyDrawSpinIntervalId);
@@ -2586,7 +3359,7 @@ socket.on('lucky_draw_result', data => {
 });
 socket.on('lucky_draw_error', data => {
   clearInterval(luckyDrawSpinIntervalId);
-  alert(data.error || 'تعذر سحب الفائز');
+  alert(data.error || t('err_lucky_draw_failed'));
 });
 
 // ---------- لوحة الصدارة / المشاركين ----------
@@ -2616,12 +3389,12 @@ function renderLeaderboard(leaderboard) {
       <span class="name">${p.name}${p.is_co_host ? ' 🔑' : ''}${p.in_voice ? ' 🎙️' : ''}</span>
       ${p.finished
         ? `<span class="score">${p.score} / ${p.total} ✅ — ⏱️ ${formatTime(p.time_taken)}</span>`
-        : `<span class="status">${quizHasStarted ? 'لسا يذاكر...' : 'بانتظار الاختبار...'}</span>`}
+        : `<span class="status">${quizHasStarted ? t('status_still_solving') : t('status_waiting_quiz')}</span>`}
       ${isHost && p.sid !== socket.id && !quizHasStarted
-        ? `<button class="ghost grant-btn" data-sid="${p.sid}" data-granted="${p.is_co_host}" style="padding:5px 10px; font-size:12px;">${p.is_co_host ? '🔒 سحب الصلاحية' : '🔑 امنح صلاحية'}</button>`
+        ? `<button class="ghost grant-btn" data-sid="${p.sid}" data-granted="${p.is_co_host}" style="padding:5px 10px; font-size:12px;">${p.is_co_host ? t('btn_revoke_permission') : t('btn_grant_permission')}</button>`
         : ''}
       ${isHost && p.sid !== socket.id
-        ? `<button class="ghost kick-btn" data-sid="${p.sid}" style="padding:5px 12px; font-size:12.5px;">🚫 طرد</button>`
+        ? `<button class="ghost kick-btn" data-sid="${p.sid}" style="padding:5px 12px; font-size:12.5px;">🚫 ${t('btn_kick')}</button>`
         : ''}
     </div>
   `).join('');
@@ -2654,7 +3427,7 @@ function ratingHtml(rating) {
   if (!rating || !rating.stars) return '';
   const filled = '★'.repeat(rating.stars);
   const empty = '☆'.repeat(5 - rating.stars);
-  return `<div class="session-rating"><span class="stars">${filled}${empty}</span> ${rating.label}${rating.fast ? '<span class="fast-badge">⚡ سريع</span>' : ''}</div>`;
+  return `<div class="session-rating"><span class="stars">${filled}${empty}</span> ${rating.label}${rating.fast ? `<span class="fast-badge">⚡ ${t('rating_fast')}</span>` : ''}</div>`;
 }
 
 let latestRoomRating = null;
@@ -2677,22 +3450,26 @@ function updateMyResultBox(leaderboard) {
   box.classList.remove('hidden');
   box.innerHTML = `
     <div class="my-result-banner">
-      <div>نتيجتك</div>
+      <div>${t('your_score')}</div>
       <div class="big">${me.score} / ${me.total}</div>
-      <div>⏱️ الوقت: ${formatTime(me.time_taken)} — ترتيبك: #${myIndex + 1}</div>
+      <div>⏱️ ${t('time_label')}: ${formatTime(me.time_taken)} — ${t('your_rank')}: #${myIndex + 1}</div>
       ${ratingHtml(latestRoomRating)}
     </div>
   `;
 }
 
 socket.on('kicked', () => {
-  alert('تم طردك من الغرفة من قبل المضيف');
+  alert(t('kicked_alert'));
   location.reload();
 });
 
-// ---------- منح/سحب صلاحية الرفع والتوليد وبدء الاختبار ----------
+// ---------- منح/سحب صلاحية الرفع والتوليد وبدء الاختبار (كويز) / الكتابة بالسبورة (كلاس) ----------
 socket.on('permission_granted', () => {
   canManageContent = true;
+  if (roomKind === 'classroom') {
+    updateClassroomPermissionUI();
+    return;
+  }
   if (!uploadedFilename && !quizHasStarted) {
     show('step-upload');
     loadUploadLibraryPicker();
@@ -2701,6 +3478,10 @@ socket.on('permission_granted', () => {
 });
 socket.on('permission_revoked', () => {
   canManageContent = false;
+  if (roomKind === 'classroom') {
+    updateClassroomPermissionUI();
+    return;
+  }
   if (!isHost && !quizHasStarted) {
     hide('step-upload'); hide('step-text'); hide('step-chat'); hide('step-summary');
     hide('step-quiz'); hide('hostQuizControls'); hide('shareSummaryBtn');
@@ -2736,8 +3517,8 @@ function renderTypingIndicator() {
   const names = [...typingPeers.keys()];
   if (!names.length) { el.textContent = ''; return; }
   el.textContent = names.length === 1
-    ? `${names[0]} يكتب الآن...`
-    : `${names.join('، ')} يكتبون الآن...`;
+    ? t('typing_one', { name: names[0] })
+    : t('typing_many', { names: names.join(currentLang === 'ar' ? '، ' : ', ') });
 }
 
 document.getElementById('chatInput').addEventListener('input', () => {
@@ -2772,7 +3553,7 @@ document.getElementById('shareSummaryBtn').addEventListener('click', () => {
 
   const btn = document.getElementById('shareSummaryBtn');
   const original = btn.textContent;
-  btn.textContent = '✅ تمت المشاركة';
+  btn.textContent = `✅ ${t('summary_shared_done')}`;
   setTimeout(() => { btn.textContent = original; }, 2000);
 });
 
@@ -2806,7 +3587,7 @@ fileInput.addEventListener('change', e => {
 
 function handleFile(file) {
   if (file.type !== 'application/pdf') {
-    showError('uploadError', 'الملف لازم يكون PDF');
+    showError('uploadError', t('err_must_be_pdf'));
     return;
   }
   selectedFile = file;
@@ -2826,7 +3607,7 @@ removeFile.addEventListener('click', () => {
 uploadBtn.addEventListener('click', async () => {
   if (!selectedFile) return;
   clearError('uploadError');
-  setLoading(uploadBtn, true, 'رفع ومعالجة الملف');
+  setLoading(uploadBtn, true, t('btn_upload_process'));
 
   try {
     const formData = new FormData();
@@ -2834,7 +3615,7 @@ uploadBtn.addEventListener('click', async () => {
 
     const uploadRes = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: formData });
     const uploadData = await uploadRes.json();
-    if (!uploadRes.ok) throw new Error(uploadData.error || 'فشل رفع الملف');
+    if (!uploadRes.ok) throw new Error(uploadData.error || t('err_upload_failed'));
 
     uploadedFilename = uploadData.filename;
 
@@ -2844,18 +3625,18 @@ uploadBtn.addEventListener('click', async () => {
       body: JSON.stringify({ filename: uploadedFilename })
     });
     const extractData = await extractRes.json();
-    if (!extractRes.ok) throw new Error(extractData.error || 'فشل استخراج النص');
+    if (!extractRes.ok) throw new Error(extractData.error || t('err_extract_failed'));
 
     extractedText = extractData.text;
-    document.getElementById('extractedText').textContent = extractedText || 'ما قدرنا نستخرج نص من هذا الملف';
+    document.getElementById('extractedText').textContent = extractedText || t('err_no_text_extracted');
     show('step-text');
     if (appMode === 'solo') show('step-chat');
     if (currentAccessToken) show('saveToLibraryBtn');
     document.getElementById('step-text').scrollIntoView({ behavior: 'smooth' });
   } catch (err) {
-    showError('uploadError', err.message || 'صار خطأ غير متوقع، تأكد إن السيرفر شغال');
+    showError('uploadError', err.message || t('err_server_down'));
   } finally {
-    setLoading(uploadBtn, false, 'رفع ومعالجة الملف');
+    setLoading(uploadBtn, false, t('btn_upload_process'));
   }
 });
 
@@ -2870,11 +3651,11 @@ async function sendAIChat() {
   const message = input.value.trim();
   if (!message) return;
   clearError('aiChatError');
-  appendChatBubble('aiChatMessages', 'أنت', message, 'me');
+  appendChatBubble('aiChatMessages', t('chat_you'), message, 'me');
   input.value = '';
 
   try {
-    const body = { message };
+    const body = { message, lang: currentLang };
     if (chatInteractionId) {
       body.interaction_id = chatInteractionId;
     } else {
@@ -2888,12 +3669,12 @@ async function sendAIChat() {
       body: JSON.stringify(body)
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'صار خطأ بالمحادثة');
+    if (!res.ok) throw new Error(data.error || t('err_chat_failed'));
 
     chatInteractionId = data.interaction_id;
-    appendChatBubble('aiChatMessages', 'ذكيّ', data.reply, 'ai');
+    appendChatBubble('aiChatMessages', t('chat_zakiy'), data.reply, 'ai');
   } catch (err) {
-    showError('aiChatError', err.message || 'صار خطأ غير متوقع');
+    showError('aiChatError', err.message || t('err_unexpected'));
   }
 }
 
@@ -2915,11 +3696,11 @@ async function sendSiteHelpMessage() {
   const message = input.value.trim();
   if (!message) return;
   clearError('siteHelpError');
-  appendChatBubble('siteHelpMessages', 'أنت', message, 'me');
+  appendChatBubble('siteHelpMessages', t('chat_you'), message, 'me');
   input.value = '';
 
   try {
-    const body = { message };
+    const body = { message, lang: currentLang };
     if (siteHelpInteractionId) body.interaction_id = siteHelpInteractionId;
 
     const res = await fetch(`${API_BASE}/api/site-help`, {
@@ -2928,12 +3709,12 @@ async function sendSiteHelpMessage() {
       body: JSON.stringify(body),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'صار خطأ بالمحادثة');
+    if (!res.ok) throw new Error(data.error || t('err_chat_failed'));
 
     siteHelpInteractionId = data.interaction_id;
-    appendChatBubble('siteHelpMessages', 'ذكيّ', data.reply, 'ai');
+    appendChatBubble('siteHelpMessages', t('chat_zakiy'), data.reply, 'ai');
   } catch (err) {
-    showError('siteHelpError', err.message || 'صار خطأ غير متوقع');
+    showError('siteHelpError', err.message || t('err_unexpected'));
   }
 }
 
@@ -2941,25 +3722,25 @@ async function sendSiteHelpMessage() {
 const summarizeBtn = document.getElementById('summarizeBtn');
 summarizeBtn.addEventListener('click', async () => {
   clearError('summarizeError');
-  setLoading(summarizeBtn, true, 'لخّص المحتوى');
+  setLoading(summarizeBtn, true, t('btn_summarize'));
 
   try {
     const res = await fetch(`${API_BASE}/api/summarize`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: extractedText })
+      body: JSON.stringify({ text: extractedText, lang: currentLang })
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'فشل التلخيص');
+    if (!res.ok) throw new Error(data.error || t('err_summarize_failed'));
 
     document.getElementById('summaryText').textContent = data.summary;
     show('step-summary');
     if (canManageContent && currentRoomCode) show('shareSummaryBtn');
     document.getElementById('step-summary').scrollIntoView({ behavior: 'smooth' });
   } catch (err) {
-    showError('summarizeError', err.message || 'صار خطأ غير متوقع');
+    showError('summarizeError', err.message || t('err_unexpected'));
   } finally {
-    setLoading(summarizeBtn, false, 'لخّص المحتوى');
+    setLoading(summarizeBtn, false, t('btn_summarize'));
   }
 });
 
@@ -2967,7 +3748,7 @@ summarizeBtn.addEventListener('click', async () => {
 const quizBtn = document.getElementById('quizBtn');
 quizBtn.addEventListener('click', async () => {
   clearError('quizError');
-  setLoading(quizBtn, true, 'ولّد اختبار من هذا المحتوى');
+  setLoading(quizBtn, true, t('btn_generate_quiz'));
 
   try {
     let numQuestions = parseInt(document.getElementById('numQuestionsInput').value, 10);
@@ -2977,10 +3758,10 @@ quizBtn.addEventListener('click', async () => {
     const res = await fetch(`${API_BASE}/api/generate-quiz`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: extractedText, num_questions: numQuestions })
+      body: JSON.stringify({ text: extractedText, num_questions: numQuestions, lang: currentLang })
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'فشل توليد الاختبار');
+    if (!res.ok) throw new Error(data.error || t('err_quiz_gen_failed'));
 
     let raw = data.quiz_raw.trim();
     raw = raw.replace(/^```json/, '').replace(/^```/, '').replace(/```$/, '').trim();
@@ -2996,9 +3777,9 @@ quizBtn.addEventListener('click', async () => {
     }
     document.getElementById('step-quiz').scrollIntoView({ behavior: 'smooth' });
   } catch (err) {
-    showError('quizError', 'صار خطأ بتوليد الاختبار أو قراءة النتيجة، جرب مرة ثانية');
+    showError('quizError', t('err_quiz_gen_parse_failed'));
   } finally {
-    setLoading(quizBtn, false, 'ولّد اختبار من هذا المحتوى');
+    setLoading(quizBtn, false, t('btn_generate_quiz'));
   }
 });
 
@@ -3009,7 +3790,7 @@ function renderQuiz() {
     const qDiv = document.createElement('div');
     qDiv.className = 'question';
     qDiv.innerHTML = `
-      <div class="q-num">السؤال ${i + 1}</div>
+      <div class="q-num">${t('question_label', { n: i + 1 })}</div>
       <div class="q-text">${q.question}</div>
       <div class="options" data-qindex="${i}">
         ${q.options.map(opt => `<div class="option" data-value="${opt}">${opt}</div>`).join('')}
@@ -3034,7 +3815,7 @@ document.getElementById('hostStartQuizBtn').addEventListener('click', () => {
   clearError('hostStartQuizError');
 
   if (!duration || duration <= 0) {
-    showError('hostStartQuizError', 'لازم تحدد مدة صحيحة للاختبار بالدقائق');
+    showError('hostStartQuizError', t('err_valid_duration_required'));
     return;
   }
 
@@ -3079,12 +3860,12 @@ function tickQuizCountdown() {
   const remaining = Math.floor(quizDeadline - Date.now() / 1000);
   const badge = document.getElementById('quizCountdownBadge');
   if (remaining <= 0) {
-    badge.textContent = '⏱️ انتهى الوقت';
+    badge.textContent = `⏱️ ${t('time_up')}`;
     clearInterval(quizCountdownIntervalId);
     if (!quizFinished) finishQuiz();
     return;
   }
-  badge.textContent = `⏱️ الوقت المتبقي: ${formatTime(remaining)}`;
+  badge.textContent = `⏱️ ${t('time_remaining')}: ${formatTime(remaining)}`;
 }
 
 function startQuizCountdown() {
@@ -3126,7 +3907,7 @@ function finishQuiz() {
 
   const banner = document.createElement('div');
   banner.className = 'score-banner';
-  banner.innerHTML = `<div>نتيجتك</div><div class="big">${correct} / ${quizData.length}</div><div>⏱️ الوقت المستغرق: ${formatTime(timeTaken)}</div>`;
+  banner.innerHTML = `<div>${t('your_score')}</div><div class="big">${correct} / ${quizData.length}</div><div>⏱️ ${t('time_taken_label')}: ${formatTime(timeTaken)}</div>`;
   document.getElementById('quizContainer').prepend(banner);
   document.getElementById('checkBtn').disabled = true;
 
@@ -3184,7 +3965,7 @@ const voiceAudioElements = new Map(); // sid -> <audio>
 function updateVoiceUI() {
   if (inVoiceChat) {
     hide('voiceJoinBtn'); show('voiceLeaveBtn'); show('voiceMuteBtn');
-    document.getElementById('voiceMuteBtn').textContent = voiceMuted ? '🎙️ شغّل المايك' : '🔇 كتم المايك';
+    document.getElementById('voiceMuteBtn').textContent = t(voiceMuted ? 'btn_voice_unmute' : 'btn_voice_mute');
   } else {
     show('voiceJoinBtn'); hide('voiceLeaveBtn'); hide('voiceMuteBtn');
   }
@@ -3234,7 +4015,7 @@ document.getElementById('voiceJoinBtn').addEventListener('click', async () => {
   try {
     localVoiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   } catch (err) {
-    showError('voiceError', 'ما قدرنا نوصل للمايك، تأكد من صلاحيات المتصفح');
+    showError('voiceError', t('err_mic_access'));
     return;
   }
   inVoiceChat = true;
@@ -3314,7 +4095,7 @@ function pomodoroDurations() {
 function updatePomodoroDisplay() {
   document.getElementById('pomodoroTimeDisplay').textContent = formatTime(pomodoroRemaining);
   const label = document.getElementById('pomodoroPhaseLabel');
-  label.textContent = pomodoroPhase === 'focus' ? '🧠 مذاكرة' : '☕ راحة';
+  label.textContent = t(pomodoroPhase === 'focus' ? 'pomodoro_phase_focus' : 'pomodoro_phase_break');
   label.classList.toggle('break', pomodoroPhase === 'break');
 }
 
@@ -3337,9 +4118,8 @@ function playPomodoroSound() {
 
 function showPomodoroAlert() {
   const wasFocus = pomodoroPhase === 'focus';
-  document.getElementById('pomodoroAlertText').textContent =
-    wasFocus ? '🎉 خلصت فترة المذاكرة! وقت الراحة' : '💪 خلصت الراحة! نرجع نذاكر؟';
-  document.getElementById('pomodoroNextBtn').textContent = wasFocus ? '☕ ابدأ الراحة' : '🧠 ابدأ المذاكرة';
+  document.getElementById('pomodoroAlertText').textContent = t(wasFocus ? 'pomodoro_focus_done' : 'pomodoro_break_done');
+  document.getElementById('pomodoroNextBtn').textContent = t(wasFocus ? 'btn_pomodoro_start_break' : 'btn_pomodoro_start_focus');
   show('pomodoroAlert');
 }
 
@@ -3677,12 +4457,12 @@ function openQrModalWithText(payloadText, captionText) {
     document.getElementById('qrRoomCodeText').textContent = captionText;
     show('qrModal');
   } catch (err) {
-    alert('تعذر توليد رمز QR');
+    alert(t('err_qr_generation'));
   }
 }
 function openQrModal(roomCode) {
   const url = `${location.origin}${location.pathname}?join=${roomCode}`;
-  openQrModalWithText(url, `كود الغرفة: ${roomCode}`);
+  openQrModalWithText(url, `${t('qr_room_code_caption')}: ${roomCode}`);
 }
 document.getElementById('showQrBtn').addEventListener('click', () => openQrModal(currentRoomCode));
 document.getElementById('showQrBtnClassroom').addEventListener('click', () => openQrModal(currentRoomCode));
@@ -3692,13 +4472,13 @@ document.getElementById('qrModalCloseBtn').addEventListener('click', () => hide(
 function openFriendQrModal() {
   if (!currentUserId) return;
   const url = `${location.origin}${location.pathname}?addfriend=${currentUserId}`;
-  openQrModalWithText(url, `شارك هذا الكود عشان يضيفونك كصديق (${currentUsername})`);
+  openQrModalWithText(url, t('qr_friend_caption', { name: currentUsername }));
 }
 document.getElementById('showFriendQrBtn').addEventListener('click', openFriendQrModal);
 
 async function handleAddFriendFromQr(userId) {
   if (userId === currentUserId) {
-    alert('هذا رمزك أنت 🙂 وريه لصديق عشان يضيفك');
+    alert(t('qr_own_code_alert'));
     return;
   }
   try {
@@ -3706,9 +4486,9 @@ async function handleAddFriendFromQr(userId) {
       headers: { 'Authorization': `Bearer ${currentAccessToken}` },
     });
     const data = await res.json();
-    if (!res.ok) { alert(data.error || 'ما لقينا هذا المستخدم'); return; }
+    if (!res.ok) { alert(data.error || t('err_user_not_found')); return; }
 
-    if (!confirm(`تبي ترسل طلب صداقة لـ ${data.username}؟`)) return;
+    if (!confirm(t('confirm_send_friend_request', { name: data.username }))) return;
 
     const reqRes = await fetch(`${API_BASE}/api/friends/request`, {
       method: 'POST',
@@ -3716,11 +4496,11 @@ async function handleAddFriendFromQr(userId) {
       body: JSON.stringify({ to_user_id: userId }),
     });
     const reqData = await reqRes.json();
-    if (!reqRes.ok) { alert(reqData.error || 'تعذر إرسال طلب الصداقة'); return; }
+    if (!reqRes.ok) { alert(reqData.error || t('err_friend_request_failed')); return; }
 
-    alert(`تم إرسال طلب الصداقة لـ ${data.username} ✅`);
+    alert(t('friend_request_sent_alert', { name: data.username }));
   } catch (err) {
-    alert('صار خطأ غير متوقع، جرب مرة ثانية');
+    alert(t('err_unexpected_retry'));
   }
 }
 </script>

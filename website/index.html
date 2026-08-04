@@ -836,6 +836,56 @@
 
   /* ---------- زري اختيار اللغة بشاشة الإعدادات ---------- */
   .lang-choice-btn.active { background: var(--emphasis-bg); color: var(--emphasis-text); border-color: var(--emphasis-bg); }
+
+  /* ---------- مفتاح تبديل (سويتش) لخيارات الخصوصية ---------- */
+  .privacy-toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 2px; border-bottom: 1px solid var(--line);
+  }
+  .privacy-toggle-row:last-child { border-bottom: none; }
+  .privacy-toggle-label { font-size: 14px; font-weight: 600; color: var(--ink); }
+  .switch { position: relative; display: inline-block; width: 42px; height: 24px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch-slider {
+    position: absolute; cursor: pointer; inset: 0; background: var(--line);
+    border-radius: 999px; transition: background .2s;
+  }
+  .switch-slider::before {
+    content: ""; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px;
+    background: white; border-radius: 50%; transition: transform .2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  }
+  .switch input:checked + .switch-slider { background: var(--teal); }
+  .switch input:checked + .switch-slider::before { transform: translateX(-18px); }
+  [dir="ltr"] .switch input:checked + .switch-slider::before { transform: translateX(18px); }
+  .switch input:disabled + .switch-slider { opacity: .45; cursor: not-allowed; }
+
+  /* ---------- صفحة البروفايل ---------- */
+  .profile-header { text-align: center; padding: 10px 0 6px; }
+  .profile-avatar {
+    width: 84px; height: 84px; border-radius: 50%; margin: 0 auto 14px;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, var(--emphasis-bg), var(--teal));
+    color: #fff; font-family: 'Almarai', sans-serif; font-weight: 800; font-size: 32px;
+    box-shadow: 0 6px 18px rgba(27,42,74,0.25);
+  }
+  .profile-header h2 { margin-bottom: 4px; }
+  .profile-school { color: var(--teal); font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+  .profile-bio { color: var(--ink-soft); font-size: 14.5px; max-width: 480px; margin: 0 auto; line-height: 1.6; }
+  .card-notice {
+    text-align: center; padding: 30px 16px; background: var(--paper-dim);
+    border-radius: var(--radius); margin-top: 18px; color: var(--ink-soft); font-weight: 600;
+  }
+  #profileSections { margin-top: 10px; }
+  .profile-section {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 18px; margin-top: 16px;
+  }
+  .profile-section .sub-heading { margin-bottom: 12px; }
+  .profile-library-row, .profile-archive-row, .profile-friend-row {
+    padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 6px; font-size: 14px;
+  }
+  .profile-archive-row .archive-participant.is-host { font-weight: 800; color: var(--teal); }
 </style>
 </head>
 <body>
@@ -861,6 +911,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">ذكيّ</div>
   <nav class="sidebar-nav">
+    <button class="sidebar-btn" id="myProfileBtn"><span class="sidebar-icon">👤</span><span class="label" data-i18n="nav_profile">بروفايلي</span></button>
     <button class="sidebar-btn" id="performanceBtn"><span class="sidebar-icon">📊</span><span class="label" data-i18n="nav_performance">أدائي</span></button>
     <button class="sidebar-btn" id="archiveBtn"><span class="sidebar-icon">📂</span><span class="label" data-i18n="nav_archive">الأرشيف</span></button>
     <button class="sidebar-btn" id="friendsBtn"><span class="sidebar-icon">👥</span><span class="label" data-i18n="nav_friends">الأصدقاء</span></button>
@@ -1094,7 +1145,96 @@
         <button class="primary" id="settingsSavePhoneBtn" data-i18n="btn_save">حفظ</button>
       </div>
       <div id="settingsPhoneMsg"></div>
+
+      <h3 class="sub-heading" style="margin-top:22px;" data-i18n="settings_profile_heading">👤 البروفايل</h3>
+      <div class="actions" style="flex-direction:column; align-items:stretch;">
+        <textarea id="settingsBioInput" class="text-input" rows="3" maxlength="300" placeholder="اكتب نبذة قصيرة عنك..." data-i18n-ph="ph_bio" style="resize:vertical; font-family:inherit;"></textarea>
+        <input type="text" id="settingsSchoolInput" class="text-input" placeholder="اسم مدرستك/جامعتك" data-i18n-ph="ph_school">
+      </div>
+
+      <div class="privacy-toggle-row">
+        <label class="privacy-toggle-label" data-i18n="settings_private_profile">🔒 بروفايل خاص بالكامل</label>
+        <label class="switch"><input type="checkbox" id="settingsPrivateToggle"><span class="switch-slider"></span></label>
+      </div>
+      <p class="desc" data-i18n="settings_private_profile_desc">لو فعّلته، محد يقدر يشوف بروفايلك غير اسمك</p>
+
+      <div id="settingsVisibilityToggles">
+        <div class="privacy-toggle-row">
+          <label class="privacy-toggle-label" data-i18n="settings_show_performance">📊 إظهار الأداء بالبروفايل</label>
+          <label class="switch"><input type="checkbox" id="settingsShowPerformance" checked><span class="switch-slider"></span></label>
+        </div>
+        <div class="privacy-toggle-row">
+          <label class="privacy-toggle-label" data-i18n="settings_show_library">📚 إظهار المكتبة بالبروفايل</label>
+          <label class="switch"><input type="checkbox" id="settingsShowLibrary" checked><span class="switch-slider"></span></label>
+        </div>
+        <div class="privacy-toggle-row">
+          <label class="privacy-toggle-label" data-i18n="settings_show_archive">📂 إظهار الأرشيف بالبروفايل</label>
+          <label class="switch"><input type="checkbox" id="settingsShowArchive" checked><span class="switch-slider"></span></label>
+        </div>
+        <div class="privacy-toggle-row">
+          <label class="privacy-toggle-label" data-i18n="settings_show_friends">👥 إظهار الأصدقاء بالبروفايل</label>
+          <label class="switch"><input type="checkbox" id="settingsShowFriends" checked><span class="switch-slider"></span></label>
+        </div>
+      </div>
+
+      <div class="actions" style="margin-top:14px;">
+        <button class="primary" id="settingsSaveProfileBtn" data-i18n="btn_save">حفظ</button>
+        <button class="ghost" id="settingsViewProfileBtn" data-i18n="btn_view_my_profile">👁️ شاهد بروفايلك</button>
+      </div>
+      <div id="settingsProfileMsg"></div>
     </div>
+  </section>
+
+  <!-- صفحة البروفايل - بروفايلك أو بروفايل شخص ثاني (عبر بحث/QR)، حسب إعدادات الخصوصية -->
+  <section class="card hidden" id="step-profile">
+    <span class="step-label" data-i18n="profile_step_label">👤 البروفايل</span>
+
+    <div class="profile-header">
+      <div class="profile-avatar" id="profileAvatar"></div>
+      <h2 id="profileUsername"></h2>
+      <p class="profile-school hidden" id="profileSchool"></p>
+      <p class="profile-bio hidden" id="profileBio"></p>
+    </div>
+
+    <div class="actions" id="profileActionsRow" style="justify-content:center;">
+      <button class="ghost hidden" id="profileShowQrBtn" data-i18n="btn_show_qr_profile">📱 QR بروفايلك</button>
+      <button class="primary hidden" id="profileAddFriendBtn" data-i18n="btn_add_friend_short">➕ أضف صديق</button>
+      <span class="badge hidden" id="profileFriendBadge"></span>
+    </div>
+
+    <div class="card-notice hidden" id="profilePrivateNotice">
+      <div style="font-size:28px;">🔒</div>
+      <p data-i18n="profile_is_private_notice">هذا البروفايل خاص</p>
+    </div>
+
+    <div id="profileSections">
+      <div class="profile-section hidden" id="profilePerformanceSection">
+        <h3 class="sub-heading" data-i18n="nav_performance">📊 أدائي</h3>
+        <div class="stat-row">
+          <div class="stat-tile"><div class="stat-value" id="profileStatAttempts">0</div><div class="stat-label" data-i18n="stat_attempts">عدد المحاولات</div></div>
+          <div class="stat-tile"><div class="stat-value" id="profileStatAvg">٠٪</div><div class="stat-label" data-i18n="stat_avg">متوسط الدرجة</div></div>
+          <div class="stat-tile study-hours"><div class="stat-value" id="profileStatMinutes">٠</div><div class="stat-label" data-i18n="stat_study_minutes">⏱️ دقائق مذاكرة</div></div>
+        </div>
+        <div class="streak-badge hidden" id="profileStreakBadge" style="margin-top:12px;"><span class="flame">🔥</span><span id="profileStreakText"></span></div>
+      </div>
+
+      <div class="profile-section hidden" id="profileLibrarySection">
+        <h3 class="sub-heading" data-i18n="nav_library">📚 مكتبتي</h3>
+        <div id="profileLibraryList"></div>
+      </div>
+
+      <div class="profile-section hidden" id="profileArchiveSection">
+        <h3 class="sub-heading" data-i18n="nav_archive">📂 الأرشيف</h3>
+        <div id="profileArchiveList"></div>
+      </div>
+
+      <div class="profile-section hidden" id="profileFriendsSection">
+        <h3 class="sub-heading" data-i18n="nav_friends">👥 الأصدقاء</h3>
+        <div id="profileFriendsListDisplay"></div>
+      </div>
+    </div>
+
+    <p class="desc hidden" id="profileNoSectionsNotice" data-i18n="profile_no_visible_sections">هذا الطالب ما فعّل عرض أي قسم إضافي.</p>
   </section>
 
   <!-- اختيار الوضع: فردي أو غرفة جماعية -->
@@ -1635,7 +1775,7 @@ const I18N = {
     qr_modal_title: 'امسح الكود عشان تنضم',
     loading_processing: 'جارٍ المعالجة',
     exam_reveal_confirm: 'أنت داخل الاختبار الحين. كشف المحتوى وقت الاختبار يعتبر نوع من الغش على نفسك ويأثر على تقييمك الحقيقي لفهمك. تبي تكشفه بكل الأحوال؟',
-    addfriend_guest_alert: 'لازم تسجل دخول أو تنشئ حساب عشان تضيف هذا الشخص كصديق',
+    addfriend_guest_alert: 'لازم تسجل دخول أو تنشئ حساب عشان تقدر تشوف هذا البروفايل',
     greeting_prefix: 'أهلاً {name} 👋',
     save_name_failed: 'تعذر حفظ الاسم، جرب مرة ثانية',
     legacy_username_prompt: 'لاحظنا حسابك بدون اسم محفوظ. وش اسمك؟ (يطلع بدل الإيميل بالموقع)',
@@ -1753,6 +1893,27 @@ const I18N = {
     invite_from_prefix: 'دعوة من',
     invite_to_room_type_quiz: 'غرفة جماعية',
     invite_to_room_type_classroom: 'كلاس مباشر',
+    nav_profile: 'بروفايلي',
+    profile_step_label: '👤 البروفايل',
+    btn_show_qr_profile: '📱 QR بروفايلك',
+    btn_add_friend_short: '➕ أضف صديق',
+    profile_is_private_notice: 'هذا البروفايل خاص',
+    profile_no_visible_sections: 'هذا الطالب ما فعّل عرض أي قسم إضافي.',
+    friend_status_friends: 'أصدقاء',
+    friend_status_pending_sent: 'طلب معلّق',
+    friend_status_pending_received: 'أرسل لك طلب صداقة',
+    settings_profile_heading: '👤 البروفايل',
+    ph_bio: 'اكتب نبذة قصيرة عنك...',
+    ph_school: 'اسم مدرستك/جامعتك',
+    settings_private_profile: '🔒 بروفايل خاص بالكامل',
+    settings_private_profile_desc: 'لو فعّلته، محد يقدر يشوف بروفايلك غير اسمك',
+    settings_show_performance: '📊 إظهار الأداء بالبروفايل',
+    settings_show_library: '📚 إظهار المكتبة بالبروفايل',
+    settings_show_archive: '📂 إظهار الأرشيف بالبروفايل',
+    settings_show_friends: '👥 إظهار الأصدقاء بالبروفايل',
+    btn_view_my_profile: '👁️ شاهد بروفايلك',
+    profile_saved: 'تم حفظ البروفايل',
+    qr_profile_caption: 'بروفايل {name} - امسح عشان تشوفه',
   },
   en: {
     nav_performance: 'My Performance',
@@ -1933,7 +2094,7 @@ const I18N = {
     qr_modal_title: 'Scan the code to join',
     loading_processing: 'Processing',
     exam_reveal_confirm: "You're currently in the exam. Revealing content during the exam is a form of cheating on yourself and affects the honest measurement of your understanding. Reveal it anyway?",
-    addfriend_guest_alert: 'You need to log in or create an account to add this person as a friend',
+    addfriend_guest_alert: 'You need to log in or create an account to view this profile',
     greeting_prefix: 'Welcome {name} 👋',
     save_name_failed: 'Could not save the name, try again',
     legacy_username_prompt: "We noticed your account has no saved name. What's your name? (shown instead of your email on the site)",
@@ -2051,6 +2212,27 @@ const I18N = {
     invite_from_prefix: 'Invite from',
     invite_to_room_type_quiz: 'Group Room',
     invite_to_room_type_classroom: 'Live Class',
+    nav_profile: 'My Profile',
+    profile_step_label: '👤 Profile',
+    btn_show_qr_profile: '📱 Your Profile QR',
+    btn_add_friend_short: '➕ Add Friend',
+    profile_is_private_notice: 'This profile is private',
+    profile_no_visible_sections: "This student hasn't made any extra section visible.",
+    friend_status_friends: 'Friends',
+    friend_status_pending_sent: 'Request pending',
+    friend_status_pending_received: 'Sent you a friend request',
+    settings_profile_heading: '👤 Profile',
+    ph_bio: 'Write a short bio about yourself...',
+    ph_school: 'Your school/university name',
+    settings_private_profile: '🔒 Fully Private Profile',
+    settings_private_profile_desc: 'If enabled, no one can see your profile except your name',
+    settings_show_performance: '📊 Show Performance on Profile',
+    settings_show_library: '📚 Show Library on Profile',
+    settings_show_archive: '📂 Show Archive on Profile',
+    settings_show_friends: '👥 Show Friends on Profile',
+    btn_view_my_profile: '👁️ View Your Profile',
+    profile_saved: 'Profile saved',
+    qr_profile_caption: "{name}'s profile - scan to view it",
   },
 };
 
@@ -2222,14 +2404,14 @@ function proceedToApp() {
     goToJoinRoomWithCode(joinCode);
   }
 
-  // إضافة صديق سريعة عبر رابط QR (?addfriend=USER_ID) - محتاج تسجيل دخول
-  // فعلي؛ لو ضيف، نسيب الباراميتر بالرابط عشان يتفحص تلقائيًا بعد ما يسجل
-  // دخول (proceedToApp تُستدعى برضو من onAuthSuccess)
-  const addFriendId = new URLSearchParams(location.search).get('addfriend');
-  if (addFriendId) {
+  // فتح بروفايل شخص عبر رابط QR (?profile=USER_ID) - محتاج تسجيل دخول فعلي؛
+  // لو ضيف، نسيب الباراميتر بالرابط عشان يتفحص تلقائيًا بعد ما يسجل دخول
+  // (proceedToApp تُستدعى برضو من onAuthSuccess)
+  const profileDeepLinkId = new URLSearchParams(location.search).get('profile');
+  if (profileDeepLinkId) {
     if (currentAccessToken) {
       history.replaceState(null, '', location.pathname);
-      handleAddFriendFromQr(addFriendId);
+      showProfileScreen(profileDeepLinkId);
     } else {
       alert(t('addfriend_guest_alert'));
     }
@@ -2397,7 +2579,7 @@ document.getElementById('guestLoginPromptBtn').addEventListener('click', () => {
 
 // ---------- شاشات الحساب (أدائي / الأرشيف / الأصدقاء / مكتبتي) - كل وحدة
 // مستقلة بزر سايد بار خاص فيها، بدل ما تكون تبويبات جوا شاشة وحدة ----------
-const ACCOUNT_SCREENS = ['step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings'];
+const ACCOUNT_SCREENS = ['step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings', 'step-profile'];
 function showAccountScreen(id) {
   ['login-form', 'signup-form', 'mode-select', 'room-mode-select', 'room-create-form',
    'room-join-form', 'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary', 'step-quiz',
@@ -2410,6 +2592,138 @@ function showLibraryScreen() { showAccountScreen('step-library'); }
 function showArchiveScreen() { showAccountScreen('step-archive'); }
 function showFriendsScreen() { showAccountScreen('step-friends'); }
 function showSettingsScreen() { showAccountScreen('step-settings'); }
+function showProfileScreen() { showAccountScreen('step-profile'); }
+
+// ---------- صفحة البروفايل (بروفايلك أو بروفايل شخص ثاني) ----------
+async function showProfileScreen(userId) {
+  if (!requireAuthOrPrompt()) return;
+  pushNavSnapshot();
+  showAccountScreen('step-profile');
+  updateGlobalBackButton();
+
+  document.getElementById('profileUsername').textContent = '...';
+  document.getElementById('profileAvatar').textContent = '';
+  hide('profileSchool'); hide('profileBio'); hide('profilePrivateNotice'); hide('profileNoSectionsNotice');
+  hide('profileShowQrBtn'); hide('profileAddFriendBtn'); hide('profileFriendBadge');
+  ['profilePerformanceSection', 'profileLibrarySection', 'profileArchiveSection', 'profileFriendsSection'].forEach(hide);
+
+  try {
+    const res = await fetch(`${API_BASE}/api/profile/${userId}`, {
+      headers: { 'Authorization': `Bearer ${currentAccessToken}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || t('err_unexpected'));
+    renderProfile(data);
+  } catch (err) {
+    document.getElementById('profileUsername').textContent = err.message || t('err_unexpected');
+  }
+}
+
+function renderProfile(data) {
+  document.getElementById('profileUsername').textContent = data.username;
+  document.getElementById('profileAvatar').textContent = (data.username || '?').trim().charAt(0).toUpperCase();
+
+  if (data.is_owner) {
+    show('profileShowQrBtn');
+    document.getElementById('profileShowQrBtn').onclick = () => openProfileQrModal(data.user_id, data.username);
+  } else if (data.friend_status !== 'self') {
+    renderProfileFriendAction(data);
+  }
+
+  if (data.is_private && !data.is_owner) {
+    show('profilePrivateNotice');
+    return;
+  }
+
+  if (data.school_name) { document.getElementById('profileSchool').textContent = `🏫 ${data.school_name}`; show('profileSchool'); }
+  if (data.bio) { document.getElementById('profileBio').textContent = data.bio; show('profileBio'); }
+
+  let anySectionShown = false;
+
+  if (data.performance) {
+    anySectionShown = true;
+    show('profilePerformanceSection');
+    document.getElementById('profileStatAttempts').textContent = data.performance.attempts_count;
+    document.getElementById('profileStatAvg').textContent = `${data.performance.avg_score}%`;
+    document.getElementById('profileStatMinutes').textContent = data.performance.total_study_minutes;
+    if (data.performance.current_streak >= 3) {
+      document.getElementById('profileStreakText').textContent = t('streak_days_suffix', { n: data.performance.current_streak });
+      show('profileStreakBadge');
+    } else {
+      hide('profileStreakBadge');
+    }
+  }
+
+  if (data.library) {
+    anySectionShown = true;
+    show('profileLibrarySection');
+    const listEl = document.getElementById('profileLibraryList');
+    listEl.innerHTML = data.library.count
+      ? data.library.titles.map(title => `<div class="profile-library-row">📄 ${title}</div>`).join('')
+      : `<p class="desc">${t('library_empty')}</p>`;
+  }
+
+  if (data.archive) {
+    anySectionShown = true;
+    show('profileArchiveSection');
+    const listEl = document.getElementById('profileArchiveList');
+    listEl.innerHTML = data.archive.length
+      ? data.archive.map(archiveSessionCardHtml).join('')
+      : `<p class="desc">${t('archive_empty')}</p>`;
+  }
+
+  if (data.friends) {
+    anySectionShown = true;
+    show('profileFriendsSection');
+    const listEl = document.getElementById('profileFriendsListDisplay');
+    listEl.innerHTML = data.friends.count
+      ? data.friends.list.map(f => `<div class="profile-friend-row view-profile-link" data-id="${f.user_id}" style="cursor:pointer;">👤 ${f.username}</div>`).join('')
+      : `<p class="desc">${t('friends_list_empty')}</p>`;
+    wireViewProfileLinks(listEl);
+  }
+
+  if (!anySectionShown && !data.is_owner) show('profileNoSectionsNotice');
+}
+
+function renderProfileFriendAction(data) {
+  const btn = document.getElementById('profileAddFriendBtn');
+  const badge = document.getElementById('profileFriendBadge');
+  if (data.friend_status === 'friends') {
+    badge.textContent = `✅ ${t('friend_status_friends')}`;
+    show('profileFriendBadge');
+  } else if (data.friend_status === 'pending_sent') {
+    badge.textContent = `⏳ ${t('friend_status_pending_sent')}`;
+    show('profileFriendBadge');
+  } else if (data.friend_status === 'pending_received') {
+    badge.textContent = `📨 ${t('friend_status_pending_received')}`;
+    show('profileFriendBadge');
+  } else {
+    show('profileAddFriendBtn');
+    btn.disabled = false;
+    btn.textContent = t('btn_add_friend_short');
+    btn.onclick = async () => {
+      btn.disabled = true;
+      try {
+        const r = await fetch(`${API_BASE}/api/friends/request`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentAccessToken}` },
+          body: JSON.stringify({ to_user_id: data.user_id }),
+        });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error);
+        btn.textContent = `✅ ${t('friend_request_sent')}`;
+      } catch (err) {
+        btn.disabled = false;
+        alert(err.message || t('err_friend_request_failed'));
+      }
+    };
+  }
+}
+
+document.getElementById('myProfileBtn').addEventListener('click', () => {
+  if (!requireAuthOrPrompt()) return;
+  showProfileScreen(currentUserId);
+});
 
 document.getElementById('performanceBtn').addEventListener('click', async () => {
   if (!requireAuthOrPrompt()) return;
@@ -2461,6 +2775,33 @@ async function loadArchive() {
   }
 }
 
+// يبني سطر مشارك واحد: الاسم + شارة 👑 للمضيف + الدرجة إن وجدت (اختبار
+// انعقد) - يشتغل بالأرشيف الشخصي وبقسم الأرشيف داخل صفحة البروفايل كلاهما
+function archiveParticipantLine(p) {
+  const hostTag = p.is_host ? ' 👑' : '';
+  const scoreTag = (p.total != null && p.total > 0) ? ` — ${p.score} / ${p.total}` : '';
+  return `${p.name || t('archive_unknown')}${hostTag}${scoreTag}`;
+}
+
+function archiveSessionCardHtml(s) {
+  const typeLabel = s.room_type === 'classroom' ? t('mode_classroom') : t('mode_room');
+  const date = s.created_at ? new Date(s.created_at).toLocaleDateString(currentLang === 'ar' ? 'ar-SA' : 'en-US') : '';
+  const participants = s.participants || [];
+  const rows = participants.length
+    ? participants.map(p => `<div class="profile-archive-row"><span class="archive-participant${p.is_host ? ' is-host' : ''}">${archiveParticipantLine(p)}</span></div>`).join('')
+    : `<p class="desc">${t('archive_no_one')}</p>`;
+  return `
+    <div class="archive-row" style="flex-direction:column; align-items:stretch;">
+      <div style="display:flex; justify-content:space-between; width:100%;">
+        <strong>${typeLabel} — ${s.room_code}</strong>
+        <span class="desc">${date}</span>
+      </div>
+      <span class="desc" style="margin:6px 0 8px;">${t('archive_host_prefix')}: ${s.host_name || t('archive_unknown')}</span>
+      ${rows}
+    </div>
+  `;
+}
+
 function renderArchive(sessions) {
   if (!sessions.length) {
     show('archiveEmptyState');
@@ -2468,21 +2809,7 @@ function renderArchive(sessions) {
     return;
   }
   hide('archiveEmptyState');
-  document.getElementById('archiveList').innerHTML = sessions.map(s => {
-    const typeLabel = s.room_type === 'classroom' ? t('mode_classroom') : t('mode_room');
-    const date = s.created_at ? new Date(s.created_at).toLocaleDateString(currentLang === 'ar' ? 'ar-SA' : 'en-US') : '';
-    const names = (s.participants || []).map(p => p.name).filter(Boolean).join(currentLang === 'ar' ? '، ' : ', ');
-    return `
-      <div class="archive-row" style="flex-direction:column; align-items:flex-start;">
-        <div style="display:flex; justify-content:space-between; width:100%;">
-          <strong>${typeLabel} — ${s.room_code}</strong>
-          <span class="desc">${date}</span>
-        </div>
-        <span class="desc">${t('archive_host_prefix')}: ${s.host_name || t('archive_unknown')}</span>
-        <span class="desc">${t('archive_participants_prefix')}: ${names || t('archive_no_one')}</span>
-      </div>
-    `;
-  }).join('');
+  document.getElementById('archiveList').innerHTML = sessions.map(archiveSessionCardHtml).join('');
 }
 
 // ---------- الأصدقاء ----------
@@ -2617,7 +2944,7 @@ function renderFriendsList(friends) {
   }
   container.innerHTML = friends.map(f => `
     <div class="friend-row">
-      <span class="name">${f.username}</span>
+      <span class="name view-profile-link" data-id="${f.user_id}" style="cursor:pointer; text-decoration:underline;">${f.username}</span>
       <button class="ghost remove-friend-btn" data-id="${f.user_id}" style="padding:5px 10px; font-size:12px;">🗑️ ${t('btn_remove')}</button>
     </div>
   `).join('');
@@ -2630,6 +2957,15 @@ function renderFriendsList(friends) {
       }).catch(() => {});
       loadFriends();
     });
+  });
+  wireViewProfileLinks(container);
+}
+
+// روابط "شوف البروفايل" تتكرر بأكثر من مكان (قائمة الأصدقاء، نتائج البحث) -
+// دالة وحدة نوصلها بأي حاوية فيها عناصر .view-profile-link
+function wireViewProfileLinks(container) {
+  container.querySelectorAll('.view-profile-link').forEach(el => {
+    el.addEventListener('click', () => showProfileScreen(el.dataset.id));
   });
 }
 
@@ -2686,10 +3022,11 @@ document.getElementById('friendSearchBtn').addEventListener('click', async () =>
     }
     container.innerHTML = results.map(u => `
       <div class="friend-row">
-        <span class="name">${u.username}</span>
+        <span class="name view-profile-link" data-id="${u.user_id}" style="cursor:pointer; text-decoration:underline;">${u.username}</span>
         <button class="ghost add-friend-btn" data-id="${u.user_id}" style="padding:5px 10px; font-size:12px;">➕ ${t('btn_add')}</button>
       </div>
     `).join('');
+    wireViewProfileLinks(container);
     container.querySelectorAll('.add-friend-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         btn.disabled = true;
@@ -2733,7 +3070,67 @@ document.getElementById('settingsBtn').addEventListener('click', () => {
     document.getElementById('settingsNameMsg').innerHTML = '';
     document.getElementById('settingsPasswordMsg').innerHTML = '';
     document.getElementById('settingsPhoneMsg').innerHTML = '';
+    loadProfileIntoSettings();
   }
+});
+
+// ---------- إعدادات البروفايل (نبذة/مدرسة/خصوصية) ----------
+async function loadProfileIntoSettings() {
+  clearError('settingsProfileMsg');
+  try {
+    const res = await fetch(`${API_BASE}/api/profile/${currentUserId}`, {
+      headers: { 'Authorization': `Bearer ${currentAccessToken}` },
+    });
+    const data = await res.json();
+    if (!res.ok) return;
+    document.getElementById('settingsBioInput').value = data.bio || '';
+    document.getElementById('settingsSchoolInput').value = data.school_name || '';
+    document.getElementById('settingsPrivateToggle').checked = !!data.is_private;
+    document.getElementById('settingsShowPerformance').checked = data.show_performance !== false;
+    document.getElementById('settingsShowLibrary').checked = data.show_library !== false;
+    document.getElementById('settingsShowArchive').checked = data.show_archive !== false;
+    document.getElementById('settingsShowFriends').checked = data.show_friends !== false;
+    updateVisibilityTogglesState();
+  } catch { /* تجاهل */ }
+}
+
+// لو البروفايل خاص بالكامل، تبديلات إظهار الأقسام تصير بلا معنى - نعطّلها
+// بصريًا بدل ما نخفيها، عشان المستخدم يفهم ليش
+function updateVisibilityTogglesState() {
+  const isPrivate = document.getElementById('settingsPrivateToggle').checked;
+  document.getElementById('settingsVisibilityToggles').style.opacity = isPrivate ? '0.5' : '1';
+  ['settingsShowPerformance', 'settingsShowLibrary', 'settingsShowArchive', 'settingsShowFriends'].forEach(id => {
+    document.getElementById(id).disabled = isPrivate;
+  });
+}
+document.getElementById('settingsPrivateToggle').addEventListener('change', updateVisibilityTogglesState);
+
+document.getElementById('settingsSaveProfileBtn').addEventListener('click', async () => {
+  clearError('settingsProfileMsg');
+  try {
+    const res = await fetch(`${API_BASE}/api/profile`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentAccessToken}` },
+      body: JSON.stringify({
+        bio: document.getElementById('settingsBioInput').value,
+        school_name: document.getElementById('settingsSchoolInput').value,
+        is_private: document.getElementById('settingsPrivateToggle').checked,
+        show_performance: document.getElementById('settingsShowPerformance').checked,
+        show_library: document.getElementById('settingsShowLibrary').checked,
+        show_archive: document.getElementById('settingsShowArchive').checked,
+        show_friends: document.getElementById('settingsShowFriends').checked,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || t('err_unexpected'));
+    document.getElementById('settingsProfileMsg').innerHTML = `<div class="desc">✅ ${t('profile_saved')}</div>`;
+  } catch (err) {
+    showError('settingsProfileMsg', err.message || t('err_unexpected'));
+  }
+});
+
+document.getElementById('settingsViewProfileBtn').addEventListener('click', () => {
+  showProfileScreen(currentUserId);
 });
 
 document.getElementById('settingsSaveNameBtn').addEventListener('click', async () => {
@@ -4755,41 +5152,15 @@ document.getElementById('showQrBtn').addEventListener('click', () => openQrModal
 document.getElementById('showQrBtnClassroom').addEventListener('click', () => openQrModal(currentRoomCode));
 document.getElementById('qrModalCloseBtn').addEventListener('click', () => hide('qrModal'));
 
-// ---------- QR شخصي "أضفني كصديق" (يفتح من شاشة الأصدقاء) ----------
-function openFriendQrModal() {
-  if (!currentUserId) return;
-  const url = `${location.origin}${location.pathname}?addfriend=${currentUserId}`;
-  openQrModalWithText(url, t('qr_friend_caption', { name: currentUsername }));
+// ---------- QR شخصي للبروفايل (يفتح من شاشة الأصدقاء وصفحة البروفايل) -
+// يوديك لبروفايل صاحب الرمز مباشرة (بدل ما يرسل طلب صداقة تلقائي)، وفيه
+// زر "أضف صديق" واضح بصفحة البروفايل نفسها ----------
+function openProfileQrModal(userId, username) {
+  if (!userId) return;
+  const url = `${location.origin}${location.pathname}?profile=${userId}`;
+  openQrModalWithText(url, t('qr_profile_caption', { name: username }));
 }
-document.getElementById('showFriendQrBtn').addEventListener('click', openFriendQrModal);
-
-async function handleAddFriendFromQr(userId) {
-  if (userId === currentUserId) {
-    alert(t('qr_own_code_alert'));
-    return;
-  }
-  try {
-    const res = await fetch(`${API_BASE}/api/profile/${userId}`, {
-      headers: { 'Authorization': `Bearer ${currentAccessToken}` },
-    });
-    const data = await res.json();
-    if (!res.ok) { alert(data.error || t('err_user_not_found')); return; }
-
-    if (!confirm(t('confirm_send_friend_request', { name: data.username }))) return;
-
-    const reqRes = await fetch(`${API_BASE}/api/friends/request`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentAccessToken}` },
-      body: JSON.stringify({ to_user_id: userId }),
-    });
-    const reqData = await reqRes.json();
-    if (!reqRes.ok) { alert(reqData.error || t('err_friend_request_failed')); return; }
-
-    alert(t('friend_request_sent_alert', { name: data.username }));
-  } catch (err) {
-    alert(t('err_unexpected_retry'));
-  }
-}
+document.getElementById('showFriendQrBtn').addEventListener('click', () => openProfileQrModal(currentUserId, currentUsername));
 </script>
 </body>
 </html>

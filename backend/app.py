@@ -759,6 +759,67 @@ def remove_friend(friend_user_id):
         return jsonify({"error": str(e)}), 500
 
 
+# ---------- دعوة الأصدقاء لجلسة/كلاس حالية ----------
+# الدعوة تُخزّن (مو بث لحظي - ما فيه قناة سوكيت عامة مربوطة بحساب المستخدم
+# خارج نطاق الغرف) وتظهر للصديق أول ما يفتح شاشة الأصدقاء بعدها
+@app.route("/api/friends/invite", methods=["POST"])
+@require_auth
+def send_session_invite():
+    data = request.get_json()
+    to_user_id = data.get("to_user_id")
+    room_code = (data.get("room_code") or "").strip().upper()
+    room_type = data.get("room_type") if data.get("room_type") in ("quiz", "classroom") else "quiz"
+    if not to_user_id or not room_code:
+        return jsonify({"error": "بيانات ناقصة"}), 400
+
+    try:
+        profile_res = (
+            supabase_admin.table("profiles").select("username").eq("user_id", request.user_id).limit(1).execute()
+        )
+        from_username = profile_res.data[0]["username"] if profile_res.data else None
+
+        supabase_admin.table("session_invites").insert(
+            {
+                "room_code": room_code,
+                "room_type": room_type,
+                "from_user_id": request.user_id,
+                "from_username": from_username,
+                "to_user_id": to_user_id,
+            }
+        ).execute()
+        return jsonify({"ok": True}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/friends/invites", methods=["GET"])
+@require_auth
+def list_session_invites():
+    try:
+        res = (
+            supabase_admin.table("session_invites")
+            .select("*")
+            .eq("to_user_id", request.user_id)
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return jsonify({"invites": res.data}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/friends/invites/<invite_id>", methods=["DELETE"])
+@require_auth
+def dismiss_session_invite(invite_id):
+    try:
+        supabase_admin.table("session_invites").delete().eq("id", invite_id).eq(
+            "to_user_id", request.user_id
+        ).execute()
+        return jsonify({"ok": True}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # ---------- أرشيف الجلسات الجماعية/الكلاسات المنتهية ----------
 @app.route("/api/sessions", methods=["GET"])
 @require_auth
@@ -1166,6 +1227,28 @@ def handle_board_stroke(data):
     if len(room["board_strokes"]) > 1000:
         room["board_strokes"] = room["board_strokes"][-1000:]
     emit("board_stroke", {"stroke": stroke}, to=room_code, include_self=False)
+
+
+@socketio.on("board_update_stroke")
+def handle_board_update_stroke(data):
+    """يحدّث موضع/حجم عنصر نص موجود أصلًا بالسبورة (تحريك/تحجيم) بدل ما نضيف
+    stroke جديد - يبحث بالـ id ويعدّل بمكانه، عشان المنضمين المتأخرين يشوفون
+    آخر حالة صحيحة وقت الـ replay."""
+    room_code = (data.get("room_code") or "").strip().upper()
+    stroke_id = data.get("id")
+    patch = data.get("patch") or {}
+    if room_code not in rooms or not stroke_id:
+        return
+    room = rooms[room_code]
+    if not can_manage_content(room, request.sid):
+        return
+    for stroke in room["board_strokes"]:
+        if stroke.get("id") == stroke_id:
+            for key in ("x", "y", "fontSize"):
+                if key in patch:
+                    stroke[key] = patch[key]
+            break
+    emit("board_update_stroke", {"id": stroke_id, "patch": patch}, to=room_code, include_self=False)
 
 
 @socketio.on("board_clear")

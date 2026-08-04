@@ -572,23 +572,193 @@ def sync_profile():
         return jsonify({"error": str(e)}), 500
 
 
+PROFILE_EDITABLE_FIELDS = (
+    "bio", "school_name", "is_private",
+    "show_performance", "show_library", "show_archive", "show_friends",
+)
+
+
+@app.route("/api/profile", methods=["PATCH"])
+@require_auth
+def update_profile():
+    data = request.get_json() or {}
+    patch = {k: data[k] for k in PROFILE_EDITABLE_FIELDS if k in data}
+    if not patch:
+        return jsonify({"error": "ما فيه شي نحدّثه"}), 400
+    if "bio" in patch:
+        patch["bio"] = (patch["bio"] or "").strip()[:300]
+    if "school_name" in patch:
+        patch["school_name"] = (patch["school_name"] or "").strip()[:100]
+
+    try:
+        supabase_admin.table("profiles").update(patch).eq("user_id", request.user_id).execute()
+        return jsonify({"ok": True}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+def _get_friend_status(my_id, other_id):
+    if my_id == other_id:
+        return "self"
+    try:
+        res = (
+            supabase_admin.table("friend_requests")
+            .select("sender_id, receiver_id, status")
+            .or_(
+                f"and(sender_id.eq.{my_id},receiver_id.eq.{other_id}),"
+                f"and(sender_id.eq.{other_id},receiver_id.eq.{my_id})"
+            )
+            .execute()
+        ).data
+    except Exception:
+        return "none"
+    if not res:
+        return "none"
+    row = res[0]
+    if row["status"] == "accepted":
+        return "friends"
+    return "pending_sent" if row["sender_id"] == my_id else "pending_received"
+
+
+def _compute_performance_summary(user_id):
+    res = (
+        supabase_admin.table("quiz_attempts")
+        .select("score, total, time_taken, created_at")
+        .eq("user_id", user_id)
+        .execute()
+    ).data
+    total_minutes = 0.0
+    scores = []
+    for a in res:
+        total_minutes += (a.get("time_taken") or 0) / 60
+        if a.get("total") and a.get("score") == a.get("total"):
+            total_minutes += 60
+        if a.get("total"):
+            scores.append(round((a["score"] / a["total"]) * 100))
+    current_streak, _ = compute_streak([a["created_at"] for a in res if a.get("created_at")])
+    return {
+        "attempts_count": len(res),
+        "avg_score": round(sum(scores) / len(scores)) if scores else 0,
+        "total_study_minutes": round(total_minutes),
+        "current_streak": current_streak,
+    }
+
+
 # ---------- نظام الأصدقاء ----------
-# يجيب اسم مستخدم معيّن من user_id - يخدم QR "أضفني كصديق" (الماسح يعرف اسم
-# صاحب الرمز قبل ما يرسل طلب الصداقة، بدل ما يرسل طلب أعمى لمعرّف مجهول)
+# البروفايل الكامل: هوية أساسية دايمًا + أقسام (أداء/مكتبة/أرشيف/أصدقاء)
+# حسب إعدادات الخصوصية لصاحب البروفايل - يخدم صفحة البروفايل وQR الشخصي
 @app.route("/api/profile/<user_id>", methods=["GET"])
 @require_auth
 def get_profile(user_id):
     try:
         res = (
             supabase_admin.table("profiles")
-            .select("user_id, username")
+            .select("user_id, username, bio, school_name, is_private, "
+                     "show_performance, show_library, show_archive, show_friends")
             .eq("user_id", user_id)
             .limit(1)
             .execute()
         )
         if not res.data:
-            return jsonify({"error": "المستخدم مو موجود"}), 404
-        return jsonify(res.data[0]), 200
+            # سباق محتمل: /api/profile/sync ما اكتمل بعد وقت التسجيل (fire-and-forget بالفرونت)
+            # لو صاحب البروفايل نفسه يطلبه، ننشئه الحين بدل ما نرجع 404 له عن نفسه
+            if user_id == request.user_id:
+                username = (
+                    supabase_admin.auth.get_user(
+                        request.headers.get("Authorization", "").replace("Bearer ", "").strip()
+                    ).user.user_metadata.get("username")
+                    or "طالب"
+                )
+                supabase_admin.table("profiles").upsert(
+                    {"user_id": request.user_id, "username": username}
+                ).execute()
+                profile = {"user_id": request.user_id, "username": username}
+            else:
+                return jsonify({"error": "المستخدم مو موجود"}), 404
+        else:
+            profile = res.data[0]
+        is_owner = user_id == request.user_id
+        friend_status = _get_friend_status(request.user_id, user_id)
+
+        result = {
+            "user_id": profile["user_id"],
+            "username": profile["username"],
+            "is_owner": is_owner,
+            "friend_status": friend_status,
+            "is_private": bool(profile.get("is_private")),
+        }
+
+        # البروفايل الخاص: ما نكشف شي غير الاسم لغير صاحبه
+        if profile.get("is_private") and not is_owner:
+            return jsonify(result), 200
+
+        result["bio"] = profile.get("bio")
+        result["school_name"] = profile.get("school_name")
+
+        show_perf = is_owner or profile.get("show_performance", True)
+        show_lib = is_owner or profile.get("show_library", True)
+        show_arch = is_owner or profile.get("show_archive", True)
+        show_friends_flag = is_owner or profile.get("show_friends", True)
+        result["show_performance"] = show_perf
+        result["show_library"] = show_lib
+        result["show_archive"] = show_arch
+        result["show_friends"] = show_friends_flag
+
+        if show_perf:
+            result["performance"] = _compute_performance_summary(user_id)
+
+        if show_lib:
+            lib_res = (
+                supabase_admin.table("library_books")
+                .select("title")
+                .eq("user_id", user_id)
+                .order("created_at", desc=True)
+                .execute()
+            ).data
+            result["library"] = {"count": len(lib_res), "titles": [b["title"] for b in lib_res[:10]]}
+
+        if show_arch:
+            hosted = (
+                supabase_admin.table("session_archive").select("*").eq("host_user_id", user_id).execute()
+            ).data
+            attended = (
+                supabase_admin.table("session_archive")
+                .select("*")
+                .contains("participant_user_ids", [user_id])
+                .execute()
+            ).data
+            merged = {row["id"]: row for row in hosted + attended}
+            sessions = sorted(merged.values(), key=lambda r: r.get("created_at") or "", reverse=True)
+            result["archive"] = sessions[:10]
+
+        if show_friends_flag:
+            as_sender = (
+                supabase_admin.table("friend_requests")
+                .select("receiver_id")
+                .eq("sender_id", user_id)
+                .eq("status", "accepted")
+                .execute()
+            ).data
+            as_receiver = (
+                supabase_admin.table("friend_requests")
+                .select("sender_id")
+                .eq("receiver_id", user_id)
+                .eq("status", "accepted")
+                .execute()
+            ).data
+            friend_ids = [r["receiver_id"] for r in as_sender] + [r["sender_id"] for r in as_receiver]
+            names = {}
+            if friend_ids:
+                profiles_res = (
+                    supabase_admin.table("profiles").select("user_id, username").in_("user_id", friend_ids).execute()
+                ).data
+                names = {p["user_id"]: p["username"] for p in profiles_res}
+            result["friends"] = {
+                "count": len(friend_ids),
+                "list": [{"user_id": fid, "username": names.get(fid, "?")} for fid in friend_ids[:20]],
+            }
+
+        return jsonify(result), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -1426,10 +1596,12 @@ def _archive_room(room_code, room):
         return
     try:
         ever = room["ever_participants"]
+        host_client_id = room.get("host_client_id")
         participants_payload = [
             {"name": p.get("name"), "user_id": p.get("user_id"), "score": p.get("score"),
-             "total": p.get("total"), "time_taken": p.get("time_taken"), "finished": p.get("finished")}
-            for p in ever.values()
+             "total": p.get("total"), "time_taken": p.get("time_taken"), "finished": p.get("finished"),
+             "is_host": cid == host_client_id}
+            for cid, p in ever.items()
         ]
         participant_user_ids = [p["user_id"] for p in ever.values() if p.get("user_id")]
         supabase_admin.table("session_archive").insert(

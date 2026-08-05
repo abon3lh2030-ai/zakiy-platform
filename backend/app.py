@@ -695,19 +695,28 @@ def get_profile(user_id):
         result["bio"] = profile.get("bio")
         result["school_name"] = profile.get("school_name")
 
-        show_perf = is_owner or profile.get("show_performance", True)
-        show_lib = is_owner or profile.get("show_library", True)
-        show_arch = is_owner or profile.get("show_archive", True)
-        show_friends_flag = is_owner or profile.get("show_friends", True)
-        result["show_performance"] = show_perf
-        result["show_library"] = show_lib
-        result["show_archive"] = show_arch
-        result["show_friends"] = show_friends_flag
+        # القيم الحقيقية المخزّنة (تُرجع دائمًا كما هي بالرد - صفحة الإعدادات تعتمد
+        # عليها بالضبط لتعبئة المفاتيح، فلازم تعكس المخزّن مو "هل تظهر للزائر الحالي")
+        show_perf_flag = profile.get("show_performance", True)
+        show_lib_flag = profile.get("show_library", True)
+        show_arch_flag = profile.get("show_archive", True)
+        show_friends_flag_raw = profile.get("show_friends", True)
+        result["show_performance"] = show_perf_flag
+        result["show_library"] = show_lib_flag
+        result["show_archive"] = show_arch_flag
+        result["show_friends"] = show_friends_flag_raw
 
-        if show_perf:
+        # بوابة تضمين بيانات القسم فعليًا بالرد: صاحب البروفايل يشوف كل شي دائمًا
+        # بغض النظر عن إعدادات خصوصيته (هذي بس تتحكم بغيره)
+        include_perf = is_owner or show_perf_flag
+        include_lib = is_owner or show_lib_flag
+        include_arch = is_owner or show_arch_flag
+        include_friends = is_owner or show_friends_flag_raw
+
+        if include_perf:
             result["performance"] = _compute_performance_summary(user_id)
 
-        if show_lib:
+        if include_lib:
             lib_res = (
                 supabase_admin.table("library_books")
                 .select("title")
@@ -717,7 +726,7 @@ def get_profile(user_id):
             ).data
             result["library"] = {"count": len(lib_res), "titles": [b["title"] for b in lib_res[:10]]}
 
-        if show_arch:
+        if include_arch:
             hosted = (
                 supabase_admin.table("session_archive").select("*").eq("host_user_id", user_id).execute()
             ).data
@@ -731,7 +740,7 @@ def get_profile(user_id):
             sessions = sorted(merged.values(), key=lambda r: r.get("created_at") or "", reverse=True)
             result["archive"] = sessions[:10]
 
-        if show_friends_flag:
+        if include_friends:
             as_sender = (
                 supabase_admin.table("friend_requests")
                 .select("receiver_id")

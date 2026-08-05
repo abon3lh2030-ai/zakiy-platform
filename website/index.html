@@ -3082,8 +3082,21 @@ document.getElementById('settingsBtn').addEventListener('click', () => {
 });
 
 // ---------- إعدادات البروفايل (نبذة/مدرسة/خصوصية) ----------
+// حقول القسم (بدون زر الحفظ/العرض) - نعطّلها وقت التحميل عشان نمنع سباق حقيقي:
+// لو المستخدم يبدأ يبدّل المفاتيح بسرعة قبل ما يوصل رد الجلب، كان يرجع يطبّق
+// القيم القديمة فوق تعديلاته لحظة ما يوصل الرد متأخر، فتنحفظ القيم الغلط بالضغط
+// على "حفظ" بعدها - تعطيل الحقول لين يخلص الجلب يمنع أي تفاعل بهالفترة الحرجة
+const PROFILE_SETTINGS_FIELD_IDS = [
+  'settingsBioInput', 'settingsSchoolInput', 'settingsPrivateToggle',
+  'settingsShowPerformance', 'settingsShowLibrary', 'settingsShowArchive', 'settingsShowFriends',
+];
+function setProfileSettingsFieldsDisabled(disabled) {
+  PROFILE_SETTINGS_FIELD_IDS.forEach(id => { document.getElementById(id).disabled = disabled; });
+  document.getElementById('settingsSaveProfileBtn').disabled = disabled;
+}
 async function loadProfileIntoSettings() {
   clearError('settingsProfileMsg');
+  setProfileSettingsFieldsDisabled(true);
   try {
     const res = await fetch(`${API_BASE}/api/profile/${currentUserId}`, {
       headers: { 'Authorization': `Bearer ${currentAccessToken}` },
@@ -3097,8 +3110,10 @@ async function loadProfileIntoSettings() {
     document.getElementById('settingsShowLibrary').checked = data.show_library !== false;
     document.getElementById('settingsShowArchive').checked = data.show_archive !== false;
     document.getElementById('settingsShowFriends').checked = data.show_friends !== false;
-    updateVisibilityTogglesState();
-  } catch { /* تجاهل */ }
+  } catch { /* تجاهل */ } finally {
+    setProfileSettingsFieldsDisabled(false);
+    updateVisibilityTogglesState(); // يراعي حالة "خاص بالكامل" الحقيقية بعد التفعيل
+  }
 }
 
 // لو البروفايل خاص بالكامل، تبديلات إظهار الأقسام تصير بلا معنى - نعطّلها
@@ -3513,6 +3528,13 @@ let roomKind = 'quiz'; // 'quiz' | 'classroom' - يحدد نوع الغرفة ا
 document.getElementById('modeSoloBtn').addEventListener('click', () => {
   pushNavSnapshot();
   appMode = 'solo';
+  // لو المستخدم كان قبل شوي بغرفة/كلاس (مضيف أو منحوه صلاحية) ورجع للرئيسية
+  // بدون تحميل الصفحة من جديد، لازم نصفّر هالحالة - وإلا "مشاركة الملخص مع
+  // الطلاب"/"ابدأ الاختبار للجميع" تطلع غلط بجلسة فردية جديدة (canManageContent
+  // وcurrentRoomCode يفضلون من الغرفة القديمة، ما فيه شي يصفّرهم غير هنا)
+  currentRoomCode = null;
+  canManageContent = false;
+  isHost = false;
   hide('mode-select');
   show('step-upload');
   show('pomodoroWidget');

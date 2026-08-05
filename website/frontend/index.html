@@ -911,6 +911,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">ذكيّ</div>
   <nav class="sidebar-nav">
+    <button class="sidebar-btn" id="homeBtn"><span class="sidebar-icon">🏠</span><span class="label" data-i18n="nav_home">الرئيسية</span></button>
     <button class="sidebar-btn" id="myProfileBtn"><span class="sidebar-icon">👤</span><span class="label" data-i18n="nav_profile">بروفايلي</span></button>
     <button class="sidebar-btn" id="performanceBtn"><span class="sidebar-icon">📊</span><span class="label" data-i18n="nav_performance">أدائي</span></button>
     <button class="sidebar-btn" id="archiveBtn"><span class="sidebar-icon">📂</span><span class="label" data-i18n="nav_archive">الأرشيف</span></button>
@@ -1597,6 +1598,7 @@ let currentLang = localStorage.getItem('zakiy-lang') || 'ar';
 
 const I18N = {
   ar: {
+    nav_home: 'الرئيسية',
     nav_performance: 'أدائي',
     nav_archive: 'الأرشيف',
     nav_friends: 'الأصدقاء',
@@ -1916,6 +1918,7 @@ const I18N = {
     qr_profile_caption: 'بروفايل {name} - امسح عشان تشوفه',
   },
   en: {
+    nav_home: 'Home',
     nav_performance: 'My Performance',
     nav_archive: 'Archive',
     nav_friends: 'Friends',
@@ -2286,6 +2289,7 @@ const TOP_LEVEL_SCREENS = [
   'mode-select', 'room-mode-select', 'room-create-form', 'room-join-form',
   'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary',
   'step-quiz', 'step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings',
+  'step-profile',
 ];
 const BACK_BUTTON_HIDDEN_ON = ['mode-select', 'login-form', 'signup-form', 'step-quiz'];
 let navHistory = [];
@@ -2719,6 +2723,15 @@ function renderProfileFriendAction(data) {
     };
   }
 }
+
+function goToHomeScreen() {
+  pushNavSnapshot();
+  TOP_LEVEL_SCREENS.forEach(hide);
+  hide('login-form'); hide('signup-form');
+  show('mode-select');
+  updateGlobalBackButton();
+}
+document.getElementById('homeBtn').addEventListener('click', goToHomeScreen);
 
 document.getElementById('myProfileBtn').addEventListener('click', () => {
   if (!requireAuthOrPrompt()) return;

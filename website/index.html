@@ -856,8 +856,10 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.25);
   }
   .switch input:checked + .switch-slider { background: var(--teal); }
-  .switch input:checked + .switch-slider::before { transform: translateX(-18px); }
-  [dir="ltr"] .switch input:checked + .switch-slider::before { transform: translateX(18px); }
+  /* الدائرة تنحط بـ left:3px دائمًا (خاصية فيزيائية ما تتأثر بـ RTL/LTR)، فتحريكها
+     وقت التفعيل لازم يكون بنفس الاتجاه الفيزيائي (يمين) بكل الحالتين - وإلا تطلع
+     برا حدود المفتاح بدل ما تنزلق جواه */
+  .switch input:checked + .switch-slider::before { transform: translateX(18px); }
   .switch input:disabled + .switch-slider { opacity: .45; cursor: not-allowed; }
 
   /* ---------- صفحة البروفايل ---------- */

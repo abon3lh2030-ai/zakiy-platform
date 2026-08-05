@@ -912,7 +912,6 @@
   <div class="sidebar-logo">ذكيّ</div>
   <nav class="sidebar-nav">
     <button class="sidebar-btn" id="homeBtn"><span class="sidebar-icon">🏠</span><span class="label" data-i18n="nav_home">الرئيسية</span></button>
-    <button class="sidebar-btn" id="myProfileBtn"><span class="sidebar-icon">👤</span><span class="label" data-i18n="nav_profile">بروفايلي</span></button>
     <button class="sidebar-btn" id="performanceBtn"><span class="sidebar-icon">📊</span><span class="label" data-i18n="nav_performance">أدائي</span></button>
     <button class="sidebar-btn" id="archiveBtn"><span class="sidebar-icon">📂</span><span class="label" data-i18n="nav_archive">الأرشيف</span></button>
     <button class="sidebar-btn" id="friendsBtn"><span class="sidebar-icon">👥</span><span class="label" data-i18n="nav_friends">الأصدقاء</span></button>
@@ -1895,7 +1894,6 @@ const I18N = {
     invite_from_prefix: 'دعوة من',
     invite_to_room_type_quiz: 'غرفة جماعية',
     invite_to_room_type_classroom: 'كلاس مباشر',
-    nav_profile: 'بروفايلي',
     profile_step_label: '👤 البروفايل',
     btn_show_qr_profile: '📱 QR بروفايلك',
     btn_add_friend_short: '➕ أضف صديق',
@@ -2215,7 +2213,6 @@ const I18N = {
     invite_from_prefix: 'Invite from',
     invite_to_room_type_quiz: 'Group Room',
     invite_to_room_type_classroom: 'Live Class',
-    nav_profile: 'My Profile',
     profile_step_label: '👤 Profile',
     btn_show_qr_profile: '📱 Your Profile QR',
     btn_add_friend_short: '➕ Add Friend',
@@ -2732,11 +2729,6 @@ function goToHomeScreen() {
   updateGlobalBackButton();
 }
 document.getElementById('homeBtn').addEventListener('click', goToHomeScreen);
-
-document.getElementById('myProfileBtn').addEventListener('click', () => {
-  if (!requireAuthOrPrompt()) return;
-  showProfileScreen(currentUserId);
-});
 
 document.getElementById('performanceBtn').addEventListener('click', async () => {
   if (!requireAuthOrPrompt()) return;

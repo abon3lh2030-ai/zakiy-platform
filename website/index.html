@@ -2486,16 +2486,25 @@ function onAuthSuccess(session) {
     body: JSON.stringify({ username: currentUsername }),
   }).catch(() => {});
 
-  // شارة الستريك بالشاشة الرئيسية - تظهر بس من ٣ أيام متتالية فأكثر
-  fetch(`${API_BASE}/api/performance`, { headers: { 'Authorization': `Bearer ${currentAccessToken}` } })
-    .then(res => res.json())
-    .then(data => {
-      if (data.current_streak >= 3) {
-        document.getElementById('streakBadgeText').textContent = t('streak_days_suffix', { n: data.current_streak });
-        show('streakBadge');
-      }
-    })
-    .catch(() => {});
+  // نسجّل بصمة "فتح المنصة اليوم" - الباك إند يتكفل بعدم التكرار لو صار
+  // أكثر من نداء بنفس اليوم (تسجيل دخول ثم تسجيل حساب مثلًا). لازم تخلص
+  // قبل ما نجيب الأداء عشان الستريك يشمل زيارة اليوم فورًا، مو بعد أول
+  // اختبار يحله المستخدم
+  fetch(`${API_BASE}/api/ping-active`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${currentAccessToken}` },
+  }).catch(() => {}).finally(() => {
+    // شارة الستريك بالشاشة الرئيسية - تظهر بس من ٣ أيام متتالية فأكثر
+    fetch(`${API_BASE}/api/performance`, { headers: { 'Authorization': `Bearer ${currentAccessToken}` } })
+      .then(res => res.json())
+      .then(data => {
+        if (data.current_streak >= 3) {
+          document.getElementById('streakBadgeText').textContent = t('streak_days_suffix', { n: data.current_streak });
+          show('streakBadge');
+        }
+      })
+      .catch(() => {});
+  });
 }
 
 // Supabase يجدد access_token تلقائيًا بالخلفية - نتابع آخر نسخة عشان الطلبات

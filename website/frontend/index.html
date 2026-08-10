@@ -1041,7 +1041,7 @@
   <section class="card hidden auth-card" id="step-force-password-change">
     <span class="auth-logo">ذكيّ</span>
     <h2 data-i18n="force_pw_heading">لازم تغيّر كلمة السر أول</h2>
-    <p class="desc" data-i18n="force_pw_desc">حسابك انسوى بكلمة سر مؤقتة - اختر كلمة سر جديدة تعرفها بس قبل ما تكمل</p>
+    <p class="desc" data-i18n="force_pw_desc">حسابك اتسوى بكلمة سر مؤقتة - اختر كلمة سر جديدة تعرفها بس قبل ما تكمل</p>
     <div class="auth-fields">
       <input type="password" id="forcePwNew" class="text-input" placeholder="كلمة مرور جديدة" data-i18n-ph="ph_new_password">
       <input type="password" id="forcePwConfirm" class="text-input" placeholder="أعد كتابتها" data-i18n-ph="ph_confirm_password">
@@ -2119,7 +2119,7 @@ const I18N = {
     ph_email_or_username: 'الإيميل أو اسم المستخدم',
     loading: 'جاري التحميل...',
     force_pw_heading: 'لازم تغيّر كلمة السر أول',
-    force_pw_desc: 'حسابك انسوى بكلمة سر مؤقتة - اختر كلمة سر جديدة تعرفها بس قبل ما تكمل',
+    force_pw_desc: 'حسابك اتسوى بكلمة سر مؤقتة - اختر كلمة سر جديدة تعرفها بس قبل ما تكمل',
     nav_my_schedule: 'جدولي',
     nav_messages: 'الرسائل',
     messages_label: '💬 الرسائل',
@@ -6202,10 +6202,14 @@ async function loadSchoolStudents() {
         <td>${escapeHtml(s.full_name || '—')}</td>
         <td>${escapeHtml(s.username)}</td>
         <td>${escapeHtml(classNames[s.class_id] || '—')}</td>
-        <td><button class="ghost" data-reset-account-pw="${s.user_id}" style="padding:4px 10px;">${t('btn_reset_password')}</button></td>
+        <td>
+          <button class="ghost" data-reset-account-pw="${s.user_id}" style="padding:4px 10px;">${t('btn_reset_password')}</button>
+          <button class="ghost" data-delete-account="${s.user_id}" style="padding:4px 10px; color:#c0392b;">${t('btn_delete')}</button>
+        </td>
       </tr>
     `).join('');
     wireResetPasswordButtons(tbody, document.getElementById('schoolStudentsResult'));
+    wireDeleteAccountButtons(tbody, loadSchoolStudents);
   } catch (e) {
     tbody.innerHTML = `<tr><td colspan="4">${escapeHtml(e.message)}</td></tr>`;
   }

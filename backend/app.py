@@ -421,7 +421,10 @@ def get_performance():
             .order("created_at")
             .execute()
         )
-        attempts = res.data
+        all_rows = res.data
+        # صفوف "app_open" مجرد بصمة يوم فتحت فيه المنصة (تخدم حساب الستريك بس) - لا تُحتسب
+        # كمحاولة اختبار حقيقية ولا تدخل بمتوسط الدرجات أو ساعات المذاكرة
+        attempts = [a for a in all_rows if a.get("mode") != "app_open"]
 
         topic_counter = Counter()
         total_minutes = 0.0
@@ -437,8 +440,10 @@ def get_performance():
             for topic, count in topic_counter.most_common(10)
         ]
 
+        # الستريك يُحسب من كل الأيام اللي فيها أي نشاط - محاولة اختبار حقيقية أو مجرد فتح
+        # للمنصة - عشان يعكس "داومت تفتح المنصة" مو بس "حليت اختبار"
         current_streak, longest_streak = compute_streak(
-            [a["created_at"] for a in attempts if a.get("created_at")]
+            [a["created_at"] for a in all_rows if a.get("created_at")]
         )
 
         return jsonify(
@@ -450,6 +455,40 @@ def get_performance():
                 "longest_streak": longest_streak,
             }
         ), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------- بصمة يوم نشاط (تفتح المنصة) - تخدم حساب الستريك اليومي ----------
+# نسجّل صف واحد بس كل يوم (مو كل فتحة تطبيق) عشان ما نتضخّم الجدول بلا داعي.
+@app.route("/api/ping-active", methods=["POST"])
+@require_auth
+def ping_active():
+    try:
+        today = datetime.now(timezone.utc).date().isoformat()
+        existing = (
+            supabase_admin.table("quiz_attempts")
+            .select("id, created_at")
+            .eq("user_id", request.user_id)
+            .eq("mode", "app_open")
+            .gte("created_at", today)
+            .limit(1)
+            .execute()
+        )
+        if existing.data:
+            return jsonify({"ok": True, "already_pinged": True}), 200
+
+        supabase_admin.table("quiz_attempts").insert(
+            {
+                "user_id": request.user_id,
+                "mode": "app_open",
+                "score": 0,
+                "total": 0,
+                "time_taken": 0,
+                "wrong_topics": [],
+            }
+        ).execute()
+        return jsonify({"ok": True, "already_pinged": False}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -621,12 +660,14 @@ def _get_friend_status(my_id, other_id):
 
 
 def _compute_performance_summary(user_id):
-    res = (
+    all_rows = (
         supabase_admin.table("quiz_attempts")
-        .select("score, total, time_taken, created_at")
+        .select("score, total, time_taken, created_at, mode")
         .eq("user_id", user_id)
         .execute()
     ).data
+    # صفوف "app_open" تخدم الستريك بس - لا تُحتسب كمحاولة اختبار حقيقية
+    res = [a for a in all_rows if a.get("mode") != "app_open"]
     total_minutes = 0.0
     scores = []
     for a in res:
@@ -635,7 +676,7 @@ def _compute_performance_summary(user_id):
             total_minutes += 60
         if a.get("total"):
             scores.append(round((a["score"] / a["total"]) * 100))
-    current_streak, _ = compute_streak([a["created_at"] for a in res if a.get("created_at")])
+    current_streak, _ = compute_streak([a["created_at"] for a in all_rows if a.get("created_at")])
     return {
         "attempts_count": len(res),
         "avg_score": round(sum(scores) / len(scores)) if scores else 0,

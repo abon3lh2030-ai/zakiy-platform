@@ -3,3 +3,7 @@ backend/__pycache__/
 backend/uploads/
 backend/.env
 .DS_Store
+
+# تطبيق iOS له مستودع Git خاص فيه (github.com/abon3lh2030-ai/zakiy-platform-IOS)
+# - مو جزء من هذا المستودع
+ios/

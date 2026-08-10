@@ -1308,10 +1308,14 @@
       <div class="leaderboard" id="leaderboardContainer"></div>
 
       <div id="roomChatBox" style="margin-top:24px;">
-        <h3 class="sub-heading" data-i18n="room_chat_heading">💬 شات الغرفة</h3>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+          <h3 class="sub-heading" style="margin:0;" data-i18n="room_chat_heading">💬 شات الغرفة</h3>
+          <button class="ghost hidden" id="chatToggleBtn" style="padding:6px 12px;"></button>
+        </div>
         <div class="chat-messages" id="chatMessages"></div>
         <div class="typing-indicator" id="typingIndicator"></div>
-        <div class="actions">
+        <p class="desc hidden" id="chatLockedNote" data-i18n="chat_locked_note">🔒 المدرس قفل الشات مؤقتًا</p>
+        <div class="actions" id="chatInputRow">
           <input type="text" id="chatInput" class="text-input" placeholder="اكتب رسالة لزملائك..." data-i18n-ph="ph_chat_message">
           <button class="ghost" id="chatSendBtn" data-i18n="btn_send">إرسال</button>
         </div>
@@ -1376,6 +1380,7 @@
     <div id="classroomParticipantsList"></div>
 
     <div id="classroomSummarySlot" style="margin-top:24px;"></div>
+    <div id="classroomChatSlot" style="margin-top:24px;"></div>
     <div id="classroomVoiceSlot" style="margin-top:24px;"></div>
   </section>
 
@@ -1579,6 +1584,8 @@ let currentRoomCode = null;
 let isHost = false;
 // الهوست الأصلي أو أي منضم منحه الهوست صلاحية الرفع/التوليد/بدء الاختبار
 let canManageContent = false;
+// حالة شات الغرفة (مفتوح/مقفول) - المدرس/الهوست يتحكم فيها بزر chatToggleBtn
+let chatEnabled = true;
 let myName = "";
 // معرّف ثابت لهذا التبويب طول عمر الجلسة، يستخدم عشان لو النت انقطع لحظيًا
 // و socket.io سوى إعادة اتصال تلقائي بـ sid جديد، نقدر نطابق نفس المشارك
@@ -1713,6 +1720,9 @@ const I18N = {
     room_chat_heading: '💬 شات الغرفة',
     ph_chat_message: 'اكتب رسالة لزملائك...',
     btn_send: 'إرسال',
+    btn_chat_lock: '🔒 قفل الشات',
+    btn_chat_unlock: '🔓 فتح الشات',
+    chat_locked_note: '🔒 المدرس قفل الشات مؤقتًا',
     voice_heading: '🎙️ الصوت الجماعي',
     voice_desc: 'صوت مباشر بينك وبين زملائك بالغرفة، اختياري تمامًا',
     btn_voice_join: '🎙️ انضم للصوت',
@@ -2032,6 +2042,9 @@ const I18N = {
     room_chat_heading: '💬 Room Chat',
     ph_chat_message: 'Write a message to your classmates...',
     btn_send: 'Send',
+    btn_chat_lock: '🔒 Lock Chat',
+    btn_chat_unlock: '🔓 Unlock Chat',
+    chat_locked_note: '🔒 The teacher has temporarily locked the chat',
     voice_heading: '🎙️ Group Voice Chat',
     voice_desc: 'Live voice with your classmates in the room, entirely optional',
     btn_voice_join: '🎙️ Join Voice',
@@ -3625,6 +3638,8 @@ socket.on('room_state', data => {
   canManageContent = data.can_manage_content;
   roomCreatedAt = data.created_at;
   roomKind = data.room_type || 'quiz';
+  chatEnabled = data.chat_enabled !== false;
+  updateChatUI();
 
   // نسجّل خطوة تنقّل بس أول مرة يدخل الغرفة فعليًا - مو كل مرة يعيد الاتصال
   // (reconnect) بعد انقطاع نت، عشان زر الرجوع ما يتراكم بخطوات وهمية
@@ -3699,13 +3714,18 @@ function enterClassroomVoiceSlot() {
   const summarySlot = document.getElementById('classroomSummarySlot');
   const summaryBox = document.getElementById('sharedSummaryBox');
   if (summaryBox.parentElement !== summarySlot) summarySlot.appendChild(summaryBox);
+  const chatSlot = document.getElementById('classroomChatSlot');
+  const chatBox = document.getElementById('roomChatBox');
+  if (chatBox.parentElement !== chatSlot) chatSlot.appendChild(chatBox);
 }
 function enterRoomVoiceSlot() {
   const slot = document.getElementById('participantsSection');
-  const box = document.getElementById('voiceChatBox');
-  if (box.parentElement !== slot) slot.insertBefore(box, document.getElementById('inQuizNote'));
   const summaryBox = document.getElementById('sharedSummaryBox');
   if (summaryBox.parentElement !== slot) slot.insertBefore(summaryBox, slot.firstChild.nextSibling);
+  const box = document.getElementById('voiceChatBox');
+  if (box.parentElement !== slot) slot.appendChild(box);
+  const chatBox = document.getElementById('roomChatBox');
+  if (chatBox.parentElement !== slot) slot.insertBefore(chatBox, box);
 }
 
 // تحدّث كل عناصر الواجهة اللي تعتمد على "هل أنا مدرس/مفوّض له صلاحية الكتابة
@@ -4178,6 +4198,7 @@ socket.on('kicked', () => {
 // ---------- منح/سحب صلاحية الرفع والتوليد وبدء الاختبار (كويز) / الكتابة بالسبورة (كلاس) ----------
 socket.on('permission_granted', () => {
   canManageContent = true;
+  updateChatUI();
   if (roomKind === 'classroom') {
     updateClassroomPermissionUI();
     return;
@@ -4190,6 +4211,7 @@ socket.on('permission_granted', () => {
 });
 socket.on('permission_revoked', () => {
   canManageContent = false;
+  updateChatUI();
   if (roomKind === 'classroom') {
     updateClassroomPermissionUI();
     return;
@@ -4204,6 +4226,24 @@ socket.on('permission_revoked', () => {
 socket.on('chat_message', data => {
   const cls = data.name === myName ? 'me' : 'other';
   appendChatBubble('chatMessages', data.name, data.message, cls);
+});
+
+// زر قفل/فتح الشات - يظهر بس للمدرس/الهوست (أو منضم منحه صلاحية)، ولما يكون
+// الشات مقفول ينختفي صندوق الكتابة عن الجميع (نفس ما الباك إند يفرضه أصلًا)
+function updateChatUI() {
+  const toggleBtn = document.getElementById('chatToggleBtn');
+  toggleBtn.classList.toggle('hidden', !canManageContent);
+  toggleBtn.textContent = t(chatEnabled ? 'btn_chat_lock' : 'btn_chat_unlock');
+  document.getElementById('chatInputRow').classList.toggle('hidden', !chatEnabled);
+  document.getElementById('chatLockedNote').classList.toggle('hidden', chatEnabled);
+}
+document.getElementById('chatToggleBtn').addEventListener('click', () => {
+  if (!currentRoomCode) return;
+  socket.emit('toggle_chat', { room_code: currentRoomCode });
+});
+socket.on('chat_state', data => {
+  chatEnabled = !!data.enabled;
+  updateChatUI();
 });
 
 function sendRoomChat() {

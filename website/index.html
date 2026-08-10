@@ -2860,15 +2860,24 @@ function onAuthSuccess(session) {
         updateGlobalBackButton();
       } else {
         proceedToApp();
+        // حساب قديم بدون اسم محفوظ - نطلبه مرة وحدة (يقدر يلغيها ويبقى بالإيميل).
+        // لازم يجي بعد ما الشاشة تتنقل صح لـ mode-select، مو قبلها - وإلا
+        // نافذة prompt() المتزامنة توقف تنفيذ الجافاسكربت وتجمّد الصفحة على
+        // شاشة تسجيل الدخول لين يسكّر المستخدم النافذة، فيطلع كأن الدخول ما
+        // اشتغل (الشاشة الثانية تظهر بعده متأخرة "تحت" شاشة الدخول اللي ما
+        // انخفت بعد)
+        if (!hasStoredUsername) {
+          promptForUsername(t('legacy_username_prompt'));
+        }
       }
     })
-    .catch(() => proceedToApp()); // تعذّر جلب الدور (مشكلة شبكة) - نكمل بنفس التجربة الفردية بدل ما نعلّق المستخدم
-
-  // حساب قديم بدون اسم محفوظ - نطلبه مرة وحدة (يقدر يلغيها ويبقى بالإيميل).
-  // الحسابات المؤسسية (معلم/إداري/طالب) اسمها مضبوط وقت الإنشاء فما تدخل هذا الشرط
-  if (!hasStoredUsername) {
-    promptForUsername(t('legacy_username_prompt'));
-  }
+    .catch(() => {
+      // تعذّر جلب الدور (مشكلة شبكة) - نكمل بنفس التجربة الفردية بدل ما نعلّق المستخدم
+      proceedToApp();
+      if (!hasStoredUsername) {
+        promptForUsername(t('legacy_username_prompt'));
+      }
+    });
 
   // نزامن اسم المستخدم بجدول profiles القابل للبحث - يخدم ميزة الأصدقاء
   fetch(`${API_BASE}/api/profile/sync`, {

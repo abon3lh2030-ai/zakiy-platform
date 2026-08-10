@@ -1064,6 +1064,7 @@
       <table class="data-table">
         <thead><tr>
           <th data-i18n="th_school_name">المدرسة</th>
+          <th data-i18n="th_admin_email">إيميل المدير</th>
           <th data-i18n="th_accounts_usage">الحسابات</th>
           <th data-i18n="th_status">الحالة</th>
           <th data-i18n="th_actions">إجراء</th>
@@ -1195,10 +1196,15 @@
   <section class="card hidden" id="step-teacher-dashboard">
     <span class="step-label" data-i18n="teacher_dash_label">👨‍🏫 لوحة المعلم</span>
     <h2 data-i18n="teacher_dash_heading">فصولي</h2>
-    <select id="teacherClassSelect" class="text-input" style="margin-bottom:14px;"></select>
+    <div class="actions" style="flex-wrap:wrap; margin-bottom:14px;">
+      <select id="teacherClassSelect" class="text-input" style="max-width:220px;"></select>
+      <button class="primary" id="teacherStartClassBtn" data-i18n="btn_start_live_class">🖍️ ابدأ درس مباشر</button>
+    </div>
+    <div id="teacherStartClassError"></div>
 
     <div class="role-tabs">
       <button class="role-tab active" data-tab="roster" data-i18n="tab_roster">👥 الطلاب</button>
+      <button class="role-tab" data-tab="performance" data-i18n="tab_performance">📊 الأداء</button>
       <button class="role-tab" data-tab="schedule" data-i18n="tab_schedule">🗓️ جدولي</button>
       <button class="role-tab" data-tab="attendance" data-i18n="tab_attendance">📋 الحضور</button>
     </div>
@@ -1208,6 +1214,20 @@
         <table class="data-table">
           <thead><tr><th data-i18n="th_student">الطالب</th><th data-i18n="th_actions">إجراء</th></tr></thead>
           <tbody id="teacherRosterTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="teacherTab-performance" class="teacher-tab-panel hidden">
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th data-i18n="th_student">الطالب</th>
+            <th data-i18n="th_attempts">عدد المحاولات</th>
+            <th data-i18n="th_avg_score">متوسط الدرجات</th>
+            <th data-i18n="th_study_minutes">دقائق المذاكرة</th>
+            <th data-i18n="th_streak">الستريك</th>
+          </tr></thead>
+          <tbody id="teacherPerformanceTableBody"></tbody>
         </table>
       </div>
     </div>
@@ -2061,6 +2081,10 @@ const I18N = {
     btn_create_school: 'إنشاء المدرسة',
     btn_activate: 'تفعيل',
     btn_deactivate: 'إيقاف',
+    th_admin_email: 'إيميل المدير',
+    btn_reset_password: '🔑 كلمة سر جديدة',
+    confirm_reset_school_password: 'بيتولّد كلمة سر جديدة لمدير هذي المدرسة وتلغي القديمة - متأكد؟',
+    admin_password_reset_msg: '✅ كلمة سر جديدة (تظهر مرة وحدة بس، احفظها الحين):',
     // ---- لوحة إدارة المدرسة ----
     school_dash_label: '🏫 لوحة إدارة المدرسة',
     school_dash_heading: 'إدارة المدرسة',
@@ -2078,10 +2102,12 @@ const I18N = {
     btn_export_csv: '⬇️ تصدير CSV', btn_export_pdf: '🖨️ تصدير PDF',
     // ---- لوحة المعلم ----
     teacher_dash_label: '👨‍🏫 لوحة المعلم', teacher_dash_heading: 'فصولي',
-    tab_roster: '👥 الطلاب', tab_schedule: '🗓️ جدولي',
+    tab_roster: '👥 الطلاب', tab_schedule: '🗓️ جدولي', tab_performance: '📊 الأداء',
     teacher_no_students: 'ما فيه طلاب بهذا الفصل بعد',
     btn_view_profile: 'عرض البروفايل',
     teacher_student_no_archive: 'ما فيه جلسات مسجّلة بعد',
+    btn_start_live_class: '🖍️ ابدأ درس مباشر',
+    th_attempts: 'عدد المحاولات', th_avg_score: 'متوسط الدرجات', th_study_minutes: 'دقائق المذاكرة', th_streak: 'الستريك',
     // ---- جدول الطالب ----
     student_schedule_label: '🗓️ جدولي', student_schedule_heading: 'جدول حصصي',
     err_email_password_required: 'لازم تكتب الإيميل وكلمة المرور',
@@ -2446,6 +2472,10 @@ const I18N = {
     btn_create_school: 'Create School',
     btn_activate: 'Activate',
     btn_deactivate: 'Deactivate',
+    th_admin_email: "Admin's Email",
+    btn_reset_password: '🔑 New Password',
+    confirm_reset_school_password: "This generates a new password for this school's admin and invalidates the old one - continue?",
+    admin_password_reset_msg: '✅ New password (shown once, save it now):',
     // ---- School dashboard ----
     school_dash_label: '🏫 School Dashboard',
     school_dash_heading: 'Manage School',
@@ -2463,10 +2493,12 @@ const I18N = {
     btn_export_csv: '⬇️ Export CSV', btn_export_pdf: '🖨️ Export PDF',
     // ---- Teacher dashboard ----
     teacher_dash_label: '👨‍🏫 Teacher Dashboard', teacher_dash_heading: 'My Classes',
-    tab_roster: '👥 Students', tab_schedule: '🗓️ My Schedule',
+    tab_roster: '👥 Students', tab_schedule: '🗓️ My Schedule', tab_performance: '📊 Performance',
     teacher_no_students: 'No students in this class yet',
     btn_view_profile: 'View Profile',
     teacher_student_no_archive: 'No recorded sessions yet',
+    btn_start_live_class: '🖍️ Start a Live Lesson',
+    th_attempts: 'Attempts', th_avg_score: 'Avg. Score', th_study_minutes: 'Study Minutes', th_streak: 'Streak',
     // ---- Student schedule ----
     student_schedule_label: '🗓️ My Schedule', student_schedule_heading: 'My Class Schedule',
     err_email_password_required: 'You need to enter your email and password',
@@ -4089,7 +4121,11 @@ socket.on('room_state', data => {
   const enteringRoomForFirstTime = document.getElementById(roomScreenId).classList.contains('hidden');
   if (enteringRoomForFirstTime) pushNavSnapshot();
 
-  hide('mode-select'); hide('room-mode-select'); hide('room-create-form'); hide('room-join-form');
+  // نخفي كل الشاشات الرئيسية (بدل قائمة يدوية قديمة) - يشمل لوحات المعلم/
+  // المدرسة/الأدمن الجديدة، عشان لو معلم بدأ درس مباشر من لوحته ما تبقى
+  // ظاهرة "تحت" شاشة الكلاس
+  TOP_LEVEL_SCREENS.forEach(hide);
+  hide('login-form'); hide('signup-form'); hide('step-force-password-change');
   updateGlobalBackButton();
 
   if (roomKind === 'classroom') {
@@ -5758,16 +5794,20 @@ function exportPdfViaPrint(title, rows, headers) {
 // ---------- Admin: لوحة المدارس ----------
 async function loadAdminDashboard() {
   const tbody = document.getElementById('adminSchoolsTableBody');
-  tbody.innerHTML = `<tr><td colspan="4">${t('loading')}</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="5">${t('loading')}</td></tr>`;
   try {
     const data = await apiCall('GET', '/api/admin/schools');
-    if (!data.schools.length) { tbody.innerHTML = `<tr><td colspan="4">${t('admin_no_schools')}</td></tr>`; return; }
+    if (!data.schools.length) { tbody.innerHTML = `<tr><td colspan="5">${t('admin_no_schools')}</td></tr>`; return; }
     tbody.innerHTML = data.schools.map(s => `
       <tr>
         <td>${escapeHtml(s.name)}</td>
+        <td>${escapeHtml(s.admin_email || '—')}</td>
         <td>${s.accounts_used} / ${s.max_accounts}</td>
         <td>${s.is_active ? t('status_active') : t('status_inactive')}</td>
-        <td><button class="ghost" data-toggle-school="${s.id}" data-active="${s.is_active}" style="padding:4px 10px;">${s.is_active ? t('btn_deactivate') : t('btn_activate')}</button></td>
+        <td style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button class="ghost" data-toggle-school="${s.id}" data-active="${s.is_active}" style="padding:4px 10px;">${s.is_active ? t('btn_deactivate') : t('btn_activate')}</button>
+          <button class="ghost" data-reset-school-pw="${s.id}" style="padding:4px 10px;">${t('btn_reset_password')}</button>
+        </td>
       </tr>
     `).join('');
     tbody.querySelectorAll('[data-toggle-school]').forEach(btn => {
@@ -5778,8 +5818,20 @@ async function loadAdminDashboard() {
         } catch (e) { alert(e.message); }
       });
     });
+    tbody.querySelectorAll('[data-reset-school-pw]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm(t('confirm_reset_school_password'))) return;
+        try {
+          const res = await apiCall('POST', `/api/admin/schools/${btn.dataset.resetSchoolPw}/reset-admin-password`);
+          const box = document.getElementById('createSchoolResult');
+          box.innerHTML = `${t('admin_password_reset_msg')}<br>📧 ${escapeHtml(res.email)}<br>🔑 <code>${escapeHtml(res.password)}</code>`;
+          box.classList.remove('hidden');
+          box.scrollIntoView({ behavior: 'smooth' });
+        } catch (e) { alert(e.message); }
+      });
+    });
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="4">${escapeHtml(e.message)}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5">${escapeHtml(e.message)}</td></tr>`;
   }
 }
 document.getElementById('createSchoolBtn').addEventListener('click', async () => {
@@ -6053,8 +6105,30 @@ document.querySelectorAll('#step-teacher-dashboard .role-tab').forEach(tabBtn =>
     document.getElementById(`teacherTab-${tabBtn.dataset.tab}`).classList.remove('hidden');
     if (tabBtn.dataset.tab === 'schedule') renderTeacherSchedule();
     else if (tabBtn.dataset.tab === 'attendance') renderTeacherAttendance();
+    else if (tabBtn.dataset.tab === 'performance') renderTeacherPerformance();
   });
 });
+
+async function renderTeacherPerformance() {
+  const tbody = document.getElementById('teacherPerformanceTableBody');
+  tbody.innerHTML = `<tr><td colspan="5">${t('loading')}</td></tr>`;
+  const classId = document.getElementById('teacherClassSelect').value;
+  try {
+    const data = await apiCall('GET', `/api/teacher/performance${classId ? `?class_id=${classId}` : ''}`);
+    if (!data.performance.length) { tbody.innerHTML = `<tr><td colspan="5">${t('teacher_no_students')}</td></tr>`; return; }
+    tbody.innerHTML = data.performance.map(p => `
+      <tr>
+        <td>${escapeHtml(p.username)}</td>
+        <td>${p.attempts_count}</td>
+        <td>${p.avg_score}%</td>
+        <td>${p.total_study_minutes}</td>
+        <td>${p.current_streak >= 3 ? `🔥 ${p.current_streak}` : p.current_streak}</td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="5">${escapeHtml(e.message)}</td></tr>`;
+  }
+}
 
 async function loadTeacherDashboard() {
   try {
@@ -6084,8 +6158,35 @@ function renderTeacherRoster(students) {
   });
 }
 document.getElementById('teacherClassSelect').addEventListener('change', async () => {
+  const activeTab = document.querySelector('#step-teacher-dashboard .role-tab.active')?.dataset.tab;
+  if (activeTab === 'performance') { renderTeacherPerformance(); return; }
+  if (activeTab === 'schedule') { renderTeacherSchedule(); return; }
+  if (activeTab === 'attendance') { renderTeacherAttendance(); return; }
   const data = await apiCall('GET', '/api/teacher/roster').catch(() => ({ students: [] }));
   renderTeacherRoster(data.students);
+});
+
+document.getElementById('teacherStartClassBtn').addEventListener('click', async () => {
+  clearError('teacherStartClassError');
+  const classId = document.getElementById('teacherClassSelect').value;
+  if (!classId) { showError('teacherStartClassError', t('err_pick_class_first')); return; }
+  try {
+    const res = await fetch(`${API_BASE}/api/room/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentAccessToken}` },
+      body: JSON.stringify({ room_type: 'classroom', class_id: classId }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || t('err_create_room_failed'));
+    // نستخدم نفس مسار انضمام الغرفة الموجود (اجتماعية/كلاس مباشر) - الاستماع
+    // لحدث room_state هو اللي يوديك فعليًا لشاشة الكلاس (step-classroom) ويفعّل
+    // السبورة والصوت والشات، وبما إنه مربوط بـ class_id يسجّل حضور تلقائي
+    myName = currentUsername;
+    joinErrorTarget = 'teacherStartClassError';
+    socket.emit('join_room', { room_code: data.room_code, name: myName, client_id: clientId, token: currentAccessToken });
+  } catch (err) {
+    showError('teacherStartClassError', err.message || t('err_unexpected'));
+  }
 });
 
 async function renderTeacherSchedule() {

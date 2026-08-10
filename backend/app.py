@@ -2031,8 +2031,23 @@ def admin_list_schools():
     schools_res = supabase_admin.table("schools").select("*").order("created_at", desc=True).execute().data
     counts = supabase_admin.table("profiles").select("school_id").not_.is_("school_id", "null").execute().data
     usage = Counter(r["school_id"] for r in counts)
+
+    # إيميل مدير كل مدرسة - ما نخزّن كلمة السر الأصلية بأي مكان (أمان)، بس
+    # الإيميل معلومة عادية نقدر نعرضها دايمًا بدون أي مشكلة
+    admins = (
+        supabase_admin.table("profiles").select("user_id, school_id").eq("role", "school_admin").execute()
+    ).data
+    admin_by_school = {a["school_id"]: a["user_id"] for a in admins}
+
     for s in schools_res:
         s["accounts_used"] = usage.get(s["id"], 0)
+        admin_uid = admin_by_school.get(s["id"])
+        s["admin_email"] = None
+        if admin_uid:
+            try:
+                s["admin_email"] = supabase_admin.auth.admin.get_user_by_id(admin_uid).user.email
+            except Exception:
+                pass
     return jsonify({"schools": schools_res}), 200
 
 
@@ -2045,6 +2060,38 @@ def admin_update_school(school_id):
         return jsonify({"error": "ما فيه شي نحدّثه"}), 400
     supabase_admin.table("schools").update(patch).eq("id", school_id).execute()
     return jsonify({"ok": True}), 200
+
+
+@app.route("/api/admin/schools/<school_id>/reset-admin-password", methods=["POST"])
+@require_role("admin")
+def admin_reset_school_password(school_id):
+    """ما نقدر نعرض كلمة السر الأصلية (ما تُخزّن نص صريح أبدًا - أمان)، فبدلها
+    نولّد كلمة سر جديدة لحساب مدير المدرسة ونرجعها مرة وحدة، ونجبره يغيّرها
+    أول ما يسجل دخول - يخدم نفس الغرض (تقدر تعطيه بيانات دخول صالحة بأي وقت)."""
+    admin_row = (
+        supabase_admin.table("profiles")
+        .select("user_id, username")
+        .eq("school_id", school_id)
+        .eq("role", "school_admin")
+        .limit(1)
+        .execute()
+    ).data
+    if not admin_row:
+        return jsonify({"error": "ما فيه حساب مدير لهذي المدرسة"}), 404
+
+    admin_uid = admin_row[0]["user_id"]
+    new_password = generate_strong_password()
+    try:
+        supabase_admin.auth.admin.update_user_by_id(admin_uid, {"password": new_password})
+    except Exception as e:
+        return jsonify({"error": f"تعذّر تحديث كلمة السر: {e}"}), 400
+    supabase_admin.table("profiles").update({"must_change_password": True}).eq("user_id", admin_uid).execute()
+
+    try:
+        email = supabase_admin.auth.admin.get_user_by_id(admin_uid).user.email
+    except Exception:
+        email = None
+    return jsonify({"email": email, "password": new_password}), 200
 
 
 # ---------- School Admin + School Administration ----------
@@ -2400,6 +2447,31 @@ def teacher_roster():
             .execute()
         ).data
     return jsonify({"classes": my_classes, "students": students}), 200
+
+
+@app.route("/api/teacher/performance", methods=["GET"])
+@require_role("teacher")
+def teacher_performance():
+    """لوحة أداء مجمّعة لكل طلاب فصول المعلم دفعة وحدة - بدل ما يفتح كل طالب
+    لحاله. تدعم فلترة اختيارية بفصل وحد عبر ?class_id="""
+    requested_class_id = request.args.get("class_id")
+    my_classes = supabase_admin.table("classes").select("id, name").eq("teacher_id", request.user_id).execute().data
+    my_class_ids = [c["id"] for c in my_classes]
+    class_ids = [requested_class_id] if requested_class_id in my_class_ids else my_class_ids
+    students = []
+    if class_ids:
+        students = (
+            supabase_admin.table("profiles")
+            .select("user_id, username, class_id")
+            .eq("role", "student")
+            .in_("class_id", class_ids)
+            .execute()
+        ).data
+    result = []
+    for s in students:
+        perf = _compute_performance_summary(s["user_id"])
+        result.append({"user_id": s["user_id"], "username": s["username"], "class_id": s["class_id"], **perf})
+    return jsonify({"performance": result}), 200
 
 
 @app.route("/api/teacher/students/<user_id>", methods=["GET"])

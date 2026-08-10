@@ -353,6 +353,19 @@
 
   .sub-heading { margin: 20px 0 10px; font-size: 14px; color: var(--ink-soft); font-weight: 600; }
 
+  /* ---------- جداول بيانات بسيطة (لوحات إدارة المدرسة) ---------- */
+  .data-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+  table.data-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table.data-table th, table.data-table td { padding: 9px 12px; text-align: start; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  table.data-table th { color: var(--ink-soft); font-weight: 600; background: var(--paper-dim); }
+  table.data-table tr:last-child td { border-bottom: none; }
+  .role-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .role-tab { padding: 7px 14px; border-radius: 20px; border: 1px solid var(--line); background: var(--paper); cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--ink-soft); }
+  .role-tab.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+  .credential-reveal { border: 1px dashed var(--teal); background: var(--teal-dim); border-radius: 10px; padding: 12px 14px; margin-top: 10px; font-size: 14px; }
+  .account-usage-meter { height: 8px; border-radius: 6px; background: var(--paper-dim); overflow: hidden; margin: 6px 0 14px; }
+  .account-usage-meter > div { height: 100%; background: var(--teal); }
+
   /* ---------- Chat (AI + room) ---------- */
   .chat-messages {
     max-height: 260px;
@@ -919,6 +932,7 @@
     <button class="sidebar-btn" id="friendsBtn"><span class="sidebar-icon">👥</span><span class="label" data-i18n="nav_friends">الأصدقاء</span></button>
     <button class="sidebar-btn" id="sidebarLibraryBtn"><span class="sidebar-icon">📚</span><span class="label" data-i18n="nav_library">مكتبتي</span></button>
     <button class="sidebar-btn" id="sidebarAiHelpBtn"><span class="sidebar-icon">🤖</span><span class="label" data-i18n="nav_ai_help">مساعد ذكيّ</span></button>
+    <button class="sidebar-btn hidden" id="studentScheduleNavBtn"><span class="sidebar-icon">🗓️</span><span class="label" data-i18n="nav_my_schedule">جدولي</span></button>
   </nav>
   <div class="sidebar-bottom">
     <button class="sidebar-btn" id="settingsBtn"><span class="sidebar-icon">⚙️</span><span class="label" data-i18n="nav_settings">الإعدادات</span></button>
@@ -962,7 +976,7 @@
     <h2 data-i18n="login_title">تسجيل الدخول</h2>
     <p class="desc" data-i18n="login_desc">أدخل بياناتك للمتابعة، أو سوّي حساب يحفظ تقدمك</p>
     <div class="auth-fields">
-      <input type="email" id="loginEmail" class="text-input" placeholder="الإيميل" data-i18n-ph="ph_email">
+      <input type="text" id="loginEmail" class="text-input" placeholder="الإيميل أو اسم المستخدم" data-i18n-ph="ph_email_or_username">
       <input type="password" id="loginPassword" class="text-input" placeholder="كلمة المرور" data-i18n-ph="ph_password">
     </div>
     <div class="auth-actions-stack">
@@ -1012,6 +1026,216 @@
       <button class="link-btn" id="goToLoginBtn" data-i18n="link_go_login">🔑 عندك حساب؟ سجّل دخولك</button>
       <button class="link-btn" id="guestFromSignupBtn" data-i18n="link_continue_guest">➡️ استمر بدون حساب</button>
     </div>
+  </section>
+
+  <!-- بوابة إجبار تغيير كلمة السر أول دخول (حسابات مؤسسية بكلمة سر مؤقتة) -
+       ما فيها زر رجوع وما تُسجّل بالتاريخ العادي، بوابة صلبة قبل أي شي ثاني -->
+  <section class="card hidden auth-card" id="step-force-password-change">
+    <span class="auth-logo">ذكيّ</span>
+    <h2 data-i18n="force_pw_heading">لازم تغيّر كلمة السر أول</h2>
+    <p class="desc" data-i18n="force_pw_desc">حسابك انسوى بكلمة سر مؤقتة - اختر كلمة سر جديدة تعرفها بس قبل ما تكمل</p>
+    <div class="auth-fields">
+      <input type="password" id="forcePwNew" class="text-input" placeholder="كلمة مرور جديدة" data-i18n-ph="ph_new_password">
+      <input type="password" id="forcePwConfirm" class="text-input" placeholder="أعد كتابتها" data-i18n-ph="ph_confirm_password">
+    </div>
+    <div class="auth-actions-stack">
+      <button class="primary" id="forcePwSubmitBtn" data-i18n="btn_save">حفظ</button>
+    </div>
+    <div id="forcePwError"></div>
+  </section>
+
+  <!-- لوحة الأدمن العام: إدارة المدارس والاشتراكات -->
+  <section class="card hidden" id="step-admin-dashboard">
+    <span class="step-label" data-i18n="admin_dash_label">🛠️ لوحة الإدارة العامة</span>
+    <h2 data-i18n="admin_dash_heading">المدارس المشتركة</h2>
+
+    <h3 class="sub-heading" data-i18n="admin_add_school_heading">➕ إضافة مدرسة جديدة</h3>
+    <div class="actions" style="flex-wrap:wrap;">
+      <input type="text" id="newSchoolName" class="text-input" placeholder="اسم المدرسة" data-i18n-ph="ph_school_name">
+      <input type="email" id="newSchoolAdminEmail" class="text-input" placeholder="إيميل مدير المدرسة" data-i18n-ph="ph_school_admin_email">
+      <input type="number" id="newSchoolMaxAccounts" class="text-input" placeholder="الحد الأقصى للحسابات" data-i18n-ph="ph_max_accounts" min="0" style="max-width:160px;">
+      <button class="primary" id="createSchoolBtn" data-i18n="btn_create_school">إنشاء المدرسة</button>
+    </div>
+    <div id="createSchoolError"></div>
+    <div id="createSchoolResult" class="credential-reveal hidden"></div>
+
+    <h3 class="sub-heading" data-i18n="admin_schools_list_heading">🏫 كل المدارس</h3>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr>
+          <th data-i18n="th_school_name">المدرسة</th>
+          <th data-i18n="th_accounts_usage">الحسابات</th>
+          <th data-i18n="th_status">الحالة</th>
+          <th data-i18n="th_actions">إجراء</th>
+        </tr></thead>
+        <tbody id="adminSchoolsTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- لوحة إدارة المدرسة (School Admin و School Administration) -->
+  <section class="card hidden" id="step-school-dashboard">
+    <span class="step-label" data-i18n="school_dash_label">🏫 لوحة إدارة المدرسة</span>
+    <h2 data-i18n="school_dash_heading">إدارة المدرسة</h2>
+    <div class="account-usage-meter"><div id="schoolUsageBar" style="width:0%;"></div></div>
+    <p class="desc" id="schoolUsageText"></p>
+
+    <div class="role-tabs">
+      <button class="role-tab active" data-tab="teachers" data-i18n="tab_teachers">👨‍🏫 المعلمون</button>
+      <button class="role-tab" data-tab="classes" data-i18n="tab_classes">🏷️ الفصول والجدول</button>
+      <button class="role-tab" data-tab="bulk" data-i18n="tab_bulk_students">➕ إضافة طلاب بالجملة</button>
+      <button class="role-tab" data-tab="attendance" data-i18n="tab_attendance">📋 الحضور</button>
+    </div>
+
+    <div id="schoolTab-teachers" class="school-tab-panel">
+      <div class="actions" style="flex-wrap:wrap;">
+        <input type="text" id="newTeacherName" class="text-input" placeholder="اسم المعلم" data-i18n-ph="ph_teacher_name">
+        <input type="email" id="newTeacherEmail" class="text-input" placeholder="إيميل المعلم" data-i18n-ph="ph_teacher_email">
+        <button class="primary" id="addTeacherBtn" data-i18n="btn_add_teacher">إضافة معلم</button>
+      </div>
+      <div id="addTeacherError"></div>
+      <div id="addTeacherResult" class="credential-reveal hidden"></div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th data-i18n="th_name">الاسم</th>
+            <th data-i18n="th_classes">الفصول</th>
+            <th data-i18n="th_student_count">عدد الطلاب</th>
+            <th data-i18n="th_last_login">آخر دخول</th>
+            <th data-i18n="th_actions">إجراء</th>
+          </tr></thead>
+          <tbody id="schoolTeachersTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="schoolTab-classes" class="school-tab-panel hidden">
+      <div class="actions" style="flex-wrap:wrap;">
+        <input type="text" id="newClassName" class="text-input" placeholder="اسم الفصل" data-i18n-ph="ph_class_name">
+        <select id="newClassTeacher" class="text-input"></select>
+        <button class="primary" id="addClassBtn" data-i18n="btn_add_class">إضافة فصل</button>
+      </div>
+      <div id="addClassError"></div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th data-i18n="th_class_name">الفصل</th>
+            <th data-i18n="th_teacher">المعلم</th>
+            <th data-i18n="th_student_count">عدد الطلاب</th>
+            <th data-i18n="th_actions">إجراء</th>
+          </tr></thead>
+          <tbody id="schoolClassesTableBody"></tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-heading" data-i18n="schedule_heading">🗓️ جدول الحصص</h3>
+      <div class="actions" style="flex-wrap:wrap;">
+        <select id="scheduleClassSelect" class="text-input"></select>
+        <select id="scheduleDay" class="text-input">
+          <option value="0" data-i18n="day_0">الأحد</option>
+          <option value="1" data-i18n="day_1">الاثنين</option>
+          <option value="2" data-i18n="day_2">الثلاثاء</option>
+          <option value="3" data-i18n="day_3">الأربعاء</option>
+          <option value="4" data-i18n="day_4">الخميس</option>
+          <option value="5" data-i18n="day_5">الجمعة</option>
+          <option value="6" data-i18n="day_6">السبت</option>
+        </select>
+        <input type="time" id="scheduleStart" class="text-input" style="max-width:120px;">
+        <input type="time" id="scheduleEnd" class="text-input" style="max-width:120px;">
+        <input type="text" id="scheduleSubject" class="text-input" placeholder="المادة" data-i18n-ph="ph_subject" style="max-width:140px;">
+        <button class="primary" id="addScheduleBtn" data-i18n="btn_add_schedule">إضافة حصة</button>
+      </div>
+      <div id="addScheduleError"></div>
+      <div id="scheduleTableWrap" class="data-table-wrap"></div>
+    </div>
+
+    <div id="schoolTab-bulk" class="school-tab-panel hidden">
+      <p class="desc" data-i18n="bulk_add_desc">اكتب اسم طالب بكل سطر - النظام يولّد اسم مستخدم وكلمة سر لكل واحد تلقائيًا</p>
+      <select id="bulkClassSelect" class="text-input" style="margin-bottom:10px;"></select>
+      <textarea id="bulkNamesInput" class="text-input" rows="8" placeholder="سارة أحمد&#10;محمد علي&#10;..." data-i18n-ph="ph_bulk_names" style="width:100%; resize:vertical; font-family:inherit;"></textarea>
+      <div class="actions" style="margin-top:10px;">
+        <button class="primary" id="bulkAddStudentsBtn" data-i18n="btn_bulk_add">إضافة الطلاب</button>
+      </div>
+      <div id="bulkAddError"></div>
+      <div id="bulkAddResultWrap" class="hidden">
+        <h3 class="sub-heading" data-i18n="bulk_result_heading">✅ الحسابات المولّدة (احفظها الحين - كلمة السر ما تتكرر عرضها)</h3>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead><tr>
+              <th data-i18n="th_name">الاسم</th>
+              <th data-i18n="th_username">اسم المستخدم</th>
+              <th data-i18n="th_password">كلمة السر</th>
+            </tr></thead>
+            <tbody id="bulkAddResultBody"></tbody>
+          </table>
+        </div>
+        <div class="actions" style="margin-top:10px;">
+          <button class="ghost" id="bulkExportCsvBtn" data-i18n="btn_export_csv">⬇️ تصدير CSV</button>
+          <button class="ghost" id="bulkExportPdfBtn" data-i18n="btn_export_pdf">🖨️ تصدير PDF</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="schoolTab-attendance" class="school-tab-panel hidden">
+      <select id="attendanceClassFilter" class="text-input" style="margin-bottom:10px;"></select>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th data-i18n="th_student">الطالب</th>
+            <th data-i18n="th_class_name">الفصل</th>
+            <th data-i18n="th_join_time">وقت الانضمام</th>
+          </tr></thead>
+          <tbody id="schoolAttendanceTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- لوحة المعلم -->
+  <section class="card hidden" id="step-teacher-dashboard">
+    <span class="step-label" data-i18n="teacher_dash_label">👨‍🏫 لوحة المعلم</span>
+    <h2 data-i18n="teacher_dash_heading">فصولي</h2>
+    <select id="teacherClassSelect" class="text-input" style="margin-bottom:14px;"></select>
+
+    <div class="role-tabs">
+      <button class="role-tab active" data-tab="roster" data-i18n="tab_roster">👥 الطلاب</button>
+      <button class="role-tab" data-tab="schedule" data-i18n="tab_schedule">🗓️ جدولي</button>
+      <button class="role-tab" data-tab="attendance" data-i18n="tab_attendance">📋 الحضور</button>
+    </div>
+
+    <div id="teacherTab-roster" class="teacher-tab-panel">
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr><th data-i18n="th_student">الطالب</th><th data-i18n="th_actions">إجراء</th></tr></thead>
+          <tbody id="teacherRosterTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="teacherTab-schedule" class="teacher-tab-panel hidden">
+      <div class="data-table-wrap" id="teacherScheduleWrap"></div>
+    </div>
+    <div id="teacherTab-attendance" class="teacher-tab-panel hidden">
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr><th data-i18n="th_student">الطالب</th><th data-i18n="th_join_time">وقت الانضمام</th></tr></thead>
+          <tbody id="teacherAttendanceTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="teacherStudentProfileModal" class="qr-modal hidden">
+      <div class="qr-modal-box" style="width:380px; text-align:start;">
+        <button class="ai-help-close" id="teacherStudentProfileClose">✕</button>
+        <div id="teacherStudentProfileContent"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- جدول حصص الطالب -->
+  <section class="card hidden" id="step-student-schedule">
+    <span class="step-label" data-i18n="student_schedule_label">🗓️ جدولي</span>
+    <h2 data-i18n="student_schedule_heading">جدول حصصي</h2>
+    <div class="data-table-wrap" id="studentScheduleWrap"></div>
   </section>
 
   <!-- لوحة تحليل الأداء (تظهر بأي وقت للمسجّلين عبر زر "📊 أدائي") -->
@@ -1572,6 +1796,11 @@ let currentUserEmail = null;
 let currentUsername = null;
 let currentUserId = null;
 let currentUserPhone = null;
+// نظام إدارة حسابات المدارس - role فاضي (null) = حساب فردي عادي (نفس التجربة
+// الحالية بدون أي تغيير)، وإلا حساب مؤسسي يوجّه للوحته الخاصة بعد الدخول
+let currentUserRole = null;
+let currentUserSchoolId = null;
+let currentUserClassId = null;
 
 let appMode = null; // 'solo' | 'room-host' | 'room-join'
 let uploadedFilename = null;
@@ -1791,6 +2020,70 @@ const I18N = {
     save_name_failed: 'تعذر حفظ الاسم، جرب مرة ثانية',
     legacy_username_prompt: 'لاحظنا حسابك بدون اسم محفوظ. وش اسمك؟ (يطلع بدل الإيميل بالموقع)',
     streak_days_suffix: '{n} أيام متتالية',
+    ph_email_or_username: 'الإيميل أو اسم المستخدم',
+    loading: 'جاري التحميل...',
+    force_pw_heading: 'لازم تغيّر كلمة السر أول',
+    force_pw_desc: 'حسابك انسوى بكلمة سر مؤقتة - اختر كلمة سر جديدة تعرفها بس قبل ما تكمل',
+    nav_my_schedule: 'جدولي',
+    err_school_fields_required: 'لازم اسم المدرسة وإيميل مدير المدرسة',
+    err_teacher_fields_required: 'لازم اسم المعلم وإيميله',
+    err_class_name_required: 'لازم اسم الفصل',
+    err_pick_class_first: 'اختر فصل أول',
+    err_schedule_time_required: 'لازم وقت بداية ونهاية الحصة',
+    err_names_required: 'لازم تكتب اسم طالب وحد على الأقل',
+    confirm_delete_account: 'متأكد تبي تحذف هذا الحساب؟ ما يرجع بعدها',
+    confirm_delete_class: 'متأكد تبي تحذف هذا الفصل؟',
+    status_active: 'مفعّلة',
+    status_inactive: 'موقوفة',
+    never_logged_in: 'ما دخل بعد',
+    no_schedule_yet: 'ما فيه حصص مضافة بعد',
+    no_attendance_yet: 'ما فيه سجل حضور بعد',
+    opt_no_teacher_yet: '— بدون معلم بعد —',
+    opt_create_class_first: 'أنشئ فصل أول',
+    opt_all_classes: 'كل الفصول',
+    opt_all_my_classes: 'كل فصولي',
+    day_0: 'الأحد', day_1: 'الاثنين', day_2: 'الثلاثاء', day_3: 'الأربعاء',
+    day_4: 'الخميس', day_5: 'الجمعة', day_6: 'السبت',
+    th_school_name: 'المدرسة', th_accounts_usage: 'الحسابات', th_status: 'الحالة', th_actions: 'إجراء',
+    th_name: 'الاسم', th_classes: 'الفصول', th_student_count: 'عدد الطلاب', th_last_login: 'آخر دخول',
+    th_class_name: 'الفصل', th_teacher: 'المعلم', th_day: 'اليوم', th_time: 'الوقت', th_subject: 'المادة',
+    th_student: 'الطالب', th_join_time: 'وقت الانضمام', th_username: 'اسم المستخدم', th_password: 'كلمة السر',
+    // ---- لوحة الأدمن العام ----
+    admin_dash_label: '🛠️ لوحة الإدارة العامة',
+    admin_dash_heading: 'المدارس المشتركة',
+    admin_add_school_heading: '➕ إضافة مدرسة جديدة',
+    admin_schools_list_heading: '🏫 كل المدارس',
+    admin_no_schools: 'ما فيه مدارس بعد',
+    admin_school_created_msg: '✅ تم إنشاء مدرسة "{name}" - بيانات دخول مدير المدرسة (تظهر مرة وحدة بس، احفظها الحين):',
+    ph_school_name: 'اسم المدرسة',
+    ph_school_admin_email: 'إيميل مدير المدرسة',
+    ph_max_accounts: 'الحد الأقصى للحسابات',
+    btn_create_school: 'إنشاء المدرسة',
+    btn_activate: 'تفعيل',
+    btn_deactivate: 'إيقاف',
+    // ---- لوحة إدارة المدرسة ----
+    school_dash_label: '🏫 لوحة إدارة المدرسة',
+    school_dash_heading: 'إدارة المدرسة',
+    school_usage_text: 'الحسابات المستخدمة: {used} من {max}',
+    tab_teachers: '👨‍🏫 المعلمون', tab_classes: '🏷️ الفصول والجدول', tab_bulk_students: '➕ إضافة طلاب بالجملة', tab_attendance: '📋 الحضور',
+    ph_teacher_name: 'اسم المعلم', ph_teacher_email: 'إيميل المعلم', btn_add_teacher: 'إضافة معلم',
+    school_no_teachers: 'ما فيه معلمين مضافين بعد',
+    school_teacher_created_msg: '✅ تم إضافة المعلم "{name}" - بيانات دخوله (تظهر مرة وحدة بس، احفظها الحين):',
+    ph_class_name: 'اسم الفصل', btn_add_class: 'إضافة فصل', school_no_classes: 'ما فيه فصول مضافة بعد',
+    schedule_heading: '🗓️ جدول الحصص', ph_subject: 'المادة', btn_add_schedule: 'إضافة حصة',
+    bulk_add_desc: 'اكتب اسم طالب بكل سطر - النظام يولّد اسم مستخدم وكلمة سر لكل واحد تلقائيًا',
+    ph_bulk_names: 'سارة أحمد\nمحمد علي\n...',
+    btn_bulk_add: 'إضافة الطلاب',
+    bulk_result_heading: '✅ الحسابات المولّدة (احفظها الحين - كلمة السر ما تتكرر عرضها)',
+    btn_export_csv: '⬇️ تصدير CSV', btn_export_pdf: '🖨️ تصدير PDF',
+    // ---- لوحة المعلم ----
+    teacher_dash_label: '👨‍🏫 لوحة المعلم', teacher_dash_heading: 'فصولي',
+    tab_roster: '👥 الطلاب', tab_schedule: '🗓️ جدولي',
+    teacher_no_students: 'ما فيه طلاب بهذا الفصل بعد',
+    btn_view_profile: 'عرض البروفايل',
+    teacher_student_no_archive: 'ما فيه جلسات مسجّلة بعد',
+    // ---- جدول الطالب ----
+    student_schedule_label: '🗓️ جدولي', student_schedule_heading: 'جدول حصصي',
     err_email_password_required: 'لازم تكتب الإيميل وكلمة المرور',
     err_wrong_credentials: 'الإيميل أو كلمة المرور غلط',
     err_name_required: 'لازم تكتب اسمك',
@@ -2112,6 +2405,70 @@ const I18N = {
     save_name_failed: 'Could not save the name, try again',
     legacy_username_prompt: "We noticed your account has no saved name. What's your name? (shown instead of your email on the site)",
     streak_days_suffix: '{n} days in a row',
+    ph_email_or_username: 'Email or username',
+    loading: 'Loading...',
+    force_pw_heading: 'You need to change your password first',
+    force_pw_desc: 'Your account was created with a temporary password - choose a new one only you know before continuing',
+    nav_my_schedule: 'My Schedule',
+    err_school_fields_required: 'School name and admin email are required',
+    err_teacher_fields_required: "Teacher's name and email are required",
+    err_class_name_required: 'Class name is required',
+    err_pick_class_first: 'Pick a class first',
+    err_schedule_time_required: 'Start and end time are required',
+    err_names_required: 'Enter at least one student name',
+    confirm_delete_account: "Delete this account? This can't be undone",
+    confirm_delete_class: 'Delete this class?',
+    status_active: 'Active',
+    status_inactive: 'Inactive',
+    never_logged_in: 'Never logged in',
+    no_schedule_yet: 'No classes scheduled yet',
+    no_attendance_yet: 'No attendance recorded yet',
+    opt_no_teacher_yet: '— No teacher yet —',
+    opt_create_class_first: 'Create a class first',
+    opt_all_classes: 'All classes',
+    opt_all_my_classes: 'All my classes',
+    day_0: 'Sunday', day_1: 'Monday', day_2: 'Tuesday', day_3: 'Wednesday',
+    day_4: 'Thursday', day_5: 'Friday', day_6: 'Saturday',
+    th_school_name: 'School', th_accounts_usage: 'Accounts', th_status: 'Status', th_actions: 'Action',
+    th_name: 'Name', th_classes: 'Classes', th_student_count: 'Students', th_last_login: 'Last login',
+    th_class_name: 'Class', th_teacher: 'Teacher', th_day: 'Day', th_time: 'Time', th_subject: 'Subject',
+    th_student: 'Student', th_join_time: 'Joined at', th_username: 'Username', th_password: 'Password',
+    // ---- Platform admin dashboard ----
+    admin_dash_label: '🛠️ Platform Admin',
+    admin_dash_heading: 'Subscribed Schools',
+    admin_add_school_heading: '➕ Add a New School',
+    admin_schools_list_heading: '🏫 All Schools',
+    admin_no_schools: 'No schools yet',
+    admin_school_created_msg: '✅ School "{name}" created - school admin login (shown once, save it now):',
+    ph_school_name: 'School name',
+    ph_school_admin_email: "School admin's email",
+    ph_max_accounts: 'Max accounts',
+    btn_create_school: 'Create School',
+    btn_activate: 'Activate',
+    btn_deactivate: 'Deactivate',
+    // ---- School dashboard ----
+    school_dash_label: '🏫 School Dashboard',
+    school_dash_heading: 'Manage School',
+    school_usage_text: 'Accounts used: {used} of {max}',
+    tab_teachers: '👨‍🏫 Teachers', tab_classes: '🏷️ Classes & Schedule', tab_bulk_students: '➕ Bulk Add Students', tab_attendance: '📋 Attendance',
+    ph_teacher_name: "Teacher's name", ph_teacher_email: "Teacher's email", btn_add_teacher: 'Add Teacher',
+    school_no_teachers: 'No teachers added yet',
+    school_teacher_created_msg: '✅ Teacher "{name}" added - their login (shown once, save it now):',
+    ph_class_name: 'Class name', btn_add_class: 'Add Class', school_no_classes: 'No classes added yet',
+    schedule_heading: '🗓️ Class Schedule', ph_subject: 'Subject', btn_add_schedule: 'Add Session',
+    bulk_add_desc: 'Write one student name per line - the system auto-generates a username and password for each',
+    ph_bulk_names: 'Sara Ahmed\nMohammed Ali\n...',
+    btn_bulk_add: 'Add Students',
+    bulk_result_heading: '✅ Generated Accounts (save now - passwords are shown only once)',
+    btn_export_csv: '⬇️ Export CSV', btn_export_pdf: '🖨️ Export PDF',
+    // ---- Teacher dashboard ----
+    teacher_dash_label: '👨‍🏫 Teacher Dashboard', teacher_dash_heading: 'My Classes',
+    tab_roster: '👥 Students', tab_schedule: '🗓️ My Schedule',
+    teacher_no_students: 'No students in this class yet',
+    btn_view_profile: 'View Profile',
+    teacher_student_no_archive: 'No recorded sessions yet',
+    // ---- Student schedule ----
+    student_schedule_label: '🗓️ My Schedule', student_schedule_heading: 'My Class Schedule',
     err_email_password_required: 'You need to enter your email and password',
     err_wrong_credentials: 'Wrong email or password',
     err_name_required: 'You need to enter your name',
@@ -2299,6 +2656,9 @@ const TOP_LEVEL_SCREENS = [
   'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary',
   'step-quiz', 'step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings',
   'step-profile',
+  // لوحات نظام إدارة حسابات المدارس - step-force-password-change مو من ضمنها
+  // عمدًا (بوابة صلبة، ما تدخل نظام الرجوع/التنقل العادي)
+  'step-admin-dashboard', 'step-school-dashboard', 'step-teacher-dashboard', 'step-student-schedule',
 ];
 const BACK_BUTTON_HIDDEN_ON = ['mode-select', 'login-form', 'signup-form', 'step-quiz'];
 let navHistory = [];
@@ -2472,9 +2832,40 @@ function onAuthSuccess(session) {
   show('welcomeGreeting');
   refreshAccountUI();
 
-  proceedToApp();
+  // نظام إدارة حسابات المدارس: نجيب دور الحساب قبل ما نوجّهه لأي شاشة - حساب
+  // مؤسسي بكلمة سر مؤقتة يتوقف عند بوابة تغييرها أول، وإلا يوجّه للوحته
+  // الخاصة، وحساب فردي عادي (role فاضي) يكمل بنفس تجربة الحساب الفردي الحالية
+  // بدون أي تغيير (proceedToApp)
+  fetch(`${API_BASE}/api/me`, { headers: { 'Authorization': `Bearer ${currentAccessToken}` } })
+    .then(res => res.json())
+    .then(me => {
+      currentUserRole = me.role;
+      currentUserSchoolId = me.school_id;
+      currentUserClassId = me.class_id;
+      document.getElementById('studentScheduleNavBtn').classList.toggle(
+        'hidden', !(currentUserRole === 'student' && currentUserSchoolId)
+      );
 
-  // حساب قديم بدون اسم محفوظ - نطلبه مرة وحدة (يقدر يلغيها ويبقى بالإيميل)
+      if (me.must_change_password) {
+        TOP_LEVEL_SCREENS.forEach(hide);
+        hide('login-form'); hide('signup-form');
+        navHistory = [];
+        show('step-force-password-change');
+        updateGlobalBackButton();
+        return;
+      }
+      if (currentUserRole) {
+        navHistory = [];
+        routeByRole(currentUserRole);
+        updateGlobalBackButton();
+      } else {
+        proceedToApp();
+      }
+    })
+    .catch(() => proceedToApp()); // تعذّر جلب الدور (مشكلة شبكة) - نكمل بنفس التجربة الفردية بدل ما نعلّق المستخدم
+
+  // حساب قديم بدون اسم محفوظ - نطلبه مرة وحدة (يقدر يلغيها ويبقى بالإيميل).
+  // الحسابات المؤسسية (معلم/إداري/طالب) اسمها مضبوط وقت الإنشاء فما تدخل هذا الشرط
   if (!hasStoredUsername) {
     promptForUsername(t('legacy_username_prompt'));
   }
@@ -2528,9 +2919,28 @@ document.getElementById('guestFromSignupBtn').addEventListener('click', proceedT
 
 document.getElementById('loginSubmitBtn').addEventListener('click', async () => {
   clearError('loginError');
-  const email = document.getElementById('loginEmail').value.trim();
+  const identifier = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
-  if (!email || !password) { showError('loginError', t('err_email_password_required')); return; }
+  if (!identifier || !password) { showError('loginError', t('err_email_password_required')); return; }
+
+  // حسابات الطلاب المولّدة بالجملة تسجّل دخول باسم مستخدم (بدون إيميل حقيقي) -
+  // لو المُدخل مو إيميل، نحوّله أول لبريده الاصطناعي عبر الباك إند قبل Supabase
+  // (اللي يتطلب إيميل دايمًا لتسجيل الدخول بكلمة سر)
+  let email = identifier;
+  if (!identifier.includes('@')) {
+    try {
+      const res = await fetch(`${API_BASE}/api/resolve-login-identifier`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier }),
+      });
+      const resolved = await res.json();
+      if (!res.ok || !resolved.email) { showError('loginError', t('err_wrong_credentials')); return; }
+      email = resolved.email;
+    } catch {
+      showError('loginError', t('err_unexpected')); return;
+    }
+  }
 
   const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
   if (error) { showError('loginError', t('err_wrong_credentials')); return; }
@@ -2605,6 +3015,7 @@ const ACCOUNT_SCREENS = ['step-performance', 'step-archive', 'step-friends', 'st
 function showAccountScreen(id) {
   ['login-form', 'signup-form', 'mode-select', 'room-mode-select', 'room-create-form',
    'room-join-form', 'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary', 'step-quiz',
+   'step-admin-dashboard', 'step-school-dashboard', 'step-teacher-dashboard', 'step-student-schedule',
    ...ACCOUNT_SCREENS]
     .forEach(hide);
   show(id);
@@ -2744,9 +3155,13 @@ function renderProfileFriendAction(data) {
 
 function goToHomeScreen() {
   pushNavSnapshot();
-  TOP_LEVEL_SCREENS.forEach(hide);
-  hide('login-form'); hide('signup-form');
-  show('mode-select');
+  if (currentUserRole && INSTITUTIONAL_DASHBOARD_SCREENS[currentUserRole]) {
+    routeByRole(currentUserRole);
+  } else {
+    TOP_LEVEL_SCREENS.forEach(hide);
+    hide('login-form'); hide('signup-form');
+    show('mode-select');
+  }
   updateGlobalBackButton();
 }
 document.getElementById('homeBtn').addEventListener('click', goToHomeScreen);
@@ -5236,6 +5651,507 @@ function openProfileQrModal(userId, username) {
   openQrModalWithText(url, t('qr_profile_caption', { name: username }));
 }
 document.getElementById('showFriendQrBtn').addEventListener('click', () => openProfileQrModal(currentUserId, currentUsername));
+
+// ============================================================================
+// ---------- نظام إدارة حسابات المدارس (٥ أدوار) ----------
+// Admin (عام) → School Admin/School Administration (لكل مدرسة) → Teacher → Student
+// ============================================================================
+
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+async function apiCall(method, path, body) {
+  const opts = { method, headers: { 'Authorization': `Bearer ${currentAccessToken}` } };
+  if (body !== undefined) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  const res = await fetch(`${API_BASE}${path}`, opts);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || t('err_unexpected'));
+  return data;
+}
+
+const INSTITUTIONAL_DASHBOARD_SCREENS = {
+  admin: 'step-admin-dashboard',
+  school_admin: 'step-school-dashboard',
+  school_administration: 'step-school-dashboard',
+  teacher: 'step-teacher-dashboard',
+};
+
+function routeByRole(role) {
+  TOP_LEVEL_SCREENS.forEach(hide);
+  hide('login-form'); hide('signup-form');
+  const screenId = INSTITUTIONAL_DASHBOARD_SCREENS[role];
+  if (!screenId) { show('mode-select'); return; }
+  show(screenId);
+  if (role === 'admin') loadAdminDashboard();
+  else if (role === 'school_admin' || role === 'school_administration') loadSchoolDashboard();
+  else if (role === 'teacher') loadTeacherDashboard();
+}
+
+// ---------- بوابة إجبار تغيير كلمة السر أول دخول ----------
+document.getElementById('forcePwSubmitBtn').addEventListener('click', async () => {
+  clearError('forcePwError');
+  const pass1 = document.getElementById('forcePwNew').value;
+  const pass2 = document.getElementById('forcePwConfirm').value;
+  if (pass1.length < 6) { showError('forcePwError', t('err_password_min')); return; }
+  if (pass1 !== pass2) { showError('forcePwError', t('err_password_mismatch')); return; }
+  const { error } = await supabaseClient.auth.updateUser({ password: pass1 });
+  if (error) { showError('forcePwError', error.message || t('err_unexpected')); return; }
+  try { await apiCall('POST', '/api/me/complete-password-change'); } catch { /* غير حرج - الأهم كلمة السر فعليًا اتغيرت */ }
+  document.getElementById('forcePwNew').value = '';
+  document.getElementById('forcePwConfirm').value = '';
+  navHistory = [];
+  if (currentUserRole) routeByRole(currentUserRole); else proceedToApp();
+  updateGlobalBackButton();
+});
+
+// ---------- تصدير CSV/PDF بدون أي مكتبة خارجية ----------
+function exportCsv(filename, rows, headers) {
+  const csvLines = [headers.join(','), ...rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))];
+  const blob = new Blob(['﻿' + csvLines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+function exportPdfViaPrint(title, rows, headers) {
+  const win = window.open('', '_blank');
+  const tableHtml = `
+    <h2>${escapeHtml(title)}</h2>
+    <table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse; font-family:sans-serif; direction:rtl;">
+      <thead><tr>${headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>
+      <tbody>${rows.map(r => `<tr>${r.map(v => `<td>${escapeHtml(v)}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table>`;
+  win.document.write(`<html><head><title>${escapeHtml(title)}</title></head><body>${tableHtml}</body></html>`);
+  win.document.close();
+  win.focus();
+  win.print();
+}
+
+// ---------- Admin: لوحة المدارس ----------
+async function loadAdminDashboard() {
+  const tbody = document.getElementById('adminSchoolsTableBody');
+  tbody.innerHTML = `<tr><td colspan="4">${t('loading')}</td></tr>`;
+  try {
+    const data = await apiCall('GET', '/api/admin/schools');
+    if (!data.schools.length) { tbody.innerHTML = `<tr><td colspan="4">${t('admin_no_schools')}</td></tr>`; return; }
+    tbody.innerHTML = data.schools.map(s => `
+      <tr>
+        <td>${escapeHtml(s.name)}</td>
+        <td>${s.accounts_used} / ${s.max_accounts}</td>
+        <td>${s.is_active ? t('status_active') : t('status_inactive')}</td>
+        <td><button class="ghost" data-toggle-school="${s.id}" data-active="${s.is_active}" style="padding:4px 10px;">${s.is_active ? t('btn_deactivate') : t('btn_activate')}</button></td>
+      </tr>
+    `).join('');
+    tbody.querySelectorAll('[data-toggle-school]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        try {
+          await apiCall('PATCH', `/api/admin/schools/${btn.dataset.toggleSchool}`, { is_active: btn.dataset.active !== 'true' });
+          loadAdminDashboard();
+        } catch (e) { alert(e.message); }
+      });
+    });
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="4">${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+document.getElementById('createSchoolBtn').addEventListener('click', async () => {
+  clearError('createSchoolError');
+  const name = document.getElementById('newSchoolName').value.trim();
+  const admin_email = document.getElementById('newSchoolAdminEmail').value.trim();
+  const max_accounts = parseInt(document.getElementById('newSchoolMaxAccounts').value, 10) || 0;
+  if (!name || !admin_email) { showError('createSchoolError', t('err_school_fields_required')); return; }
+  try {
+    const data = await apiCall('POST', '/api/admin/schools', { name, admin_email, max_accounts });
+    const box = document.getElementById('createSchoolResult');
+    box.innerHTML = `${t('admin_school_created_msg', { name })}<br>📧 ${escapeHtml(data.school_admin.email)}<br>🔑 <code>${escapeHtml(data.school_admin.password)}</code>`;
+    box.classList.remove('hidden');
+    document.getElementById('newSchoolName').value = '';
+    document.getElementById('newSchoolAdminEmail').value = '';
+    document.getElementById('newSchoolMaxAccounts').value = '';
+    loadAdminDashboard();
+  } catch (e) {
+    showError('createSchoolError', e.message);
+  }
+});
+
+// ---------- School Admin / School Administration: لوحة المدرسة ----------
+let schoolClassesCache = [];
+
+document.querySelectorAll('#step-school-dashboard .role-tab').forEach(tabBtn => {
+  tabBtn.addEventListener('click', () => {
+    document.querySelectorAll('#step-school-dashboard .role-tab').forEach(b => b.classList.remove('active'));
+    tabBtn.classList.add('active');
+    document.querySelectorAll('#step-school-dashboard .school-tab-panel').forEach(p => p.classList.add('hidden'));
+    document.getElementById(`schoolTab-${tabBtn.dataset.tab}`).classList.remove('hidden');
+    if (tabBtn.dataset.tab === 'attendance') loadSchoolAttendance();
+  });
+});
+
+async function loadSchoolDashboard() {
+  await Promise.all([loadSchoolInfo(), loadSchoolTeachers(), loadSchoolClasses()]);
+}
+
+async function loadSchoolInfo() {
+  try {
+    const info = await apiCall('GET', '/api/school/info');
+    const pct = info.max_accounts > 0 ? Math.min(100, Math.round((info.accounts_used / info.max_accounts) * 100)) : 0;
+    document.getElementById('schoolUsageBar').style.width = `${pct}%`;
+    document.getElementById('schoolUsageText').textContent = t('school_usage_text', { used: info.accounts_used, max: info.max_accounts });
+  } catch { /* غير حرج لعمل بقية اللوحة */ }
+}
+
+async function loadSchoolTeachers() {
+  const tbody = document.getElementById('schoolTeachersTableBody');
+  tbody.innerHTML = `<tr><td colspan="5">${t('loading')}</td></tr>`;
+  try {
+    const data = await apiCall('GET', '/api/school/teachers');
+    if (!data.teachers.length) { tbody.innerHTML = `<tr><td colspan="5">${t('school_no_teachers')}</td></tr>`; return; }
+    tbody.innerHTML = data.teachers.map(tch => `
+      <tr>
+        <td>${escapeHtml(tch.username)}</td>
+        <td>${tch.classes.map(c => escapeHtml(c.name)).join('، ') || '—'}</td>
+        <td>${tch.student_count}</td>
+        <td>${tch.last_login ? new Date(tch.last_login).toLocaleString(currentLang === 'ar' ? 'ar' : 'en') : t('never_logged_in')}</td>
+        <td><button class="ghost" data-delete-account="${tch.user_id}" style="padding:4px 10px;">${t('btn_delete')}</button></td>
+      </tr>
+    `).join('');
+    wireDeleteAccountButtons(tbody, loadSchoolTeachers);
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="5">${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+function wireDeleteAccountButtons(container, onDone) {
+  container.querySelectorAll('[data-delete-account]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm(t('confirm_delete_account'))) return;
+      try { await apiCall('DELETE', `/api/school/accounts/${btn.dataset.deleteAccount}`); onDone(); }
+      catch (e) { alert(e.message); }
+    });
+  });
+}
+document.getElementById('addTeacherBtn').addEventListener('click', async () => {
+  clearError('addTeacherError');
+  const name = document.getElementById('newTeacherName').value.trim();
+  const email = document.getElementById('newTeacherEmail').value.trim();
+  if (!name || !email) { showError('addTeacherError', t('err_teacher_fields_required')); return; }
+  try {
+    const data = await apiCall('POST', '/api/school/teachers', { name, email });
+    const box = document.getElementById('addTeacherResult');
+    box.innerHTML = `${t('school_teacher_created_msg', { name })}<br>📧 ${escapeHtml(data.email)}<br>🔑 <code>${escapeHtml(data.password)}</code>`;
+    box.classList.remove('hidden');
+    document.getElementById('newTeacherName').value = '';
+    document.getElementById('newTeacherEmail').value = '';
+    loadSchoolTeachers();
+    loadSchoolInfo();
+  } catch (e) {
+    showError('addTeacherError', e.message);
+  }
+});
+
+async function loadSchoolClasses() {
+  const tbody = document.getElementById('schoolClassesTableBody');
+  try {
+    const [classesData, teachersData] = await Promise.all([
+      apiCall('GET', '/api/school/classes'),
+      apiCall('GET', '/api/school/teachers'),
+    ]);
+    schoolClassesCache = classesData.classes;
+    const teacherOptions = teachersData.teachers.map(tch => `<option value="${tch.user_id}">${escapeHtml(tch.username)}</option>`).join('');
+    document.getElementById('newClassTeacher').innerHTML = `<option value="">${t('opt_no_teacher_yet')}</option>${teacherOptions}`;
+
+    const classOptions = schoolClassesCache.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+    document.getElementById('scheduleClassSelect').innerHTML = classOptions;
+    document.getElementById('bulkClassSelect').innerHTML = classOptions || `<option value="">${t('opt_create_class_first')}</option>`;
+    document.getElementById('attendanceClassFilter').innerHTML = `<option value="">${t('opt_all_classes')}</option>${classOptions}`;
+
+    if (!schoolClassesCache.length) {
+      tbody.innerHTML = `<tr><td colspan="4">${t('school_no_classes')}</td></tr>`;
+      return;
+    }
+    const studentsData = await apiCall('GET', '/api/school/students');
+    const counts = {};
+    studentsData.students.forEach(s => { if (s.class_id) counts[s.class_id] = (counts[s.class_id] || 0) + 1; });
+    tbody.innerHTML = schoolClassesCache.map(c => `
+      <tr>
+        <td>${escapeHtml(c.name)}</td>
+        <td>
+          <select class="text-input" data-reassign-class="${c.id}" style="padding:4px 8px; font-size:13px;">
+            <option value="">${t('opt_no_teacher_yet')}</option>
+            ${teachersData.teachers.map(tch => `<option value="${tch.user_id}" ${tch.user_id === c.teacher_id ? 'selected' : ''}>${escapeHtml(tch.username)}</option>`).join('')}
+          </select>
+        </td>
+        <td>${counts[c.id] || 0}</td>
+        <td><button class="ghost" data-delete-class="${c.id}" style="padding:4px 10px;">${t('btn_delete')}</button></td>
+      </tr>
+    `).join('');
+    tbody.querySelectorAll('[data-reassign-class]').forEach(sel => {
+      sel.addEventListener('change', async () => {
+        try { await apiCall('PATCH', `/api/school/classes/${sel.dataset.reassignClass}`, { teacher_id: sel.value || null }); loadSchoolTeachers(); }
+        catch (e) { alert(e.message); }
+      });
+    });
+    tbody.querySelectorAll('[data-delete-class]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm(t('confirm_delete_class'))) return;
+        try { await apiCall('DELETE', `/api/school/classes/${btn.dataset.deleteClass}`); loadSchoolClasses(); }
+        catch (e) { alert(e.message); }
+      });
+    });
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="4">${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+document.getElementById('addClassBtn').addEventListener('click', async () => {
+  clearError('addClassError');
+  const name = document.getElementById('newClassName').value.trim();
+  const teacher_id = document.getElementById('newClassTeacher').value || undefined;
+  if (!name) { showError('addClassError', t('err_class_name_required')); return; }
+  try {
+    await apiCall('POST', '/api/school/classes', { name, teacher_id });
+    document.getElementById('newClassName').value = '';
+    loadSchoolClasses();
+  } catch (e) {
+    showError('addClassError', e.message);
+  }
+});
+
+async function renderScheduleTable(classId) {
+  const wrap = document.getElementById('scheduleTableWrap');
+  if (!classId) { wrap.innerHTML = ''; return; }
+  const dayNames = [t('day_0'), t('day_1'), t('day_2'), t('day_3'), t('day_4'), t('day_5'), t('day_6')];
+  try {
+    const data = await apiCall('GET', `/api/school/classes/${classId}/schedule`);
+    if (!data.schedule.length) { wrap.innerHTML = `<p class="desc">${t('no_schedule_yet')}</p>`; return; }
+    wrap.innerHTML = `<table class="data-table"><thead><tr>
+        <th>${t('th_day')}</th><th>${t('th_time')}</th><th>${t('th_subject')}</th><th>${t('th_actions')}</th>
+      </tr></thead><tbody>${data.schedule.map(s => `
+        <tr>
+          <td>${dayNames[s.day_of_week] || s.day_of_week}</td>
+          <td>${escapeHtml(s.start_time)} - ${escapeHtml(s.end_time)}</td>
+          <td>${escapeHtml(s.subject || '—')}</td>
+          <td><button class="ghost" data-delete-schedule="${s.id}" style="padding:4px 10px;">${t('btn_delete')}</button></td>
+        </tr>`).join('')}</tbody></table>`;
+    wrap.querySelectorAll('[data-delete-schedule]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        try { await apiCall('DELETE', `/api/school/schedule/${btn.dataset.deleteSchedule}`); renderScheduleTable(classId); }
+        catch (e) { alert(e.message); }
+      });
+    });
+  } catch (e) {
+    wrap.innerHTML = `<p class="desc">${escapeHtml(e.message)}</p>`;
+  }
+}
+document.getElementById('scheduleClassSelect').addEventListener('change', e => renderScheduleTable(e.target.value));
+document.getElementById('addScheduleBtn').addEventListener('click', async () => {
+  clearError('addScheduleError');
+  const class_id = document.getElementById('scheduleClassSelect').value;
+  const day_of_week = parseInt(document.getElementById('scheduleDay').value, 10);
+  const start_time = document.getElementById('scheduleStart').value;
+  const end_time = document.getElementById('scheduleEnd').value;
+  const subject = document.getElementById('scheduleSubject').value.trim();
+  if (!class_id) { showError('addScheduleError', t('err_pick_class_first')); return; }
+  if (!start_time || !end_time) { showError('addScheduleError', t('err_schedule_time_required')); return; }
+  try {
+    await apiCall('POST', `/api/school/classes/${class_id}/schedule`, { day_of_week, start_time, end_time, subject });
+    document.getElementById('scheduleSubject').value = '';
+    renderScheduleTable(class_id);
+  } catch (e) {
+    showError('addScheduleError', e.message);
+  }
+});
+
+let lastBulkAddResult = [];
+document.getElementById('bulkAddStudentsBtn').addEventListener('click', async () => {
+  clearError('bulkAddError');
+  const class_id = document.getElementById('bulkClassSelect').value;
+  const names = document.getElementById('bulkNamesInput').value.split('\n').map(n => n.trim()).filter(Boolean);
+  if (!class_id) { showError('bulkAddError', t('err_pick_class_first')); return; }
+  if (!names.length) { showError('bulkAddError', t('err_names_required')); return; }
+  try {
+    const data = await apiCall('POST', '/api/school/students/bulk', { class_id, names });
+    lastBulkAddResult = data.students;
+    document.getElementById('bulkAddResultBody').innerHTML = data.students.map(s => `
+      <tr><td>${escapeHtml(s.name)}</td><td>${escapeHtml(s.username)}</td><td><code>${escapeHtml(s.password)}</code></td></tr>
+    `).join('');
+    document.getElementById('bulkAddResultWrap').classList.remove('hidden');
+    document.getElementById('bulkNamesInput').value = '';
+    loadSchoolInfo();
+  } catch (e) {
+    showError('bulkAddError', e.message);
+  }
+});
+document.getElementById('bulkExportCsvBtn').addEventListener('click', () => {
+  exportCsv('zakiy-students.csv', lastBulkAddResult.map(s => [s.name, s.username, s.password]), [t('th_name'), t('th_username'), t('th_password')]);
+});
+document.getElementById('bulkExportPdfBtn').addEventListener('click', () => {
+  exportPdfViaPrint(t('bulk_result_heading'), lastBulkAddResult.map(s => [s.name, s.username, s.password]), [t('th_name'), t('th_username'), t('th_password')]);
+});
+
+async function loadSchoolAttendance() {
+  const tbody = document.getElementById('schoolAttendanceTableBody');
+  tbody.innerHTML = `<tr><td colspan="3">${t('loading')}</td></tr>`;
+  const classId = document.getElementById('attendanceClassFilter').value;
+  try {
+    const [attData, studentsData] = await Promise.all([
+      apiCall('GET', `/api/school/attendance${classId ? `?class_id=${classId}` : ''}`),
+      apiCall('GET', '/api/school/students'),
+    ]);
+    const studentNames = {};
+    studentsData.students.forEach(s => { studentNames[s.user_id] = s.username; });
+    const classNames = {};
+    attData.classes.forEach(c => { classNames[c.id] = c.name; });
+    if (!attData.attendance.length) { tbody.innerHTML = `<tr><td colspan="3">${t('no_attendance_yet')}</td></tr>`; return; }
+    tbody.innerHTML = attData.attendance.map(a => `
+      <tr>
+        <td>${escapeHtml(studentNames[a.user_id] || a.user_id)}</td>
+        <td>${escapeHtml(classNames[a.class_id] || '—')}</td>
+        <td>${new Date(a.joined_at).toLocaleString(currentLang === 'ar' ? 'ar' : 'en')}</td>
+      </tr>
+    `).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="3">${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+document.getElementById('attendanceClassFilter').addEventListener('change', loadSchoolAttendance);
+
+// ---------- Teacher: لوحة المعلم ----------
+let teacherClassesCache = [];
+
+document.querySelectorAll('#step-teacher-dashboard .role-tab').forEach(tabBtn => {
+  tabBtn.addEventListener('click', () => {
+    document.querySelectorAll('#step-teacher-dashboard .role-tab').forEach(b => b.classList.remove('active'));
+    tabBtn.classList.add('active');
+    document.querySelectorAll('#step-teacher-dashboard .teacher-tab-panel').forEach(p => p.classList.add('hidden'));
+    document.getElementById(`teacherTab-${tabBtn.dataset.tab}`).classList.remove('hidden');
+    if (tabBtn.dataset.tab === 'schedule') renderTeacherSchedule();
+    else if (tabBtn.dataset.tab === 'attendance') renderTeacherAttendance();
+  });
+});
+
+async function loadTeacherDashboard() {
+  try {
+    const data = await apiCall('GET', '/api/teacher/roster');
+    teacherClassesCache = data.classes;
+    const select = document.getElementById('teacherClassSelect');
+    select.innerHTML = `<option value="">${t('opt_all_my_classes')}</option>` +
+      teacherClassesCache.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+    renderTeacherRoster(data.students);
+  } catch (e) {
+    document.getElementById('teacherRosterTableBody').innerHTML = `<tr><td colspan="2">${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+function renderTeacherRoster(students) {
+  const filterClassId = document.getElementById('teacherClassSelect').value;
+  const filtered = filterClassId ? students.filter(s => s.class_id === filterClassId) : students;
+  const tbody = document.getElementById('teacherRosterTableBody');
+  if (!filtered.length) { tbody.innerHTML = `<tr><td colspan="2">${t('teacher_no_students')}</td></tr>`; return; }
+  tbody.innerHTML = filtered.map(s => `
+    <tr>
+      <td>${escapeHtml(s.username)}</td>
+      <td><button class="ghost" data-view-student="${s.user_id}" style="padding:4px 10px;">${t('btn_view_profile')}</button></td>
+    </tr>
+  `).join('');
+  tbody.querySelectorAll('[data-view-student]').forEach(btn => {
+    btn.addEventListener('click', () => openTeacherStudentProfile(btn.dataset.viewStudent));
+  });
+}
+document.getElementById('teacherClassSelect').addEventListener('change', async () => {
+  const data = await apiCall('GET', '/api/teacher/roster').catch(() => ({ students: [] }));
+  renderTeacherRoster(data.students);
+});
+
+async function renderTeacherSchedule() {
+  const wrap = document.getElementById('teacherScheduleWrap');
+  wrap.innerHTML = t('loading');
+  const dayNames = [t('day_0'), t('day_1'), t('day_2'), t('day_3'), t('day_4'), t('day_5'), t('day_6')];
+  try {
+    const data = await apiCall('GET', '/api/teacher/schedule');
+    if (!data.schedule.length) { wrap.innerHTML = `<p class="desc">${t('no_schedule_yet')}</p>`; return; }
+    const classNames = {};
+    data.classes.forEach(c => { classNames[c.id] = c.name; });
+    wrap.innerHTML = `<table class="data-table"><thead><tr>
+        <th>${t('th_class_name')}</th><th>${t('th_day')}</th><th>${t('th_time')}</th><th>${t('th_subject')}</th>
+      </tr></thead><tbody>${data.schedule.map(s => `
+        <tr>
+          <td>${escapeHtml(classNames[s.class_id] || '—')}</td>
+          <td>${dayNames[s.day_of_week] || s.day_of_week}</td>
+          <td>${escapeHtml(s.start_time)} - ${escapeHtml(s.end_time)}</td>
+          <td>${escapeHtml(s.subject || '—')}</td>
+        </tr>`).join('')}</tbody></table>`;
+  } catch (e) {
+    wrap.innerHTML = `<p class="desc">${escapeHtml(e.message)}</p>`;
+  }
+}
+
+async function renderTeacherAttendance() {
+  const tbody = document.getElementById('teacherAttendanceTableBody');
+  tbody.innerHTML = `<tr><td colspan="2">${t('loading')}</td></tr>`;
+  try {
+    const [attData, rosterData] = await Promise.all([
+      apiCall('GET', '/api/teacher/attendance'),
+      apiCall('GET', '/api/teacher/roster'),
+    ]);
+    const studentNames = {};
+    rosterData.students.forEach(s => { studentNames[s.user_id] = s.username; });
+    if (!attData.attendance.length) { tbody.innerHTML = `<tr><td colspan="2">${t('no_attendance_yet')}</td></tr>`; return; }
+    tbody.innerHTML = attData.attendance.map(a => `
+      <tr><td>${escapeHtml(studentNames[a.user_id] || a.user_id)}</td><td>${new Date(a.joined_at).toLocaleString(currentLang === 'ar' ? 'ar' : 'en')}</td></tr>
+    `).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="2">${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+async function openTeacherStudentProfile(userId) {
+  const content = document.getElementById('teacherStudentProfileContent');
+  content.innerHTML = t('loading');
+  show('teacherStudentProfileModal');
+  try {
+    const p = await apiCall('GET', `/api/teacher/students/${userId}`);
+    const perf = p.performance || {};
+    content.innerHTML = `
+      <h2 style="margin-top:0;">${escapeHtml(p.username)}</h2>
+      <h3 class="sub-heading" data-i18n="performance_heading_default">📊 الأداء</h3>
+      <p class="desc">${t('stat_attempts')}: ${perf.attempts_count ?? 0} — ${t('stat_avg')}: ${perf.avg_score ?? 0}% — ${t('stat_study_minutes')}: ${perf.total_study_minutes ?? 0}</p>
+      <h3 class="sub-heading" data-i18n="nav_archive">📂 الأرشيف</h3>
+      ${(p.archive || []).length
+        ? `<ul style="padding-inline-start:20px;">${p.archive.map(a => `<li>${escapeHtml(a.title || a.room_code || '—')}</li>`).join('')}</ul>`
+        : `<p class="desc">${t('teacher_student_no_archive')}</p>`}
+    `;
+  } catch (e) {
+    content.innerHTML = `<p class="desc">${escapeHtml(e.message)}</p>`;
+  }
+}
+document.getElementById('teacherStudentProfileClose').addEventListener('click', () => hide('teacherStudentProfileModal'));
+
+// ---------- Student: جدولي ----------
+document.getElementById('studentScheduleNavBtn').addEventListener('click', async () => {
+  if (!requireAuthOrPrompt()) return;
+  pushNavSnapshot();
+  TOP_LEVEL_SCREENS.forEach(hide);
+  show('step-student-schedule');
+  updateGlobalBackButton();
+  const wrap = document.getElementById('studentScheduleWrap');
+  wrap.innerHTML = t('loading');
+  const dayNames = [t('day_0'), t('day_1'), t('day_2'), t('day_3'), t('day_4'), t('day_5'), t('day_6')];
+  try {
+    const data = await apiCall('GET', '/api/student/schedule');
+    if (!data.schedule.length) { wrap.innerHTML = `<p class="desc">${t('no_schedule_yet')}</p>`; return; }
+    wrap.innerHTML = `<table class="data-table"><thead><tr>
+        <th>${t('th_day')}</th><th>${t('th_time')}</th><th>${t('th_subject')}</th>
+      </tr></thead><tbody>${data.schedule.map(s => `
+        <tr><td>${dayNames[s.day_of_week] || s.day_of_week}</td><td>${escapeHtml(s.start_time)} - ${escapeHtml(s.end_time)}</td><td>${escapeHtml(s.subject || '—')}</td></tr>
+      `).join('')}</tbody></table>`;
+  } catch (e) {
+    wrap.innerHTML = `<p class="desc">${escapeHtml(e.message)}</p>`;
+  }
+});
 </script>
 </body>
 </html>

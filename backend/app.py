@@ -12,6 +12,9 @@ from collections import Counter
 from datetime import datetime, timezone
 import os
 import random
+import re
+import secrets
+import string
 import time
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
@@ -90,6 +93,31 @@ def require_auth(f):
         return f(*args, **kwargs)
 
     return wrapper
+
+
+def require_role(*roles):
+    """فوق require_auth: يتأكد إن دور المستخدم (بجدول profiles) من ضمن roles
+    المسموحة لهذا الـ endpoint، ويحط request.profile (role/school_id/class_id/
+    must_change_password) عشان الدالة تستخدمها بدون ما تعيد جلبها."""
+
+    def decorator(f):
+        @wraps(f)
+        def role_checked(*args, **kwargs):
+            profile = (
+                supabase_admin.table("profiles")
+                .select("role, school_id, class_id, must_change_password")
+                .eq("user_id", request.user_id)
+                .limit(1)
+                .execute()
+            ).data
+            if not profile or profile[0]["role"] not in roles:
+                return jsonify({"error": "ما عندك صلاحية لهذا الإجراء"}), 403
+            request.profile = profile[0]
+            return f(*args, **kwargs)
+
+        return require_auth(role_checked)
+
+    return decorator
 
 
 # ---------- فحص إن السيرفر شغال ----------
@@ -1135,12 +1163,38 @@ def create_room():
     data = request.get_json(silent=True) or {}
     room_type = data.get("room_type") if data.get("room_type") in ("quiz", "classroom") else "quiz"
     room_code = generate_room_code()
+
+    # ربط اختياري بفصل مدرسي (يخدم تسجيل الحضور التلقائي بـ handle_join_room) -
+    # نتحقق إن صاحب الطلب فعلًا معلم هذا الفصل بالذات، وإلا نتجاهل الربط بصمت
+    # بدون ما نمنع إنشاء الغرفة أصلًا (غرف الاختبار/الدراسة العامة تبقى تشتغل
+    # عادي لأي أحد، الربط بالفصل ميزة إضافية بس)
+    class_id = None
+    requested_class_id = data.get("class_id")
+    if requested_class_id and supabase_admin is not None:
+        token = request.headers.get("Authorization", "").replace("Bearer ", "").strip()
+        try:
+            user_response = supabase_admin.auth.get_user(token)
+            uid = user_response.user.id if user_response and user_response.user else None
+            owns_class = (
+                supabase_admin.table("classes")
+                .select("id")
+                .eq("id", requested_class_id)
+                .eq("teacher_id", uid)
+                .limit(1)
+                .execute()
+            ).data
+            if owns_class:
+                class_id = requested_class_id
+        except Exception:
+            class_id = None
+
     rooms[room_code] = {
         "host_sid": None,
         "host_client_id": None,
         "host_name": None,
         "created_at": time.time(),
         "room_type": room_type,
+        "class_id": class_id,
         "quiz": None,
         "quiz_started_at": None,
         "duration_minutes": None,
@@ -1184,6 +1238,29 @@ def handle_join_room(data):
                 user_id = user_response.user.id
         except Exception:
             user_id = None
+
+    # تسجيل حضور تلقائي: لو الغرفة مرتبطة بفصل مدرسي (class_id) وهذا مستخدم
+    # مسجّل، نسجّل بصمة انضمام وحدة باليوم (نفس نمط عدم-التكرار المستخدم أصلًا
+    # بـ /api/ping-active). هذا هو الأثر الدائم الوحيد اللي يبقى بعد ما الغرفة
+    # تختفي من الذاكرة، ويُستخدم لحساب تقرير الحضور تلقائيًا من النشاط الفعلي
+    if room.get("class_id") and user_id and supabase_admin is not None:
+        try:
+            today = datetime.now(timezone.utc).date().isoformat()
+            existing = (
+                supabase_admin.table("session_attendance")
+                .select("id")
+                .eq("class_id", room["class_id"])
+                .eq("user_id", user_id)
+                .gte("joined_at", today)
+                .limit(1)
+                .execute()
+            )
+            if not existing.data:
+                supabase_admin.table("session_attendance").insert(
+                    {"class_id": room["class_id"], "room_code": room_code, "user_id": user_id}
+                ).execute()
+        except Exception:
+            pass
 
     # socket.io يسوي إعادة اتصال تلقائية بعد أي انقطاع بسيط بالنت، وكل reconnect
     # يجيب sid جديد. لو نفس المتصفح (نفس client_id) يرجع ينضم، نلقى مشاركته
@@ -1712,6 +1789,683 @@ def handle_disconnect():
         else:
             socketio.start_background_task(_delete_room_if_still_empty, room_code)
         break
+
+
+# ============================================================================
+# ---------- نظام إدارة حسابات المدارس (٥ أدوار) ----------
+# Admin (عام) → School Admin/School Administration (لكل مدرسة) → Teacher → Student
+# ملاحظة معمارية: نفس نمط بقية الملف - كل الكتابة عبر supabase_admin (مفتاح
+# service role)، والتحقق من الصلاحيات كود Flask صريح (require_role تحت)،
+# مو RLS - RLS المفعّلة بجدول الهجرة طبقة حماية إضافية بس.
+# ============================================================================
+
+STUDENT_EMAIL_DOMAIN = "students.zakiy.internal"
+
+
+def generate_strong_password(length=12):
+    """كلمة سر عشوائية قوية (حروف كبيرة/صغيرة + أرقام + رموز) عبر secrets -
+    توليد آمن تشفيريًا، مو module random العادي."""
+    alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+    while True:
+        pwd = "".join(secrets.choice(alphabet) for _ in range(length))
+        if (
+            any(c.islower() for c in pwd)
+            and any(c.isupper() for c in pwd)
+            and any(c.isdigit() for c in pwd)
+            and any(c in "!@#$%^&*" for c in pwd)
+        ):
+            return pwd
+
+
+# تحويل تقريبي (transliteration) للحروف العربية لحروف لاتينية - ضروري لأن اسم
+# المستخدم يُستخدم حرفيًا بالجزء المحلي من البريد الاصطناعي، وSupabase Auth يرفض
+# أي بريد فيه أحرف غير ASCII بالجزء قبل الـ @ ("invalid format")
+_ARABIC_TRANSLIT = {
+    "ا": "a", "أ": "a", "إ": "i", "آ": "a", "ب": "b", "ت": "t", "ث": "th",
+    "ج": "j", "ح": "h", "خ": "kh", "د": "d", "ذ": "th", "ر": "r", "ز": "z",
+    "س": "s", "ش": "sh", "ص": "s", "ض": "d", "ط": "t", "ظ": "z", "ع": "a",
+    "غ": "gh", "ف": "f", "ق": "q", "ك": "k", "ل": "l", "م": "m", "ن": "n",
+    "ه": "h", "و": "w", "ي": "y", "ة": "h", "ى": "a", "ء": "", "ئ": "e", "ؤ": "o",
+}
+
+
+def _transliterate_arabic(text):
+    return "".join(_ARABIC_TRANSLIT.get(ch, ch) for ch in text)
+
+
+def _slugify_username(name):
+    base = _transliterate_arabic(name.strip())
+    base = re.sub(r"[^A-Za-z0-9]+", "", base)
+    return (base[:20] or "student").lower()
+
+
+def _generate_unique_student_username(name):
+    """يضمن عدم تعارض مع اسم مستخدم طالب موجود - الفهرس الفريد الجزئي بقاعدة
+    البيانات (role='student') هو خط الدفاع الأخير لو صار تعارض نادر وقت الإدخال."""
+    base = _slugify_username(name)
+    candidate = base
+    suffix = 1
+    while True:
+        existing = (
+            supabase_admin.table("profiles")
+            .select("user_id")
+            .eq("role", "student")
+            .ilike("username", candidate)
+            .limit(1)
+            .execute()
+        ).data
+        if not existing:
+            return candidate
+        suffix += 1
+        candidate = f"{base}{suffix}"
+
+
+def _get_institutional_profile(user_id):
+    """نفس شكل رد /api/profile/<id> (الاسم/الأداء/الأرشيف) لكن بدون بوابات
+    الخصوصية الاجتماعية (is_private/show_*) - إشراف مؤسسي (معلم/إدارة مدرسة على
+    طالب/معلم تحت مسؤوليتهم) مو مشاركة اجتماعية بين أقران."""
+    res = (
+        supabase_admin.table("profiles")
+        .select("user_id, username, bio, school_name, role, class_id")
+        .eq("user_id", user_id)
+        .limit(1)
+        .execute()
+    )
+    if not res.data:
+        return None
+    profile = res.data[0]
+    hosted = (
+        supabase_admin.table("session_archive").select("*").eq("host_user_id", user_id).execute()
+    ).data
+    attended = (
+        supabase_admin.table("session_archive")
+        .select("*")
+        .contains("participant_user_ids", [user_id])
+        .execute()
+    ).data
+    merged = {row["id"]: row for row in hosted + attended}
+    sessions = sorted(merged.values(), key=lambda r: r.get("created_at") or "", reverse=True)
+    return {
+        "user_id": profile["user_id"],
+        "username": profile["username"],
+        "bio": profile.get("bio"),
+        "school_name": profile.get("school_name"),
+        "role": profile.get("role"),
+        "class_id": profile.get("class_id"),
+        "is_private": False,
+        "is_owner": False,
+        "performance": _compute_performance_summary(user_id),
+        "archive": sessions[:10],
+    }
+
+
+# ---------- أي مستخدم مسجّل دخول ----------
+@app.route("/api/me", methods=["GET"])
+@require_auth
+def get_me():
+    """أول شي يناديه الفرونت إند بعد تسجيل الدخول - يحدد هل يوجّه المستخدم للوحة
+    مؤسسية (role موجود) أو يكمل بنفس تجربة الحساب الفردي الحالية (role فاضي)."""
+    profile = (
+        supabase_admin.table("profiles")
+        .select("role, school_id, class_id, must_change_password, username")
+        .eq("user_id", request.user_id)
+        .limit(1)
+        .execute()
+    ).data
+    if not profile:
+        return jsonify(
+            {"role": None, "school_id": None, "class_id": None, "must_change_password": False, "username": None}
+        ), 200
+    p = profile[0]
+    return jsonify(
+        {
+            "role": p.get("role"),
+            "school_id": p.get("school_id"),
+            "class_id": p.get("class_id"),
+            "must_change_password": bool(p.get("must_change_password")),
+            "username": p.get("username"),
+        }
+    ), 200
+
+
+@app.route("/api/me/complete-password-change", methods=["POST"])
+@require_auth
+def complete_password_change():
+    supabase_admin.table("profiles").update({"must_change_password": False}).eq(
+        "user_id", request.user_id
+    ).execute()
+    return jsonify({"ok": True}), 200
+
+
+@app.route("/api/resolve-login-identifier", methods=["POST"])
+def resolve_login_identifier():
+    """يحوّل اسم مستخدم طالب لبريده الاصطناعي عشان يقدر يسجّل دخول بيه عبر
+    Supabase (يتطلب بريد دايمًا). لو المُدخل بريد فعلي (فيه @) يرجعه زي ما هو
+    بدون أي بحث - نقطة عامة بدون تسجيل دخول (تُستدعى قبله بالضبط)."""
+    if supabase_admin is None:
+        return jsonify({"error": "نظام الحسابات مو مفعّل حاليًا بالسيرفر"}), 503
+    data = request.get_json(silent=True) or {}
+    identifier = (data.get("identifier") or "").strip()
+    if not identifier:
+        return jsonify({"error": "لازم تكتب إيميلك أو اسم المستخدم"}), 400
+    if "@" in identifier:
+        return jsonify({"email": identifier}), 200
+
+    res = (
+        supabase_admin.table("profiles")
+        .select("user_id")
+        .eq("role", "student")
+        .ilike("username", identifier)
+        .limit(1)
+        .execute()
+    )
+    if not res.data:
+        return jsonify({"error": "بيانات الدخول غير صحيحة"}), 404
+    try:
+        user = supabase_admin.auth.admin.get_user_by_id(res.data[0]["user_id"])
+        return jsonify({"email": user.user.email}), 200
+    except Exception:
+        return jsonify({"error": "بيانات الدخول غير صحيحة"}), 404
+
+
+# ---------- Admin (صاحب المنصة) ----------
+@app.route("/api/admin/schools", methods=["POST"])
+@require_role("admin")
+def admin_create_school():
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()
+    admin_email = (data.get("admin_email") or "").strip()
+    try:
+        max_accounts = int(data.get("max_accounts") or 0)
+    except (TypeError, ValueError):
+        max_accounts = 0
+    if not name or not admin_email:
+        return jsonify({"error": "لازم اسم المدرسة وإيميل مدير المدرسة"}), 400
+
+    school = (
+        supabase_admin.table("schools")
+        .insert(
+            {
+                "name": name,
+                "max_accounts": max_accounts,
+                "subscription_package": data.get("subscription_package"),
+                "created_by": request.user_id,
+            }
+        )
+        .execute()
+        .data[0]
+    )
+
+    temp_password = generate_strong_password()
+    try:
+        created = supabase_admin.auth.admin.create_user(
+            {
+                "email": admin_email,
+                "password": temp_password,
+                "email_confirm": True,
+                "user_metadata": {"username": name},
+            }
+        )
+    except Exception as e:
+        # نظّف المدرسة اللي أنشأناها لو فشل إنشاء حساب مديرها - عشان ما تصير
+        # مدرسة يتيمة بدون أي حساب يديرها
+        supabase_admin.table("schools").delete().eq("id", school["id"]).execute()
+        return jsonify({"error": f"فشل إنشاء حساب مدير المدرسة: {e}"}), 400
+
+    supabase_admin.table("profiles").upsert(
+        {
+            "user_id": created.user.id,
+            "username": name,
+            "role": "school_admin",
+            "school_id": school["id"],
+            "must_change_password": True,
+        }
+    ).execute()
+
+    return jsonify({"school": school, "school_admin": {"email": admin_email, "password": temp_password}}), 200
+
+
+@app.route("/api/admin/schools", methods=["GET"])
+@require_role("admin")
+def admin_list_schools():
+    schools_res = supabase_admin.table("schools").select("*").order("created_at", desc=True).execute().data
+    counts = supabase_admin.table("profiles").select("school_id").not_.is_("school_id", "null").execute().data
+    usage = Counter(r["school_id"] for r in counts)
+    for s in schools_res:
+        s["accounts_used"] = usage.get(s["id"], 0)
+    return jsonify({"schools": schools_res}), 200
+
+
+@app.route("/api/admin/schools/<school_id>", methods=["PATCH"])
+@require_role("admin")
+def admin_update_school(school_id):
+    data = request.get_json(silent=True) or {}
+    patch = {k: data[k] for k in ("max_accounts", "subscription_status", "subscription_package", "is_active") if k in data}
+    if not patch:
+        return jsonify({"error": "ما فيه شي نحدّثه"}), 400
+    supabase_admin.table("schools").update(patch).eq("id", school_id).execute()
+    return jsonify({"ok": True}), 200
+
+
+# ---------- School Admin + School Administration ----------
+def _school_scoped_profile(target_user_id):
+    """يرجّع بروفايل target_user_id بس لو تابع لنفس مدرسة صاحب الطلب، وإلا None."""
+    res = (
+        supabase_admin.table("profiles")
+        .select("user_id, role, school_id, class_id, username")
+        .eq("user_id", target_user_id)
+        .limit(1)
+        .execute()
+    ).data
+    if not res or res[0].get("school_id") != request.profile["school_id"]:
+        return None
+    return res[0]
+
+
+def _school_account_usage(school_id):
+    used = (
+        supabase_admin.table("profiles")
+        .select("user_id", count="exact")
+        .eq("school_id", school_id)
+        .in_("role", ["teacher", "student", "school_administration"])
+        .execute()
+    )
+    return used.count or 0
+
+
+@app.route("/api/school/info", methods=["GET"])
+@require_role("school_admin", "school_administration", "teacher", "student")
+def school_info():
+    """معلومات مدرسة صاحب الطلب (الاسم/الحد الأقصى/الاستهلاك) - تخدم عدّاد
+    استهلاك الحسابات بلوحة إدارة المدرسة."""
+    school_id = request.profile["school_id"]
+    school = supabase_admin.table("schools").select("*").eq("id", school_id).limit(1).execute().data
+    if not school:
+        return jsonify({"error": "مدرستك غير موجودة"}), 404
+    result = school[0]
+    result["accounts_used"] = _school_account_usage(school_id)
+    return jsonify(result), 200
+
+
+@app.route("/api/school/teachers", methods=["POST"])
+@require_role("school_admin", "school_administration")
+def school_add_teacher():
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()
+    email = (data.get("email") or "").strip()
+    if not name or not email:
+        return jsonify({"error": "لازم الاسم والإيميل"}), 400
+
+    school_id = request.profile["school_id"]
+    school = supabase_admin.table("schools").select("max_accounts").eq("id", school_id).limit(1).execute().data
+    if not school:
+        return jsonify({"error": "مدرستك غير موجودة"}), 400
+    if _school_account_usage(school_id) >= school[0]["max_accounts"]:
+        return jsonify({"error": "وصلت الحد الأقصى لعدد الحسابات المسموح لمدرستك"}), 400
+
+    temp_password = generate_strong_password()
+    try:
+        created = supabase_admin.auth.admin.create_user(
+            {"email": email, "password": temp_password, "email_confirm": True, "user_metadata": {"username": name}}
+        )
+    except Exception as e:
+        return jsonify({"error": f"فشل إنشاء الحساب: {e}"}), 400
+
+    supabase_admin.table("profiles").upsert(
+        {
+            "user_id": created.user.id,
+            "username": name,
+            "role": "teacher",
+            "school_id": school_id,
+            "must_change_password": True,
+        }
+    ).execute()
+    return jsonify({"email": email, "password": temp_password, "user_id": created.user.id}), 200
+
+
+@app.route("/api/school/teachers", methods=["GET"])
+@require_role("school_admin", "school_administration")
+def school_list_teachers():
+    school_id = request.profile["school_id"]
+    teachers = (
+        supabase_admin.table("profiles")
+        .select("user_id, username")
+        .eq("school_id", school_id)
+        .eq("role", "teacher")
+        .execute()
+    ).data
+    classes = supabase_admin.table("classes").select("id, name, teacher_id").eq("school_id", school_id).execute().data
+    students = (
+        supabase_admin.table("profiles").select("class_id").eq("school_id", school_id).eq("role", "student").execute()
+    ).data
+    student_counts = Counter(s["class_id"] for s in students if s.get("class_id"))
+
+    result = []
+    for t in teachers:
+        my_classes = [c for c in classes if c["teacher_id"] == t["user_id"]]
+        try:
+            auth_user = supabase_admin.auth.admin.get_user_by_id(t["user_id"])
+            last_login = auth_user.user.last_sign_in_at
+        except Exception:
+            last_login = None
+        result.append(
+            {
+                "user_id": t["user_id"],
+                "username": t["username"],
+                "classes": [{"id": c["id"], "name": c["name"]} for c in my_classes],
+                "student_count": sum(student_counts.get(c["id"], 0) for c in my_classes),
+                "last_login": str(last_login) if last_login else None,
+            }
+        )
+    return jsonify({"teachers": result}), 200
+
+
+@app.route("/api/school/accounts/<user_id>", methods=["PATCH"])
+@require_role("school_admin", "school_administration")
+def school_update_account(user_id):
+    target = _school_scoped_profile(user_id)
+    if not target:
+        return jsonify({"error": "الحساب مو تابع لمدرستك"}), 404
+    if request.profile["role"] == "school_administration" and target["role"] in ("school_admin", "school_administration"):
+        return jsonify({"error": "ما عندك صلاحية تعدّل هذا الحساب"}), 403
+
+    data = request.get_json(silent=True) or {}
+    patch = {}
+    if "username" in data:
+        patch["username"] = (data["username"] or "").strip()[:60]
+    if "class_id" in data:
+        patch["class_id"] = data["class_id"]
+    if patch:
+        supabase_admin.table("profiles").update(patch).eq("user_id", user_id).execute()
+    return jsonify({"ok": True}), 200
+
+
+@app.route("/api/school/accounts/<user_id>", methods=["DELETE"])
+@require_role("school_admin", "school_administration")
+def school_delete_account(user_id):
+    target = _school_scoped_profile(user_id)
+    if not target:
+        return jsonify({"error": "الحساب مو تابع لمدرستك"}), 404
+    if request.profile["role"] == "school_administration" and target["role"] in ("school_admin", "school_administration"):
+        return jsonify({"error": "ما عندك صلاحية تحذف هذا الحساب"}), 403
+    # profiles.user_id مربوط بمفتاح خارجي لـ auth.users بدون cascade - لازم نمسح
+    # صف profiles أول، وإلا حذف حساب Auth يفشل ("Database error deleting user")
+    # لأن الصف لسا يشير له
+    supabase_admin.table("profiles").delete().eq("user_id", user_id).execute()
+    try:
+        supabase_admin.auth.admin.delete_user(user_id)
+    except Exception:
+        pass
+    return jsonify({"ok": True}), 200
+
+
+@app.route("/api/school/profile/<user_id>", methods=["GET"])
+@require_role("school_admin", "school_administration")
+def school_view_profile(user_id):
+    if not _school_scoped_profile(user_id):
+        return jsonify({"error": "الحساب مو تابع لمدرستك"}), 404
+    profile = _get_institutional_profile(user_id)
+    if not profile:
+        return jsonify({"error": "المستخدم مو موجود"}), 404
+    return jsonify(profile), 200
+
+
+@app.route("/api/school/classes", methods=["POST"])
+@require_role("school_admin", "school_administration")
+def school_create_class():
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()
+    if not name:
+        return jsonify({"error": "لازم اسم الفصل"}), 400
+    row = {"school_id": request.profile["school_id"], "name": name}
+    if data.get("teacher_id"):
+        row["teacher_id"] = data["teacher_id"]
+    try:
+        created = supabase_admin.table("classes").insert(row).execute().data[0]
+    except Exception as e:
+        return jsonify({"error": f"تعذّر إنشاء الفصل: {e}"}), 400
+    return jsonify(created), 200
+
+
+@app.route("/api/school/classes", methods=["GET"])
+@require_role("school_admin", "school_administration", "teacher")
+def school_list_classes():
+    q = supabase_admin.table("classes").select("*").eq("school_id", request.profile["school_id"])
+    if request.profile["role"] == "teacher":
+        q = q.eq("teacher_id", request.user_id)
+    return jsonify({"classes": q.execute().data}), 200
+
+
+@app.route("/api/school/classes/<class_id>", methods=["PATCH"])
+@require_role("school_admin", "school_administration")
+def school_update_class(class_id):
+    data = request.get_json(silent=True) or {}
+    patch = {}
+    if "name" in data:
+        patch["name"] = (data["name"] or "").strip()
+    if "teacher_id" in data:
+        patch["teacher_id"] = data["teacher_id"]
+    if patch:
+        supabase_admin.table("classes").update(patch).eq("id", class_id).eq(
+            "school_id", request.profile["school_id"]
+        ).execute()
+    return jsonify({"ok": True}), 200
+
+
+@app.route("/api/school/classes/<class_id>", methods=["DELETE"])
+@require_role("school_admin", "school_administration")
+def school_delete_class(class_id):
+    supabase_admin.table("classes").delete().eq("id", class_id).eq("school_id", request.profile["school_id"]).execute()
+    return jsonify({"ok": True}), 200
+
+
+@app.route("/api/school/classes/<class_id>/schedule", methods=["POST"])
+@require_role("school_admin", "school_administration")
+def school_add_schedule(class_id):
+    data = request.get_json(silent=True) or {}
+    row = {
+        "class_id": class_id,
+        "day_of_week": data.get("day_of_week"),
+        "start_time": data.get("start_time"),
+        "end_time": data.get("end_time"),
+        "subject": data.get("subject"),
+    }
+    try:
+        created = supabase_admin.table("class_schedule").insert(row).execute().data[0]
+    except Exception as e:
+        return jsonify({"error": f"تعذّر إضافة الحصة: {e}"}), 400
+    return jsonify(created), 200
+
+
+@app.route("/api/school/classes/<class_id>/schedule", methods=["GET"])
+@require_role("school_admin", "school_administration", "teacher", "student")
+def school_get_schedule(class_id):
+    schedule = supabase_admin.table("class_schedule").select("*").eq("class_id", class_id).execute().data
+    return jsonify({"schedule": schedule}), 200
+
+
+@app.route("/api/school/schedule/<schedule_id>", methods=["DELETE"])
+@require_role("school_admin", "school_administration")
+def school_delete_schedule(schedule_id):
+    supabase_admin.table("class_schedule").delete().eq("id", schedule_id).execute()
+    return jsonify({"ok": True}), 200
+
+
+@app.route("/api/school/students/bulk", methods=["POST"])
+@require_role("school_admin", "school_administration")
+def school_bulk_add_students():
+    data = request.get_json(silent=True) or {}
+    class_id = data.get("class_id")
+    names = [n.strip() for n in (data.get("names") or []) if n and n.strip()]
+    if not class_id or not names:
+        return jsonify({"error": "لازم تختار فصل وتكتب أسماء"}), 400
+
+    school_id = request.profile["school_id"]
+    school = supabase_admin.table("schools").select("max_accounts").eq("id", school_id).limit(1).execute().data
+    if not school:
+        return jsonify({"error": "مدرستك غير موجودة"}), 400
+    remaining = school[0]["max_accounts"] - _school_account_usage(school_id)
+    if len(names) > remaining:
+        return jsonify(
+            {
+                "error": f"العدد يتجاوز الحد الأقصى المسموح لمدرستك (متبقي {max(remaining, 0)} حساب)",
+                "remaining_slots": max(remaining, 0),
+            }
+        ), 400
+
+    created_students = []
+    for name in names:
+        username = _generate_unique_student_username(name)
+        password = generate_strong_password()
+        email = f"{username}@{STUDENT_EMAIL_DOMAIN}"
+        try:
+            created = supabase_admin.auth.admin.create_user(
+                {
+                    "email": email,
+                    "password": password,
+                    "email_confirm": True,
+                    "user_metadata": {"username": username, "display_name": name},
+                }
+            )
+        except Exception:
+            continue  # نتخطى هذا الاسم بس نكمل الباقي - القائمة المُرجعة توضح مين انسوى فعلًا
+        supabase_admin.table("profiles").upsert(
+            {
+                "user_id": created.user.id,
+                "username": username,
+                "role": "student",
+                "school_id": school_id,
+                "class_id": class_id,
+                "must_change_password": True,
+            }
+        ).execute()
+        created_students.append({"name": name, "username": username, "password": password})
+
+    return jsonify({"students": created_students}), 200
+
+
+@app.route("/api/school/students", methods=["GET"])
+@require_role("school_admin", "school_administration", "teacher")
+def school_list_students():
+    class_id = request.args.get("class_id")
+    q = supabase_admin.table("profiles").select("user_id, username, class_id").eq("role", "student")
+    if request.profile["role"] == "teacher":
+        allowed_ids = [
+            c["id"]
+            for c in supabase_admin.table("classes").select("id").eq("teacher_id", request.user_id).execute().data
+        ]
+        if class_id and class_id not in allowed_ids:
+            return jsonify({"error": "الفصل مو تابع لك"}), 403
+        q = q.in_("class_id", [class_id] if class_id else (allowed_ids or ["-"]))
+    else:
+        q = q.eq("school_id", request.profile["school_id"])
+        if class_id:
+            q = q.eq("class_id", class_id)
+    return jsonify({"students": q.execute().data}), 200
+
+
+@app.route("/api/school/attendance", methods=["GET"])
+@require_role("school_admin", "school_administration")
+def school_attendance_report():
+    school_id = request.profile["school_id"]
+    class_id = request.args.get("class_id")
+    classes = supabase_admin.table("classes").select("id, name").eq("school_id", school_id).execute().data
+    class_ids = [class_id] if class_id else [c["id"] for c in classes]
+    rows = []
+    if class_ids:
+        rows = (
+            supabase_admin.table("session_attendance")
+            .select("class_id, user_id, joined_at")
+            .in_("class_id", class_ids)
+            .order("joined_at", desc=True)
+            .limit(500)
+            .execute()
+        ).data
+    return jsonify({"attendance": rows, "classes": classes}), 200
+
+
+# ---------- Teacher ----------
+@app.route("/api/teacher/roster", methods=["GET"])
+@require_role("teacher")
+def teacher_roster():
+    my_classes = supabase_admin.table("classes").select("id, name").eq("teacher_id", request.user_id).execute().data
+    class_ids = [c["id"] for c in my_classes]
+    students = []
+    if class_ids:
+        students = (
+            supabase_admin.table("profiles")
+            .select("user_id, username, class_id")
+            .eq("role", "student")
+            .in_("class_id", class_ids)
+            .execute()
+        ).data
+    return jsonify({"classes": my_classes, "students": students}), 200
+
+
+@app.route("/api/teacher/students/<user_id>", methods=["GET"])
+@require_role("teacher")
+def teacher_view_student(user_id):
+    target = (
+        supabase_admin.table("profiles")
+        .select("class_id")
+        .eq("user_id", user_id)
+        .eq("role", "student")
+        .limit(1)
+        .execute()
+    ).data
+    if not target:
+        return jsonify({"error": "الطالب مو موجود"}), 404
+    my_class_ids = [
+        c["id"] for c in supabase_admin.table("classes").select("id").eq("teacher_id", request.user_id).execute().data
+    ]
+    if target[0]["class_id"] not in my_class_ids:
+        return jsonify({"error": "هذا الطالب مو بفصلك"}), 403
+    profile = _get_institutional_profile(user_id)
+    return jsonify(profile), 200
+
+
+@app.route("/api/teacher/schedule", methods=["GET"])
+@require_role("teacher")
+def teacher_schedule():
+    my_classes = supabase_admin.table("classes").select("id, name").eq("teacher_id", request.user_id).execute().data
+    class_ids = [c["id"] for c in my_classes]
+    schedule = []
+    if class_ids:
+        schedule = supabase_admin.table("class_schedule").select("*").in_("class_id", class_ids).execute().data
+    return jsonify({"classes": my_classes, "schedule": schedule}), 200
+
+
+@app.route("/api/teacher/attendance", methods=["GET"])
+@require_role("teacher")
+def teacher_attendance():
+    requested_class_id = request.args.get("class_id")
+    my_class_ids = [
+        c["id"] for c in supabase_admin.table("classes").select("id").eq("teacher_id", request.user_id).execute().data
+    ]
+    class_ids = [requested_class_id] if requested_class_id in my_class_ids else my_class_ids
+    rows = []
+    if class_ids:
+        rows = (
+            supabase_admin.table("session_attendance")
+            .select("class_id, user_id, joined_at")
+            .in_("class_id", class_ids)
+            .order("joined_at", desc=True)
+            .limit(500)
+            .execute()
+        ).data
+    return jsonify({"attendance": rows}), 200
+
+
+# ---------- Student ----------
+@app.route("/api/student/schedule", methods=["GET"])
+@require_role("student")
+def student_schedule():
+    if not request.profile.get("class_id"):
+        return jsonify({"schedule": []}), 200
+    schedule = (
+        supabase_admin.table("class_schedule").select("*").eq("class_id", request.profile["class_id"]).execute()
+    ).data
+    return jsonify({"schedule": schedule}), 200
 
 
 if __name__ == "__main__":

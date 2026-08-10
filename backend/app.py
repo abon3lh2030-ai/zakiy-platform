@@ -1110,6 +1110,7 @@ def create_room():
         "raised_hands": [],
         "board_strokes": [],
         "class_started": False,
+        "chat_enabled": True,
         "participants": {},
         "ever_participants": {},
     }
@@ -1200,6 +1201,7 @@ def handle_join_room(data):
             "board_strokes": room["board_strokes"],
             "raised_hands": room["raised_hands"],
             "class_started": room["class_started"],
+            "chat_enabled": room.get("chat_enabled", True),
         },
     )
     emit("leaderboard_update", {"leaderboard": get_leaderboard(room_code)}, to=room_code)
@@ -1303,6 +1305,8 @@ def handle_chat_message(data):
     room = rooms[room_code]
     if request.sid not in room["participants"]:
         return
+    if not room.get("chat_enabled", True):
+        return
 
     participant = room["participants"][request.sid]
     # ما يقدر يسولف بالشات وهو لسا يحل الاختبار (بعد ما بدأ وقبل ما يسلّم)
@@ -1315,6 +1319,19 @@ def handle_chat_message(data):
         {"name": name, "message": message, "ts": time.time()},
         to=room_code,
     )
+
+
+@socketio.on("toggle_chat")
+def handle_toggle_chat(data):
+    """يفتح/يقفل شات الغرفة النصي للجميع - المضيف أو أي منضم منحه صلاحية بس."""
+    room_code = (data.get("room_code") or "").strip().upper()
+    if room_code not in rooms:
+        return
+    room = rooms[room_code]
+    if not can_manage_content(room, request.sid):
+        return
+    room["chat_enabled"] = not room.get("chat_enabled", True)
+    emit("chat_state", {"enabled": room["chat_enabled"]}, to=room_code)
 
 
 @socketio.on("typing")

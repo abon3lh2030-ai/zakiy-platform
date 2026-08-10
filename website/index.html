@@ -2764,7 +2764,8 @@ function goToJoinRoomWithCode(code) {
 
 // ---------- الحساب (اختياري) ----------
 function proceedToApp() {
-  hide('login-form'); hide('signup-form');
+  hide('login-form'); hide('signup-form'); hide('step-force-password-change');
+  show('sidebar');
   show('mode-select');
   navHistory = [];
   updateGlobalBackButton();
@@ -2849,6 +2850,7 @@ function onAuthSuccess(session) {
       if (me.must_change_password) {
         TOP_LEVEL_SCREENS.forEach(hide);
         hide('login-form'); hide('signup-form');
+        hide('sidebar'); // بوابة صلبة فعليًا - ما نخلي السايد بار يفتح مسارات ثانية يتفادى بيها المستخدم البوابة
         navHistory = [];
         show('step-force-password-change');
         updateGlobalBackButton();
@@ -2908,9 +2910,19 @@ function onAuthSuccess(session) {
 }
 
 // Supabase يجدد access_token تلقائيًا بالخلفية - نتابع آخر نسخة عشان الطلبات
-// المحمية (تسجيل نتيجة اختبار، جلب الأداء) ما تفشل بجلسة قديمة منتهية
+// المحمية (تسجيل نتيجة اختبار، جلب الأداء) ما تفشل بجلسة قديمة منتهية.
+// ملاحظة مهمة: Supabase يخزّن الجلسة بـ localStorage المشتركة بين كل تبويبات
+// نفس الموقع - فلو سجّلت دخول بحساب ثاني بتبويب ثاني، هذا التبويب يستلم
+// حدث الجلسة الجديدة تلقائيًا برضو! لو صاحب الحساب فعليًا تغيّر (user id
+// مختلف) نعيد تحميل الصفحة كاملة بدل ما نكمل بحالة قديمة (دور/توكن ما
+// يطابقون الحساب الفعلي الحين، يسبب أخطاء "ما عندك صلاحية" مربكة)
 supabaseClient.auth.onAuthStateChange((_event, session) => {
-  if (session) currentAccessToken = session.access_token;
+  if (!session) return;
+  if (currentUserId && session.user.id !== currentUserId) {
+    location.reload();
+    return;
+  }
+  currentAccessToken = session.access_token;
 });
 
 supabaseClient.auth.getSession().then(({ data }) => {
@@ -3022,7 +3034,7 @@ document.getElementById('guestLoginPromptBtn').addEventListener('click', () => {
 // مستقلة بزر سايد بار خاص فيها، بدل ما تكون تبويبات جوا شاشة وحدة ----------
 const ACCOUNT_SCREENS = ['step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings', 'step-profile'];
 function showAccountScreen(id) {
-  ['login-form', 'signup-form', 'mode-select', 'room-mode-select', 'room-create-form',
+  ['login-form', 'signup-form', 'step-force-password-change', 'mode-select', 'room-mode-select', 'room-create-form',
    'room-join-form', 'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary', 'step-quiz',
    'step-admin-dashboard', 'step-school-dashboard', 'step-teacher-dashboard', 'step-student-schedule',
    ...ACCOUNT_SCREENS]
@@ -5691,7 +5703,8 @@ const INSTITUTIONAL_DASHBOARD_SCREENS = {
 
 function routeByRole(role) {
   TOP_LEVEL_SCREENS.forEach(hide);
-  hide('login-form'); hide('signup-form');
+  hide('login-form'); hide('signup-form'); hide('step-force-password-change');
+  show('sidebar');
   const screenId = INSTITUTIONAL_DASHBOARD_SCREENS[role];
   if (!screenId) { show('mode-select'); return; }
   show(screenId);

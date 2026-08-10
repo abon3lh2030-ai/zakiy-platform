@@ -721,7 +721,10 @@
     font-weight: 700; padding: 1px 7px; margin-inline-start: auto; line-height: 1.5;
   }
 
-  body { padding-left: var(--sidebar-width); }
+  /* padding الجسم يتفعّل بس لما السايد بار فعليًا ظاهر (كلاس with-sidebar
+     تتحكم فيه show('sidebar')/hide('sidebar')) - وإلا شاشات بلا سايد بار
+     زي بوابة إجبار تغيير كلمة السر تطلع مزاحة يمين بدل انها بالنص فعليًا */
+  body.with-sidebar { padding-left: var(--sidebar-width); }
 
   @media (max-width: 720px) {
     :root { --sidebar-width: 60px; }
@@ -907,7 +910,7 @@
   .profile-archive-row .archive-participant.is-host { font-weight: 800; color: var(--teal); }
 </style>
 </head>
-<body>
+<body class="with-sidebar">
 <script>
   // نطبّق الثيم المحفوظ فورًا (قبل أي رندر محسوس) عشان نتفادى "ومضة" لون
   // خاطئ لما الصفحة تفتح بالدارك مود
@@ -1088,6 +1091,7 @@
 
     <div class="role-tabs">
       <button class="role-tab active" data-tab="teachers" data-i18n="tab_teachers">👨‍🏫 المعلمون</button>
+      <button class="role-tab" data-tab="students" data-i18n="tab_students">👥 الطلاب</button>
       <button class="role-tab" data-tab="classes" data-i18n="tab_classes">🏷️ الفصول والجدول</button>
       <button class="role-tab" data-tab="bulk" data-i18n="tab_bulk_students">➕ إضافة طلاب</button>
       <button class="role-tab" data-tab="attendance" data-i18n="tab_attendance">📋 الحضور</button>
@@ -1113,6 +1117,7 @@
           <tbody id="schoolTeachersTableBody"></tbody>
         </table>
       </div>
+      <div id="schoolTeachersResult" class="credential-reveal hidden"></div>
 
       <h3 class="sub-heading" data-i18n="broadcast_teachers_heading">📢 رسالة جماعية لكل معلمي المدرسة</h3>
       <textarea id="schoolBroadcastInput" class="text-input" rows="3" placeholder="اكتب رسالتك هنا..." data-i18n-ph="ph_broadcast_body" style="width:100%; resize:vertical; font-family:inherit;"></textarea>
@@ -1120,6 +1125,21 @@
         <button class="primary" id="schoolBroadcastBtn" data-i18n="btn_send_broadcast">إرسال للجميع</button>
       </div>
       <div id="schoolBroadcastError"></div>
+    </div>
+
+    <div id="schoolTab-students" class="school-tab-panel hidden">
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th data-i18n="th_full_name">الاسم الكامل</th>
+            <th data-i18n="th_username">اسم المستخدم</th>
+            <th data-i18n="th_class_name">الفصل</th>
+            <th data-i18n="th_actions">إجراء</th>
+          </tr></thead>
+          <tbody id="schoolStudentsTableBody"></tbody>
+        </table>
+      </div>
+      <div id="schoolStudentsResult" class="credential-reveal hidden"></div>
     </div>
 
     <div id="schoolTab-classes" class="school-tab-panel hidden">
@@ -2113,6 +2133,7 @@ const I18N = {
     no_users_found: 'ما فيه نتائج',
     no_notifications_yet: 'ما فيه تنبيهات بعد',
     btn_start_now: '🖍️ ابدأ الحصة الآن',
+    btn_join_class_now: '🖍️ انضم للحصة الآن',
     broadcast_teachers_heading: '📢 رسالة جماعية لكل معلمي المدرسة',
     broadcast_students_heading: '📢 رسالة جماعية لطلاب الفصل المختار',
     ph_broadcast_body: 'اكتب رسالتك هنا...',
@@ -2165,6 +2186,11 @@ const I18N = {
     th_admin_email: 'إيميل المدير',
     btn_reset_password: '🔑 كلمة سر جديدة',
     confirm_reset_school_password: 'بيتولّد كلمة سر جديدة لمدير هذي المدرسة وتلغي القديمة - متأكد؟',
+    confirm_delete_school: 'حذف نهائي - بيمسح المدرسة وكل حساباتها (معلمين وطلاب) نهائيًا، ما يرجع بعدها. متأكد؟',
+    confirm_reset_account_password: 'بيتولّد كلمة سر جديدة لهذا الحساب وتلغي القديمة - متأكد؟',
+    tab_students: '👥 الطلاب',
+    no_students_in_school: 'ما فيه طلاب مضافين بعد',
+    th_full_name: 'الاسم الكامل',
     admin_password_reset_msg: '✅ كلمة سر جديدة (تظهر مرة وحدة بس، احفظها الحين):',
     // ---- لوحة إدارة المدرسة ----
     school_dash_label: '🏫 لوحة إدارة المدرسة',
@@ -2174,6 +2200,7 @@ const I18N = {
     ph_teacher_name: 'اسم المعلم', ph_teacher_email: 'إيميل المعلم', btn_add_teacher: 'إضافة معلم',
     school_no_teachers: 'ما فيه معلمين مضافين بعد',
     school_teacher_created_msg: '✅ تم إضافة المعلم "{name}" - بيانات دخوله (تظهر مرة وحدة بس، احفظها الحين):',
+    reset_password_result_msg: '✅ كلمة السر الجديدة لـ "{name}" (تظهر مرة وحدة بس، احفظها الحين):',
     ph_class_name: 'اسم الفصل', btn_add_class: 'إضافة فصل', school_no_classes: 'ما فيه فصول مضافة بعد',
     schedule_heading: '🗓️ جدول الحصص', ph_subject: 'المادة', btn_add_schedule: 'إضافة حصة',
     bulk_add_desc: 'اكتب اسم طالب بكل سطر - النظام يولّد اسم مستخدم وكلمة سر لكل واحد تلقائيًا',
@@ -2529,6 +2556,7 @@ const I18N = {
     no_users_found: 'No results',
     no_notifications_yet: 'No notifications yet',
     btn_start_now: '🖍️ Start the Class Now',
+    btn_join_class_now: '🖍️ Join the Class Now',
     broadcast_teachers_heading: '📢 Broadcast to All School Teachers',
     broadcast_students_heading: '📢 Broadcast to the Selected Class',
     ph_broadcast_body: 'Write your message here...',
@@ -2581,6 +2609,11 @@ const I18N = {
     th_admin_email: "Admin's Email",
     btn_reset_password: '🔑 New Password',
     confirm_reset_school_password: "This generates a new password for this school's admin and invalidates the old one - continue?",
+    confirm_delete_school: "Permanent deletion - this removes the school and all its accounts (teachers and students) for good. Continue?",
+    confirm_reset_account_password: "This generates a new password for this account and invalidates the old one - continue?",
+    tab_students: '👥 Students',
+    no_students_in_school: 'No students added yet',
+    th_full_name: 'Full Name',
     admin_password_reset_msg: '✅ New password (shown once, save it now):',
     // ---- School dashboard ----
     school_dash_label: '🏫 School Dashboard',
@@ -2590,6 +2623,7 @@ const I18N = {
     ph_teacher_name: "Teacher's name", ph_teacher_email: "Teacher's email", btn_add_teacher: 'Add Teacher',
     school_no_teachers: 'No teachers added yet',
     school_teacher_created_msg: '✅ Teacher "{name}" added - their login (shown once, save it now):',
+    reset_password_result_msg: '✅ New password for "{name}" (shown once, save it now):',
     ph_class_name: 'Class name', btn_add_class: 'Add Class', school_no_classes: 'No classes added yet',
     schedule_heading: '🗓️ Class Schedule', ph_subject: 'Subject', btn_add_schedule: 'Add Session',
     bulk_add_desc: 'Write one student name per line - the system auto-generates a username and password for each',
@@ -2783,8 +2817,14 @@ document.querySelectorAll('.lang-choice-btn').forEach(btn => {
 
 applyLanguage();
 
-function show(id) { document.getElementById(id).classList.remove('hidden'); }
-function hide(id) { document.getElementById(id).classList.add('hidden'); }
+function show(id) {
+  document.getElementById(id).classList.remove('hidden');
+  if (id === 'sidebar') document.body.classList.add('with-sidebar');
+}
+function hide(id) {
+  document.getElementById(id).classList.add('hidden');
+  if (id === 'sidebar') document.body.classList.remove('with-sidebar');
+}
 
 // ---------- زر الرجوع العام (يظهر بكل مكان إلا الواجهة الرئيسية وتسجيل
 // الدخول والاختبار) - نحفظ "لقطة" لكل الشاشات الظاهرة وقت كل تنقل رئيسي،
@@ -5923,6 +5963,7 @@ async function loadAdminDashboard() {
         <td style="display:flex; gap:6px; flex-wrap:wrap;">
           <button class="ghost" data-toggle-school="${s.id}" data-active="${s.is_active}" style="padding:4px 10px;">${s.is_active ? t('btn_deactivate') : t('btn_activate')}</button>
           <button class="ghost" data-reset-school-pw="${s.id}" style="padding:4px 10px;">${t('btn_reset_password')}</button>
+          <button class="ghost" data-delete-school="${s.id}" style="padding:4px 10px; color:#c0392b;">${t('btn_delete')}</button>
         </td>
       </tr>
     `).join('');
@@ -5943,6 +5984,15 @@ async function loadAdminDashboard() {
           box.innerHTML = `${t('admin_password_reset_msg')}<br>📧 ${escapeHtml(res.email)}<br>🔑 <code>${escapeHtml(res.password)}</code>`;
           box.classList.remove('hidden');
           box.scrollIntoView({ behavior: 'smooth' });
+        } catch (e) { alert(e.message); }
+      });
+    });
+    tbody.querySelectorAll('[data-delete-school]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm(t('confirm_delete_school'))) return;
+        try {
+          await apiCall('DELETE', `/api/admin/schools/${btn.dataset.deleteSchool}`);
+          loadAdminDashboard();
         } catch (e) { alert(e.message); }
       });
     });
@@ -5980,6 +6030,7 @@ document.querySelectorAll('#step-school-dashboard .role-tab').forEach(tabBtn => 
     document.querySelectorAll('#step-school-dashboard .school-tab-panel').forEach(p => p.classList.add('hidden'));
     document.getElementById(`schoolTab-${tabBtn.dataset.tab}`).classList.remove('hidden');
     if (tabBtn.dataset.tab === 'attendance') loadSchoolAttendance();
+    if (tabBtn.dataset.tab === 'students') loadSchoolStudents();
   });
 });
 
@@ -6008,10 +6059,14 @@ async function loadSchoolTeachers() {
         <td>${tch.classes.map(c => escapeHtml(c.name)).join('، ') || '—'}</td>
         <td>${tch.student_count}</td>
         <td>${tch.last_login ? new Date(tch.last_login).toLocaleString(currentLang === 'ar' ? 'ar' : 'en') : t('never_logged_in')}</td>
-        <td><button class="ghost" data-delete-account="${tch.user_id}" style="padding:4px 10px;">${t('btn_delete')}</button></td>
+        <td>
+          <button class="ghost" data-reset-account-pw="${tch.user_id}" style="padding:4px 10px;">${t('btn_reset_password')}</button>
+          <button class="ghost" data-delete-account="${tch.user_id}" style="padding:4px 10px; color:#c0392b;">${t('btn_delete')}</button>
+        </td>
       </tr>
     `).join('');
     wireDeleteAccountButtons(tbody, loadSchoolTeachers);
+    wireResetPasswordButtons(tbody, document.getElementById('schoolTeachersResult'));
   } catch (e) {
     tbody.innerHTML = `<tr><td colspan="5">${escapeHtml(e.message)}</td></tr>`;
   }
@@ -6022,6 +6077,23 @@ function wireDeleteAccountButtons(container, onDone) {
       if (!confirm(t('confirm_delete_account'))) return;
       try { await apiCall('DELETE', `/api/school/accounts/${btn.dataset.deleteAccount}`); onDone(); }
       catch (e) { alert(e.message); }
+    });
+  });
+}
+// زر إعادة تعيين كلمة سر لأي حساب تابع للمدرسة (معلم أو طالب) - يولّد كلمة
+// سر عشوائية قوية جديدة بالباك إند ويعرضها مرة وحدة بصندوق النتيجة، ويفعّل
+// must_change_password تلقائيًا عشان صاحب الحساب يغيّرها أول ما يدخل
+function wireResetPasswordButtons(container, resultBox) {
+  container.querySelectorAll('[data-reset-account-pw]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm(t('confirm_reset_account_password'))) return;
+      try {
+        const data = await apiCall('POST', `/api/school/accounts/${btn.dataset.resetAccountPw}/reset-password`);
+        if (resultBox) {
+          resultBox.innerHTML = `${t('reset_password_result_msg', { name: data.identifier })}<br>🔑 <code>${escapeHtml(data.password)}</code>`;
+          resultBox.classList.remove('hidden');
+        }
+      } catch (e) { alert(e.message); }
     });
   });
 }
@@ -6110,6 +6182,34 @@ document.getElementById('addClassBtn').addEventListener('click', async () => {
     showError('addClassError', e.message);
   }
 });
+
+// كل طلاب المدرسة بأسمائهم الحقيقية الكاملة (لا بس اسم المستخدم المولّد) -
+// مع زر إعادة تعيين كلمة سر لكل طالب لحاله
+async function loadSchoolStudents() {
+  const tbody = document.getElementById('schoolStudentsTableBody');
+  tbody.innerHTML = `<tr><td colspan="4">${t('loading')}</td></tr>`;
+  document.getElementById('schoolStudentsResult').classList.add('hidden');
+  try {
+    const [studentsData, classesData] = await Promise.all([
+      apiCall('GET', '/api/school/students'),
+      schoolClassesCache.length ? Promise.resolve({ classes: schoolClassesCache }) : apiCall('GET', '/api/school/classes'),
+    ]);
+    const classNames = {};
+    classesData.classes.forEach(c => { classNames[c.id] = c.name; });
+    if (!studentsData.students.length) { tbody.innerHTML = `<tr><td colspan="4">${t('no_students_in_school')}</td></tr>`; return; }
+    tbody.innerHTML = studentsData.students.map(s => `
+      <tr>
+        <td>${escapeHtml(s.full_name || '—')}</td>
+        <td>${escapeHtml(s.username)}</td>
+        <td>${escapeHtml(classNames[s.class_id] || '—')}</td>
+        <td><button class="ghost" data-reset-account-pw="${s.user_id}" style="padding:4px 10px;">${t('btn_reset_password')}</button></td>
+      </tr>
+    `).join('');
+    wireResetPasswordButtons(tbody, document.getElementById('schoolStudentsResult'));
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="4">${escapeHtml(e.message)}</td></tr>`;
+  }
+}
 
 async function renderScheduleTable(classId) {
   const wrap = document.getElementById('scheduleTableWrap');
@@ -6288,7 +6388,12 @@ document.getElementById('teacherClassSelect').addEventListener('change', async (
 
 document.getElementById('teacherStartClassBtn').addEventListener('click', async () => {
   clearError('teacherStartClassError');
-  const classId = document.getElementById('teacherClassSelect').value;
+  // القائمة تبدأ افتراضيًا على "كل فصولي" (value فاضية) لغرض تصفح جدول
+  // الطلاب/الأداء - بس ما فيه معنى لدرس مباشر "لكل الفصول"، فلو المعلم ما
+  // غيّر الاختيار وعنده فصل واحد بس نبدأ فيه تلقائيًا بدل ما نوقفه بخطأ
+  // ونجبره يرجع يفتح القائمة يدويًا - يقدر يبدأ درس بأي وقت بضغطة وحدة
+  let classId = document.getElementById('teacherClassSelect').value;
+  if (!classId && teacherClassesCache.length === 1) classId = teacherClassesCache[0].id;
   if (!classId) { showError('teacherStartClassError', t('err_pick_class_first')); return; }
   try {
     const res = await fetch(`${API_BASE}/api/room/create`, {
@@ -6538,11 +6643,17 @@ async function loadNotifications() {
           ${n.type === 'schedule_reminder' && n.related_class_id
             ? `<button class="ghost" data-start-class-now="${n.related_class_id}" style="padding:4px 10px; margin-top:6px;">${t('btn_start_now')}</button>`
             : ''}
+          ${n.type === 'class_started' && n.related_room_code
+            ? `<button class="ghost" data-join-class-now="${n.related_room_code}" style="padding:4px 10px; margin-top:6px;">${t('btn_join_class_now')}</button>`
+            : ''}
         </div>
       </div>
     `).join('');
     list.querySelectorAll('[data-start-class-now]').forEach(btn => {
       btn.addEventListener('click', () => goToTeacherClassAndStart(btn.dataset.startClassNow));
+    });
+    list.querySelectorAll('[data-join-class-now]').forEach(btn => {
+      btn.addEventListener('click', () => joinClassByCode(btn.dataset.joinClassNow));
     });
     apiCall('POST', '/api/notifications/mark-read', {}).then(refreshUnreadBadge).catch(() => {});
   } catch (e) {
@@ -6559,6 +6670,14 @@ function goToTeacherClassAndStart(classId) {
     if ([...select.options].some(o => o.value === classId)) select.value = classId;
     document.getElementById('teacherStartClassBtn').click();
   }, 400);
+}
+
+// من إشعار "الحصة بدأت الآن" - ينضم الطالب مباشرة لغرفة المعلم بنفس كود
+// الغرفة المرفق بالإشعار، بدون ما يحتاج يكتب الكود يدويًا
+function joinClassByCode(roomCode) {
+  myName = currentUsername;
+  joinErrorTarget = 'roomJoinError';
+  socket.emit('join_room', { room_code: roomCode, name: myName, client_id: clientId, token: currentAccessToken });
 }
 
 // ---------- بث جماعي: مدير مدرسة لمعلميه ----------

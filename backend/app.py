@@ -1874,7 +1874,7 @@ def _get_institutional_profile(user_id):
     طالب/معلم تحت مسؤوليتهم) مو مشاركة اجتماعية بين أقران."""
     res = (
         supabase_admin.table("profiles")
-        .select("user_id, username, bio, school_name, role, class_id")
+        .select("user_id, username, full_name, bio, school_name, role, class_id")
         .eq("user_id", user_id)
         .limit(1)
         .execute()
@@ -1896,6 +1896,7 @@ def _get_institutional_profile(user_id):
     return {
         "user_id": profile["user_id"],
         "username": profile["username"],
+        "full_name": profile.get("full_name"),
         "bio": profile.get("bio"),
         "school_name": profile.get("school_name"),
         "role": profile.get("role"),
@@ -2070,6 +2071,27 @@ def admin_update_school(school_id):
     return jsonify({"ok": True}), 200
 
 
+@app.route("/api/admin/schools/<school_id>", methods=["DELETE"])
+@require_role("admin")
+def admin_delete_school(school_id):
+    """حذف فعلي (مو بس إيقاف) - يشيل المدرسة وكل حساباتها نهائيًا. ترتيب
+    مهم: نجيب قائمة المستخدمين أول، ثم نحذف صف المدرسة (يكسح تلقائيًا كل
+    الفصول/الجدول/الحضور/صفوف profiles عبر cascade المُعرّف بالهجرة)، وبعدها
+    بس نحذف حسابات Auth - نفس ترتيب حذف الحساب الفردي (profiles أول) لأن
+    حذف Auth وصف profiles لسا موجود يفشل بخطأ قيد مفتاح خارجي."""
+    user_ids = [
+        r["user_id"]
+        for r in supabase_admin.table("profiles").select("user_id").eq("school_id", school_id).execute().data
+    ]
+    supabase_admin.table("schools").delete().eq("id", school_id).execute()
+    for uid in user_ids:
+        try:
+            supabase_admin.auth.admin.delete_user(uid)
+        except Exception:
+            pass
+    return jsonify({"ok": True}), 200
+
+
 @app.route("/api/admin/schools/<school_id>/reset-admin-password", methods=["POST"])
 @require_role("admin")
 def admin_reset_school_password(school_id):
@@ -2107,7 +2129,7 @@ def _school_scoped_profile(target_user_id):
     """يرجّع بروفايل target_user_id بس لو تابع لنفس مدرسة صاحب الطلب، وإلا None."""
     res = (
         supabase_admin.table("profiles")
-        .select("user_id, role, school_id, class_id, username")
+        .select("user_id, role, school_id, class_id, username, full_name")
         .eq("user_id", target_user_id)
         .limit(1)
         .execute()
@@ -2254,6 +2276,34 @@ def school_delete_account(user_id):
     return jsonify({"ok": True}), 200
 
 
+@app.route("/api/school/accounts/<user_id>/reset-password", methods=["POST"])
+@require_role("school_admin", "school_administration")
+def school_reset_account_password(user_id):
+    """يولّد كلمة سر جديدة لأي حساب بمدرسة صاحب الطلب (معلم أو طالب) - نفس
+    مبدأ إعادة تعيين كلمة سر مدير المدرسة (لا نخزّن كلمة سر أصلية نص صريح
+    أبدًا، فالبديل الآمن توليد جديدة عند الحاجة)."""
+    target = _school_scoped_profile(user_id)
+    if not target:
+        return jsonify({"error": "الحساب مو تابع لمدرستك"}), 404
+    if request.profile["role"] == "school_administration" and target["role"] in ("school_admin", "school_administration"):
+        return jsonify({"error": "ما عندك صلاحية لهذا الحساب"}), 403
+
+    new_password = generate_strong_password()
+    try:
+        supabase_admin.auth.admin.update_user_by_id(user_id, {"password": new_password})
+    except Exception as e:
+        return jsonify({"error": f"تعذّر تحديث كلمة السر: {e}"}), 400
+    supabase_admin.table("profiles").update({"must_change_password": True}).eq("user_id", user_id).execute()
+
+    identifier = target.get("username") or ""
+    if target.get("role") != "student":
+        try:
+            identifier = supabase_admin.auth.admin.get_user_by_id(user_id).user.email or identifier
+        except Exception:
+            pass
+    return jsonify({"identifier": identifier, "password": new_password}), 200
+
+
 @app.route("/api/school/profile/<user_id>", methods=["GET"])
 @require_role("school_admin", "school_administration")
 def school_view_profile(user_id):
@@ -2388,6 +2438,7 @@ def school_bulk_add_students():
             {
                 "user_id": created.user.id,
                 "username": username,
+                "full_name": name,
                 "role": "student",
                 "school_id": school_id,
                 "class_id": class_id,
@@ -2403,7 +2454,7 @@ def school_bulk_add_students():
 @require_role("school_admin", "school_administration", "teacher")
 def school_list_students():
     class_id = request.args.get("class_id")
-    q = supabase_admin.table("profiles").select("user_id, username, class_id").eq("role", "student")
+    q = supabase_admin.table("profiles").select("user_id, username, full_name, class_id").eq("role", "student")
     if request.profile["role"] == "teacher":
         allowed_ids = [
             c["id"]
@@ -2459,7 +2510,7 @@ def teacher_roster():
     if class_ids:
         students = (
             supabase_admin.table("profiles")
-            .select("user_id, username, class_id")
+            .select("user_id, username, full_name, class_id")
             .eq("role", "student")
             .in_("class_id", class_ids)
             .execute()
@@ -2480,7 +2531,7 @@ def teacher_performance():
     if class_ids:
         students = (
             supabase_admin.table("profiles")
-            .select("user_id, username, class_id")
+            .select("user_id, username, full_name, class_id")
             .eq("role", "student")
             .in_("class_id", class_ids)
             .execute()
@@ -2488,7 +2539,10 @@ def teacher_performance():
     result = []
     for s in students:
         perf = _compute_performance_summary(s["user_id"])
-        result.append({"user_id": s["user_id"], "username": s["username"], "class_id": s["class_id"], **perf})
+        result.append({
+            "user_id": s["user_id"], "username": s["username"], "full_name": s.get("full_name"),
+            "class_id": s["class_id"], **perf,
+        })
     return jsonify({"performance": result}), 200
 
 

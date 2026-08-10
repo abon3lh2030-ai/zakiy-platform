@@ -9,7 +9,7 @@ from flask_cors import CORS
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from functools import wraps
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import os
 import random
 import re
@@ -1300,6 +1300,14 @@ def handle_join_room(data):
         room["host_client_id"] = client_id
         room["host_sid"] = request.sid
         room["host_name"] = name
+
+        # لحظة ما المضيف (المعلم) يبدأ فعليًا كلاس مباشر مرتبط بفصل، ننبّه كل
+        # طلاب ذاك الفصل إن الحصة بدأت - مو بمؤقّت أعمى، بحدث فعلي حقيقي
+        if room.get("class_id"):
+            try:
+                _notify_class_started(room["class_id"], room_code, name)
+            except Exception:
+                pass
     elif client_id and client_id == room["host_client_id"]:
         room["host_sid"] = request.sid
         room["host_name"] = name
@@ -2419,6 +2427,7 @@ def school_attendance_report():
     classes = supabase_admin.table("classes").select("id, name").eq("school_id", school_id).execute().data
     class_ids = [class_id] if class_id else [c["id"] for c in classes]
     rows = []
+    manual_rows = []
     if class_ids:
         rows = (
             supabase_admin.table("session_attendance")
@@ -2428,7 +2437,16 @@ def school_attendance_report():
             .limit(500)
             .execute()
         ).data
-    return jsonify({"attendance": rows, "classes": classes}), 200
+        # حضور يدوي سجّله المعلم - مصدر منفصل بالإضافة للتلقائي (انضمام الكلاس)
+        manual_rows = (
+            supabase_admin.table("manual_attendance")
+            .select("class_id, student_id, session_date, status")
+            .in_("class_id", class_ids)
+            .order("session_date", desc=True)
+            .limit(500)
+            .execute()
+        ).data
+    return jsonify({"attendance": rows, "manual_attendance": manual_rows, "classes": classes}), 200
 
 
 # ---------- Teacher ----------
@@ -2538,6 +2556,348 @@ def student_schedule():
         supabase_admin.table("class_schedule").select("*").eq("class_id", request.profile["class_id"]).execute()
     ).data
     return jsonify({"schedule": schedule}), 200
+
+
+# ============================================================================
+# ---------- الرسائل + التنبيهات + الحضور اليدوي ----------
+# ============================================================================
+
+RIYADH_OFFSET = timedelta(hours=3)  # المنصة عربية سعودية - أوقات الجدول بتوقيت الرياض
+
+
+def _riyadh_now():
+    return datetime.now(timezone.utc) + RIYADH_OFFSET
+
+
+def _create_notification(recipient_id, ntype, title, body=None, sender_id=None, class_id=None, room_code=None):
+    """يدرج تنبيه ويدفعه لحظيًا للمستلم لو أونلاين (منضم لغرفته الشخصية
+    user:<id> عبر حدث register_user) - نفس نمط emit(..., to=room_code) المستخدم
+    أصلًا بكل أحداث غرف الدراسة، بس هنا الغرفة خاصة بمستخدم وحد."""
+    if supabase_admin is None:
+        return
+    row = {
+        "recipient_user_id": recipient_id,
+        "type": ntype,
+        "title": title,
+        "body": body,
+        "sender_id": sender_id,
+        "related_class_id": class_id,
+        "related_room_code": room_code,
+    }
+    try:
+        supabase_admin.table("notifications").insert(row).execute()
+        socketio.emit("new_notification", row, to=f"user:{recipient_id}")
+    except Exception:
+        pass
+
+
+def _notify_class_started(class_id, room_code, teacher_name):
+    students = (
+        supabase_admin.table("profiles").select("user_id").eq("role", "student").eq("class_id", class_id).execute()
+    ).data
+    for s in students:
+        _create_notification(
+            s["user_id"], "class_started", "🖍️ الحصة بدأت الآن",
+            f"{teacher_name} بدأ الدرس المباشر - ادخل الحين",
+            class_id=class_id, room_code=room_code,
+        )
+
+
+@socketio.on("register_user")
+def handle_register_user(data):
+    """يربط اتصال Socket.IO الحالي بحساب المستخدم المسجّل دخوله - يخلّيه يستلم
+    تنبيهاته لحظيًا (رسالة/بث/تذكير حصة/بدء حصة) بأي مكان بالموقع، مو بس وهو
+    داخل غرفة دراسة. يُستدعى من الفرونت إند كل ما يتصل/يعيد الاتصال."""
+    token = (data.get("token") or "").strip()
+    if not token or supabase_admin is None:
+        return
+    try:
+        user_response = supabase_admin.auth.get_user(token)
+        if user_response and user_response.user:
+            join_room(f"user:{user_response.user.id}")
+    except Exception:
+        pass
+
+
+# ---------- الرسائل المباشرة ----------
+@app.route("/api/messages/conversations", methods=["GET"])
+@require_auth
+def list_conversations():
+    sent = (
+        supabase_admin.table("messages").select("*").eq("sender_id", request.user_id)
+        .order("created_at", desc=True).execute()
+    ).data
+    received = (
+        supabase_admin.table("messages").select("*").eq("recipient_id", request.user_id)
+        .order("created_at", desc=True).execute()
+    ).data
+    all_msgs = sorted(sent + received, key=lambda m: m["created_at"], reverse=True)
+
+    conversations = {}
+    unread_counts = Counter()
+    for m in all_msgs:
+        other_id = m["recipient_id"] if m["sender_id"] == request.user_id else m["sender_id"]
+        if other_id not in conversations:
+            conversations[other_id] = m
+        if m["recipient_id"] == request.user_id and not m["read_at"]:
+            unread_counts[other_id] += 1
+
+    other_ids = list(conversations.keys())
+    names = {}
+    if other_ids:
+        profiles = supabase_admin.table("profiles").select("user_id, username").in_("user_id", other_ids).execute().data
+        names = {p["user_id"]: p["username"] for p in profiles}
+
+    result = [
+        {
+            "user_id": oid,
+            "username": names.get(oid, "?"),
+            "last_message": m["body"],
+            "last_message_at": m["created_at"],
+            "unread_count": unread_counts.get(oid, 0),
+        }
+        for oid, m in conversations.items()
+    ]
+    result.sort(key=lambda c: c["last_message_at"], reverse=True)
+    return jsonify({"conversations": result}), 200
+
+
+@app.route("/api/messages/thread/<other_user_id>", methods=["GET"])
+@require_auth
+def get_message_thread(other_user_id):
+    sent = (
+        supabase_admin.table("messages").select("*")
+        .eq("sender_id", request.user_id).eq("recipient_id", other_user_id).execute()
+    ).data
+    received = (
+        supabase_admin.table("messages").select("*")
+        .eq("sender_id", other_user_id).eq("recipient_id", request.user_id).execute()
+    ).data
+    thread = sorted(sent + received, key=lambda m: m["created_at"])
+
+    # نعلّم الرسائل الواردة كمقروءة أول ما يفتح المحادثة
+    unread_ids = [m["id"] for m in received if not m["read_at"]]
+    if unread_ids:
+        supabase_admin.table("messages").update({"read_at": datetime.now(timezone.utc).isoformat()}).in_(
+            "id", unread_ids
+        ).execute()
+
+    return jsonify({"messages": thread}), 200
+
+
+@app.route("/api/messages/send", methods=["POST"])
+@require_auth
+def send_message():
+    data = request.get_json(silent=True) or {}
+    recipient_id = data.get("recipient_id")
+    body = (data.get("body") or "").strip()[:2000]
+    if not recipient_id or not body:
+        return jsonify({"error": "لازم مستلم ونص الرسالة"}), 400
+    if recipient_id == request.user_id:
+        return jsonify({"error": "ما تقدر ترسل لنفسك"}), 400
+
+    row = supabase_admin.table("messages").insert(
+        {"sender_id": request.user_id, "recipient_id": recipient_id, "body": body}
+    ).execute().data[0]
+
+    sender_name = (
+        supabase_admin.table("profiles").select("username").eq("user_id", request.user_id).limit(1).execute().data
+    )
+    sender_name = sender_name[0]["username"] if sender_name else "مستخدم"
+    _create_notification(recipient_id, "new_message", f"💬 رسالة جديدة من {sender_name}", body, sender_id=request.user_id)
+
+    return jsonify(row), 200
+
+
+# ---------- التنبيهات ----------
+@app.route("/api/notifications", methods=["GET"])
+@require_auth
+def list_notifications():
+    rows = (
+        supabase_admin.table("notifications").select("*").eq("recipient_user_id", request.user_id)
+        .order("created_at", desc=True).limit(50).execute()
+    ).data
+    unread_count = sum(1 for r in rows if not r["read_at"])
+    return jsonify({"notifications": rows, "unread_count": unread_count}), 200
+
+
+@app.route("/api/notifications/mark-read", methods=["POST"])
+@require_auth
+def mark_notifications_read():
+    data = request.get_json(silent=True) or {}
+    notif_id = data.get("id")
+    q = supabase_admin.table("notifications").update({"read_at": datetime.now(timezone.utc).isoformat()}).eq(
+        "recipient_user_id", request.user_id
+    )
+    if notif_id:
+        q = q.eq("id", notif_id)
+    else:
+        q = q.is_("read_at", "null")
+    q.execute()
+    return jsonify({"ok": True}), 200
+
+
+# ---------- البث الجماعي ----------
+@app.route("/api/school/broadcast", methods=["POST"])
+@require_role("school_admin", "school_administration")
+def school_broadcast():
+    data = request.get_json(silent=True) or {}
+    body = (data.get("body") or "").strip()[:2000]
+    if not body:
+        return jsonify({"error": "لازم نص الرسالة"}), 400
+    teachers = (
+        supabase_admin.table("profiles").select("user_id")
+        .eq("school_id", request.profile["school_id"]).eq("role", "teacher").execute()
+    ).data
+    for t in teachers:
+        _create_notification(t["user_id"], "broadcast", "📢 رسالة من إدارة المدرسة", body, sender_id=request.user_id)
+    return jsonify({"ok": True, "sent_to": len(teachers)}), 200
+
+
+@app.route("/api/teacher/broadcast", methods=["POST"])
+@require_role("teacher")
+def teacher_broadcast():
+    data = request.get_json(silent=True) or {}
+    body = (data.get("body") or "").strip()[:2000]
+    if not body:
+        return jsonify({"error": "لازم نص الرسالة"}), 400
+    requested_class_id = data.get("class_id")
+    my_class_ids = [
+        c["id"] for c in supabase_admin.table("classes").select("id").eq("teacher_id", request.user_id).execute().data
+    ]
+    class_ids = [requested_class_id] if requested_class_id in my_class_ids else my_class_ids
+    if not class_ids:
+        return jsonify({"error": "ما عندك فصول"}), 400
+    students = (
+        supabase_admin.table("profiles").select("user_id").eq("role", "student").in_("class_id", class_ids).execute()
+    ).data
+    for s in students:
+        _create_notification(s["user_id"], "broadcast", "📢 رسالة من معلمك", body, sender_id=request.user_id)
+    return jsonify({"ok": True, "sent_to": len(students)}), 200
+
+
+# ---------- الحضور اليدوي (يسجّله المعلم مرة لكل حصة/يوم) ----------
+@app.route("/api/teacher/attendance/manual", methods=["GET"])
+@require_role("teacher")
+def get_manual_attendance():
+    class_id = request.args.get("class_id")
+    date = request.args.get("date")
+    if not class_id or not date:
+        return jsonify({"error": "لازم class_id وdate"}), 400
+    owns = (
+        supabase_admin.table("classes").select("id").eq("id", class_id).eq("teacher_id", request.user_id)
+        .limit(1).execute()
+    ).data
+    if not owns:
+        return jsonify({"error": "الفصل مو تابع لك"}), 403
+    rows = (
+        supabase_admin.table("manual_attendance").select("student_id, status")
+        .eq("class_id", class_id).eq("session_date", date).execute()
+    ).data
+    return jsonify({"records": rows}), 200
+
+
+@app.route("/api/teacher/attendance/manual", methods=["POST"])
+@require_role("teacher")
+def save_manual_attendance():
+    data = request.get_json(silent=True) or {}
+    class_id = data.get("class_id")
+    date = data.get("date")
+    records = data.get("records") or []
+    if not class_id or not date or not records:
+        return jsonify({"error": "لازم class_id وdate وقائمة الحضور"}), 400
+    owns = (
+        supabase_admin.table("classes").select("id").eq("id", class_id).eq("teacher_id", request.user_id)
+        .limit(1).execute()
+    ).data
+    if not owns:
+        return jsonify({"error": "الفصل مو تابع لك"}), 403
+
+    rows = [
+        {
+            "class_id": class_id,
+            "student_id": r["student_id"],
+            "session_date": date,
+            "status": r["status"],
+            "recorded_by": request.user_id,
+            "recorded_at": datetime.now(timezone.utc).isoformat(),
+        }
+        for r in records
+        if r.get("student_id") and r.get("status") in ("present", "absent", "late")
+    ]
+    if rows:
+        supabase_admin.table("manual_attendance").upsert(rows, on_conflict="class_id,student_id,session_date").execute()
+    return jsonify({"ok": True, "saved": len(rows)}), 200
+
+
+# ---------- حلقة خلفية: تذكير قبل الحصة بنص ساعة ----------
+def _check_schedule_reminders_once(now=None):
+    """جولة فحص وحدة - دالة مستقلة (مو حلقة) عشان تُختبر مباشرة بوقت معطى
+    بدل انتظار حقيقي بالاختبارات. day_of_week بالجدول: 0=الأحد..6=السبت،
+    بينما Python weekday(): 0=الاثنين..6=الأحد، فلازم تحويل."""
+    now = now or _riyadh_now()
+    today_str = now.date().isoformat()
+    window_end = (now + timedelta(minutes=30)).time()
+    python_weekday_to_schedule = {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 0}
+    today_schedule_day = python_weekday_to_schedule[now.weekday()]
+
+    schedule_rows = (
+        supabase_admin.table("class_schedule").select("id, class_id, day_of_week, start_time, subject")
+        .eq("day_of_week", today_schedule_day).execute()
+    ).data
+
+    for row in schedule_rows:
+        start_time = datetime.strptime(row["start_time"], "%H:%M:%S").time() if len(row["start_time"]) > 5 \
+            else datetime.strptime(row["start_time"], "%H:%M").time()
+        if not (now.time() <= start_time <= window_end):
+            continue
+
+        # ندّعي (claim) صف الحارس أول قبل أي إرسال - القيد الفريد
+        # (schedule_id, sent_date) يمنع تكرار الإرسال لو أكثر من عملية
+        # عمّال (worker) شغّالة بنفس الوقت، بدل ما نتأكد من عدم وجوده بس ثم نرسل
+        try:
+            supabase_admin.table("schedule_reminders_sent").insert(
+                {"schedule_id": row["id"], "sent_date": today_str}
+            ).execute()
+        except Exception:
+            continue  # صف موجود أصلًا (اتُرسل التذكير قبل) - نتخطى
+
+        cls = supabase_admin.table("classes").select("name, teacher_id").eq("id", row["class_id"]).limit(1).execute().data
+        if not cls:
+            continue
+        class_name = cls[0]["name"]
+        teacher_id = cls[0].get("teacher_id")
+        title = "⏰ تذكير: حصة بعد نص ساعة"
+        body = f"حصة {row.get('subject') or class_name} تبدأ الساعة {row['start_time']}"
+
+        if teacher_id:
+            _create_notification(teacher_id, "schedule_reminder", title, body, class_id=row["class_id"])
+        students = (
+            supabase_admin.table("profiles").select("user_id").eq("role", "student")
+            .eq("class_id", row["class_id"]).execute()
+        ).data
+        for s in students:
+            _create_notification(s["user_id"], "schedule_reminder", title, body, class_id=row["class_id"])
+
+
+def schedule_reminder_loop():
+    while True:
+        try:
+            if supabase_admin is not None:
+                _check_schedule_reminders_once()
+        except Exception:
+            pass
+        socketio.sleep(60)
+
+
+# نطلق الحلقة مرة وحدة بس عند إقلاع التطبيق الفعلي. بوضع debug المحلي، Flask
+# يشغّل السكربت مرتين: العملية الأصلية (بدون WERKZEUG_RUN_MAIN - ما تخدم أي
+# طلب فعليًا، بس تراقب وتعيد تشغيل عملية فرعية) والعملية الفرعية (اللي فيها
+# WERKZEUG_RUN_MAIN="true" وهي اللي فعليًا تشغّل السيرفر). نبدأ الحلقة في كل
+# حالة إلا العملية الأصلية بالذات (القيمة موجودة لكنها مو "true")
+_werkzeug_run_main = os.environ.get("WERKZEUG_RUN_MAIN")
+if supabase_admin is not None and _werkzeug_run_main in (None, "true"):
+    socketio.start_background_task(schedule_reminder_loop)
 
 
 if __name__ == "__main__":

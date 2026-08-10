@@ -716,6 +716,10 @@
   .sidebar-btn:hover { background: var(--paper-dim); }
   .sidebar-btn .sidebar-icon { font-size: 16px; }
   .sidebar-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 6px; padding-top: 14px; }
+  .unread-badge {
+    background: #d9453f; color: #fff; border-radius: 999px; font-size: 11px;
+    font-weight: 700; padding: 1px 7px; margin-inline-start: auto; line-height: 1.5;
+  }
 
   body { padding-left: var(--sidebar-width); }
 
@@ -927,6 +931,7 @@
   <div class="sidebar-logo">ذكيّ</div>
   <nav class="sidebar-nav">
     <button class="sidebar-btn" id="homeBtn"><span class="sidebar-icon">🏠</span><span class="label" data-i18n="nav_home">الرئيسية</span></button>
+    <button class="sidebar-btn" id="messagesBtn"><span class="sidebar-icon">💬</span><span class="label" data-i18n="nav_messages">الرسائل</span><span class="unread-badge hidden" id="messagesUnreadBadge">0</span></button>
     <button class="sidebar-btn" id="performanceBtn"><span class="sidebar-icon">📊</span><span class="label" data-i18n="nav_performance">أدائي</span></button>
     <button class="sidebar-btn" id="archiveBtn"><span class="sidebar-icon">📂</span><span class="label" data-i18n="nav_archive">الأرشيف</span></button>
     <button class="sidebar-btn" id="friendsBtn"><span class="sidebar-icon">👥</span><span class="label" data-i18n="nav_friends">الأصدقاء</span></button>
@@ -1108,6 +1113,13 @@
           <tbody id="schoolTeachersTableBody"></tbody>
         </table>
       </div>
+
+      <h3 class="sub-heading" data-i18n="broadcast_teachers_heading">📢 رسالة جماعية لكل معلمي المدرسة</h3>
+      <textarea id="schoolBroadcastInput" class="text-input" rows="3" placeholder="اكتب رسالتك هنا..." data-i18n-ph="ph_broadcast_body" style="width:100%; resize:vertical; font-family:inherit;"></textarea>
+      <div class="actions" style="margin-top:8px;">
+        <button class="primary" id="schoolBroadcastBtn" data-i18n="btn_send_broadcast">إرسال للجميع</button>
+      </div>
+      <div id="schoolBroadcastError"></div>
     </div>
 
     <div id="schoolTab-classes" class="school-tab-panel hidden">
@@ -1216,6 +1228,13 @@
           <tbody id="teacherRosterTableBody"></tbody>
         </table>
       </div>
+
+      <h3 class="sub-heading" data-i18n="broadcast_students_heading">📢 رسالة جماعية لطلاب الفصل المختار</h3>
+      <textarea id="teacherBroadcastInput" class="text-input" rows="3" placeholder="اكتب رسالتك هنا..." data-i18n-ph="ph_broadcast_body" style="width:100%; resize:vertical; font-family:inherit;"></textarea>
+      <div class="actions" style="margin-top:8px;">
+        <button class="primary" id="teacherBroadcastBtn" data-i18n="btn_send_broadcast">إرسال للجميع</button>
+      </div>
+      <div id="teacherBroadcastError"></div>
     </div>
     <div id="teacherTab-performance" class="teacher-tab-panel hidden">
       <div class="data-table-wrap">
@@ -1235,6 +1254,11 @@
       <div class="data-table-wrap" id="teacherScheduleWrap"></div>
     </div>
     <div id="teacherTab-attendance" class="teacher-tab-panel hidden">
+      <h3 class="sub-heading" style="margin-top:0;" data-i18n="manual_attendance_heading">📋 تسجيل حضور اليوم</h3>
+      <input type="date" id="manualAttendanceDate" class="text-input" style="max-width:180px; margin-bottom:10px;">
+      <div id="manualAttendanceFormWrap"></div>
+
+      <h3 class="sub-heading" data-i18n="auto_attendance_heading">🔗 الحضور التلقائي (من الانضمام للكلاس المباشر)</h3>
       <div class="data-table-wrap">
         <table class="data-table">
           <thead><tr><th data-i18n="th_student">الطالب</th><th data-i18n="th_join_time">وقت الانضمام</th></tr></thead>
@@ -1256,6 +1280,38 @@
     <span class="step-label" data-i18n="student_schedule_label">🗓️ جدولي</span>
     <h2 data-i18n="student_schedule_heading">جدول حصصي</h2>
     <div class="data-table-wrap" id="studentScheduleWrap"></div>
+  </section>
+
+  <!-- الرسائل والتنبيهات - محادثات ثنائية مع أي مستخدم + تنبيهات (رسالة
+       جديدة/بث جماعي/تذكير حصة/بدء حصة) -->
+  <section class="card hidden" id="step-messages">
+    <span class="step-label" data-i18n="messages_label">💬 الرسائل</span>
+    <h2 data-i18n="messages_heading">الرسائل والتنبيهات</h2>
+
+    <div class="role-tabs">
+      <button class="role-tab active" data-msg-tab="conversations" data-i18n="tab_conversations">💬 المحادثات</button>
+      <button class="role-tab" data-msg-tab="notifications" data-i18n="tab_notifications">🔔 التنبيهات</button>
+    </div>
+
+    <div id="msgTab-conversations" class="msg-tab-panel">
+      <input type="text" id="newConversationSearch" class="text-input" placeholder="ابحث باسم مستخدم لبدء محادثة" data-i18n-ph="ph_search_username" style="margin-bottom:10px;">
+      <div id="newConversationResults"></div>
+
+      <div id="conversationsList"></div>
+
+      <div id="activeThreadBox" class="hidden" style="margin-top:16px; border-top:1px solid var(--line); padding-top:14px;">
+        <h3 class="sub-heading" id="activeThreadTitle" style="margin-top:0;"></h3>
+        <div class="chat-messages" id="threadMessages"></div>
+        <div class="actions">
+          <input type="text" id="threadInput" class="text-input" placeholder="اكتب رسالة..." data-i18n-ph="ph_chat_message">
+          <button class="ghost" id="threadSendBtn" data-i18n="btn_send">إرسال</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="msgTab-notifications" class="msg-tab-panel hidden">
+      <div id="notificationsList"></div>
+    </div>
   </section>
 
   <!-- لوحة تحليل الأداء (تظهر بأي وقت للمسجّلين عبر زر "📊 أدائي") -->
@@ -2045,6 +2101,31 @@ const I18N = {
     force_pw_heading: 'لازم تغيّر كلمة السر أول',
     force_pw_desc: 'حسابك انسوى بكلمة سر مؤقتة - اختر كلمة سر جديدة تعرفها بس قبل ما تكمل',
     nav_my_schedule: 'جدولي',
+    nav_messages: 'الرسائل',
+    messages_label: '💬 الرسائل',
+    messages_heading: 'الرسائل والتنبيهات',
+    tab_conversations: '💬 المحادثات',
+    tab_notifications: '🔔 التنبيهات',
+    ph_search_username: 'ابحث باسم مستخدم لبدء محادثة',
+    no_conversations_yet: 'ما فيه محادثات بعد - ابحث باسم مستخدم فوق عشان تبدأ وحدة',
+    you_label: 'أنت',
+    btn_message: 'راسله',
+    no_users_found: 'ما فيه نتائج',
+    no_notifications_yet: 'ما فيه تنبيهات بعد',
+    btn_start_now: '🖍️ ابدأ الحصة الآن',
+    broadcast_teachers_heading: '📢 رسالة جماعية لكل معلمي المدرسة',
+    broadcast_students_heading: '📢 رسالة جماعية لطلاب الفصل المختار',
+    ph_broadcast_body: 'اكتب رسالتك هنا...',
+    btn_send_broadcast: 'إرسال للجميع',
+    err_broadcast_body_required: 'لازم تكتب نص الرسالة',
+    broadcast_sent_msg: '✅ وصلت لـ {n} حساب',
+    manual_attendance_heading: '📋 تسجيل حضور اليوم',
+    auto_attendance_heading: '🔗 الحضور التلقائي (من الانضمام للكلاس المباشر)',
+    attendance_status_present: 'حاضر',
+    attendance_status_late: 'متأخر',
+    attendance_status_absent: 'غايب',
+    btn_save_attendance: 'حفظ الحضور',
+    attendance_saved_msg: '✅ تم حفظ الحضور',
     err_school_fields_required: 'لازم اسم المدرسة وإيميل مدير المدرسة',
     err_teacher_fields_required: 'لازم اسم المعلم وإيميله',
     err_class_name_required: 'لازم اسم الفصل',
@@ -2436,6 +2517,31 @@ const I18N = {
     force_pw_heading: 'You need to change your password first',
     force_pw_desc: 'Your account was created with a temporary password - choose a new one only you know before continuing',
     nav_my_schedule: 'My Schedule',
+    nav_messages: 'Messages',
+    messages_label: '💬 Messages',
+    messages_heading: 'Messages & Notifications',
+    tab_conversations: '💬 Conversations',
+    tab_notifications: '🔔 Notifications',
+    ph_search_username: 'Search by username to start a conversation',
+    no_conversations_yet: 'No conversations yet - search a username above to start one',
+    you_label: 'You',
+    btn_message: 'Message',
+    no_users_found: 'No results',
+    no_notifications_yet: 'No notifications yet',
+    btn_start_now: '🖍️ Start the Class Now',
+    broadcast_teachers_heading: '📢 Broadcast to All School Teachers',
+    broadcast_students_heading: '📢 Broadcast to the Selected Class',
+    ph_broadcast_body: 'Write your message here...',
+    btn_send_broadcast: 'Send to All',
+    err_broadcast_body_required: 'Message text is required',
+    broadcast_sent_msg: '✅ Sent to {n} account(s)',
+    manual_attendance_heading: "📋 Take Today's Attendance",
+    auto_attendance_heading: '🔗 Automatic Attendance (from joining the live class)',
+    attendance_status_present: 'Present',
+    attendance_status_late: 'Late',
+    attendance_status_absent: 'Absent',
+    btn_save_attendance: 'Save Attendance',
+    attendance_saved_msg: '✅ Attendance saved',
     err_school_fields_required: 'School name and admin email are required',
     err_teacher_fields_required: "Teacher's name and email are required",
     err_class_name_required: 'Class name is required',
@@ -2691,6 +2797,7 @@ const TOP_LEVEL_SCREENS = [
   // لوحات نظام إدارة حسابات المدارس - step-force-password-change مو من ضمنها
   // عمدًا (بوابة صلبة، ما تدخل نظام الرجوع/التنقل العادي)
   'step-admin-dashboard', 'step-school-dashboard', 'step-teacher-dashboard', 'step-student-schedule',
+  'step-messages',
 ];
 const BACK_BUTTON_HIDDEN_ON = ['mode-select', 'login-form', 'signup-form', 'step-quiz'];
 let navHistory = [];
@@ -2845,6 +2952,10 @@ function onAuthSuccess(session) {
   currentUserEmail = session.user.email;
   currentUserId = session.user.id;
   currentUserPhone = session.user.user_metadata?.phone || '';
+
+  // السوكيت أصلًا متصل من قبل الدخول (كضيف) - حدث 'connect' ما يعيد الإطلاق
+  // لمجرد ما صار عندنا توكن الحين، فلازم نسجّل الهوية هنا صراحة
+  socket.emit('register_user', { token: currentAccessToken });
 
   // لو الحساب عنده تفضيل لغة محفوظ (من جهاز ثاني مثلًا) وما فيه اختيار محلي
   // بهالمتصفح بعد، نطبّقه - عشان تفضيل اللغة يرافق الحساب مو بس الجهاز
@@ -3068,7 +3179,7 @@ const ACCOUNT_SCREENS = ['step-performance', 'step-archive', 'step-friends', 'st
 function showAccountScreen(id) {
   ['login-form', 'signup-form', 'step-force-password-change', 'mode-select', 'room-mode-select', 'room-create-form',
    'room-join-form', 'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary', 'step-quiz',
-   'step-admin-dashboard', 'step-school-dashboard', 'step-teacher-dashboard', 'step-student-schedule',
+   'step-admin-dashboard', 'step-school-dashboard', 'step-teacher-dashboard', 'step-student-schedule', 'step-messages',
    ...ACCOUNT_SCREENS]
     .forEach(hide);
   show(id);
@@ -4103,6 +4214,11 @@ socket.on('join_error', data => showError(joinErrorTarget, data.error));
 socket.on('connect', () => {
   if (currentRoomCode) {
     socket.emit('join_room', { room_code: currentRoomCode, name: myName, client_id: clientId, token: currentAccessToken });
+  }
+  // نربط هذا الاتصال بحساب المستخدم (لو مسجّل دخول) عشان يستلم تنبيهاته
+  // اللحظية بأي مكان بالموقع - يشمل إعادة الاتصال بعد انقطاع نت
+  if (currentAccessToken) {
+    socket.emit('register_user', { token: currentAccessToken });
   }
 });
 
@@ -6104,8 +6220,12 @@ document.querySelectorAll('#step-teacher-dashboard .role-tab').forEach(tabBtn =>
     document.querySelectorAll('#step-teacher-dashboard .teacher-tab-panel').forEach(p => p.classList.add('hidden'));
     document.getElementById(`teacherTab-${tabBtn.dataset.tab}`).classList.remove('hidden');
     if (tabBtn.dataset.tab === 'schedule') renderTeacherSchedule();
-    else if (tabBtn.dataset.tab === 'attendance') renderTeacherAttendance();
-    else if (tabBtn.dataset.tab === 'performance') renderTeacherPerformance();
+    else if (tabBtn.dataset.tab === 'attendance') {
+      renderTeacherAttendance();
+      const dateInput = document.getElementById('manualAttendanceDate');
+      if (!dateInput.value) dateInput.value = new Date().toISOString().slice(0, 10);
+      loadManualAttendanceForm();
+    } else if (tabBtn.dataset.tab === 'performance') renderTeacherPerformance();
   });
 });
 
@@ -6275,6 +6395,254 @@ document.getElementById('studentScheduleNavBtn').addEventListener('click', async
     wrap.innerHTML = `<p class="desc">${escapeHtml(e.message)}</p>`;
   }
 });
+
+// ============================================================================
+// ---------- الرسائل + التنبيهات ----------
+// ============================================================================
+
+let activeThreadUserId = null;
+
+async function refreshUnreadBadge() {
+  if (!currentAccessToken) return;
+  try {
+    const data = await apiCall('GET', '/api/notifications');
+    const badge = document.getElementById('messagesUnreadBadge');
+    if (data.unread_count > 0) {
+      badge.textContent = data.unread_count > 99 ? '99+' : data.unread_count;
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
+  } catch { /* غير حرج */ }
+}
+socket.on('new_notification', () => refreshUnreadBadge());
+
+document.getElementById('messagesBtn').addEventListener('click', () => {
+  if (!requireAuthOrPrompt()) return;
+  pushNavSnapshot();
+  TOP_LEVEL_SCREENS.forEach(hide);
+  hide('login-form'); hide('signup-form');
+  show('sidebar');
+  show('step-messages');
+  updateGlobalBackButton();
+  loadConversations();
+  loadNotifications();
+});
+
+document.querySelectorAll('#step-messages .role-tab').forEach(tabBtn => {
+  tabBtn.addEventListener('click', () => {
+    document.querySelectorAll('#step-messages .role-tab').forEach(b => b.classList.remove('active'));
+    tabBtn.classList.add('active');
+    document.querySelectorAll('#step-messages .msg-tab-panel').forEach(p => p.classList.add('hidden'));
+    document.getElementById(`msgTab-${tabBtn.dataset.msgTab}`).classList.remove('hidden');
+    if (tabBtn.dataset.msgTab === 'notifications') loadNotifications();
+  });
+});
+
+async function loadConversations() {
+  const list = document.getElementById('conversationsList');
+  list.innerHTML = t('loading');
+  try {
+    const data = await apiCall('GET', '/api/messages/conversations');
+    if (!data.conversations.length) { list.innerHTML = `<p class="desc">${t('no_conversations_yet')}</p>`; return; }
+    list.innerHTML = data.conversations.map(c => `
+      <div class="friend-row" data-open-thread="${c.user_id}" data-username="${escapeHtml(c.username)}" style="cursor:pointer;">
+        <div>
+          <div style="font-weight:700;">${escapeHtml(c.username)}${c.unread_count ? ` <span class="unread-badge">${c.unread_count}</span>` : ''}</div>
+          <div class="desc" style="margin:2px 0 0;">${escapeHtml((c.last_message || '').slice(0, 60))}</div>
+        </div>
+      </div>
+    `).join('');
+    list.querySelectorAll('[data-open-thread]').forEach(row => {
+      row.addEventListener('click', () => openThread(row.dataset.openThread, row.dataset.username));
+    });
+  } catch (e) {
+    list.innerHTML = `<p class="desc">${escapeHtml(e.message)}</p>`;
+  }
+}
+
+async function openThread(userId, username) {
+  activeThreadUserId = userId;
+  document.getElementById('activeThreadBox').classList.remove('hidden');
+  document.getElementById('activeThreadTitle').textContent = username;
+  const container = document.getElementById('threadMessages');
+  container.innerHTML = '';
+  try {
+    const data = await apiCall('GET', `/api/messages/thread/${userId}`);
+    data.messages.forEach(m => {
+      appendChatBubble('threadMessages', m.sender_id === currentUserId ? t('you_label') : username, m.body,
+        m.sender_id === currentUserId ? 'me' : 'other');
+    });
+    refreshUnreadBadge();
+    loadConversations();
+  } catch (e) {
+    showError('threadInput', e.message);
+  }
+}
+
+async function sendThreadMessage() {
+  const input = document.getElementById('threadInput');
+  const body = input.value.trim();
+  if (!body || !activeThreadUserId) return;
+  input.value = '';
+  try {
+    await apiCall('POST', '/api/messages/send', { recipient_id: activeThreadUserId, body });
+    appendChatBubble('threadMessages', t('you_label'), body, 'me');
+    loadConversations();
+  } catch (e) {
+    alert(e.message);
+  }
+}
+document.getElementById('threadSendBtn').addEventListener('click', sendThreadMessage);
+document.getElementById('threadInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendThreadMessage(); });
+
+let searchDebounceId = null;
+document.getElementById('newConversationSearch').addEventListener('input', () => {
+  clearTimeout(searchDebounceId);
+  const q = document.getElementById('newConversationSearch').value.trim();
+  const results = document.getElementById('newConversationResults');
+  if (!q) { results.innerHTML = ''; return; }
+  searchDebounceId = setTimeout(async () => {
+    try {
+      const data = await apiCall('GET', `/api/friends/search?q=${encodeURIComponent(q)}`);
+      results.innerHTML = data.results.map(u => `
+        <div class="friend-row" data-start-thread="${u.user_id}" data-username="${escapeHtml(u.username)}" style="cursor:pointer;">
+          <div style="font-weight:600;">${escapeHtml(u.username)}</div>
+          <span class="link-btn">${t('btn_message')}</span>
+        </div>
+      `).join('') || `<p class="desc">${t('no_users_found')}</p>`;
+      results.querySelectorAll('[data-start-thread]').forEach(row => {
+        row.addEventListener('click', () => {
+          document.getElementById('newConversationSearch').value = '';
+          results.innerHTML = '';
+          openThread(row.dataset.startThread, row.dataset.username);
+        });
+      });
+    } catch { /* غير حرج */ }
+  }, 300);
+});
+
+const NOTIF_ICONS = { new_message: '💬', broadcast: '📢', schedule_reminder: '⏰', class_started: '🖍️' };
+async function loadNotifications() {
+  const list = document.getElementById('notificationsList');
+  list.innerHTML = t('loading');
+  try {
+    const data = await apiCall('GET', '/api/notifications');
+    if (!data.notifications.length) { list.innerHTML = `<p class="desc">${t('no_notifications_yet')}</p>`; return; }
+    list.innerHTML = data.notifications.map(n => `
+      <div class="friend-row" style="align-items:flex-start; ${n.read_at ? '' : 'border-color:var(--teal);'}">
+        <div>
+          <div style="font-weight:700;">${NOTIF_ICONS[n.type] || '🔔'} ${escapeHtml(n.title)}</div>
+          ${n.body ? `<div class="desc" style="margin:4px 0;">${escapeHtml(n.body)}</div>` : ''}
+          <div class="desc" style="font-size:12px;">${new Date(n.created_at).toLocaleString(currentLang === 'ar' ? 'ar' : 'en')}</div>
+          ${n.type === 'schedule_reminder' && n.related_class_id
+            ? `<button class="ghost" data-start-class-now="${n.related_class_id}" style="padding:4px 10px; margin-top:6px;">${t('btn_start_now')}</button>`
+            : ''}
+        </div>
+      </div>
+    `).join('');
+    list.querySelectorAll('[data-start-class-now]').forEach(btn => {
+      btn.addEventListener('click', () => goToTeacherClassAndStart(btn.dataset.startClassNow));
+    });
+    apiCall('POST', '/api/notifications/mark-read', {}).then(refreshUnreadBadge).catch(() => {});
+  } catch (e) {
+    list.innerHTML = `<p class="desc">${escapeHtml(e.message)}</p>`;
+  }
+}
+
+// من إشعار تذكير الحصة - يوديك للوحة المعلم، يختار الفصل تلقائيًا، ويبدأ
+// الدرس المباشر بنفس زر teacherStartClassBtn الموجود
+function goToTeacherClassAndStart(classId) {
+  routeByRole('teacher');
+  setTimeout(() => {
+    const select = document.getElementById('teacherClassSelect');
+    if ([...select.options].some(o => o.value === classId)) select.value = classId;
+    document.getElementById('teacherStartClassBtn').click();
+  }, 400);
+}
+
+// ---------- بث جماعي: مدير مدرسة لمعلميه ----------
+document.getElementById('schoolBroadcastBtn')?.addEventListener('click', async () => {
+  const body = document.getElementById('schoolBroadcastInput').value.trim();
+  clearError('schoolBroadcastError');
+  if (!body) { showError('schoolBroadcastError', t('err_broadcast_body_required')); return; }
+  try {
+    const res = await apiCall('POST', '/api/school/broadcast', { body });
+    document.getElementById('schoolBroadcastInput').value = '';
+    showError('schoolBroadcastError', t('broadcast_sent_msg', { n: res.sent_to }));
+  } catch (e) {
+    showError('schoolBroadcastError', e.message);
+  }
+});
+
+// ---------- بث جماعي: معلم لطلاب فصله ----------
+document.getElementById('teacherBroadcastBtn')?.addEventListener('click', async () => {
+  const body = document.getElementById('teacherBroadcastInput').value.trim();
+  const class_id = document.getElementById('teacherClassSelect').value || undefined;
+  clearError('teacherBroadcastError');
+  if (!body) { showError('teacherBroadcastError', t('err_broadcast_body_required')); return; }
+  try {
+    const res = await apiCall('POST', '/api/teacher/broadcast', { body, class_id });
+    document.getElementById('teacherBroadcastInput').value = '';
+    showError('teacherBroadcastError', t('broadcast_sent_msg', { n: res.sent_to }));
+  } catch (e) {
+    showError('teacherBroadcastError', e.message);
+  }
+});
+
+// ---------- الحضور اليدوي (يسجّله المعلم) ----------
+document.getElementById('manualAttendanceDate')?.addEventListener('change', loadManualAttendanceForm);
+document.getElementById('teacherClassSelect').addEventListener('change', () => {
+  if (document.querySelector('#step-teacher-dashboard .role-tab.active')?.dataset.tab === 'attendance') {
+    loadManualAttendanceForm();
+  }
+});
+
+async function loadManualAttendanceForm() {
+  const wrap = document.getElementById('manualAttendanceFormWrap');
+  const classId = document.getElementById('teacherClassSelect').value;
+  const date = document.getElementById('manualAttendanceDate').value;
+  if (!classId || !date) { wrap.innerHTML = `<p class="desc">${t('err_pick_class_first')}</p>`; return; }
+  wrap.innerHTML = t('loading');
+  try {
+    const [rosterData, existingData] = await Promise.all([
+      apiCall('GET', '/api/teacher/roster'),
+      apiCall('GET', `/api/teacher/attendance/manual?class_id=${classId}&date=${date}`),
+    ]);
+    const students = rosterData.students.filter(s => s.class_id === classId);
+    const existing = {};
+    existingData.records.forEach(r => { existing[r.student_id] = r.status; });
+    if (!students.length) { wrap.innerHTML = `<p class="desc">${t('teacher_no_students')}</p>`; return; }
+    wrap.innerHTML = students.map(s => `
+      <div class="friend-row">
+        <div style="font-weight:600;">${escapeHtml(s.username)}</div>
+        <div class="actions" style="gap:6px;">
+          ${['present', 'late', 'absent'].map(st => `
+            <label style="display:flex; align-items:center; gap:4px; font-size:13px; cursor:pointer;">
+              <input type="radio" name="att-${s.user_id}" value="${st}" ${existing[s.user_id] === st || (!existing[s.user_id] && st === 'present') ? 'checked' : ''}>
+              ${t('attendance_status_' + st)}
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `).join('') + `<button class="primary" id="saveManualAttendanceBtn" style="margin-top:10px;">${t('btn_save_attendance')}</button>`;
+
+    document.getElementById('saveManualAttendanceBtn').addEventListener('click', async () => {
+      const records = students.map(s => ({
+        student_id: s.user_id,
+        status: document.querySelector(`input[name="att-${s.user_id}"]:checked`)?.value || 'present',
+      }));
+      try {
+        await apiCall('POST', '/api/teacher/attendance/manual', { class_id: classId, date, records });
+        alert(t('attendance_saved_msg'));
+      } catch (e) {
+        alert(e.message);
+      }
+    });
+  } catch (e) {
+    wrap.innerHTML = `<p class="desc">${escapeHtml(e.message)}</p>`;
+  }
+}
 </script>
 </body>
 </html>

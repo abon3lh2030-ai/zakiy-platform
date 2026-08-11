@@ -1138,6 +1138,29 @@
       </div>
       <div id="schoolTeachersResult" class="credential-reveal hidden"></div>
 
+      <!-- إداريو المدرسة (school_administration) - نفس صلاحيات مدير المدرسة
+           على المعلمين/الطلاب/الحضور، إلا إدارة حساب مدير/إداري ثاني. زر
+           الإضافة يُخفى لحساب إداري (يشوف القائمة بس، ما يضيف/يحذف) -->
+      <h3 class="sub-heading" style="margin-top:22px;" data-i18n="admin_staff_heading">🧑‍💼 إداريو المدرسة</h3>
+      <div class="actions" style="flex-wrap:wrap;" id="addAdministrationForm">
+        <input type="text" id="newAdminName" class="text-input" placeholder="اسم الإداري" data-i18n-ph="ph_admin_staff_name">
+        <input type="email" id="newAdminEmail" class="text-input" placeholder="إيميل الإداري" data-i18n-ph="ph_admin_staff_email">
+        <button class="primary" id="addAdministrationBtn" data-i18n="btn_add_admin_staff">إضافة إداري</button>
+      </div>
+      <div id="addAdministrationError"></div>
+      <div id="addAdministrationResult" class="credential-reveal hidden"></div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th data-i18n="th_name">الاسم</th>
+            <th data-i18n="th_last_login">آخر دخول</th>
+            <th data-i18n="th_actions">إجراء</th>
+          </tr></thead>
+          <tbody id="schoolAdministrationTableBody"></tbody>
+        </table>
+      </div>
+      <div id="schoolAdministrationResult" class="credential-reveal hidden"></div>
+
       <h3 class="sub-heading" data-i18n="broadcast_teachers_heading">📢 رسالة جماعية لكل معلمي المدرسة</h3>
       <textarea id="schoolBroadcastInput" class="text-input" rows="3" placeholder="اكتب رسالتك هنا..." data-i18n-ph="ph_broadcast_body" style="width:100%; resize:vertical; font-family:inherit;"></textarea>
       <div class="actions" style="margin-top:8px;">
@@ -2232,6 +2255,10 @@ const I18N = {
     ph_teacher_name: 'اسم المعلم', ph_teacher_email: 'إيميل المعلم', btn_add_teacher: 'إضافة معلم',
     school_no_teachers: 'ما فيه معلمين مضافين بعد',
     school_teacher_created_msg: '✅ تم إضافة المعلم "{name}" - بيانات دخوله (تظهر مرة وحدة بس، احفظها الحين):',
+    admin_staff_heading: '🧑‍💼 إداريو المدرسة',
+    ph_admin_staff_name: 'اسم الإداري', ph_admin_staff_email: 'إيميل الإداري', btn_add_admin_staff: 'إضافة إداري',
+    school_no_admin_staff: 'ما فيه إداريين مضافين بعد',
+    school_admin_staff_created_msg: '✅ تم إضافة الإداري "{name}" - بيانات دخوله (تظهر مرة وحدة بس، احفظها الحين):',
     reset_password_result_msg: '✅ كلمة السر الجديدة لـ "{name}" (تظهر مرة وحدة بس، احفظها الحين):',
     ph_class_name: 'اسم الفصل', btn_add_class: 'إضافة فصل', school_no_classes: 'ما فيه فصول مضافة بعد',
     schedule_heading: '🗓️ جدول الحصص', ph_subject: 'المادة', btn_add_schedule: 'إضافة حصة',
@@ -2669,6 +2696,10 @@ const I18N = {
     ph_teacher_name: "Teacher's name", ph_teacher_email: "Teacher's email", btn_add_teacher: 'Add Teacher',
     school_no_teachers: 'No teachers added yet',
     school_teacher_created_msg: '✅ Teacher "{name}" added - their login (shown once, save it now):',
+    admin_staff_heading: '🧑‍💼 School Administrative Staff',
+    ph_admin_staff_name: "Staff member's name", ph_admin_staff_email: "Staff member's email", btn_add_admin_staff: 'Add Staff Member',
+    school_no_admin_staff: 'No administrative staff added yet',
+    school_admin_staff_created_msg: '✅ Staff member "{name}" added - their login (shown once, save it now):',
     reset_password_result_msg: '✅ New password for "{name}" (shown once, save it now):',
     ph_class_name: 'Class name', btn_add_class: 'Add Class', school_no_classes: 'No classes added yet',
     schedule_heading: '🗓️ Class Schedule', ph_subject: 'Subject', btn_add_schedule: 'Add Session',
@@ -6205,8 +6236,53 @@ document.querySelectorAll('#step-school-dashboard .role-tab').forEach(tabBtn => 
 });
 
 async function loadSchoolDashboard() {
-  await Promise.all([loadSchoolInfo(), loadSchoolTeachers(), loadSchoolClasses()]);
+  // زر إضافة إداري محجوز على مدير المدرسة (school_admin) بس - نفس القيد
+  // اللي الباك إند يفرضه أصلًا (إداري ما يقدر يدير حساب مدير/إداري ثاني)
+  document.getElementById('addAdministrationForm').classList.toggle('hidden', currentUserRole !== 'school_admin');
+  await Promise.all([loadSchoolInfo(), loadSchoolTeachers(), loadSchoolAdministration(), loadSchoolClasses()]);
 }
+
+async function loadSchoolAdministration() {
+  const tbody = document.getElementById('schoolAdministrationTableBody');
+  tbody.innerHTML = `<tr><td colspan="3">${t('loading')}</td></tr>`;
+  try {
+    const data = await apiCall('GET', '/api/school/administration');
+    if (!data.administration.length) { tbody.innerHTML = `<tr><td colspan="3">${t('school_no_admin_staff')}</td></tr>`; return; }
+    tbody.innerHTML = data.administration.map(a => `
+      <tr>
+        <td>${escapeHtml(a.username)}</td>
+        <td>${a.last_login ? new Date(a.last_login).toLocaleString(currentLang === 'ar' ? 'ar' : 'en') : t('never_logged_in')}</td>
+        <td>
+          <button class="ghost" data-reset-account-pw="${a.user_id}" style="padding:4px 10px;">${t('btn_reset_password')}</button>
+          ${currentUserRole === 'school_admin' ? `<button class="ghost" data-delete-account="${a.user_id}" style="padding:4px 10px; color:#c0392b;">${t('btn_delete')}</button>` : ''}
+        </td>
+      </tr>
+    `).join('');
+    wireDeleteAccountButtons(tbody, loadSchoolAdministration);
+    wireResetPasswordButtons(tbody, document.getElementById('schoolAdministrationResult'));
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="3">${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+document.getElementById('addAdministrationBtn').addEventListener('click', async () => {
+  clearError('addAdministrationError');
+  const name = document.getElementById('newAdminName').value.trim();
+  const email = document.getElementById('newAdminEmail').value.trim();
+  if (!name || !email) { showError('addAdministrationError', t('err_teacher_fields_required')); return; }
+  try {
+    const data = await apiCall('POST', '/api/school/administration', { name, email });
+    const box = document.getElementById('addAdministrationResult');
+    box.innerHTML = `${t('school_admin_staff_created_msg', { name })}<br>📧 ${escapeHtml(data.email)}<br>🔑 <code>${escapeHtml(data.password)}</code>`;
+    box.classList.remove('hidden');
+    document.getElementById('newAdminName').value = '';
+    document.getElementById('newAdminEmail').value = '';
+    loadSchoolAdministration();
+    loadSchoolInfo();
+  } catch (e) {
+    showError('addAdministrationError', e.message);
+  }
+});
 
 async function loadSchoolInfo() {
   try {

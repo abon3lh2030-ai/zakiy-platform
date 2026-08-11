@@ -2295,6 +2295,71 @@ def school_list_teachers():
     return jsonify({"teachers": result}), 200
 
 
+# ---------- حسابات "إداري المدرسة" (school_administration) ----------
+# نفس صلاحيات مدير المدرسة (school_admin) بالضبط على المعلمين/الطلاب/
+# الحضور، إلا إدارة حسابات مدير/إداري مدرسة ثانية - محجوزة على مدير
+# المدرسة الأصلي بس (نفس القيد المطبّق أصلًا بـ PATCH/DELETE accounts).
+# ملاحظة: الدور موجود بمنطق الصلاحيات وعدّاد استهلاك الحسابات
+# (_school_account_usage) من البداية، بس ما كان فيه أي endpoint فعلي
+# ينشئ حساب بهذا الدور - هذا كان ينقص فعليًا.
+@app.route("/api/school/administration", methods=["POST"])
+@require_role("school_admin")
+def school_add_administration():
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()
+    email = (data.get("email") or "").strip()
+    if not name or not email:
+        return jsonify({"error": "لازم الاسم والإيميل"}), 400
+
+    school_id = request.profile["school_id"]
+    school = supabase_admin.table("schools").select("max_accounts").eq("id", school_id).limit(1).execute().data
+    if not school:
+        return jsonify({"error": "مدرستك غير موجودة"}), 400
+    if _school_account_usage(school_id) >= school[0]["max_accounts"]:
+        return jsonify({"error": "وصلت الحد الأقصى لعدد الحسابات المسموح لمدرستك"}), 400
+
+    temp_password = generate_strong_password()
+    try:
+        created = supabase_admin.auth.admin.create_user(
+            {"email": email, "password": temp_password, "email_confirm": True, "user_metadata": {"username": name}}
+        )
+    except Exception as e:
+        return jsonify({"error": f"فشل إنشاء الحساب: {e}"}), 400
+
+    supabase_admin.table("profiles").upsert(
+        {
+            "user_id": created.user.id,
+            "username": name,
+            "role": "school_administration",
+            "school_id": school_id,
+            "must_change_password": True,
+        }
+    ).execute()
+    return jsonify({"email": email, "password": temp_password, "user_id": created.user.id}), 200
+
+
+@app.route("/api/school/administration", methods=["GET"])
+@require_role("school_admin", "school_administration")
+def school_list_administration():
+    school_id = request.profile["school_id"]
+    rows = (
+        supabase_admin.table("profiles")
+        .select("user_id, username")
+        .eq("school_id", school_id)
+        .eq("role", "school_administration")
+        .execute()
+    ).data
+    result = []
+    for r in rows:
+        try:
+            auth_user = supabase_admin.auth.admin.get_user_by_id(r["user_id"])
+            last_login = auth_user.user.last_sign_in_at
+        except Exception:
+            last_login = None
+        result.append({"user_id": r["user_id"], "username": r["username"], "last_login": str(last_login) if last_login else None})
+    return jsonify({"administration": result}), 200
+
+
 @app.route("/api/school/accounts/<user_id>", methods=["PATCH"])
 @require_role("school_admin", "school_administration")
 def school_update_account(user_id):

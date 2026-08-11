@@ -3049,6 +3049,17 @@ APPLE_PRODUCT_PLAN_MAP = {
     "com.zakiy.ultimate.yearly": ("ultimate", "annual"),
 }
 
+# منتجات Google Play Billing بتطبيق أندرويد -> (باقة، دورة فوترة) - لازم
+# تطابق PlanCatalog.kt / معرّفات المنتجات المُنشأة فعليًا بـ Play Console
+GOOGLE_PRODUCT_PLAN_MAP = {
+    "zakiy_plus_monthly": ("plus", "monthly"),
+    "zakiy_plus_yearly": ("plus", "annual"),
+    "zakiy_pro_monthly": ("pro", "monthly"),
+    "zakiy_pro_yearly": ("pro", "annual"),
+    "zakiy_ultimate_monthly": ("ultimate", "monthly"),
+    "zakiy_ultimate_yearly": ("ultimate", "annual"),
+}
+
 # مفتاح سري مشترك بين الباك إند وسيرفر بوابة الدفع - يوقّع/يثبت هوية طلب
 # webhook تأكيد الدفع (اللي يوصل من سيرفر البوابة مو متصفح المستخدم، فما
 # يقدر يمرر توكن Supabase عادي). خله بمتغير بيئة .env، ونسّقه مع بوابتك
@@ -3231,6 +3242,26 @@ def subscription_apple_verify():
     expires_at = (datetime.now(timezone.utc) + timedelta(days=days)).isoformat()
     supabase_admin.table("profiles").update(
         {"subscription_tier": plan, "subscription_period": period, "subscription_expires_at": expires_at, "subscription_source": "apple"}
+    ).eq("user_id", request.user_id).execute()
+    return jsonify({"tier": plan, "period": period, "expires_at": expires_at}), 200
+
+
+@app.route("/api/subscription/google/verify", methods=["POST"])
+@require_auth
+def subscription_google_verify():
+    """نفس /api/subscription/apple/verify بالضبط، بس لتطبيق أندرويد بعد شراء
+    Google Play Billing ناجح. ملاحظة: تحقق مبسّط يثق بـ product_id المُرسل -
+    لو تبي تحقق خادمي صارم، أضف نداء Google Play Developer API
+    (purchases.subscriptions.get) هنا بدل الثقة المباشرة بالقيمة المُرسلة."""
+    data = request.get_json(silent=True) or {}
+    product_id = data.get("product_id")
+    if product_id not in GOOGLE_PRODUCT_PLAN_MAP:
+        return jsonify({"error": "منتج غير معروف"}), 400
+    plan, period = GOOGLE_PRODUCT_PLAN_MAP[product_id]
+    days = 30 if period == "monthly" else 365
+    expires_at = (datetime.now(timezone.utc) + timedelta(days=days)).isoformat()
+    supabase_admin.table("profiles").update(
+        {"subscription_tier": plan, "subscription_period": period, "subscription_expires_at": expires_at, "subscription_source": "google"}
     ).eq("user_id", request.user_id).execute()
     return jsonify({"tier": plan, "period": period, "expires_at": expires_at}), 200
 

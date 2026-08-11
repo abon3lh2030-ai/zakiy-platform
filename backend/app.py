@@ -2884,6 +2884,185 @@ def save_manual_attendance():
     return jsonify({"ok": True, "saved": len(rows)}), 200
 
 
+# ============================================================================
+# ---------- الاشتراكات (٤ باقات: مجاني/بلس/برو/ألتميت) ----------
+# ============================================================================
+# الأرقام هنا لازم تبقى مطابقة تمامًا لـ ios/Zakiy/Subscriptions/PlanCatalog.swift
+# و UsageLimiter.swift - أي تعديل بالأسعار/الحدود لازم يصير بالمكانين مع بعض.
+SUBSCRIPTION_PLANS = {
+    "free": {
+        "name_ar": "المجاني", "name_en": "Free",
+        "price_monthly": 0, "price_annual": 0,
+        "library_limit": 5, "solo_daily": 3, "group_daily": 1, "lesson_daily": 0,
+        "archive_limit": 8, "performance_limit": 5,
+    },
+    "plus": {
+        "name_ar": "بلس", "name_en": "Plus",
+        "price_monthly": 19.99, "price_annual": 99.99,
+        "library_limit": 20, "solo_daily": 5, "group_daily": 3, "lesson_daily": 1,
+        "archive_limit": 15, "performance_limit": 8,
+    },
+    "pro": {
+        "name_ar": "برو", "name_en": "Pro",
+        "price_monthly": 39.99, "price_annual": 199.99,
+        "library_limit": 30, "solo_daily": 10, "group_daily": 5, "lesson_daily": 3,
+        "archive_limit": 30, "performance_limit": 15,
+    },
+    "ultimate": {
+        "name_ar": "ألتميت", "name_en": "Ultimate",
+        "price_monthly": 59.99, "price_annual": 299.99,
+        "library_limit": 50, "solo_daily": None, "group_daily": None, "lesson_daily": 8,
+        "archive_limit": None, "performance_limit": None,
+    },
+}
+
+# منتجات StoreKit بتطبيق iOS -> (باقة، دورة فوترة) - لازم تطابق ProductID.swift
+APPLE_PRODUCT_PLAN_MAP = {
+    "com.zakiy.plus.monthly": ("plus", "monthly"),
+    "com.zakiy.plus.yearly": ("plus", "annual"),
+    "com.zakiy.pro.monthly": ("pro", "monthly"),
+    "com.zakiy.pro.yearly": ("pro", "annual"),
+    "com.zakiy.ultimate.monthly": ("ultimate", "monthly"),
+    "com.zakiy.ultimate.yearly": ("ultimate", "annual"),
+}
+
+# مفتاح سري مشترك بين الباك إند وسيرفر بوابة الدفع - يوقّع/يثبت هوية طلب
+# webhook تأكيد الدفع (اللي يوصل من سيرفر البوابة مو متصفح المستخدم، فما
+# يقدر يمرر توكن Supabase عادي). خله بمتغير بيئة .env، ونسّقه مع بوابتك
+PAYMENT_GATEWAY_WEBHOOK_SECRET = os.getenv("PAYMENT_GATEWAY_WEBHOOK_SECRET")
+
+
+@app.route("/api/subscription/plans", methods=["GET"])
+def subscription_plans():
+    """كتالوج الباقات - عام، بدون تسجيل دخول (تُستخدم بصفحة الأسعار قبل الدخول برضو)."""
+    return jsonify({"plans": SUBSCRIPTION_PLANS}), 200
+
+
+def _resolve_subscription(profile):
+    """يرجّع الباقة الفعّالة لحساب معيّن. حساب مؤسسي (role موجود - طالب/معلم/
+    إدارة مدرسة) دايمًا بلا حدود بغض النظر عن أي اشتراك شخصي مسجّل له، تماشيًا
+    مع نفس قاعدة UsageLimiter.owner بتطبيق iOS - وصوله محكوم بعضوية مدرسته."""
+    if profile.get("role"):
+        return {"tier": "school", "period": None, "expires_at": None, "unlimited": True}
+
+    tier = profile.get("subscription_tier") or "free"
+    expires_at = profile.get("subscription_expires_at")
+    if tier != "free" and expires_at:
+        try:
+            expiry_dt = datetime.fromisoformat(str(expires_at).replace("Z", "+00:00"))
+            if expiry_dt < datetime.now(timezone.utc):
+                tier = "free"  # انتهت صلاحية الاشتراك - يرجع تلقائيًا للباقة المجانية
+        except Exception:
+            pass
+    return {"tier": tier, "period": profile.get("subscription_period"), "expires_at": expires_at, "unlimited": tier == "ultimate"}
+
+
+@app.route("/api/subscription/me", methods=["GET"])
+@require_auth
+def subscription_me():
+    rows = (
+        supabase_admin.table("profiles")
+        .select("role, subscription_tier, subscription_period, subscription_expires_at")
+        .eq("user_id", request.user_id)
+        .limit(1)
+        .execute()
+    ).data
+    profile = rows[0] if rows else {}
+    resolved = _resolve_subscription(profile)
+    plan_key = resolved["tier"] if resolved["tier"] in SUBSCRIPTION_PLANS else "free"
+    return jsonify({**resolved, "limits": SUBSCRIPTION_PLANS[plan_key]}), 200
+
+
+@app.route("/api/subscription/checkout", methods=["POST"])
+@require_auth
+def subscription_checkout():
+    """ينشئ طلب اشتراك معلّق ويرجّع تفاصيله (المبلغ/الباقة/الدورة) عشان
+    الفرونت إند يبدأ بيها تدفّق بوابة الدفع الفعلي (Moyasar/Tap/PayTabs/إلخ -
+    أي بوابة تختارها). بعد ما الدفع ينجح فعليًا، بوابتك تستدعي
+    /api/subscription/orders/<order_id>/confirm لتفعيل الاشتراك."""
+    data = request.get_json(silent=True) or {}
+    plan = data.get("plan")
+    period = data.get("period")
+    if plan not in SUBSCRIPTION_PLANS or plan == "free":
+        return jsonify({"error": "باقة غير صالحة"}), 400
+    if period not in ("monthly", "annual"):
+        return jsonify({"error": "دورة فوترة غير صالحة (monthly أو annual)"}), 400
+
+    amount = SUBSCRIPTION_PLANS[plan]["price_monthly" if period == "monthly" else "price_annual"]
+    order = (
+        supabase_admin.table("subscription_orders")
+        .insert({"user_id": request.user_id, "plan": plan, "period": period, "amount": amount, "currency": "SAR"})
+        .execute()
+        .data[0]
+    )
+    return jsonify({"order_id": order["id"], "plan": plan, "period": period, "amount": amount, "currency": "SAR"}), 200
+
+
+@app.route("/api/subscription/orders/<order_id>/confirm", methods=["POST"])
+def subscription_confirm_order(order_id):
+    """يستدعيها خادم بوابة الدفع (webhook) بعد نجاح الدفع فعليًا - محمي بمفتاح
+    سري مشترك بالهيدر X-Gateway-Secret بدل توكن مستخدم عادي (اللي يستدعيها
+    سيرفر البوابة، مو متصفح المستخدم نفسه)."""
+    if not PAYMENT_GATEWAY_WEBHOOK_SECRET or request.headers.get("X-Gateway-Secret") != PAYMENT_GATEWAY_WEBHOOK_SECRET:
+        return jsonify({"error": "غير مصرح"}), 403
+
+    rows = supabase_admin.table("subscription_orders").select("*").eq("id", order_id).limit(1).execute().data
+    if not rows:
+        return jsonify({"error": "الطلب غير موجود"}), 404
+    order = rows[0]
+    if order["status"] == "paid":
+        return jsonify({"ok": True, "already_confirmed": True}), 200
+
+    data = request.get_json(silent=True) or {}
+    days = 30 if order["period"] == "monthly" else 365
+    expires_at = (datetime.now(timezone.utc) + timedelta(days=days)).isoformat()
+
+    supabase_admin.table("subscription_orders").update(
+        {"status": "paid", "paid_at": datetime.now(timezone.utc).isoformat(), "gateway_reference": data.get("gateway_reference")}
+    ).eq("id", order_id).execute()
+    supabase_admin.table("profiles").update(
+        {
+            "subscription_tier": order["plan"],
+            "subscription_period": order["period"],
+            "subscription_expires_at": expires_at,
+            "subscription_source": "web",
+        }
+    ).eq("user_id", order["user_id"]).execute()
+    return jsonify({"ok": True}), 200
+
+
+@app.route("/api/subscription/apple/verify", methods=["POST"])
+@require_auth
+def subscription_apple_verify():
+    """يستدعيها تطبيق iOS بعد شراء StoreKit ناجح - يربط الاشتراك بحساب
+    المستخدم بالباك إند (بدل ما يبقى محلي بالجهاز بس، عشان يبقى متزامن لو
+    سجّل دخول من جهاز/منصة ثانية). ملاحظة: هذا تحقق مبسّط يثق بـ product_id
+    المُرسل من التطبيق (StoreKit 2 أصلًا يتحقق من توقيع المعاملة JWS على
+    الجهاز قبل ما توصلنا) - لو تبي تحقق خادمي إضافي صارم، أضف نداء App Store
+    Server API هنا بدل الثقة المباشرة بالقيمة المُرسلة."""
+    data = request.get_json(silent=True) or {}
+    product_id = data.get("product_id")
+    if product_id not in APPLE_PRODUCT_PLAN_MAP:
+        return jsonify({"error": "منتج غير معروف"}), 400
+    plan, period = APPLE_PRODUCT_PLAN_MAP[product_id]
+    days = 30 if period == "monthly" else 365
+    expires_at = (datetime.now(timezone.utc) + timedelta(days=days)).isoformat()
+    supabase_admin.table("profiles").update(
+        {"subscription_tier": plan, "subscription_period": period, "subscription_expires_at": expires_at, "subscription_source": "apple"}
+    ).eq("user_id", request.user_id).execute()
+    return jsonify({"tier": plan, "period": period, "expires_at": expires_at}), 200
+
+
+@app.route("/api/subscription/cancel", methods=["POST"])
+@require_auth
+def subscription_cancel():
+    """إلغاء فوري يرجع للباقة المجانية على طول - نسخة مبسّطة لأول إصدار."""
+    supabase_admin.table("profiles").update(
+        {"subscription_tier": "free", "subscription_period": None, "subscription_expires_at": None, "subscription_source": None}
+    ).eq("user_id", request.user_id).execute()
+    return jsonify({"ok": True}), 200
+
+
 # ---------- حلقة خلفية: تذكير قبل الحصة بنص ساعة ----------
 def _check_schedule_reminders_once(now=None):
     """جولة فحص وحدة - دالة مستقلة (مو حلقة) عشان تُختبر مباشرة بوقت معطى

@@ -908,6 +908,25 @@
     padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 6px; font-size: 14px;
   }
   .profile-archive-row .archive-participant.is-host { font-weight: 800; color: var(--teal); }
+
+  /* ---------- الاشتراكات ---------- */
+  .sub-period-btn.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+  .subscription-plans-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-top: 6px;
+  }
+  .plan-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 16px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .plan-card.current-plan { border-color: var(--teal); border-width: 2px; }
+  .plan-card .plan-name { font-weight: 800; font-size: 16px; }
+  .plan-card .plan-price { font-weight: 800; font-size: 20px; color: var(--teal); }
+  .plan-card .plan-price small { font-weight: 600; font-size: 12px; color: var(--ink-soft); }
+  .plan-card .plan-features { font-size: 13px; color: var(--ink-soft); line-height: 1.8; flex-grow: 1; }
+  .plan-card .plan-current-badge {
+    text-align: center; padding: 8px; border-radius: 8px; background: var(--paper-dim);
+    color: var(--teal); font-weight: 700; font-size: 13px;
+  }
 </style>
 </head>
 <body class="with-sidebar">
@@ -1503,6 +1522,19 @@
         <button class="ghost" id="settingsViewProfileBtn" data-i18n="btn_view_my_profile">👁️ شاهد بروفايلك</button>
       </div>
       <div id="settingsProfileMsg"></div>
+
+      <!-- حسابات مؤسسية (role موجود - طالب/معلم/إدارة مدرسة) وصولها محكوم
+           بعضوية مدرستها، ما تشترك شخصيًا - هذا القسم يُخفى لها بالكامل عبر JS -->
+      <div id="settingsSubscriptionSection">
+        <h3 class="sub-heading" style="margin-top:22px;" data-i18n="settings_subscription_heading">👑 الاشتراك</h3>
+        <p class="desc" id="subscriptionCurrentPlan"></p>
+        <div class="actions" style="margin-bottom:10px;">
+          <button class="ghost sub-period-btn active" data-period="monthly" data-i18n="period_monthly">شهري</button>
+          <button class="ghost sub-period-btn" data-period="annual" data-i18n="period_annual">سنوي</button>
+        </div>
+        <div id="subscriptionPlansGrid" class="subscription-plans-grid"></div>
+        <div id="subscriptionMsg"></div>
+      </div>
     </div>
   </section>
 
@@ -2342,6 +2374,20 @@ const I18N = {
     settings_profile_heading: '👤 البروفايل',
     ph_bio: 'اكتب نبذة قصيرة عنك...',
     ph_school: 'اسم مدرستك/جامعتك',
+    settings_subscription_heading: '👑 الاشتراك',
+    period_monthly: 'شهري', period_annual: 'سنوي',
+    plan_free: 'المجاني', plan_plus: 'بلس', plan_pro: 'برو', plan_ultimate: 'ألتميت',
+    current_plan_label: 'باقتك الحالية: {plan}',
+    current_plan_badge: '✅ باقتك الحالية',
+    sar_label: 'ريال', free_label: 'مجانًا', unlimited_label: 'بلا حدود', full_label: 'كامل',
+    feat_library: '📚 {n} كتاب بالمكتبة',
+    feat_solo: '🎯 {n} جلسة فردية يوميًا',
+    feat_group: '👥 {n} جلسة جماعية يوميًا',
+    feat_lesson: '🖍️ {n} درس مباشر يوميًا',
+    feat_archive: '📂 آخر {n} جلسة بالأرشيف',
+    feat_performance: '📊 آخر {n} اختبار بالأداء',
+    btn_subscribe: 'اشترك',
+    checkout_created_msg: '✅ طلبك جاهز (#{order_id}) بمبلغ {amount} ريال - أكمل الدفع عبر بوابة الدفع',
     settings_private_profile: '🔒 بروفايل خاص بالكامل',
     settings_private_profile_desc: 'لو فعّلته، محد يقدر يشوف بروفايلك غير اسمك',
     settings_show_performance: '📊 إظهار الأداء بالبروفايل',
@@ -2765,6 +2811,20 @@ const I18N = {
     settings_profile_heading: '👤 Profile',
     ph_bio: 'Write a short bio about yourself...',
     ph_school: 'Your school/university name',
+    settings_subscription_heading: '👑 Subscription',
+    period_monthly: 'Monthly', period_annual: 'Yearly',
+    plan_free: 'Free', plan_plus: 'Plus', plan_pro: 'Pro', plan_ultimate: 'Ultimate',
+    current_plan_label: 'Your current plan: {plan}',
+    current_plan_badge: '✅ Your current plan',
+    sar_label: 'SAR', free_label: 'Free', unlimited_label: 'Unlimited', full_label: 'Full',
+    feat_library: '📚 {n} library books',
+    feat_solo: '🎯 {n} solo sessions/day',
+    feat_group: '👥 {n} group sessions/day',
+    feat_lesson: '🖍️ {n} live lessons/day',
+    feat_archive: '📂 Last {n} archived sessions',
+    feat_performance: '📊 Last {n} performance results',
+    btn_subscribe: 'Subscribe',
+    checkout_created_msg: '✅ Your order is ready (#{order_id}) for {amount} SAR - complete payment via the payment gateway',
     settings_private_profile: '🔒 Fully Private Profile',
     settings_private_profile_desc: 'If enabled, no one can see your profile except your name',
     settings_show_performance: '📊 Show Performance on Profile',
@@ -3228,7 +3288,7 @@ function showPerformanceDashboard() { showAccountScreen('step-performance'); }
 function showLibraryScreen() { showAccountScreen('step-library'); }
 function showArchiveScreen() { showAccountScreen('step-archive'); }
 function showFriendsScreen() { showAccountScreen('step-friends'); }
-function showSettingsScreen() { showAccountScreen('step-settings'); }
+function showSettingsScreen() { showAccountScreen('step-settings'); loadSubscriptionSection(); }
 function showProfileScreen() { showAccountScreen('step-profile'); }
 
 // ---------- صفحة البروفايل (بروفايلك أو بروفايل شخص ثاني) ----------
@@ -3792,6 +3852,101 @@ document.getElementById('settingsSaveProfileBtn').addEventListener('click', asyn
 document.getElementById('settingsViewProfileBtn').addEventListener('click', () => {
   showProfileScreen(currentUserId);
 });
+
+// ---------- الاشتراكات ----------
+// حساب مؤسسي (role موجود) وصوله محكوم بعضوية مدرسته - القسم يُخفى له بالكامل،
+// مطابق لنفس قاعدة UsageLimiter.owner المطبّقة بتطبيق iOS
+let subscriptionPlansCache = null;
+let subscriptionMeCache = null;
+let subscriptionPeriod = 'monthly';
+const SUBSCRIPTION_PLAN_ORDER = ['free', 'plus', 'pro', 'ultimate'];
+
+async function loadSubscriptionSection() {
+  const section = document.getElementById('settingsSubscriptionSection');
+  if (!currentUserId || currentUserRole) { section.classList.add('hidden'); return; }
+  section.classList.remove('hidden');
+  document.getElementById('subscriptionMsg').textContent = '';
+  try {
+    const [plansData, meData] = await Promise.all([
+      apiCall('GET', '/api/subscription/plans'),
+      apiCall('GET', '/api/subscription/me'),
+    ]);
+    subscriptionPlansCache = plansData.plans;
+    subscriptionMeCache = meData;
+    renderSubscriptionPlans();
+  } catch (e) {
+    document.getElementById('subscriptionCurrentPlan').textContent = e.message;
+  }
+}
+
+function renderSubscriptionPlans() {
+  if (!subscriptionPlansCache) return;
+  const currentTier = subscriptionMeCache?.tier || 'free';
+  document.getElementById('subscriptionCurrentPlan').textContent = t('current_plan_label', { plan: t(`plan_${currentTier}`) });
+  const grid = document.getElementById('subscriptionPlansGrid');
+  grid.innerHTML = SUBSCRIPTION_PLAN_ORDER.map(key => {
+    const plan = subscriptionPlansCache[key];
+    if (!plan) return '';
+    const price = subscriptionPeriod === 'monthly' ? plan.price_monthly : plan.price_annual;
+    const periodLabel = subscriptionPeriod === 'monthly' ? t('period_monthly') : t('period_annual');
+    const isCurrent = key === currentTier;
+    return `
+      <div class="plan-card ${isCurrent ? 'current-plan' : ''}">
+        <div class="plan-name">${t(`plan_${key}`)}</div>
+        <div class="plan-price">${price > 0 ? `${price} ${t('sar_label')}<small> / ${periodLabel}</small>` : t('free_label')}</div>
+        <div class="plan-features">${renderPlanFeatures(plan)}</div>
+        ${isCurrent
+          ? `<div class="plan-current-badge">${t('current_plan_badge')}</div>`
+          : (key === 'free' ? '' : `<button class="primary" data-subscribe-plan="${key}" style="width:100%;">${t('btn_subscribe')}</button>`)}
+      </div>
+    `;
+  }).join('');
+  grid.querySelectorAll('[data-subscribe-plan]').forEach(btn => {
+    btn.addEventListener('click', () => startCheckout(btn.dataset.subscribePlan));
+  });
+}
+
+function renderPlanFeatures(plan) {
+  const unl = t('unlimited_label');
+  const full = t('full_label');
+  return [
+    t('feat_library', { n: plan.library_limit }),
+    t('feat_solo', { n: plan.solo_daily ?? unl }),
+    t('feat_group', { n: plan.group_daily ?? unl }),
+    t('feat_lesson', { n: plan.lesson_daily ?? unl }),
+    t('feat_archive', { n: plan.archive_limit ?? full }),
+    t('feat_performance', { n: plan.performance_limit ?? full }),
+  ].join('<br>');
+}
+
+document.querySelectorAll('.sub-period-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.sub-period-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    subscriptionPeriod = btn.dataset.period;
+    renderSubscriptionPlans();
+  });
+});
+
+// ينشئ طلب اشتراك معلّق بالباك إند ويسلّمه لبوابة الدفع - عرّف
+// window.ZAKIY_PAYMENT_GATEWAY_HANDLER(order) لربط بوابتك الفعلية (Moyasar/
+// Tap/PayTabs/إلخ)؛ order = {order_id, plan, period, amount, currency}.
+// بدون تعريفها، نعرض تفاصيل الطلب بس كنقطة تكامل واضحة.
+async function startCheckout(plan) {
+  const msg = document.getElementById('subscriptionMsg');
+  msg.textContent = t('loading');
+  try {
+    const order = await apiCall('POST', '/api/subscription/checkout', { plan, period: subscriptionPeriod });
+    if (typeof window.ZAKIY_PAYMENT_GATEWAY_HANDLER === 'function') {
+      window.ZAKIY_PAYMENT_GATEWAY_HANDLER(order);
+      msg.textContent = '';
+    } else {
+      msg.textContent = t('checkout_created_msg', { amount: order.amount, order_id: order.order_id });
+    }
+  } catch (e) {
+    msg.textContent = e.message;
+  }
+}
 
 document.getElementById('settingsSaveNameBtn').addEventListener('click', async () => {
   const newName = document.getElementById('settingsUsernameInput').value.trim();

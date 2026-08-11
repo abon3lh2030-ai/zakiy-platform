@@ -11,3 +11,7 @@ win & mac/
 # تطبيق iOS له مستودع Git خاص فيه (github.com/abon3lh2030-ai/zakiy-platform-IOS)
 # - مو جزء من هذا المستودع
 ios/
+
+# تطبيق أندرويد له مستودع Git خاص فيه
+# (github.com/abon3lh2030-ai/zakiy-platform-Android) - مو جزء من هذا المستودع
+Android/

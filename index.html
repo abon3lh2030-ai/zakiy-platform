@@ -2189,6 +2189,7 @@ const I18N = {
     no_notifications_yet: 'ما فيه تنبيهات بعد',
     btn_start_now: '🖍️ ابدأ الحصة الآن',
     btn_join_class_now: '🖍️ انضم للحصة الآن',
+    btn_open_conversation: '💬 افتح المحادثة',
     broadcast_teachers_heading: '📢 رسالة جماعية لكل معلمي المدرسة',
     broadcast_students_heading: '📢 رسالة جماعية لطلاب الفصل المختار',
     ph_broadcast_body: 'اكتب رسالتك هنا...',
@@ -2630,6 +2631,7 @@ const I18N = {
     no_notifications_yet: 'No notifications yet',
     btn_start_now: '🖍️ Start the Class Now',
     btn_join_class_now: '🖍️ Join the Class Now',
+    btn_open_conversation: '💬 Open Conversation',
     broadcast_teachers_heading: '📢 Broadcast to All School Teachers',
     broadcast_students_heading: '📢 Broadcast to the Selected Class',
     ph_broadcast_body: 'Write your message here...',
@@ -6886,6 +6888,12 @@ document.getElementById('newConversationSearch').addEventListener('input', () =>
 });
 
 const NOTIF_ICONS = { new_message: '💬', broadcast: '📢', schedule_reminder: '⏰', class_started: '🖍️' };
+// العنوان مخزّن دايمًا بصيغة "رسالة جديدة من {الاسم}" - نستخرج الاسم منه
+// بدل ما نضيف حقل ثاني بالباك إند لغرض تجميلي بس
+function notificationSenderName(title) {
+  const parts = title.split('من ');
+  return parts.length > 1 ? parts[parts.length - 1].trim() : title;
+}
 async function loadNotifications() {
   const list = document.getElementById('notificationsList');
   list.innerHTML = t('loading');
@@ -6904,6 +6912,9 @@ async function loadNotifications() {
           ${n.type === 'class_started' && n.related_room_code
             ? `<button class="ghost" data-join-class-now="${n.related_room_code}" style="padding:4px 10px; margin-top:6px;">${t('btn_join_class_now')}</button>`
             : ''}
+          ${n.type === 'new_message' && n.sender_id
+            ? `<button class="ghost" data-open-thread="${n.sender_id}" data-username="${escapeHtml(notificationSenderName(n.title))}" style="padding:4px 10px; margin-top:6px;">${t('btn_open_conversation')}</button>`
+            : ''}
         </div>
       </div>
     `).join('');
@@ -6912,6 +6923,12 @@ async function loadNotifications() {
     });
     list.querySelectorAll('[data-join-class-now]').forEach(btn => {
       btn.addEventListener('click', () => joinClassByCode(btn.dataset.joinClassNow));
+    });
+    list.querySelectorAll('[data-open-thread]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        showAccountScreen('step-messages');
+        openThread(btn.dataset.openThread, btn.dataset.username);
+      });
     });
     apiCall('POST', '/api/notifications/mark-read', {}).then(refreshUnreadBadge).catch(() => {});
   } catch (e) {

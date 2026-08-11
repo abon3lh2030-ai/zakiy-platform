@@ -2917,6 +2917,7 @@ document.getElementById('globalBackBtn').addEventListener('click', () => {
   const prev = navHistory.pop();
   if (!prev) return;
   TOP_LEVEL_SCREENS.forEach(hide);
+  hide('pomodoroWidget'); // خلّه يختفي كل ما غادرنا الشاشة الحالية بالكامل - يظهر بس أثناء جلسة المذاكرة الفردية نفسها
   prev.forEach(show);
   updateGlobalBackButton();
 });
@@ -2995,6 +2996,7 @@ document.querySelectorAll('.exam-overlay button').forEach(btn => {
 function goToJoinRoomWithCode(code) {
   pushNavSnapshot();
   TOP_LEVEL_SCREENS.forEach(hide);
+  hide('pomodoroWidget'); // خلّه يختفي كل ما غادرنا الشاشة الحالية بالكامل - يظهر بس أثناء جلسة المذاكرة الفردية نفسها
   hide('login-form'); hide('signup-form');
   show('room-join-form');
   document.getElementById('joinRoomCode').value = code.toUpperCase();
@@ -3092,6 +3094,7 @@ function onAuthSuccess(session) {
 
       if (me.must_change_password) {
         TOP_LEVEL_SCREENS.forEach(hide);
+  hide('pomodoroWidget'); // خلّه يختفي كل ما غادرنا الشاشة الحالية بالكامل - يظهر بس أثناء جلسة المذاكرة الفردية نفسها
         hide('login-form'); hide('signup-form');
         hide('sidebar'); // بوابة صلبة فعليًا - ما نخلي السايد بار يفتح مسارات ثانية يتفادى بيها المستخدم البوابة
         navHistory = [];
@@ -3253,6 +3256,7 @@ document.getElementById('loginRequiredLoginBtn').addEventListener('click', () =>
   hide('loginRequiredModal');
   pushNavSnapshot();
   TOP_LEVEL_SCREENS.forEach(hide);
+  hide('pomodoroWidget'); // خلّه يختفي كل ما غادرنا الشاشة الحالية بالكامل - يظهر بس أثناء جلسة المذاكرة الفردية نفسها
   hide('signup-form');
   show('login-form');
   updateGlobalBackButton();
@@ -3261,6 +3265,7 @@ document.getElementById('loginRequiredSignupBtn').addEventListener('click', () =
   hide('loginRequiredModal');
   pushNavSnapshot();
   TOP_LEVEL_SCREENS.forEach(hide);
+  hide('pomodoroWidget'); // خلّه يختفي كل ما غادرنا الشاشة الحالية بالكامل - يظهر بس أثناء جلسة المذاكرة الفردية نفسها
   hide('login-form');
   show('signup-form');
   updateGlobalBackButton();
@@ -3268,6 +3273,7 @@ document.getElementById('loginRequiredSignupBtn').addEventListener('click', () =
 document.getElementById('guestLoginPromptBtn').addEventListener('click', () => {
   pushNavSnapshot();
   TOP_LEVEL_SCREENS.forEach(hide);
+  hide('pomodoroWidget'); // خلّه يختفي كل ما غادرنا الشاشة الحالية بالكامل - يظهر بس أثناء جلسة المذاكرة الفردية نفسها
   hide('signup-form');
   show('login-form');
   updateGlobalBackButton();
@@ -3423,6 +3429,7 @@ function goToHomeScreen() {
     routeByRole(currentUserRole);
   } else {
     TOP_LEVEL_SCREENS.forEach(hide);
+  hide('pomodoroWidget'); // خلّه يختفي كل ما غادرنا الشاشة الحالية بالكامل - يظهر بس أثناء جلسة المذاكرة الفردية نفسها
     hide('login-form'); hide('signup-form');
     show('mode-select');
   }
@@ -4438,6 +4445,7 @@ socket.on('room_state', data => {
   // المدرسة/الأدمن الجديدة، عشان لو معلم بدأ درس مباشر من لوحته ما تبقى
   // ظاهرة "تحت" شاشة الكلاس
   TOP_LEVEL_SCREENS.forEach(hide);
+  hide('pomodoroWidget'); // خلّه يختفي كل ما غادرنا الشاشة الحالية بالكامل - يظهر بس أثناء جلسة المذاكرة الفردية نفسها
   hide('login-form'); hide('signup-form'); hide('step-force-password-change');
   updateGlobalBackButton();
 
@@ -6056,6 +6064,7 @@ const INSTITUTIONAL_DASHBOARD_SCREENS = {
 
 function routeByRole(role) {
   TOP_LEVEL_SCREENS.forEach(hide);
+  hide('pomodoroWidget'); // خلّه يختفي كل ما غادرنا الشاشة الحالية بالكامل - يظهر بس أثناء جلسة المذاكرة الفردية نفسها
   hide('login-form'); hide('signup-form'); hide('step-force-password-change');
   show('sidebar');
   const screenId = INSTITUTIONAL_DASHBOARD_SCREENS[role];
@@ -6648,6 +6657,7 @@ document.getElementById('studentScheduleNavBtn').addEventListener('click', async
   if (!requireAuthOrPrompt()) return;
   pushNavSnapshot();
   TOP_LEVEL_SCREENS.forEach(hide);
+  hide('pomodoroWidget'); // خلّه يختفي كل ما غادرنا الشاشة الحالية بالكامل - يظهر بس أثناء جلسة المذاكرة الفردية نفسها
   show('step-student-schedule');
   updateGlobalBackButton();
   const wrap = document.getElementById('studentScheduleWrap');
@@ -6691,6 +6701,7 @@ document.getElementById('messagesBtn').addEventListener('click', () => {
   if (!requireAuthOrPrompt()) return;
   pushNavSnapshot();
   TOP_LEVEL_SCREENS.forEach(hide);
+  hide('pomodoroWidget'); // خلّه يختفي كل ما غادرنا الشاشة الحالية بالكامل - يظهر بس أثناء جلسة المذاكرة الفردية نفسها
   hide('login-form'); hide('signup-form');
   show('sidebar');
   show('step-messages');

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تحميل ذكيّ — منصة المذاكرة الذكية</title>
+<meta name="description" content="حمّل تطبيق ذكيّ على أي جهاز عندك، أو افتح النسخة المباشرة من المتصفح.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #FAF9F5;
+    --paper-dim: #F0EEE6;
+    --ink: #1B2A4A;
+    --ink-soft: #5C6B7A;
+    --highlighter: #FFC93C;
+    --highlighter-soft: #FFF0C2;
+    --teal: #2E8B77;
+    --teal-dim: #E4F2EE;
+    --danger: #C7554A;
+    --danger-soft: #FBEAE8;
+    --line: #E2DFD4;
+    --surface: #FFFFFF;
+    --emphasis-bg: #1B2A4A;
+    --emphasis-text: #FFFFFF;
+    --radius: 14px;
+  }
+
+  [data-theme="dark"] {
+    --paper: #14181F;
+    --paper-dim: #1C222C;
+    --ink: #E8EAF0;
+    --ink-soft: #98A2B3;
+    --highlighter: #FFC93C;
+    --highlighter-soft: #3A3220;
+    --teal: #4FC3A1;
+    --teal-dim: #163B32;
+    --danger: #D2665A;
+    --danger-soft: #3A2020;
+    --line: #2A313D;
+    --surface: #1B212B;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans Arabic', sans-serif;
+    line-height: 1.7;
+    min-height: 100vh;
+    background-image: linear-gradient(var(--line) 1px, transparent 1px);
+    background-size: 100% 42px;
+    background-attachment: local;
+    transition: background-color .2s, color .2s;
+  }
+
+  .wrap { max-width: 880px; margin: 0 auto; padding: 48px 24px 100px; }
+
+  /* ---------- Header ---------- */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 56px;
+  }
+  .logo {
+    font-family: 'Almarai', sans-serif;
+    font-weight: 800;
+    font-size: 28px;
+    color: var(--ink);
+    position: relative;
+    display: inline-block;
+    text-decoration: none;
+  }
+  .logo::after {
+    content: "";
+    position: absolute;
+    right: 0; left: 0; bottom: 2px;
+    height: 10px;
+    background: var(--highlighter);
+    z-index: -1;
+    opacity: .75;
+    transform: skewX(-8deg);
+  }
+  .theme-toggle {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink);
+    width: 38px; height: 38px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .theme-toggle:hover { border-color: var(--ink); }
+
+  /* ---------- Hero ---------- */
+  .hero { margin-bottom: 48px; text-align: center; }
+  .step-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--teal);
+    background: var(--teal-dim);
+    padding: 5px 12px;
+    border-radius: 999px;
+    margin-bottom: 18px;
+  }
+  .hero h1 {
+    font-family: 'Almarai', sans-serif;
+    font-weight: 800;
+    font-size: clamp(30px, 5vw, 42px);
+    line-height: 1.35;
+    margin-bottom: 14px;
+  }
+  .hero p {
+    color: var(--ink-soft);
+    font-size: 16px;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+
+  /* ---------- Download grid ---------- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+    margin-bottom: 18px;
+  }
+  @media (max-width: 560px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  .dl-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 26px 24px;
+    box-shadow: 0 1px 0 rgba(27,42,74,0.03);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform .12s, border-color .2s;
+  }
+  .dl-card:hover { border-color: var(--teal); transform: translateY(-2px); }
+  .dl-card .icon {
+    width: 52px; height: 52px;
+    border-radius: 12px;
+    background: var(--teal-dim);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    flex-shrink: 0;
+  }
+  .dl-card .info { flex: 1; min-width: 0; }
+  .dl-card .info .title {
+    font-family: 'Almarai', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: 3px;
+  }
+  .dl-card .info .sub {
+    color: var(--ink-soft);
+    font-size: 13px;
+  }
+  .dl-card .arrow {
+    color: var(--ink-soft);
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .open-web {
+    background: var(--emphasis-bg);
+    color: var(--emphasis-text);
+  }
+  .open-web .icon { background: rgba(255,255,255,.12); }
+  .open-web .info .sub { color: rgba(255,255,255,.65); }
+  .open-web .arrow { color: rgba(255,255,255,.65); }
+
+  footer {
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 13px;
+    margin-top: 40px;
+  }
+  footer a { color: var(--teal); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <a href="#" class="logo">ذكيّ</a>
+    <button class="theme-toggle" id="themeToggle" aria-label="تبديل المظهر">🌓</button>
+  </header>
+
+  <div class="hero">
+    <div class="step-label">📥 تحميل التطبيق</div>
+    <h1>حمّل ذكيّ على أي جهاز عندك</h1>
+    <p>اختر جهازك من تحت، أو افتح النسخة المباشرة من المتصفح بدون تحميل.</p>
+  </div>
+
+  <div class="grid">
+    <!-- رابط تحميل نسخة الماك -->
+    <a href="#" class="dl-card" id="downloadMac">
+      <div class="icon">🍎</div>
+      <div class="info">
+        <div class="title">تحميل للماك</div>
+        <div class="sub">macOS — ملف dmg</div>
+      </div>
+      <div class="arrow">⭠</div>
+    </a>
+
+    <!-- رابط تحميل نسخة الويندوز -->
+    <a href="#" class="dl-card" id="downloadWindows">
+      <div class="icon">🪟</div>
+      <div class="info">
+        <div class="title">تحميل للويندوز</div>
+        <div class="sub">Windows — ملف exe</div>
+      </div>
+      <div class="arrow">⭠</div>
+    </a>
+
+    <!-- رابط تحميل نسخة iOS -->
+    <a href="#" class="dl-card" id="downloadIOS">
+      <div class="icon">📱</div>
+      <div class="info">
+        <div class="title">تحميل لـ iOS</div>
+        <div class="sub">آيفون وآيباد — App Store</div>
+      </div>
+      <div class="arrow">⭠</div>
+    </a>
+
+    <!-- رابط تحميل نسخة Android -->
+    <a href="#" class="dl-card" id="downloadAndroid">
+      <div class="icon">🤖</div>
+      <div class="info">
+        <div class="title">تحميل لأندرويد</div>
+        <div class="sub">Android — Google Play</div>
+      </div>
+      <div class="arrow">⭠</div>
+    </a>
+  </div>
+
+  <!-- رابط فتح الموقع مباشرة -->
+  <a href="#" class="dl-card open-web" id="openWebsite">
+    <div class="icon">🌐</div>
+    <div class="info">
+      <div class="title">فتح الموقع</div>
+      <div class="sub">استخدم ذكيّ مباشرة من المتصفح بدون تحميل</div>
+    </div>
+    <div class="arrow">⭠</div>
+  </a>
+
+  <footer>
+    ذكيّ — منصة المذاكرة الذكية
+  </footer>
+</div>
+
+<script>
+  const root = document.documentElement;
+  const saved = localStorage.getItem('zakiy_theme');
+  if (saved === 'dark') root.setAttribute('data-theme', 'dark');
+
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    const isDark = root.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      root.removeAttribute('data-theme');
+      localStorage.setItem('zakiy_theme', 'light');
+    } else {
+      root.setAttribute('data-theme', 'dark');
+      localStorage.setItem('zakiy_theme', 'dark');
+    }
+  });
+</script>
+
+</body>
+</html>

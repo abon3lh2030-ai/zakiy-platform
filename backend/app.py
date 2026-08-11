@@ -1215,9 +1215,15 @@ def create_room():
     data = request.get_json(silent=True) or {}
     room_type = data.get("room_type") if data.get("room_type") in ("quiz", "classroom") else "quiz"
 
-    # حد يومي حسب الباقة (غرفة جماعية = quiz، درس مباشر = classroom) - حساب
-    # مؤسسي وضيف يتخطّون الفحص تلقائيًا (_check_and_record_daily_action)
+    # لازم حساب مسجّل عشان تنشئ غرفة (درس مباشر أو جلسة جماعية) - ما نسمح
+    # للضيوف إطلاقًا، وإلا حد الباقة اليومي ما له أي معنى (ولا نقدر نربط
+    # الاستخدام بحساب أصلًا)
     uid = _optional_user_id()
+    if uid is None:
+        return jsonify({"error": "لازم تسجل الدخول عشان تنشئ درس مباشر أو جلسة جماعية"}), 401
+
+    # حد يومي حسب الباقة (غرفة جماعية = quiz، درس مباشر = classroom) - حساب
+    # مؤسسي يتخطّى الفحص تلقائيًا (_check_and_record_daily_action)
     limited_action = "live_lesson" if room_type == "classroom" else "group_room"
     allowed, reject_msg = _check_and_record_daily_action(uid, limited_action)
     if not allowed:
@@ -1286,8 +1292,8 @@ def handle_join_room(data):
 
     room = rooms[room_code]
 
-    # ربط اختياري بحساب مسجّل - لو الطالب داخل الجلسة وهو مسجّل دخول، نربط
-    # نتيجته بحسابه (ساعات مذاكرة/ستريك/أرشيف) بدون ما نجبره على تسجيل دخول
+    # لازم حساب مسجّل عشان تدخل أي درس مباشر أو جلسة جماعية - ما فيه دخول
+    # كضيف إطلاقًا (نفس قيد إنشاء الغرفة بـ /api/room/create بالضبط)
     user_id = None
     if token and supabase_admin is not None:
         try:
@@ -1296,6 +1302,9 @@ def handle_join_room(data):
                 user_id = user_response.user.id
         except Exception:
             user_id = None
+    if user_id is None:
+        emit("join_error", {"error": "لازم تسجل الدخول عشان تدخل درس مباشر أو جلسة جماعية"})
+        return
 
     # تسجيل حضور تلقائي: لو الغرفة مرتبطة بفصل مدرسي (class_id) وهذا مستخدم
     # مسجّل، نسجّل بصمة انضمام وحدة باليوم (نفس نمط عدم-التكرار المستخدم أصلًا
@@ -3037,6 +3046,17 @@ SUBSCRIPTION_PLANS = {
         "library_limit": 50, "solo_daily": None, "group_daily": None, "lesson_daily": 8,
         "archive_limit": None, "performance_limit": None,
     },
+    # باقة داخلية بس (ما تُباع) - لصاحب المنصة نفسه، بلا حدود على كل شي.
+    # تُفعّل يدويًا بتحديث profiles.subscription_tier='owner' مباشرة بقاعدة
+    # البيانات، مو من أي شاشة اشتراك عادية - مطابقة لنفس فكرة PlanTier.owner
+    # بتطبيق iOS (كانت محلية بس هناك، صارت الحين معروفة بالباك إند فتنعكس
+    # صح بكل المنصات: الموقع وأندرويد يقرآنها من /api/subscription/me مباشرة)
+    "owner": {
+        "name_ar": "مالك التطبيق", "name_en": "App Owner",
+        "price_monthly": 0, "price_annual": 0,
+        "library_limit": None, "solo_daily": None, "group_daily": None, "lesson_daily": None,
+        "archive_limit": None, "performance_limit": None,
+    },
 }
 
 # منتجات StoreKit بتطبيق iOS -> (باقة، دورة فوترة) - لازم تطابق ProductID.swift
@@ -3088,7 +3108,7 @@ def _resolve_subscription(profile):
                 tier = "free"  # انتهت صلاحية الاشتراك - يرجع تلقائيًا للباقة المجانية
         except Exception:
             pass
-    return {"tier": tier, "period": profile.get("subscription_period"), "expires_at": expires_at, "unlimited": tier == "ultimate"}
+    return {"tier": tier, "period": profile.get("subscription_period"), "expires_at": expires_at, "unlimited": tier in ("ultimate", "owner")}
 
 
 # مفاتيح حدود اليوم بجدول SUBSCRIPTION_PLANS اللي يقابل كل نوع إجراء محدود -

@@ -15,3 +15,7 @@ ios/
 # تطبيق أندرويد له مستودع Git خاص فيه
 # (github.com/abon3lh2030-ai/zakiy-platform-Android) - مو جزء من هذا المستودع
 Android/
+
+# صفحة تحميل التطبيق (الروابط الخمسة) لها مستودع Git خاص فيها
+# (github.com/abon3lh2030-ai/zakiy-platform-wibsite) - مو جزء من هذا المستودع
+platform-website/

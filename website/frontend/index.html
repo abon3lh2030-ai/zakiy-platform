@@ -4114,6 +4114,7 @@ libraryAddBtn.addEventListener('click', async () => {
   try {
     const formData = new FormData();
     formData.append('file', librarySelectedFile);
+    formData.append('context', 'library');
     const uploadRes = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: formData });
     const uploadData = await uploadRes.json();
     if (!uploadRes.ok) throw new Error(uploadData.error || t('err_upload_failed'));
@@ -4218,10 +4219,11 @@ document.getElementById('saveToLibraryBtn').addEventListener('click', async () =
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentAccessToken}` },
       body: JSON.stringify({ title: title.trim(), extracted_text: extractedText }),
     });
-    if (!res.ok) throw new Error();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || t('err_library_save_failed'));
     alert(t('save_to_library_success'));
-  } catch {
-    alert(t('err_library_save_failed'));
+  } catch (err) {
+    alert(err.message || t('err_library_save_failed'));
   }
 });
 
@@ -5153,6 +5155,10 @@ uploadBtn.addEventListener('click', async () => {
   try {
     const formData = new FormData();
     formData.append('file', selectedFile);
+    // "مذاكرة فردية" بس (appMode==='solo' وما فيه غرفة) تحسب من حد الباقة
+    // اليومي - رفع مادة داخل غرفة أنشأها المضيف أصلًا ما يُحسب مرة ثانية
+    // (انفحص وقت إنشاء الغرفة نفسها)
+    if (appMode === 'solo' && !currentRoomCode) formData.append('context', 'solo');
 
     const uploadRes = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: formData });
     const uploadData = await uploadRes.json();

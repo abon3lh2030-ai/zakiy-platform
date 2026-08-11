@@ -95,6 +95,23 @@ def require_auth(f):
     return wrapper
 
 
+def _optional_user_id():
+    """يرجّع user_id لو فيه توكن Supabase صالح بالهيدر، وإلا None (ضيف) - بدون
+    ما يفشل الطلب أصلًا. تستخدمها endpoints عامة (رفع ملف/إنشاء غرفة) تشتغل
+    للضيوف والمسجّلين مع بعض، بس تحتاج تعرف هوية المسجّل لو موجودة (حدود
+    الباقات، ربط اختياري بفصل مدرسي، إلخ)."""
+    if supabase_admin is None:
+        return None
+    token = request.headers.get("Authorization", "").replace("Bearer ", "").strip()
+    if not token:
+        return None
+    try:
+        user_response = supabase_admin.auth.get_user(token)
+        return user_response.user.id if user_response and user_response.user else None
+    except Exception:
+        return None
+
+
 def require_role(*roles):
     """فوق require_auth: يتأكد إن دور المستخدم (بجدول profiles) من ضمن roles
     المسموحة لهذا الـ endpoint، ويحط request.profile (role/school_id/class_id/
@@ -135,6 +152,17 @@ def upload_file():
     file = request.files["file"]
     if file.filename == "":
         return jsonify({"error": "اسم الملف فاضي"}), 400
+
+    # هذا الـ endpoint مشترك بين ٣ مسارات مختلفة بالواجهة (مذاكرة فردية/إضافة
+    # لمكتبتك مباشرة/رفع مادة داخل غرفة أنشأها المضيف أصلًا) - context=solo
+    # يوصلنا بس من مسار "مذاكرة فردية" (مطابق تمامًا لحظة UsageLimiter.
+    # recordUsage(.soloSession) بتطبيق iOS)؛ المسارين الثانيين ما يحتاجوا هذا
+    # الفحص هنا (المكتبة سقفها كلي بمكانه، والغرفة انفحصت أصلًا وقت إنشائها)
+    if request.form.get("context") == "solo":
+        uid = _optional_user_id()
+        allowed, reject_msg = _check_and_record_daily_action(uid, "solo_session")
+        if not allowed:
+            return jsonify({"error": reject_msg}), 402
 
     filename = secure_filename(file.filename)
     filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
@@ -474,6 +502,14 @@ def get_performance():
             [a["created_at"] for a in all_rows if a.get("created_at")]
         )
 
+        # حد "الأداء" حسب الباقة - آخر N محاولة بس (attempts أصلًا تصاعدي
+        # بالوقت، فـ[-N:] يعطينا آخر N مع الحفاظ على نفس الترتيب التصاعدي).
+        # الستريك والمواضيع الضعيفة تفضل محسوبة من كل البيانات - القيد على
+        # عرض المحاولات بس، مو على تتبّع النشاط العام
+        performance_limit = _resolve_performance_limit(request.user_id)
+        if performance_limit is not None:
+            attempts = attempts[-performance_limit:]
+
         return jsonify(
             {
                 "attempts": attempts,
@@ -568,6 +604,16 @@ def create_library_book():
 
     if not title or not extracted_text:
         return jsonify({"error": "لازم عنوان ونص مستخرج"}), 400
+
+    # سقف تخزين كلي (مو يومي) حسب الباقة - عدد الكتب المحفوظة فعليًا الآن،
+    # حساب مؤسسي أو باقة ألتميت (library_limit=None) يتخطّون الفحص
+    library_limit = _resolved_plan_for_user(request.user_id)["library_limit"]
+    if library_limit is not None:
+        current_count = (
+            supabase_admin.table("library_books").select("id", count="exact").eq("user_id", request.user_id).execute()
+        ).count or 0
+        if current_count >= library_limit:
+            return jsonify({"error": "وصلت الحد الأقصى لعدد الكتب بمكتبتك - رقّي اشتراكك من الإعدادات عشان تضيف أكثر"}), 402
 
     try:
         res = (
@@ -1088,6 +1134,12 @@ def list_sessions():
 
         merged = {row["id"]: row for row in hosted + attended}
         sessions = sorted(merged.values(), key=lambda r: r.get("created_at") or "", reverse=True)
+
+        # حد "الأرشيف" حسب الباقة - آخر N جلسة بس (sessions أصلًا تنازلي بالوقت)
+        archive_limit = _resolve_archive_limit(request.user_id)
+        if archive_limit is not None:
+            sessions = sessions[:archive_limit]
+
         return jsonify({"sessions": sessions}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -1162,6 +1214,15 @@ def can_manage_content(room, sid):
 def create_room():
     data = request.get_json(silent=True) or {}
     room_type = data.get("room_type") if data.get("room_type") in ("quiz", "classroom") else "quiz"
+
+    # حد يومي حسب الباقة (غرفة جماعية = quiz، درس مباشر = classroom) - حساب
+    # مؤسسي وضيف يتخطّون الفحص تلقائيًا (_check_and_record_daily_action)
+    uid = _optional_user_id()
+    limited_action = "live_lesson" if room_type == "classroom" else "group_room"
+    allowed, reject_msg = _check_and_record_daily_action(uid, limited_action)
+    if not allowed:
+        return jsonify({"error": reject_msg}), 402
+
     room_code = generate_room_code()
 
     # ربط اختياري بفصل مدرسي (يخدم تسجيل الحضور التلقائي بـ handle_join_room) -
@@ -1170,11 +1231,8 @@ def create_room():
     # عادي لأي أحد، الربط بالفصل ميزة إضافية بس)
     class_id = None
     requested_class_id = data.get("class_id")
-    if requested_class_id and supabase_admin is not None:
-        token = request.headers.get("Authorization", "").replace("Bearer ", "").strip()
+    if requested_class_id and uid:
         try:
-            user_response = supabase_admin.auth.get_user(token)
-            uid = user_response.user.id if user_response and user_response.user else None
             owns_class = (
                 supabase_admin.table("classes")
                 .select("id")
@@ -2955,6 +3013,65 @@ def _resolve_subscription(profile):
         except Exception:
             pass
     return {"tier": tier, "period": profile.get("subscription_period"), "expires_at": expires_at, "unlimited": tier == "ultimate"}
+
+
+# مفاتيح حدود اليوم بجدول SUBSCRIPTION_PLANS اللي يقابل كل نوع إجراء محدود -
+# مطابق تمامًا لـ LimitedAction بتطبيق iOS (بدون librarySave - ذاك سقف تخزين
+# كلي يُفحص مباشرة بعدد صفوف جدول library، مو حد يومي بـ usage_events)
+_DAILY_LIMIT_KEYS = {"solo_session": "solo_daily", "group_room": "group_daily", "live_lesson": "lesson_daily"}
+
+
+def _resolved_plan_for_user(user_id):
+    """يرجّع dict حدود الباقة الفعّالة (من SUBSCRIPTION_PLANS) لحساب معيّن -
+    اختصار مشترك تستخدمه أي endpoint محتاجة تقصّر عرضها حسب الباقة (أداء/أرشيف)."""
+    rows = (
+        supabase_admin.table("profiles")
+        .select("role, subscription_tier, subscription_expires_at")
+        .eq("user_id", user_id)
+        .limit(1)
+        .execute()
+    ).data
+    resolved = _resolve_subscription(rows[0] if rows else {})
+    return SUBSCRIPTION_PLANS.get(resolved["tier"], SUBSCRIPTION_PLANS["free"])
+
+
+def _resolve_performance_limit(user_id):
+    return _resolved_plan_for_user(user_id)["performance_limit"]
+
+
+def _resolve_archive_limit(user_id):
+    return _resolved_plan_for_user(user_id)["archive_limit"]
+
+
+def _daily_usage_count(user_id, action):
+    start_of_day = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+    res = (
+        supabase_admin.table("usage_events")
+        .select("id", count="exact")
+        .eq("user_id", user_id)
+        .eq("action", action)
+        .gte("created_at", start_of_day)
+        .execute()
+    )
+    return res.count or 0
+
+
+def _check_and_record_daily_action(user_id, action):
+    """يتحقق من حد اليوم لإجراء محدود (مذاكرة فردية/غرفة جماعية/درس مباشر)
+    قبل تنفيذه فعليًا، ويسجّله لو مسموح - إنفاذ سيرفري حقيقي، مو بس عرض
+    بالواجهة. يرجّع (مسموح: bool, رسالة الرفض أو None).
+    - user_id=None (ضيف) يمر بلا قيد دايمًا - ما فيه حساب نتتبعه.
+    - حساب مؤسسي أو باقة فيها الحد None (بلا حدود) يتخطى الفحص بالكامل."""
+    if user_id is None or supabase_admin is None:
+        return True, None
+    plan = _resolved_plan_for_user(user_id)
+    limit = plan[_DAILY_LIMIT_KEYS[action]]
+    if limit is None:
+        return True, None
+    if _daily_usage_count(user_id, action) >= limit:
+        return False, "وصلت الحد اليومي لباقتك الحالية - رقّي اشتراكك من الإعدادات عشان تكمل"
+    supabase_admin.table("usage_events").insert({"user_id": user_id, "action": action}).execute()
+    return True, None
 
 
 @app.route("/api/subscription/me", methods=["GET"])

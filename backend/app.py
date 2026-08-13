@@ -13,6 +13,7 @@ from datetime import datetime, timedelta, timezone
 import os
 import random
 import re
+import requests
 import secrets
 import string
 import time
@@ -3085,11 +3086,18 @@ GOOGLE_PRODUCT_PLAN_MAP = {
 # يقدر يمرر توكن Supabase عادي). خله بمتغير بيئة .env، ونسّقه مع بوابتك
 PAYMENT_GATEWAY_WEBHOOK_SECRET = os.getenv("PAYMENT_GATEWAY_WEBHOOK_SECRET")
 
+# بوابة ميسر (Moyasar) - المفتاح العلني آمن يظهر بالفرونت إند (نمرره عبر
+# /api/subscription/plans بدل ما نكرره بالكود)، والمفتاح السري بالباك إند
+# بس، يُستخدم للتحقق المباشر من حالة أي دفعة (Basic Auth، اسم المستخدم =
+# المفتاح السري، بدون كلمة سر) بدل الثقة بمحتوى الـ webhook مباشرة
+MOYASAR_PUBLISHABLE_KEY = os.getenv("MOYASAR_PUBLISHABLE_KEY")
+MOYASAR_SECRET_KEY = os.getenv("MOYASAR_SECRET_KEY")
+
 
 @app.route("/api/subscription/plans", methods=["GET"])
 def subscription_plans():
     """كتالوج الباقات - عام، بدون تسجيل دخول (تُستخدم بصفحة الأسعار قبل الدخول برضو)."""
-    return jsonify({"plans": SUBSCRIPTION_PLANS}), 200
+    return jsonify({"plans": SUBSCRIPTION_PLANS, "moyasar_publishable_key": MOYASAR_PUBLISHABLE_KEY}), 200
 
 
 def _resolve_subscription(profile):
@@ -3211,11 +3219,30 @@ def subscription_checkout():
     return jsonify({"order_id": order["id"], "plan": plan, "period": period, "amount": amount, "currency": "SAR"}), 200
 
 
+def _activate_subscription_order(order, gateway_reference=None):
+    """يفعّل اشتراك المستخدم بعد تأكيد دفع ناجح لطلب معلّق - منطق مشترك بين
+    مسار التأكيد اليدوي العام ومسار تأكيد ميسر التلقائي، عشان يبقى بمكان وحد."""
+    days = 30 if order["period"] == "monthly" else 365
+    expires_at = (datetime.now(timezone.utc) + timedelta(days=days)).isoformat()
+    supabase_admin.table("subscription_orders").update(
+        {"status": "paid", "paid_at": datetime.now(timezone.utc).isoformat(), "gateway_reference": gateway_reference}
+    ).eq("id", order["id"]).execute()
+    supabase_admin.table("profiles").update(
+        {
+            "subscription_tier": order["plan"],
+            "subscription_period": order["period"],
+            "subscription_expires_at": expires_at,
+            "subscription_source": "web",
+        }
+    ).eq("user_id", order["user_id"]).execute()
+    return expires_at
+
+
 @app.route("/api/subscription/orders/<order_id>/confirm", methods=["POST"])
 def subscription_confirm_order(order_id):
-    """يستدعيها خادم بوابة الدفع (webhook) بعد نجاح الدفع فعليًا - محمي بمفتاح
-    سري مشترك بالهيدر X-Gateway-Secret بدل توكن مستخدم عادي (اللي يستدعيها
-    سيرفر البوابة، مو متصفح المستخدم نفسه)."""
+    """مسار تأكيد عام يدوي/لبوابة مستقبلية ثانية - محمي بمفتاح سري مشترك
+    بالهيدر X-Gateway-Secret بدل توكن مستخدم عادي. ميسر تحديدًا يُؤكَّد عبر
+    /api/subscription/webhook/moyasar (يتحقق مباشرة من ميسر، ما يثق بالطلب)."""
     if not PAYMENT_GATEWAY_WEBHOOK_SECRET or request.headers.get("X-Gateway-Secret") != PAYMENT_GATEWAY_WEBHOOK_SECRET:
         return jsonify({"error": "غير مصرح"}), 403
 
@@ -3227,20 +3254,57 @@ def subscription_confirm_order(order_id):
         return jsonify({"ok": True, "already_confirmed": True}), 200
 
     data = request.get_json(silent=True) or {}
-    days = 30 if order["period"] == "monthly" else 365
-    expires_at = (datetime.now(timezone.utc) + timedelta(days=days)).isoformat()
+    _activate_subscription_order(order, gateway_reference=data.get("gateway_reference"))
+    return jsonify({"ok": True}), 200
 
-    supabase_admin.table("subscription_orders").update(
-        {"status": "paid", "paid_at": datetime.now(timezone.utc).isoformat(), "gateway_reference": data.get("gateway_reference")}
-    ).eq("id", order_id).execute()
-    supabase_admin.table("profiles").update(
-        {
-            "subscription_tier": order["plan"],
-            "subscription_period": order["period"],
-            "subscription_expires_at": expires_at,
-            "subscription_source": "web",
-        }
-    ).eq("user_id", order["user_id"]).execute()
+
+@app.route("/api/subscription/webhook/moyasar", methods=["POST"])
+def subscription_webhook_moyasar():
+    """Webhook ميسر - يوصلنا إشعار بعد أي محاولة دفع. ما نثق بمحتوى الطلب
+    مباشرة (أي طرف يقدر يرسل POST مزيّف لهذا الرابط العام) - بدلها نستخدم
+    معرّف الدفعة بس عشان نستعلم عن حالتها الحقيقية مباشرة من ميسر بمفتاحنا
+    السري (Basic Auth)، ونتحقق كمان إن المبلغ يطابق الطلب المعلّق فعليًا."""
+    if not MOYASAR_SECRET_KEY:
+        return jsonify({"error": "ميسر غير مُهيّأ بالسيرفر"}), 500
+
+    payload = request.get_json(silent=True) or {}
+    payment_id = (payload.get("data") or {}).get("id") or payload.get("id")
+    if not payment_id:
+        return jsonify({"error": "لا يوجد معرف دفعة بالإشعار"}), 400
+
+    try:
+        resp = requests.get(
+            f"https://api.moyasar.com/v1/payments/{payment_id}",
+            auth=(MOYASAR_SECRET_KEY, ""),
+            timeout=15,
+        )
+    except requests.RequestException:
+        return jsonify({"error": "تعذّر الاتصال بميسر"}), 502
+    if resp.status_code != 200:
+        return jsonify({"error": "تعذّر التحقق من الدفعة لدى ميسر"}), 502
+    payment = resp.json()
+
+    if payment.get("status") != "paid":
+        return jsonify({"ok": True, "ignored": True}), 200
+
+    order_id = (payment.get("metadata") or {}).get("order_id")
+    if not order_id:
+        return jsonify({"error": "لا يوجد رقم طلب بالبيانات الوصفية"}), 400
+
+    rows = supabase_admin.table("subscription_orders").select("*").eq("id", order_id).limit(1).execute().data
+    if not rows:
+        return jsonify({"error": "الطلب غير موجود"}), 404
+    order = rows[0]
+    if order["status"] == "paid":
+        return jsonify({"ok": True, "already_confirmed": True}), 200
+
+    # المبلغ المدفوع فعليًا (بالهللة) لازم يطابق مبلغ الطلب - يمنع أي تلاعب
+    # بالـ metadata من طرف العميل (مثلًا دفع باقة أرخص ثم ادّعاء طلب أغلى)
+    expected_halalas = round(float(order["amount"]) * 100)
+    if payment.get("amount") != expected_halalas or payment.get("currency") != "SAR":
+        return jsonify({"error": "المبلغ المدفوع لا يطابق الطلب"}), 400
+
+    _activate_subscription_order(order, gateway_reference=payment_id)
     return jsonify({"ok": True}), 200
 
 

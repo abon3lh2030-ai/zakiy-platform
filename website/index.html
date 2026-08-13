@@ -6,6 +6,10 @@
 <title>ذكيّ — منصة المذاكرة الذكية</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
+<!-- نموذج دفع ميسر المدمج (بطاقة/مدى/Apple Pay) - بيانات البطاقة تروح لميسر
+     مباشرة من المتصفح، ما تلمس سيرفرنا إطلاقًا -->
+<link rel="stylesheet" href="https://cdn.moyasar.com/mpf/1.15.0/moyasar.css">
+<script src="https://cdn.moyasar.com/mpf/1.15.0/moyasar.js"></script>
 <style>
   :root {
     --paper: #FAF9F5;
@@ -529,6 +533,44 @@
     font-weight: 700;
     cursor: pointer;
   }
+
+  /* ---------- نافذة الدفع (ميسر) ---------- */
+  .payment-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 24, 31, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 16px;
+  }
+  .payment-modal-box {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 26px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .payment-modal-box h3 {
+    font-family: 'Almarai', sans-serif;
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+  .payment-modal-close {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink);
+    border-radius: 999px;
+    width: 32px; height: 32px;
+    font-size: 15px;
+    cursor: pointer;
+    float: left;
+  }
+  #paymentModalMsg { margin-top: 12px; font-size: 14px; color: var(--ink-soft); }
 
   /* ---------- التوب 3 ---------- */
   .podium {
@@ -1561,6 +1603,17 @@
     </div>
   </section>
 
+  <!-- نافذة دفع ميسر - تظهر فوق أي شاشة وقت الاشتراك، نموذج البطاقة/Apple Pay
+       يُبنى داخلها مباشرة عبر Moyasar.js -->
+  <div class="payment-modal-overlay hidden" id="paymentModalOverlay">
+    <div class="payment-modal-box">
+      <button class="payment-modal-close" id="paymentModalCloseBtn">✕</button>
+      <h3 data-i18n="payment_modal_heading">إتمام الدفع</h3>
+      <div class="mysr-form" id="moyasarFormContainer"></div>
+      <div id="paymentModalMsg"></div>
+    </div>
+  </div>
+
   <!-- صفحة البروفايل - بروفايلك أو بروفايل شخص ثاني (عبر بحث/QR)، حسب إعدادات الخصوصية -->
   <section class="card hidden" id="step-profile">
     <span class="step-label" data-i18n="profile_step_label">👤 البروفايل</span>
@@ -2415,7 +2468,11 @@ const I18N = {
     feat_archive: '📂 آخر {n} جلسة بالأرشيف',
     feat_performance: '📊 آخر {n} اختبار بالأداء',
     btn_subscribe: 'اشترك',
-    checkout_created_msg: '✅ طلبك جاهز (#{order_id}) بمبلغ {amount} ريال - أكمل الدفع عبر بوابة الدفع',
+    payment_modal_heading: 'إتمام الدفع',
+    payment_not_ready_msg: 'الدفع غير متاح حاليًا، حاول لاحقًا',
+    payment_processing_msg: '⏳ جاري تفعيل اشتراكك...',
+    payment_success_msg: '✅ تم الدفع بنجاح! اشتراكك مفعّل الآن',
+    payment_delayed_msg: 'الدفع قيد المراجعة - بيتفعّل اشتراكك خلال دقائق',
     settings_private_profile: '🔒 بروفايل خاص بالكامل',
     settings_private_profile_desc: 'لو فعّلته، محد يقدر يشوف بروفايلك غير اسمك',
     settings_show_performance: '📊 إظهار الأداء بالبروفايل',
@@ -2857,7 +2914,11 @@ const I18N = {
     feat_archive: '📂 Last {n} archived sessions',
     feat_performance: '📊 Last {n} performance results',
     btn_subscribe: 'Subscribe',
-    checkout_created_msg: '✅ Your order is ready (#{order_id}) for {amount} SAR - complete payment via the payment gateway',
+    payment_modal_heading: 'Complete Payment',
+    payment_not_ready_msg: 'Payment is unavailable right now, please try again later',
+    payment_processing_msg: '⏳ Activating your subscription...',
+    payment_success_msg: '✅ Payment successful! Your subscription is now active',
+    payment_delayed_msg: 'Payment is under review - your subscription will activate within minutes',
     settings_private_profile: '🔒 Fully Private Profile',
     settings_private_profile_desc: 'If enabled, no one can see your profile except your name',
     settings_show_performance: '📊 Show Performance on Profile',
@@ -2951,6 +3012,7 @@ document.getElementById('globalBackBtn').addEventListener('click', () => {
   if (!prev) return;
   TOP_LEVEL_SCREENS.forEach(hide);
   hide('pomodoroWidget'); // خلّه يختفي كل ما غادرنا الشاشة الحالية بالكامل - يظهر بس أثناء جلسة المذاكرة الفردية نفسها
+  hide('paymentModalOverlay'); // نفس المبدأ - نافذة الدفع ما تضل عالقة لو المستخدم غادر الإعدادات بدون ما يسكّرها صراحة
   prev.forEach(show);
   updateGlobalBackButton();
 });
@@ -3030,6 +3092,7 @@ function goToJoinRoomWithCode(code) {
   pushNavSnapshot();
   TOP_LEVEL_SCREENS.forEach(hide);
   hide('pomodoroWidget'); // خلّه يختفي كل ما غادرنا الشاشة الحالية بالكامل - يظهر بس أثناء جلسة المذاكرة الفردية نفسها
+  hide('paymentModalOverlay'); // نفس المبدأ - نافذة الدفع ما تضل عالقة لو المستخدم غادر الإعدادات بدون ما يسكّرها صراحة
   hide('login-form'); hide('signup-form');
   show('room-join-form');
   document.getElementById('joinRoomCode').value = code.toUpperCase();
@@ -3128,6 +3191,7 @@ function onAuthSuccess(session) {
       if (me.must_change_password) {
         TOP_LEVEL_SCREENS.forEach(hide);
   hide('pomodoroWidget'); // خلّه يختفي كل ما غادرنا الشاشة الحالية بالكامل - يظهر بس أثناء جلسة المذاكرة الفردية نفسها
+  hide('paymentModalOverlay'); // نفس المبدأ - نافذة الدفع ما تضل عالقة لو المستخدم غادر الإعدادات بدون ما يسكّرها صراحة
         hide('login-form'); hide('signup-form');
         hide('sidebar'); // بوابة صلبة فعليًا - ما نخلي السايد بار يفتح مسارات ثانية يتفادى بيها المستخدم البوابة
         navHistory = [];
@@ -3290,6 +3354,7 @@ document.getElementById('loginRequiredLoginBtn').addEventListener('click', () =>
   pushNavSnapshot();
   TOP_LEVEL_SCREENS.forEach(hide);
   hide('pomodoroWidget'); // خلّه يختفي كل ما غادرنا الشاشة الحالية بالكامل - يظهر بس أثناء جلسة المذاكرة الفردية نفسها
+  hide('paymentModalOverlay'); // نفس المبدأ - نافذة الدفع ما تضل عالقة لو المستخدم غادر الإعدادات بدون ما يسكّرها صراحة
   hide('signup-form');
   show('login-form');
   updateGlobalBackButton();
@@ -3299,6 +3364,7 @@ document.getElementById('loginRequiredSignupBtn').addEventListener('click', () =
   pushNavSnapshot();
   TOP_LEVEL_SCREENS.forEach(hide);
   hide('pomodoroWidget'); // خلّه يختفي كل ما غادرنا الشاشة الحالية بالكامل - يظهر بس أثناء جلسة المذاكرة الفردية نفسها
+  hide('paymentModalOverlay'); // نفس المبدأ - نافذة الدفع ما تضل عالقة لو المستخدم غادر الإعدادات بدون ما يسكّرها صراحة
   hide('login-form');
   show('signup-form');
   updateGlobalBackButton();
@@ -3307,6 +3373,7 @@ document.getElementById('guestLoginPromptBtn').addEventListener('click', () => {
   pushNavSnapshot();
   TOP_LEVEL_SCREENS.forEach(hide);
   hide('pomodoroWidget'); // خلّه يختفي كل ما غادرنا الشاشة الحالية بالكامل - يظهر بس أثناء جلسة المذاكرة الفردية نفسها
+  hide('paymentModalOverlay'); // نفس المبدأ - نافذة الدفع ما تضل عالقة لو المستخدم غادر الإعدادات بدون ما يسكّرها صراحة
   hide('signup-form');
   show('login-form');
   updateGlobalBackButton();
@@ -3463,6 +3530,7 @@ function goToHomeScreen() {
   } else {
     TOP_LEVEL_SCREENS.forEach(hide);
   hide('pomodoroWidget'); // خلّه يختفي كل ما غادرنا الشاشة الحالية بالكامل - يظهر بس أثناء جلسة المذاكرة الفردية نفسها
+  hide('paymentModalOverlay'); // نفس المبدأ - نافذة الدفع ما تضل عالقة لو المستخدم غادر الإعدادات بدون ما يسكّرها صراحة
     hide('login-form'); hide('signup-form');
     show('mode-select');
   }
@@ -3899,6 +3967,7 @@ document.getElementById('settingsViewProfileBtn').addEventListener('click', () =
 let subscriptionPlansCache = null;
 let subscriptionMeCache = null;
 let subscriptionPeriod = 'monthly';
+let moyasarPublishableKey = null;
 const SUBSCRIPTION_PLAN_ORDER = ['free', 'plus', 'pro', 'ultimate'];
 
 async function loadSubscriptionSection() {
@@ -3912,6 +3981,7 @@ async function loadSubscriptionSection() {
       apiCall('GET', '/api/subscription/me'),
     ]);
     subscriptionPlansCache = plansData.plans;
+    moyasarPublishableKey = plansData.moyasar_publishable_key;
     subscriptionMeCache = meData;
     renderSubscriptionPlans();
   } catch (e) {
@@ -3968,24 +4038,83 @@ document.querySelectorAll('.sub-period-btn').forEach(btn => {
   });
 });
 
-// ينشئ طلب اشتراك معلّق بالباك إند ويسلّمه لبوابة الدفع - عرّف
-// window.ZAKIY_PAYMENT_GATEWAY_HANDLER(order) لربط بوابتك الفعلية (Moyasar/
-// Tap/PayTabs/إلخ)؛ order = {order_id, plan, period, amount, currency}.
-// بدون تعريفها، نعرض تفاصيل الطلب بس كنقطة تكامل واضحة.
+// ينشئ طلب اشتراك معلّق بالباك إند ثم يفتح نموذج دفع ميسر المدمج (بطاقة/
+// مدى/Apple Pay). الدفعة نفسها تُنشأ من طرف Moyasar.js بالمتصفح مباشرة
+// بالمفتاح العلني بس (بيانات البطاقة ما تلمس سيرفرنا) - وتفعيل الاشتراك
+// الفعلي يصير عبر ويبهوك ميسر (/api/subscription/webhook/moyasar) بعد ما
+// يتأكد الباك إند من نجاح الدفع مباشرة مع ميسر، مو من هذا الكود، عشان محد
+// يقدر يزوّر "نجح الدفع" من طرف المتصفح.
+let pendingSubscriptionOrder = null;
+
 async function startCheckout(plan) {
   const msg = document.getElementById('subscriptionMsg');
   msg.textContent = t('loading');
   try {
     const order = await apiCall('POST', '/api/subscription/checkout', { plan, period: subscriptionPeriod });
-    if (typeof window.ZAKIY_PAYMENT_GATEWAY_HANDLER === 'function') {
-      window.ZAKIY_PAYMENT_GATEWAY_HANDLER(order);
-      msg.textContent = '';
-    } else {
-      msg.textContent = t('checkout_created_msg', { amount: order.amount, order_id: order.order_id });
-    }
+    msg.textContent = '';
+    openPaymentModal(order);
   } catch (e) {
     msg.textContent = e.message;
   }
+}
+
+function openPaymentModal(order) {
+  if (!moyasarPublishableKey) {
+    document.getElementById('subscriptionMsg').textContent = t('payment_not_ready_msg');
+    return;
+  }
+  pendingSubscriptionOrder = order;
+  document.getElementById('moyasarFormContainer').innerHTML = '';
+  document.getElementById('paymentModalMsg').textContent = '';
+  show('paymentModalOverlay');
+
+  Moyasar.init({
+    element: '.mysr-form',
+    amount: Math.round(order.amount * 100), // ميسر يتوقع المبلغ بالهللة
+    currency: order.currency || 'SAR',
+    description: `ذكيّ - ${t('plan_' + order.plan)} (${order.period === 'monthly' ? t('period_monthly') : t('period_annual')})`,
+    publishable_api_key: moyasarPublishableKey,
+    methods: ['creditcard', 'applepay'],
+    metadata: { order_id: order.order_id },
+    apple_pay: {
+      country: 'SA',
+      label: 'ذكيّ',
+      validate_merchant_url: 'https://api.moyasar.com/v1/applepay/initiate',
+    },
+    on_completed: function () {
+      // الدفع بدأ ونجح من طرف المتصفح - التفعيل الفعلي ينتظر ويبهوك ميسر
+      document.getElementById('paymentModalMsg').textContent = t('payment_processing_msg');
+      pollSubscriptionActivation();
+    },
+  });
+}
+
+function closePaymentModal() {
+  hide('paymentModalOverlay');
+  document.getElementById('moyasarFormContainer').innerHTML = '';
+  pendingSubscriptionOrder = null;
+}
+document.getElementById('paymentModalCloseBtn').addEventListener('click', closePaymentModal);
+
+// يتحقق من /api/subscription/me كل ٣ ثواني (لين ١٢ محاولة ~ دقيقة) لين
+// تنعكس حالة الدفع بعد ما ويبهوك ميسر يوصل ويفعّل الاشتراك بالباك إند
+async function pollSubscriptionActivation(attempt = 0) {
+  if (!pendingSubscriptionOrder || attempt >= 12) {
+    if (attempt >= 12) document.getElementById('paymentModalMsg').textContent = t('payment_delayed_msg');
+    return;
+  }
+  await new Promise(r => setTimeout(r, 3000));
+  try {
+    const me = await apiCall('GET', '/api/subscription/me');
+    if (me.tier === pendingSubscriptionOrder.plan) {
+      subscriptionMeCache = me;
+      document.getElementById('paymentModalMsg').textContent = t('payment_success_msg');
+      renderSubscriptionPlans();
+      setTimeout(closePaymentModal, 2000);
+      return;
+    }
+  } catch (e) { /* تجاهل، نحاول مرة ثانية */ }
+  pollSubscriptionActivation(attempt + 1);
 }
 
 document.getElementById('settingsSaveNameBtn').addEventListener('click', async () => {
@@ -4485,6 +4614,7 @@ socket.on('room_state', data => {
   // ظاهرة "تحت" شاشة الكلاس
   TOP_LEVEL_SCREENS.forEach(hide);
   hide('pomodoroWidget'); // خلّه يختفي كل ما غادرنا الشاشة الحالية بالكامل - يظهر بس أثناء جلسة المذاكرة الفردية نفسها
+  hide('paymentModalOverlay'); // نفس المبدأ - نافذة الدفع ما تضل عالقة لو المستخدم غادر الإعدادات بدون ما يسكّرها صراحة
   hide('login-form'); hide('signup-form'); hide('step-force-password-change');
   updateGlobalBackButton();
 
@@ -6104,6 +6234,7 @@ const INSTITUTIONAL_DASHBOARD_SCREENS = {
 function routeByRole(role) {
   TOP_LEVEL_SCREENS.forEach(hide);
   hide('pomodoroWidget'); // خلّه يختفي كل ما غادرنا الشاشة الحالية بالكامل - يظهر بس أثناء جلسة المذاكرة الفردية نفسها
+  hide('paymentModalOverlay'); // نفس المبدأ - نافذة الدفع ما تضل عالقة لو المستخدم غادر الإعدادات بدون ما يسكّرها صراحة
   hide('login-form'); hide('signup-form'); hide('step-force-password-change');
   show('sidebar');
   const screenId = INSTITUTIONAL_DASHBOARD_SCREENS[role];
@@ -6742,6 +6873,7 @@ document.getElementById('studentScheduleNavBtn').addEventListener('click', async
   pushNavSnapshot();
   TOP_LEVEL_SCREENS.forEach(hide);
   hide('pomodoroWidget'); // خلّه يختفي كل ما غادرنا الشاشة الحالية بالكامل - يظهر بس أثناء جلسة المذاكرة الفردية نفسها
+  hide('paymentModalOverlay'); // نفس المبدأ - نافذة الدفع ما تضل عالقة لو المستخدم غادر الإعدادات بدون ما يسكّرها صراحة
   show('step-student-schedule');
   updateGlobalBackButton();
   const wrap = document.getElementById('studentScheduleWrap');
@@ -6786,6 +6918,7 @@ document.getElementById('messagesBtn').addEventListener('click', () => {
   pushNavSnapshot();
   TOP_LEVEL_SCREENS.forEach(hide);
   hide('pomodoroWidget'); // خلّه يختفي كل ما غادرنا الشاشة الحالية بالكامل - يظهر بس أثناء جلسة المذاكرة الفردية نفسها
+  hide('paymentModalOverlay'); // نفس المبدأ - نافذة الدفع ما تضل عالقة لو المستخدم غادر الإعدادات بدون ما يسكّرها صراحة
   hide('login-form'); hide('signup-form');
   show('sidebar');
   show('step-messages');

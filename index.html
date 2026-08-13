@@ -3250,6 +3250,12 @@ function onAuthSuccess(session) {
       })
       .catch(() => {});
   });
+
+  // نموذج ميسر المدمج يتطلب callback_url صالح (حتى بدون إعادة توجيه فعلية
+  // ملموسة بأغلب الحالات) - فلو المستخدم رجع فعليًا لصفحتنا بعد تدفّق دفع
+  // (مثلاً Apple Pay أو 3D Secure يحتاجون تحويل كامل)، نكمل متابعة تفعيل
+  // الاشتراك المعلّق من جديد بعد إعادة تحميل الصفحة
+  resumePendingSubscriptionCheck();
 }
 
 // Supabase يجدد access_token تلقائيًا بالخلفية - نتابع آخر نسخة عشان الطلبات
@@ -4058,12 +4064,18 @@ async function startCheckout(plan) {
   }
 }
 
+// نحفظ الطلب المعلّق بـ localStorage (مو متغيّر جافاسكربت بس) لأن Moyasar.js
+// يتطلب callback_url صالح ويقدر يعيد تحميل الصفحة كاملة (Apple Pay/3D Secure)
+// - فلازم نقدر نكمل متابعة التفعيل حتى بعد إعادة تحميل تفقد فيها كل متغيّرات الذاكرة
+const PENDING_ORDER_STORAGE_KEY = 'zakiy_pending_subscription_order';
+
 function openPaymentModal(order) {
   if (!moyasarPublishableKey) {
     document.getElementById('subscriptionMsg').textContent = t('payment_not_ready_msg');
     return;
   }
   pendingSubscriptionOrder = order;
+  localStorage.setItem(PENDING_ORDER_STORAGE_KEY, JSON.stringify(order));
   document.getElementById('moyasarFormContainer').innerHTML = '';
   document.getElementById('paymentModalMsg').textContent = '';
   show('paymentModalOverlay');
@@ -4074,6 +4086,7 @@ function openPaymentModal(order) {
     currency: order.currency || 'SAR',
     description: `ذكيّ - ${t('plan_' + order.plan)} (${order.period === 'monthly' ? t('period_monthly') : t('period_annual')})`,
     publishable_api_key: moyasarPublishableKey,
+    callback_url: window.location.origin + window.location.pathname,
     methods: ['creditcard', 'applepay'],
     metadata: { order_id: order.order_id },
     apple_pay: {
@@ -4093,8 +4106,28 @@ function closePaymentModal() {
   hide('paymentModalOverlay');
   document.getElementById('moyasarFormContainer').innerHTML = '';
   pendingSubscriptionOrder = null;
+  localStorage.removeItem(PENDING_ORDER_STORAGE_KEY);
 }
 document.getElementById('paymentModalCloseBtn').addEventListener('click', closePaymentModal);
+
+// يستأنف متابعة طلب معلّق بعد ما المستخدم يرجع لصفحتنا من تدفّق دفع أعاد
+// تحميل الصفحة كاملة (Apple Pay/3D Secure) - يُستدعى بعد كل نجاح دخول
+function resumePendingSubscriptionCheck() {
+  const raw = localStorage.getItem(PENDING_ORDER_STORAGE_KEY);
+  if (!raw) return;
+  // ننظّف أي معطيات رجّعها ميسر بالرابط (id/status/message) عشان يبقى نظيف
+  if (window.location.search) {
+    history.replaceState(null, '', window.location.pathname + window.location.hash);
+  }
+  let order;
+  try { order = JSON.parse(raw); } catch (e) { localStorage.removeItem(PENDING_ORDER_STORAGE_KEY); return; }
+  showSettingsScreen();
+  pendingSubscriptionOrder = order;
+  show('paymentModalOverlay');
+  document.getElementById('moyasarFormContainer').innerHTML = '';
+  document.getElementById('paymentModalMsg').textContent = t('payment_processing_msg');
+  pollSubscriptionActivation();
+}
 
 // يتحقق من /api/subscription/me كل ٣ ثواني (لين ١٢ محاولة ~ دقيقة) لين
 // تنعكس حالة الدفع بعد ما ويبهوك ميسر يوصل ويفعّل الاشتراك بالباك إند
@@ -4110,6 +4143,7 @@ async function pollSubscriptionActivation(attempt = 0) {
       subscriptionMeCache = me;
       document.getElementById('paymentModalMsg').textContent = t('payment_success_msg');
       renderSubscriptionPlans();
+      localStorage.removeItem(PENDING_ORDER_STORAGE_KEY);
       setTimeout(closePaymentModal, 2000);
       return;
     }

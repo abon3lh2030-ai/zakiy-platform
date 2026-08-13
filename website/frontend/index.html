@@ -4144,7 +4144,12 @@ async function pollSubscriptionActivation(attempt = 0) {
       document.getElementById('paymentModalMsg').textContent = t('payment_success_msg');
       renderSubscriptionPlans();
       localStorage.removeItem(PENDING_ORDER_STORAGE_KEY);
-      setTimeout(closePaymentModal, 2000);
+      setTimeout(() => {
+        closePaymentModal();
+        // ينزل تلقائيًا لقسم الاشتراك عشان يشوف التأكيد مباشرة، خصوصًا لو
+        // رجع لتو من صفحة دفع خارجية وصفحة الإعدادات فتحت من أعلاها
+        document.getElementById('settingsSubscriptionSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 2000);
       return;
     }
   } catch (e) { /* تجاهل، نحاول مرة ثانية */ }

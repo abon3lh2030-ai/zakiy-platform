@@ -3109,14 +3109,25 @@ def _resolve_subscription(profile):
 
     tier = profile.get("subscription_tier") or "free"
     expires_at = profile.get("subscription_expires_at")
+    days_remaining = None
     if tier != "free" and expires_at:
         try:
             expiry_dt = datetime.fromisoformat(str(expires_at).replace("Z", "+00:00"))
-            if expiry_dt < datetime.now(timezone.utc):
+            remaining = expiry_dt - datetime.now(timezone.utc)
+            if remaining.total_seconds() <= 0:
                 tier = "free"  # انتهت صلاحية الاشتراك - يرجع تلقائيًا للباقة المجانية
+            else:
+                # نقرّب لأعلى - "باقي يوم" يبقى ١ حتى لو تبقى ٣ ساعات بس، مو ٠
+                days_remaining = max(1, -(-int(remaining.total_seconds()) // 86400))
         except Exception:
             pass
-    return {"tier": tier, "period": profile.get("subscription_period"), "expires_at": expires_at, "unlimited": tier in ("ultimate", "owner")}
+    return {
+        "tier": tier,
+        "period": profile.get("subscription_period"),
+        "expires_at": expires_at,
+        "unlimited": tier in ("ultimate", "owner"),
+        "days_remaining": days_remaining,
+    }
 
 
 # مفاتيح حدود اليوم بجدول SUBSCRIPTION_PLANS اللي يقابل كل نوع إجراء محدود -
@@ -3420,6 +3431,42 @@ def schedule_reminder_loop():
         socketio.sleep(60)
 
 
+def _check_expired_subscriptions_once():
+    """يفحص الحسابات الفردية (role فاضي) اللي انتهت صلاحية اشتراكها المدفوع
+    فعليًا - يرجّعها للباقة المجانية بقاعدة البيانات نفسها (مو بس بالعرض
+    اللحظي اللي يسويه _resolve_subscription وقت الطلب) ويرسل تنبيه وحد
+    يوضّح السبب. إعادة الضبط لـ subscription_tier='free' نفسها تمنع تكرار
+    نفس التنبيه بالمرات الجاية (الاستعلام ما يعيد التقاطه بعدها)."""
+    now_iso = datetime.now(timezone.utc).isoformat()
+    rows = (
+        supabase_admin.table("profiles")
+        .select("user_id, subscription_tier")
+        .is_("role", "null")
+        .not_.in_("subscription_tier", ["free", "owner"])
+        .lt("subscription_expires_at", now_iso)
+        .execute()
+    ).data
+    for row in rows:
+        plan_name = SUBSCRIPTION_PLANS.get(row.get("subscription_tier"), {}).get("name_ar", "المدفوعة")
+        supabase_admin.table("profiles").update(
+            {"subscription_tier": "free", "subscription_period": None, "subscription_expires_at": None}
+        ).eq("user_id", row["user_id"]).execute()
+        _create_notification(
+            row["user_id"], "subscription_expired", "⌛ انتهت صلاحية اشتراكك",
+            f"انتهت باقة {plan_name} ورجع حسابك للباقة المجانية - جدّد اشتراكك من الإعدادات عشان تكمل بنفس المميزات",
+        )
+
+
+def subscription_expiry_loop():
+    while True:
+        try:
+            if supabase_admin is not None:
+                _check_expired_subscriptions_once()
+        except Exception:
+            pass
+        socketio.sleep(1800)  # كل نص ساعة يكفي - انتهاء الاشتراك حدث يومي مو دقيق بالثانية
+
+
 # نطلق الحلقة مرة وحدة بس عند إقلاع التطبيق الفعلي. بوضع debug المحلي، Flask
 # يشغّل السكربت مرتين: العملية الأصلية (بدون WERKZEUG_RUN_MAIN - ما تخدم أي
 # طلب فعليًا، بس تراقب وتعيد تشغيل عملية فرعية) والعملية الفرعية (اللي فيها
@@ -3428,6 +3475,7 @@ def schedule_reminder_loop():
 _werkzeug_run_main = os.environ.get("WERKZEUG_RUN_MAIN")
 if supabase_admin is not None and _werkzeug_run_main in (None, "true"):
     socketio.start_background_task(schedule_reminder_loop)
+    socketio.start_background_task(subscription_expiry_loop)
 
 
 if __name__ == "__main__":

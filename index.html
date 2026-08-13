@@ -1593,6 +1593,7 @@
       <div id="settingsSubscriptionSection">
         <h3 class="sub-heading" style="margin-top:22px;" data-i18n="settings_subscription_heading">👑 الاشتراك</h3>
         <p class="desc" id="subscriptionCurrentPlan"></p>
+        <p class="desc hidden" id="subscriptionDaysRemaining" style="color: var(--teal);"></p>
         <div class="actions" style="margin-bottom:10px;">
           <button class="ghost sub-period-btn active" data-period="monthly" data-i18n="period_monthly">شهري</button>
           <button class="ghost sub-period-btn" data-period="annual" data-i18n="period_annual">سنوي</button>
@@ -2459,6 +2460,7 @@ const I18N = {
     period_monthly: 'شهري', period_annual: 'سنوي',
     plan_free: 'المجاني', plan_plus: 'بلس', plan_pro: 'برو', plan_ultimate: 'ألتميت',
     current_plan_label: 'باقتك الحالية: {plan}',
+    days_remaining_label: '⏳ باقي {n} يوم على انتهاء اشتراكك',
     current_plan_badge: '✅ باقتك الحالية',
     sar_label: 'ريال', free_label: 'مجانًا', unlimited_label: 'بلا حدود', full_label: 'كامل',
     feat_library: '📚 {n} كتاب بالمكتبة',
@@ -2905,6 +2907,7 @@ const I18N = {
     period_monthly: 'Monthly', period_annual: 'Yearly',
     plan_free: 'Free', plan_plus: 'Plus', plan_pro: 'Pro', plan_ultimate: 'Ultimate',
     current_plan_label: 'Your current plan: {plan}',
+    days_remaining_label: '⏳ {n} days left until your subscription ends',
     current_plan_badge: '✅ Your current plan',
     sar_label: 'SAR', free_label: 'Free', unlimited_label: 'Unlimited', full_label: 'Full',
     feat_library: '📚 {n} library books',
@@ -3999,6 +4002,14 @@ function renderSubscriptionPlans() {
   if (!subscriptionPlansCache) return;
   const currentTier = subscriptionMeCache?.tier || 'free';
   document.getElementById('subscriptionCurrentPlan').textContent = t('current_plan_label', { plan: t(`plan_${currentTier}`) });
+  const daysEl = document.getElementById('subscriptionDaysRemaining');
+  const daysRemaining = subscriptionMeCache?.days_remaining;
+  if (daysRemaining) {
+    daysEl.textContent = t('days_remaining_label', { n: daysRemaining });
+    daysEl.classList.remove('hidden');
+  } else {
+    daysEl.classList.add('hidden');
+  }
   const grid = document.getElementById('subscriptionPlansGrid');
   grid.innerHTML = SUBSCRIPTION_PLAN_ORDER.map(key => {
     const plan = subscriptionPlansCache[key];

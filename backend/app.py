@@ -806,6 +806,11 @@ def update_note(note_id):
     for key in ("title", "content", "folder_id", "note_type", "checklist_items", "is_pinned"):
         if key in data:
             patch[key] = data[key]
+    # نص فاضي لـ folder_id = "بدون مجلد" صراحة - حل لقيد بمكتبة kotlinx.serialization
+    # بتطبيق أندرويد (explicitNulls=false تحذف أي حقل null تلقائيًا، فما يقدر
+    # يرسل "امسح المجلد" كـ null صريح زي iOS/الموقع، فيرسل نص فاضي بدلها)
+    if patch.get("folder_id") == "":
+        patch["folder_id"] = None
     if not patch:
         return jsonify({"error": "ما فيه شي نحدّثه"}), 400
     patch["updated_at"] = datetime.now(timezone.utc).isoformat()

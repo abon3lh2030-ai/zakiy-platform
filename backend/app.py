@@ -138,6 +138,22 @@ def require_role(*roles):
     return decorator
 
 
+def require_personal_account(f):
+    """عكس require_role - يمنع أي حساب مؤسسي (role موجود: طالب/معلم/إدارة
+    مدرسة) من الوصول، لميزات مخصصة للحساب الفردي بس (مثل دفتر الملاحظات)."""
+
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        profile = (
+            supabase_admin.table("profiles").select("role").eq("user_id", request.user_id).limit(1).execute()
+        ).data
+        if profile and profile[0].get("role"):
+            return jsonify({"error": "هذي الميزة متاحة للحسابات الفردية بس"}), 403
+        return f(*args, **kwargs)
+
+    return require_auth(wrapper)
+
+
 # ---------- فحص إن السيرفر شغال ----------
 @app.route("/api/health")
 def health():
@@ -666,6 +682,154 @@ def delete_library_book(book_id):
         return jsonify({"ok": True}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# ---------- دفتر الملاحظات (حسابات فردية بس - ما يظهر لأي حساب مؤسسي) ----------
+@app.route("/api/notes/folders", methods=["GET"])
+@require_personal_account
+def list_note_folders():
+    rows = (
+        supabase_admin.table("note_folders")
+        .select("*")
+        .eq("user_id", request.user_id)
+        .order("created_at", desc=False)
+        .execute()
+    ).data
+    return jsonify({"folders": rows}), 200
+
+
+@app.route("/api/notes/folders", methods=["POST"])
+@require_personal_account
+def create_note_folder():
+    name = ((request.get_json(silent=True) or {}).get("name") or "").strip()
+    if not name:
+        return jsonify({"error": "لازم اسم للمجلد"}), 400
+    row = (
+        supabase_admin.table("note_folders").insert({"user_id": request.user_id, "name": name}).execute().data[0]
+    )
+    return jsonify(row), 200
+
+
+@app.route("/api/notes/folders/<folder_id>", methods=["PATCH"])
+@require_personal_account
+def update_note_folder(folder_id):
+    name = ((request.get_json(silent=True) or {}).get("name") or "").strip()
+    if not name:
+        return jsonify({"error": "لازم اسم للمجلد"}), 400
+    res = (
+        supabase_admin.table("note_folders")
+        .update({"name": name})
+        .eq("id", folder_id)
+        .eq("user_id", request.user_id)
+        .execute()
+    )
+    if not res.data:
+        return jsonify({"error": "المجلد مو موجود"}), 404
+    return jsonify(res.data[0]), 200
+
+
+@app.route("/api/notes/folders/<folder_id>", methods=["DELETE"])
+@require_personal_account
+def delete_note_folder(folder_id):
+    """حذف المجلد بس - الملاحظات جواه ما تنحذف، ترجع "بدون مجلد" (ON DELETE
+    SET NULL على مستوى قاعدة البيانات نفسها، مو منطق هنا)."""
+    res = (
+        supabase_admin.table("note_folders")
+        .delete()
+        .eq("id", folder_id)
+        .eq("user_id", request.user_id)
+        .execute()
+    )
+    if not res.data:
+        return jsonify({"error": "المجلد مو موجود"}), 404
+    return jsonify({"ok": True}), 200
+
+
+@app.route("/api/notes", methods=["GET"])
+@require_personal_account
+def list_notes():
+    """يدعم فلترة بمجلد (folder_id) وبحث نصي بالعنوان أو المحتوى (q) - يرجّع
+    المثبّتة أول دايمًا، ثم الباقي بأحدث تحديث."""
+    folder_id = request.args.get("folder_id")
+    q = (request.args.get("q") or "").strip()
+    query = supabase_admin.table("notes").select(
+        "id, folder_id, title, note_type, is_pinned, created_at, updated_at"
+    ).eq("user_id", request.user_id)
+    if folder_id:
+        query = query.eq("folder_id", folder_id)
+    if q:
+        safe_q = q.replace(",", " ").replace("%", " ")
+        query = query.or_(f"title.ilike.%{safe_q}%,content.ilike.%{safe_q}%")
+    rows = query.order("is_pinned", desc=True).order("updated_at", desc=True).execute().data
+    return jsonify({"notes": rows}), 200
+
+
+@app.route("/api/notes/<note_id>", methods=["GET"])
+@require_personal_account
+def get_note(note_id):
+    rows = (
+        supabase_admin.table("notes").select("*").eq("id", note_id).eq("user_id", request.user_id).limit(1).execute()
+    ).data
+    if not rows:
+        return jsonify({"error": "الملاحظة مو موجودة"}), 404
+    return jsonify(rows[0]), 200
+
+
+@app.route("/api/notes", methods=["POST"])
+@require_personal_account
+def create_note():
+    data = request.get_json(silent=True) or {}
+    note_type = data.get("note_type") if data.get("note_type") in ("text", "checklist") else "text"
+    row = (
+        supabase_admin.table("notes")
+        .insert(
+            {
+                "user_id": request.user_id,
+                "folder_id": data.get("folder_id"),
+                "title": (data.get("title") or "").strip(),
+                "content": data.get("content") or "",
+                "note_type": note_type,
+                "checklist_items": data.get("checklist_items") or [],
+            }
+        )
+        .execute()
+        .data[0]
+    )
+    return jsonify(row), 200
+
+
+@app.route("/api/notes/<note_id>", methods=["PATCH"])
+@require_personal_account
+def update_note(note_id):
+    data = request.get_json(silent=True) or {}
+    patch = {}
+    for key in ("title", "content", "folder_id", "note_type", "checklist_items", "is_pinned"):
+        if key in data:
+            patch[key] = data[key]
+    if not patch:
+        return jsonify({"error": "ما فيه شي نحدّثه"}), 400
+    patch["updated_at"] = datetime.now(timezone.utc).isoformat()
+    res = (
+        supabase_admin.table("notes")
+        .update(patch)
+        .eq("id", note_id)
+        .eq("user_id", request.user_id)
+        .execute()
+    )
+    if not res.data:
+        return jsonify({"error": "الملاحظة مو موجودة"}), 404
+    return jsonify(res.data[0]), 200
+
+
+@app.route("/api/notes/<note_id>", methods=["DELETE"])
+@require_personal_account
+def delete_note(note_id):
+    res = (
+        supabase_admin.table("notes").delete().eq("id", note_id).eq("user_id", request.user_id).execute()
+    )
+    if not res.data:
+        return jsonify({"error": "الملاحظة مو موجودة"}), 404
+    return jsonify({"ok": True}), 200
 
 
 # ---------- ملف تعريف الطالب (username قابل للبحث - يخدم ميزة الأصدقاء) ----------

@@ -969,6 +969,51 @@
     text-align: center; padding: 8px; border-radius: 8px; background: var(--paper-dim);
     color: var(--teal); font-weight: 700; font-size: 13px;
   }
+
+  /* ---------- دفتر الملاحظات ---------- */
+  .notes-folders-row {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;
+  }
+  .folder-chip {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
+    padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--ink-soft);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .folder-chip.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+  .folder-chip .folder-chip-del { opacity: .7; font-size: 11px; }
+  .folder-chip .folder-chip-del:hover { opacity: 1; }
+  .folder-chip-add { border-style: dashed; }
+
+  .note-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .note-card:hover { border-color: var(--teal); }
+  .note-card .note-card-top { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+  .note-card .note-card-title { font-weight: 700; font-size: 15px; color: var(--ink); }
+  .note-card .note-card-title.untitled { color: var(--ink-soft); font-weight: 500; }
+  .note-card .note-card-preview { font-size: 13px; color: var(--ink-soft); line-height: 1.6; }
+  .note-card .note-card-meta { font-size: 11.5px; color: var(--ink-soft); display: flex; gap: 10px; margin-top: 2px; }
+  .note-card .note-pin-icon { font-size: 13px; }
+
+  .note-type-btn.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+  .note-title-input { font-size: 18px; font-weight: 700; font-family: 'Almarai', sans-serif; margin-bottom: 10px; }
+  .note-content-textarea {
+    width: 100%; min-height: 320px; resize: vertical; line-height: 1.9; font-family: inherit;
+  }
+  #notePinBtn.pinned { background: var(--highlighter-soft); border-color: var(--highlighter); }
+
+  .checklist-row {
+    display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 1px solid var(--line);
+  }
+  .checklist-row input[type=checkbox] { width: 18px; height: 18px; flex-shrink: 0; cursor: pointer; }
+  .checklist-row .checklist-text-input {
+    flex: 1; border: none; background: transparent; font-family: inherit; font-size: 14.5px; color: var(--ink); padding: 4px;
+  }
+  .checklist-row .checklist-text-input:focus { outline: none; }
+  .checklist-row.done .checklist-text-input { text-decoration: line-through; color: var(--ink-soft); }
+  .checklist-row .checklist-del-btn { color: var(--danger); cursor: pointer; font-size: 13px; flex-shrink: 0; }
 </style>
 </head>
 <body class="with-sidebar">
@@ -1000,6 +1045,7 @@
     <button class="sidebar-btn" id="archiveBtn"><span class="sidebar-icon">📂</span><span class="label" data-i18n="nav_archive">الأرشيف</span></button>
     <button class="sidebar-btn" id="friendsBtn"><span class="sidebar-icon">👥</span><span class="label" data-i18n="nav_friends">الأصدقاء</span></button>
     <button class="sidebar-btn" id="sidebarLibraryBtn"><span class="sidebar-icon">📚</span><span class="label" data-i18n="nav_library">مكتبتي</span></button>
+    <button class="sidebar-btn hidden" id="notesBtn"><span class="sidebar-icon">📝</span><span class="label" data-i18n="nav_notes">ملاحظاتي</span></button>
     <button class="sidebar-btn" id="sidebarAiHelpBtn"><span class="sidebar-icon">🤖</span><span class="label" data-i18n="nav_ai_help">مساعد ذكيّ</span></button>
     <button class="sidebar-btn hidden" id="studentScheduleNavBtn"><span class="sidebar-icon">🗓️</span><span class="label" data-i18n="nav_my_schedule">جدولي</span></button>
   </nav>
@@ -1512,6 +1558,52 @@
       <button class="primary" id="libraryAddBtn" disabled data-i18n="btn_save_to_library">احفظ بالمكتبة</button>
     </div>
     <div id="libraryError"></div>
+  </section>
+
+  <!-- دفتر الملاحظات (حساب فردي بس - يُخفى تمامًا لأي حساب مؤسسي) -->
+  <section class="card hidden" id="step-notes">
+    <span class="step-label" data-i18n="notes_step_label">📝 ملاحظاتي</span>
+    <h2 data-i18n="notes_heading">دفتر ملاحظاتك</h2>
+
+    <div class="actions" style="margin-bottom:14px;">
+      <input type="text" id="notesSearchInput" class="text-input" style="flex:1;" placeholder="ابحث بالملاحظات..." data-i18n-ph="ph_notes_search">
+      <button class="primary" id="notesNewBtn" data-i18n="btn_new_note">➕ ملاحظة جديدة</button>
+    </div>
+
+    <div class="notes-folders-row" id="notesFoldersRow"></div>
+
+    <div id="notesList"></div>
+    <p class="desc hidden" id="notesEmptyState" data-i18n="notes_empty">ما فيه ملاحظات هنا لحد الحين.</p>
+  </section>
+
+  <!-- صفحة ملاحظة وحدة (كل ملاحظة بصفحتها الخاصة) -->
+  <section class="card hidden" id="step-note-editor">
+    <div class="actions" style="justify-content:space-between; margin-bottom:14px;">
+      <div class="actions" style="margin:0;">
+        <button class="ghost note-type-btn active" id="noteTypeTextBtn" data-i18n="note_type_text">📝 نص</button>
+        <button class="ghost note-type-btn" id="noteTypeChecklistBtn" data-i18n="note_type_checklist">☑️ تو-دو</button>
+      </div>
+      <div class="actions" style="margin:0;">
+        <button class="ghost" id="notePinBtn" title="تثبيت">📌</button>
+        <button class="ghost" id="noteDeleteBtn" data-i18n="btn_delete">🗑️ حذف</button>
+      </div>
+    </div>
+
+    <input type="text" id="noteTitleInput" class="text-input note-title-input" placeholder="عنوان الملاحظة" data-i18n-ph="ph_note_title">
+
+    <select id="noteFolderSelect" class="text-input" style="margin-bottom:12px;"></select>
+
+    <textarea id="noteContentTextarea" class="text-input note-content-textarea" placeholder="اكتب ملاحظتك هنا..." data-i18n-ph="ph_note_content"></textarea>
+
+    <div id="noteChecklistWrap" class="hidden">
+      <div id="noteChecklistItems"></div>
+      <div class="actions">
+        <input type="text" id="noteChecklistNewInput" class="text-input" style="flex:1;" placeholder="إضافة عنصر..." data-i18n-ph="ph_checklist_item">
+        <button class="ghost" id="noteChecklistAddBtn" data-i18n="btn_add">➕ إضافة</button>
+      </div>
+    </div>
+
+    <p class="desc" id="noteSavedIndicator" style="margin-top:10px;"></p>
   </section>
 
   <!-- الإعدادات - شاشة مستقلة (زر ⚙️ بالسايد بار). اللغة متاحة للجميع، بقية
@@ -2230,6 +2322,25 @@ const I18N = {
     force_pw_heading: 'لازم تغيّر كلمة السر أول',
     force_pw_desc: 'حسابك اتسوى بكلمة سر مؤقتة - اختر كلمة سر جديدة تعرفها بس قبل ما تكمل',
     nav_my_schedule: 'جدولي',
+    nav_notes: 'ملاحظاتي',
+    notes_step_label: '📝 ملاحظاتي',
+    notes_heading: 'دفتر ملاحظاتك',
+    ph_notes_search: 'ابحث بالملاحظات...',
+    btn_new_note: '➕ ملاحظة جديدة',
+    notes_empty: 'ما فيه ملاحظات هنا لحد الحين.',
+    notes_folder_all: 'الكل',
+    notes_folder_unfiled: 'بدون مجلد',
+    notes_new_folder: 'مجلد جديد',
+    notes_new_folder_prompt: 'اسم المجلد الجديد:',
+    notes_delete_folder_confirm: 'تحذف هذا المجلد؟ الملاحظات جواه تبقى، بس ترجع بدون مجلد.',
+    notes_untitled: 'بدون عنوان',
+    notes_saved_indicator: '✅ تم الحفظ',
+    notes_delete_confirm: 'تحذف هذي الملاحظة نهائيًا؟',
+    note_type_text: '📝 نص',
+    note_type_checklist: '☑️ تو-دو',
+    ph_note_title: 'عنوان الملاحظة',
+    ph_note_content: 'اكتب ملاحظتك هنا...',
+    ph_checklist_item: 'إضافة عنصر...',
     nav_messages: 'الرسائل',
     messages_label: '💬 الرسائل',
     messages_heading: 'الرسائل والتنبيهات',
@@ -2677,6 +2788,25 @@ const I18N = {
     force_pw_heading: 'You need to change your password first',
     force_pw_desc: 'Your account was created with a temporary password - choose a new one only you know before continuing',
     nav_my_schedule: 'My Schedule',
+    nav_notes: 'My Notes',
+    notes_step_label: '📝 My Notes',
+    notes_heading: 'Your notebook',
+    ph_notes_search: 'Search notes...',
+    btn_new_note: '➕ New note',
+    notes_empty: 'No notes here yet.',
+    notes_folder_all: 'All',
+    notes_folder_unfiled: 'Unfiled',
+    notes_new_folder: 'New folder',
+    notes_new_folder_prompt: 'New folder name:',
+    notes_delete_folder_confirm: 'Delete this folder? Notes inside it stay, just unfiled.',
+    notes_untitled: 'Untitled',
+    notes_saved_indicator: '✅ Saved',
+    notes_delete_confirm: 'Delete this note permanently?',
+    note_type_text: '📝 Text',
+    note_type_checklist: '☑️ To-do',
+    ph_note_title: 'Note title',
+    ph_note_content: 'Write your note here...',
+    ph_checklist_item: 'Add item...',
     nav_messages: 'Messages',
     messages_label: '💬 Messages',
     messages_heading: 'Messages & Notifications',
@@ -2990,7 +3120,7 @@ const TOP_LEVEL_SCREENS = [
   'mode-select', 'room-mode-select', 'room-create-form', 'room-join-form',
   'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary',
   'step-quiz', 'step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings',
-  'step-profile',
+  'step-profile', 'step-notes', 'step-note-editor',
   // لوحات نظام إدارة حسابات المدارس - step-force-password-change مو من ضمنها
   // عمدًا (بوابة صلبة، ما تدخل نظام الرجوع/التنقل العادي)
   'step-admin-dashboard', 'step-school-dashboard', 'step-teacher-dashboard', 'step-student-schedule',
@@ -3197,6 +3327,8 @@ function onAuthSuccess(session) {
       document.getElementById('studentScheduleNavBtn').classList.toggle(
         'hidden', !(currentUserRole === 'student' && currentUserSchoolId)
       );
+      // دفتر الملاحظات ميزة حساب فردي بس - أي حساب مؤسسي (role موجود) ما يشوفه إطلاقًا
+      document.getElementById('notesBtn').classList.toggle('hidden', !!currentUserRole);
 
       if (me.must_change_password) {
         TOP_LEVEL_SCREENS.forEach(hide);
@@ -3397,7 +3529,7 @@ document.getElementById('guestLoginPromptBtn').addEventListener('click', () => {
 
 // ---------- شاشات الحساب (أدائي / الأرشيف / الأصدقاء / مكتبتي) - كل وحدة
 // مستقلة بزر سايد بار خاص فيها، بدل ما تكون تبويبات جوا شاشة وحدة ----------
-const ACCOUNT_SCREENS = ['step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings', 'step-profile'];
+const ACCOUNT_SCREENS = ['step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings', 'step-profile', 'step-notes', 'step-note-editor'];
 function showAccountScreen(id) {
   ['login-form', 'signup-form', 'step-force-password-change', 'mode-select', 'room-mode-select', 'room-create-form',
    'room-join-form', 'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary', 'step-quiz',
@@ -3412,6 +3544,7 @@ function showArchiveScreen() { showAccountScreen('step-archive'); }
 function showFriendsScreen() { showAccountScreen('step-friends'); }
 function showSettingsScreen() { showAccountScreen('step-settings'); loadSubscriptionSection(); }
 function showProfileScreen() { showAccountScreen('step-profile'); }
+function showNotesScreen() { showAccountScreen('step-notes'); loadNotesScreen(); }
 
 // ---------- صفحة البروفايل (بروفايلك أو بروفايل شخص ثاني) ----------
 async function showProfileScreen(userId) {
@@ -3589,6 +3722,12 @@ document.getElementById('friendsBtn').addEventListener('click', () => {
   showFriendsScreen();
   updateGlobalBackButton();
   loadFriends();
+});
+document.getElementById('notesBtn').addEventListener('click', () => {
+  if (!requireAuthOrPrompt()) return;
+  pushNavSnapshot();
+  showNotesScreen();
+  updateGlobalBackButton();
 });
 
 async function loadArchive() {
@@ -7227,6 +7366,277 @@ async function loadManualAttendanceForm() {
     wrap.innerHTML = `<p class="desc">${escapeHtml(e.message)}</p>`;
   }
 }
+
+// ================= دفتر الملاحظات (حساب فردي بس) =================
+let notesFoldersCache = [];
+let notesListCache = [];
+let notesActiveFolder = null; // null = الكل، 'unfiled' = بدون مجلد، وإلا id المجلد
+let notesSearchQuery = '';
+let notesSearchDebounce = null;
+
+async function loadNotesScreen() {
+  try {
+    const [foldersRes, notesRes] = await Promise.all([
+      apiCall('GET', '/api/notes/folders'),
+      apiCall('GET', '/api/notes'),
+    ]);
+    notesFoldersCache = foldersRes.folders;
+    notesListCache = notesRes.notes;
+    renderNotesFolders();
+    renderNotesList();
+  } catch (e) {
+    document.getElementById('notesList').innerHTML = `<p class="desc">${escapeHtml(e.message)}</p>`;
+  }
+}
+
+async function refreshNotesList() {
+  const params = new URLSearchParams();
+  if (notesActiveFolder && notesActiveFolder !== 'unfiled') params.set('folder_id', notesActiveFolder);
+  if (notesSearchQuery) params.set('q', notesSearchQuery);
+  const res = await apiCall('GET', `/api/notes?${params.toString()}`);
+  notesListCache = notesActiveFolder === 'unfiled' ? res.notes.filter(n => !n.folder_id) : res.notes;
+  renderNotesList();
+}
+
+function renderNotesFolders() {
+  const row = document.getElementById('notesFoldersRow');
+  const chips = [
+    `<span class="folder-chip ${notesActiveFolder === null ? 'active' : ''}" data-folder="__all__">${t('notes_folder_all')}</span>`,
+    `<span class="folder-chip ${notesActiveFolder === 'unfiled' ? 'active' : ''}" data-folder="__unfiled__">${t('notes_folder_unfiled')}</span>`,
+    ...notesFoldersCache.map(f => `
+      <span class="folder-chip ${notesActiveFolder === f.id ? 'active' : ''}" data-folder="${f.id}">
+        ${escapeHtml(f.name)}
+        <span class="folder-chip-del" data-del-folder="${f.id}">✕</span>
+      </span>
+    `),
+    `<span class="folder-chip folder-chip-add" id="notesAddFolderChip">➕ ${t('notes_new_folder')}</span>`,
+  ];
+  row.innerHTML = chips.join('');
+
+  row.querySelectorAll('[data-folder]').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const val = chip.dataset.folder;
+      notesActiveFolder = val === '__all__' ? null : (val === '__unfiled__' ? 'unfiled' : val);
+      renderNotesFolders();
+      refreshNotesList();
+    });
+  });
+  row.querySelectorAll('[data-del-folder]').forEach(btn => {
+    btn.addEventListener('click', async (ev) => {
+      ev.stopPropagation();
+      if (!confirm(t('notes_delete_folder_confirm'))) return;
+      try {
+        await apiCall('DELETE', `/api/notes/folders/${btn.dataset.delFolder}`);
+        if (notesActiveFolder === btn.dataset.delFolder) notesActiveFolder = null;
+        await loadNotesScreen();
+      } catch (e) { alert(e.message); }
+    });
+  });
+  document.getElementById('notesAddFolderChip').addEventListener('click', async () => {
+    const name = prompt(t('notes_new_folder_prompt'));
+    if (!name || !name.trim()) return;
+    try {
+      await apiCall('POST', '/api/notes/folders', { name: name.trim() });
+      await loadNotesScreen();
+    } catch (e) { alert(e.message); }
+  });
+}
+
+function noteFolderName(folderId) {
+  const f = notesFoldersCache.find(x => x.id === folderId);
+  return f ? f.name : null;
+}
+
+function renderNotesList() {
+  const list = document.getElementById('notesList');
+  const empty = document.getElementById('notesEmptyState');
+  empty.classList.toggle('hidden', notesListCache.length > 0);
+  list.innerHTML = notesListCache.map(n => {
+    const title = n.title && n.title.trim() ? escapeHtml(n.title) : t('notes_untitled');
+    const folderTag = n.folder_id ? escapeHtml(noteFolderName(n.folder_id) || '') : '';
+    const dateStr = new Date(n.updated_at).toLocaleDateString(currentLang === 'ar' ? 'ar-SA' : 'en-US');
+    const typeIcon = n.note_type === 'checklist' ? '☑️' : '📝';
+    return `
+      <div class="note-card" data-note-id="${n.id}">
+        <div class="note-card-top">
+          <span class="note-card-title ${n.title && n.title.trim() ? '' : 'untitled'}">${typeIcon} ${title}</span>
+          ${n.is_pinned ? '<span class="note-pin-icon">📌</span>' : ''}
+        </div>
+        <div class="note-card-meta">
+          <span>${dateStr}</span>
+          ${folderTag ? `<span>📁 ${folderTag}</span>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+  list.querySelectorAll('.note-card').forEach(card => {
+    card.addEventListener('click', () => {
+      pushNavSnapshot();
+      openNoteEditor(card.dataset.noteId);
+      updateGlobalBackButton();
+    });
+  });
+}
+
+document.getElementById('notesSearchInput').addEventListener('input', (e) => {
+  clearTimeout(notesSearchDebounce);
+  notesSearchDebounce = setTimeout(() => {
+    notesSearchQuery = e.target.value.trim();
+    refreshNotesList();
+  }, 350);
+});
+
+document.getElementById('notesNewBtn').addEventListener('click', async () => {
+  try {
+    const note = await apiCall('POST', '/api/notes', {
+      title: '', content: '', note_type: 'text',
+      folder_id: notesActiveFolder && notesActiveFolder !== 'unfiled' ? notesActiveFolder : null,
+    });
+    pushNavSnapshot();
+    openNoteEditor(note.id, note);
+    updateGlobalBackButton();
+  } catch (e) { alert(e.message); }
+});
+
+// ---------- محرر الملاحظة (صفحة مستقلة لكل ملاحظة) ----------
+let currentNoteId = null;
+let currentNoteData = null;
+let noteSaveDebounce = null;
+
+function populateNoteFolderSelect() {
+  const sel = document.getElementById('noteFolderSelect');
+  sel.innerHTML = `<option value="">${t('notes_folder_unfiled')}</option>` +
+    notesFoldersCache.map(f => `<option value="${f.id}">${escapeHtml(f.name)}</option>`).join('');
+}
+
+async function openNoteEditor(noteId, prefetched) {
+  showAccountScreen('step-note-editor');
+  populateNoteFolderSelect();
+  const note = prefetched || await apiCall('GET', `/api/notes/${noteId}`);
+  currentNoteId = note.id;
+  currentNoteData = note;
+
+  document.getElementById('noteTitleInput').value = note.title || '';
+  document.getElementById('noteContentTextarea').value = note.content || '';
+  document.getElementById('noteFolderSelect').value = note.folder_id || '';
+  document.getElementById('notePinBtn').classList.toggle('pinned', !!note.is_pinned);
+  document.getElementById('noteSavedIndicator').textContent = '';
+  setNoteTypeUI(note.note_type === 'checklist' ? 'checklist' : 'text');
+  renderChecklistItems(note.checklist_items || []);
+}
+
+function setNoteTypeUI(type) {
+  document.getElementById('noteTypeTextBtn').classList.toggle('active', type === 'text');
+  document.getElementById('noteTypeChecklistBtn').classList.toggle('active', type === 'checklist');
+  document.getElementById('noteContentTextarea').classList.toggle('hidden', type === 'checklist');
+  document.getElementById('noteChecklistWrap').classList.toggle('hidden', type !== 'checklist');
+}
+
+async function saveCurrentNote(patch) {
+  if (!currentNoteId) return;
+  try {
+    const updated = await apiCall('PATCH', `/api/notes/${currentNoteId}`, patch);
+    currentNoteData = updated;
+    document.getElementById('noteSavedIndicator').textContent = t('notes_saved_indicator');
+    // نحدّث الكاش المحلي بدل إعادة تحميل كامل القائمة من السيرفر
+    const idx = notesListCache.findIndex(n => n.id === currentNoteId);
+    if (idx !== -1) notesListCache[idx] = { ...notesListCache[idx], ...updated };
+  } catch (e) {
+    document.getElementById('noteSavedIndicator').textContent = e.message;
+  }
+}
+
+document.getElementById('noteTitleInput').addEventListener('input', (e) => {
+  clearTimeout(noteSaveDebounce);
+  noteSaveDebounce = setTimeout(() => saveCurrentNote({ title: e.target.value }), 600);
+});
+document.getElementById('noteTitleInput').addEventListener('blur', (e) => {
+  clearTimeout(noteSaveDebounce);
+  saveCurrentNote({ title: e.target.value });
+});
+document.getElementById('noteContentTextarea').addEventListener('input', (e) => {
+  clearTimeout(noteSaveDebounce);
+  noteSaveDebounce = setTimeout(() => saveCurrentNote({ content: e.target.value }), 600);
+});
+document.getElementById('noteContentTextarea').addEventListener('blur', (e) => {
+  clearTimeout(noteSaveDebounce);
+  saveCurrentNote({ content: e.target.value });
+});
+document.getElementById('noteFolderSelect').addEventListener('change', (e) => {
+  saveCurrentNote({ folder_id: e.target.value || null });
+});
+document.getElementById('notePinBtn').addEventListener('click', () => {
+  const nowPinned = !document.getElementById('notePinBtn').classList.contains('pinned');
+  document.getElementById('notePinBtn').classList.toggle('pinned', nowPinned);
+  saveCurrentNote({ is_pinned: nowPinned });
+});
+document.getElementById('noteDeleteBtn').addEventListener('click', async () => {
+  if (!currentNoteId || !confirm(t('notes_delete_confirm'))) return;
+  try {
+    await apiCall('DELETE', `/api/notes/${currentNoteId}`);
+    notesListCache = notesListCache.filter(n => n.id !== currentNoteId);
+    document.getElementById('globalBackBtn').click();
+  } catch (e) { alert(e.message); }
+});
+document.getElementById('noteTypeTextBtn').addEventListener('click', () => {
+  setNoteTypeUI('text');
+  saveCurrentNote({ note_type: 'text' });
+});
+document.getElementById('noteTypeChecklistBtn').addEventListener('click', () => {
+  setNoteTypeUI('checklist');
+  saveCurrentNote({ note_type: 'checklist' });
+});
+
+// ---------- عناصر التو-دو ليست داخل الملاحظة ----------
+function renderChecklistItems(items) {
+  const wrap = document.getElementById('noteChecklistItems');
+  wrap.innerHTML = items.map((item, idx) => `
+    <div class="checklist-row ${item.done ? 'done' : ''}" data-idx="${idx}">
+      <input type="checkbox" ${item.done ? 'checked' : ''}>
+      <input type="text" class="checklist-text-input" value="${escapeHtml(item.text || '')}">
+      <span class="checklist-del-btn">🗑️</span>
+    </div>
+  `).join('');
+
+  wrap.querySelectorAll('.checklist-row').forEach(row => {
+    const idx = Number(row.dataset.idx);
+    row.querySelector('input[type=checkbox]').addEventListener('change', (e) => {
+      const items = [...(currentNoteData.checklist_items || [])];
+      items[idx] = { ...items[idx], done: e.target.checked };
+      currentNoteData.checklist_items = items;
+      row.classList.toggle('done', e.target.checked);
+      saveCurrentNote({ checklist_items: items });
+    });
+    row.querySelector('.checklist-text-input').addEventListener('blur', (e) => {
+      const items = [...(currentNoteData.checklist_items || [])];
+      items[idx] = { ...items[idx], text: e.target.value };
+      currentNoteData.checklist_items = items;
+      saveCurrentNote({ checklist_items: items });
+    });
+    row.querySelector('.checklist-del-btn').addEventListener('click', () => {
+      const items = (currentNoteData.checklist_items || []).filter((_, i) => i !== idx);
+      currentNoteData.checklist_items = items;
+      renderChecklistItems(items);
+      saveCurrentNote({ checklist_items: items });
+    });
+  });
+}
+
+function addChecklistItem() {
+  const input = document.getElementById('noteChecklistNewInput');
+  const text = input.value.trim();
+  if (!text) return;
+  const items = [...(currentNoteData.checklist_items || []), { text, done: false }];
+  currentNoteData.checklist_items = items;
+  renderChecklistItems(items);
+  saveCurrentNote({ checklist_items: items });
+  input.value = '';
+  input.focus();
+}
+document.getElementById('noteChecklistAddBtn').addEventListener('click', addChecklistItem);
+document.getElementById('noteChecklistNewInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') addChecklistItem();
+});
 </script>
 </body>
 </html>

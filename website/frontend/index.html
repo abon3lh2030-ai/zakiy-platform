@@ -1005,9 +1005,16 @@
   #notePinBtn.pinned { background: var(--highlighter-soft); border-color: var(--highlighter); }
 
   .checklist-row {
-    display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 10px; padding: 9px 4px; border-bottom: 1px solid var(--line);
   }
-  .checklist-row input[type=checkbox] { width: 18px; height: 18px; flex-shrink: 0; cursor: pointer; }
+  .checklist-toggle {
+    width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    font-size: 13px; font-weight: 800; color: transparent; cursor: pointer;
+    background: var(--paper-dim); transition: background .15s, border-color .15s, color .15s;
+  }
+  .checklist-toggle:hover { border-color: var(--teal); }
+  .checklist-toggle.done { background: var(--teal); border-color: var(--teal); color: #fff; }
   .checklist-row .checklist-text-input {
     flex: 1; border: none; background: transparent; font-family: inherit; font-size: 14.5px; color: var(--ink); padding: 4px;
   }
@@ -1604,7 +1611,7 @@
     <div class="actions" style="justify-content:space-between; margin-bottom:14px;">
       <div class="actions" style="margin:0;">
         <button class="ghost note-type-btn active" id="noteTypeTextBtn" data-i18n="note_type_text">📝 نص</button>
-        <button class="ghost note-type-btn" id="noteTypeChecklistBtn" data-i18n="note_type_checklist">☑️ تو-دو</button>
+        <button class="ghost note-type-btn" id="noteTypeChecklistBtn" data-i18n="note_type_checklist">☑️ قائمة المهام</button>
       </div>
       <div class="actions" style="margin:0;">
         <button class="ghost" id="notePinBtn" title="تثبيت">📌</button>
@@ -2422,7 +2429,7 @@ const I18N = {
     notes_saved_indicator: '✅ تم الحفظ',
     notes_delete_confirm: 'تحذف هذي الملاحظة نهائيًا؟',
     note_type_text: '📝 نص',
-    note_type_checklist: '☑️ تو-دو',
+    note_type_checklist: '☑️ قائمة المهام',
     ph_note_title: 'عنوان الملاحظة',
     ph_note_content: 'اكتب ملاحظتك هنا...',
     ph_checklist_item: 'إضافة عنصر...',
@@ -7739,12 +7746,12 @@ document.getElementById('noteTypeChecklistBtn').addEventListener('click', () => 
   saveCurrentNote({ note_type: 'checklist' });
 });
 
-// ---------- عناصر التو-دو ليست داخل الملاحظة ----------
+// ---------- عناصر قائمة المهام داخل الملاحظة ----------
 function renderChecklistItems(items) {
   const wrap = document.getElementById('noteChecklistItems');
   wrap.innerHTML = items.map((item, idx) => `
     <div class="checklist-row ${item.done ? 'done' : ''}" data-idx="${idx}">
-      <input type="checkbox" ${item.done ? 'checked' : ''}>
+      <span class="checklist-toggle ${item.done ? 'done' : ''}">✓</span>
       <input type="text" class="checklist-text-input" value="${escapeHtml(item.text || '')}">
       <span class="checklist-del-btn">🗑️</span>
     </div>
@@ -7752,11 +7759,13 @@ function renderChecklistItems(items) {
 
   wrap.querySelectorAll('.checklist-row').forEach(row => {
     const idx = Number(row.dataset.idx);
-    row.querySelector('input[type=checkbox]').addEventListener('change', (e) => {
+    row.querySelector('.checklist-toggle').addEventListener('click', () => {
       const items = [...(currentNoteData.checklist_items || [])];
-      items[idx] = { ...items[idx], done: e.target.checked };
+      const nowDone = !items[idx].done;
+      items[idx] = { ...items[idx], done: nowDone };
       currentNoteData.checklist_items = items;
-      row.classList.toggle('done', e.target.checked);
+      row.classList.toggle('done', nowDone);
+      row.querySelector('.checklist-toggle').classList.toggle('done', nowDone);
       saveCurrentNote({ checklist_items: items });
     });
     row.querySelector('.checklist-text-input').addEventListener('blur', (e) => {

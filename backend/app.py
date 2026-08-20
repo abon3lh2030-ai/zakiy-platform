@@ -3187,6 +3187,305 @@ def save_manual_attendance():
 
 
 # ============================================================================
+# ---------- دفتر الواجبات (معلم/طالب بس - محجوب عن الحسابات الفردية) ----------
+# ============================================================================
+ASSIGNMENT_SUBMISSIONS_BUCKET = "assignment-submissions"
+
+
+def _assignment_submission_path(assignment_id, student_id, filename):
+    safe_name = secure_filename(filename) or "file"
+    return f"{assignment_id}/{student_id}/{safe_name}"
+
+
+@app.route("/api/teacher/assignments", methods=["POST"])
+@require_role("teacher")
+def create_assignment():
+    data = request.get_json(silent=True) or {}
+    class_id = data.get("class_id")
+    subject = (data.get("subject") or "").strip()
+    title = (data.get("title") or "").strip()
+    content = data.get("content") or ""
+    target_student_id = data.get("target_student_id") or None
+    if not class_id or not subject or not title:
+        return jsonify({"error": "لازم الفصل والمادة وعنوان الواجب"}), 400
+
+    owns = (
+        supabase_admin.table("classes").select("id, name").eq("id", class_id).eq("teacher_id", request.user_id)
+        .limit(1).execute()
+    ).data
+    if not owns:
+        return jsonify({"error": "الفصل مو تابع لك"}), 403
+
+    if target_student_id:
+        belongs = (
+            supabase_admin.table("profiles").select("user_id").eq("user_id", target_student_id)
+            .eq("role", "student").eq("class_id", class_id).limit(1).execute()
+        ).data
+        if not belongs:
+            return jsonify({"error": "هذا الطالب مو بهذا الفصل"}), 400
+
+    assignment = (
+        supabase_admin.table("assignments")
+        .insert(
+            {
+                "teacher_id": request.user_id,
+                "class_id": class_id,
+                "target_student_id": target_student_id,
+                "subject": subject,
+                "title": title,
+                "content": content,
+            }
+        )
+        .execute()
+        .data[0]
+    )
+
+    # نبلّغ الطالب المستهدف، أو كل طلاب الفصل لو الواجب عام
+    notif_title = "📚 واجب جديد"
+    notif_body = f"{subject} - {title}"
+    if target_student_id:
+        _create_notification(target_student_id, "new_assignment", notif_title, notif_body, class_id=class_id)
+    else:
+        students = (
+            supabase_admin.table("profiles").select("user_id").eq("role", "student").eq("class_id", class_id).execute()
+        ).data
+        for s in students:
+            _create_notification(s["user_id"], "new_assignment", notif_title, notif_body, class_id=class_id)
+
+    return jsonify(assignment), 200
+
+
+@app.route("/api/teacher/assignments", methods=["GET"])
+@require_role("teacher")
+def list_teacher_assignments():
+    class_id = request.args.get("class_id")
+    query = supabase_admin.table("assignments").select("*").eq("teacher_id", request.user_id)
+    if class_id:
+        query = query.eq("class_id", class_id)
+    assignments = query.order("created_at", desc=True).execute().data
+
+    class_names = {c["id"]: c["name"] for c in supabase_admin.table("classes").select("id, name").eq("teacher_id", request.user_id).execute().data}
+    submission_counts = Counter(
+        r["assignment_id"]
+        for r in supabase_admin.table("assignment_submissions").select("assignment_id").execute().data
+    )
+    for a in assignments:
+        a["class_name"] = class_names.get(a["class_id"])
+        a["submitted_count"] = submission_counts.get(a["id"], 0)
+        if a["target_student_id"]:
+            a["total_count"] = 1
+        else:
+            a["total_count"] = (
+                supabase_admin.table("profiles").select("user_id", count="exact")
+                .eq("role", "student").eq("class_id", a["class_id"]).execute().count or 0
+            )
+    return jsonify({"assignments": assignments}), 200
+
+
+@app.route("/api/teacher/assignments/<assignment_id>", methods=["GET"])
+@require_role("teacher")
+def teacher_assignment_detail(assignment_id):
+    rows = (
+        supabase_admin.table("assignments").select("*").eq("id", assignment_id).eq("teacher_id", request.user_id)
+        .limit(1).execute()
+    ).data
+    if not rows:
+        return jsonify({"error": "الواجب مو موجود"}), 404
+    assignment = rows[0]
+
+    if assignment["target_student_id"]:
+        targets = (
+            supabase_admin.table("profiles").select("user_id, username, full_name")
+            .eq("user_id", assignment["target_student_id"]).execute()
+        ).data
+    else:
+        targets = (
+            supabase_admin.table("profiles").select("user_id, username, full_name")
+            .eq("role", "student").eq("class_id", assignment["class_id"]).execute()
+        ).data
+
+    submissions = (
+        supabase_admin.table("assignment_submissions").select("*").eq("assignment_id", assignment_id).execute()
+    ).data
+    submissions_by_student = {s["student_id"]: s for s in submissions}
+
+    students = []
+    for t in targets:
+        sub = submissions_by_student.get(t["user_id"])
+        students.append(
+            {
+                "user_id": t["user_id"],
+                "username": t["username"],
+                "full_name": t.get("full_name"),
+                "submitted": sub is not None,
+                "submitted_at": sub.get("submitted_at") if sub else None,
+                "file_name": sub.get("file_name") if sub else None,
+                "note": sub.get("note") if sub else None,
+                "grade": sub.get("grade") if sub else None,
+            }
+        )
+    assignment["students"] = students
+    return jsonify(assignment), 200
+
+
+@app.route("/api/teacher/assignments/<assignment_id>/submissions/<student_id>", methods=["PATCH"])
+@require_role("teacher")
+def grade_assignment_submission(assignment_id, student_id):
+    owns = (
+        supabase_admin.table("assignments").select("id").eq("id", assignment_id).eq("teacher_id", request.user_id)
+        .limit(1).execute()
+    ).data
+    if not owns:
+        return jsonify({"error": "الواجب مو تابع لك"}), 403
+    grade = (request.get_json(silent=True) or {}).get("grade")
+    res = (
+        supabase_admin.table("assignment_submissions")
+        .update({"grade": grade, "graded_at": datetime.now(timezone.utc).isoformat()})
+        .eq("assignment_id", assignment_id)
+        .eq("student_id", student_id)
+        .execute()
+    )
+    if not res.data:
+        return jsonify({"error": "الطالب ما سلّم الواجب بعد"}), 404
+    return jsonify(res.data[0]), 200
+
+
+@app.route("/api/teacher/assignments/<assignment_id>/submissions/<student_id>/file", methods=["GET"])
+@require_role("teacher")
+def teacher_download_submission(assignment_id, student_id):
+    owns = (
+        supabase_admin.table("assignments").select("id").eq("id", assignment_id).eq("teacher_id", request.user_id)
+        .limit(1).execute()
+    ).data
+    if not owns:
+        return jsonify({"error": "الواجب مو تابع لك"}), 403
+    sub = (
+        supabase_admin.table("assignment_submissions").select("file_path")
+        .eq("assignment_id", assignment_id).eq("student_id", student_id).limit(1).execute()
+    ).data
+    if not sub:
+        return jsonify({"error": "الطالب ما سلّم الواجب بعد"}), 404
+    signed = supabase_admin.storage.from_(ASSIGNMENT_SUBMISSIONS_BUCKET).create_signed_url(sub[0]["file_path"], 3600)
+    return jsonify({"url": signed["signedURL"]}), 200
+
+
+@app.route("/api/teacher/assignments/<assignment_id>", methods=["DELETE"])
+@require_role("teacher")
+def delete_assignment(assignment_id):
+    res = (
+        supabase_admin.table("assignments").delete().eq("id", assignment_id).eq("teacher_id", request.user_id).execute()
+    )
+    if not res.data:
+        return jsonify({"error": "الواجب مو موجود"}), 404
+    return jsonify({"ok": True}), 200
+
+
+@app.route("/api/student/assignments", methods=["GET"])
+@require_role("student")
+def list_student_assignments():
+    class_id = request.profile.get("class_id")
+    assignments = supabase_admin.table("assignments").select("*").eq("target_student_id", request.user_id).execute().data
+    if class_id:
+        class_wide = (
+            supabase_admin.table("assignments").select("*").eq("class_id", class_id).is_("target_student_id", "null").execute()
+        ).data
+        assignments = assignments + class_wide
+    assignments.sort(key=lambda a: a["created_at"], reverse=True)
+
+    my_submissions = {
+        s["assignment_id"]: s
+        for s in supabase_admin.table("assignment_submissions").select("*").eq("student_id", request.user_id).execute().data
+    }
+    for a in assignments:
+        sub = my_submissions.get(a["id"])
+        a["submitted"] = sub is not None
+        a["grade"] = sub.get("grade") if sub else None
+    return jsonify({"assignments": assignments}), 200
+
+
+def _student_can_see_assignment(assignment, student_profile, student_id):
+    if assignment["target_student_id"] == student_id:
+        return True
+    return assignment["target_student_id"] is None and assignment["class_id"] == student_profile.get("class_id")
+
+
+@app.route("/api/student/assignments/<assignment_id>", methods=["GET"])
+@require_role("student")
+def student_assignment_detail(assignment_id):
+    rows = supabase_admin.table("assignments").select("*").eq("id", assignment_id).limit(1).execute().data
+    if not rows or not _student_can_see_assignment(rows[0], request.profile, request.user_id):
+        return jsonify({"error": "الواجب مو موجود"}), 404
+    assignment = rows[0]
+    sub = (
+        supabase_admin.table("assignment_submissions").select("*")
+        .eq("assignment_id", assignment_id).eq("student_id", request.user_id).limit(1).execute()
+    ).data
+    assignment["submission"] = sub[0] if sub else None
+    return jsonify(assignment), 200
+
+
+@app.route("/api/student/assignments/<assignment_id>/submit", methods=["POST"])
+@require_role("student")
+def submit_assignment(assignment_id):
+    rows = supabase_admin.table("assignments").select("*").eq("id", assignment_id).limit(1).execute().data
+    if not rows or not _student_can_see_assignment(rows[0], request.profile, request.user_id):
+        return jsonify({"error": "الواجب مو موجود"}), 404
+    if "file" not in request.files:
+        return jsonify({"error": "لازم ترفع ملف الواجب"}), 400
+    file = request.files["file"]
+    if file.filename == "":
+        return jsonify({"error": "اسم الملف فاضي"}), 400
+    note = request.form.get("note") or None
+
+    path = _assignment_submission_path(assignment_id, request.user_id, file.filename)
+    file_bytes = file.read()
+    supabase_admin.storage.from_(ASSIGNMENT_SUBMISSIONS_BUCKET).upload(
+        path, file_bytes, file_options={"content-type": file.mimetype or "application/octet-stream", "x-upsert": "true"}
+    )
+
+    submission = (
+        supabase_admin.table("assignment_submissions")
+        .upsert(
+            {
+                "assignment_id": assignment_id,
+                "student_id": request.user_id,
+                "file_path": path,
+                "file_name": secure_filename(file.filename) or file.filename,
+                "note": note,
+                "submitted_at": datetime.now(timezone.utc).isoformat(),
+                # يعيد تسليم الواجب يصفّر الدرجة السابقة - نسخة جديدة تحتاج تقييم جديد
+                "grade": None,
+                "graded_at": None,
+            },
+            on_conflict="assignment_id,student_id",
+        )
+        .execute()
+        .data[0]
+    )
+    my_username_rows = supabase_admin.table("profiles").select("username").eq("user_id", request.user_id).limit(1).execute().data
+    my_username = my_username_rows[0]["username"] if my_username_rows else ""
+    _create_notification(
+        rows[0]["teacher_id"], "assignment_submitted", "✅ تسليم واجب جديد",
+        f"{my_username} سلّم واجب {rows[0]['title']}".strip(),
+        sender_id=request.user_id, class_id=rows[0]["class_id"],
+    )
+    return jsonify(submission), 200
+
+
+@app.route("/api/student/assignments/<assignment_id>/file", methods=["GET"])
+@require_role("student")
+def student_download_own_submission(assignment_id):
+    sub = (
+        supabase_admin.table("assignment_submissions").select("file_path")
+        .eq("assignment_id", assignment_id).eq("student_id", request.user_id).limit(1).execute()
+    ).data
+    if not sub:
+        return jsonify({"error": "ما سلّمت هذا الواجب بعد"}), 404
+    signed = supabase_admin.storage.from_(ASSIGNMENT_SUBMISSIONS_BUCKET).create_signed_url(sub[0]["file_path"], 3600)
+    return jsonify({"url": signed["signedURL"]}), 200
+
+
+# ============================================================================
 # ---------- الاشتراكات (٤ باقات: مجاني/بلس/برو/ألتميت) ----------
 # ============================================================================
 # الأرقام هنا لازم تبقى مطابقة تمامًا لـ ios/Zakiy/Subscriptions/PlanCatalog.swift

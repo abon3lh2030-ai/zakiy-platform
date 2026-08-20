@@ -347,65 +347,142 @@ def chat():
         return jsonify({"error": str(e)}), 500
 
 
-# ---------- مساعد ذكيّ يشرح الموقع نفسه (متاح للجميع بدون تسجيل دخول) ----------
-SITE_HELP_SYSTEM_PROMPT = """أنت مساعد داخل منصة "ذكيّ" (Zakiy) - منصة دراسية سعودية تحوّل ملفات PDF
-الدراسية لملخصات واختبارات تفاعلية بمساعدة الذكاء الاصطناعي. مهمتك تشرح للطالب
-كيف يستخدم الموقع بوضوح واختصار، بالعربية، بدون رموز Markdown.
-
-هذي ميزات الموقع اللي تقدر تشرحها:
-
-**الوضع الفردي**: يرفع الطالب ملف PDF، الموقع يستخرج نصه، يلخّصه، ويولّد منه
-اختبار اختيار من متعدد (يحدد الطالب عدد الأسئلة من 5 إلى 20). فيه شات ذكاء
-اصطناعي يقدر يسأله عن محتوى الملف. بعد كل سؤال بالاختبار يطلع شرح ليه الإجابة
-صحيحة. وقت الاختبار يصير تغبيش على الملخص والنص عشان يركّز، مع زر يقدر يكشفه
-بتحذير. فيه مؤقت بومودورو اختياري (25 دقيقة مذاكرة / 5 دقائق راحة).
-
-**الغرفة الجماعية**: طالب ينشئ غرفة يطلع له كود، وزملاءه ينضمون بنفس الكود.
-أول من ينضم يصير "الهوست" وهو اللي يرفع الملف ويولّد الاختبار ويحدد مدته
-ويبدأه للجميع بنفس الوقت. الهوست يقدر يمنح أي منضم صلاحية يرفع ويبدأ الاختبار
-بدلًا عنه. فيه شات نصي بين الأعضاء وصوت جماعي مباشر (اختياري)، يوقفون
-تلقائيًا وقت الاختبار عشان محد يغش. بعد كل واحد يسلّم يشوف نتيجته وترتيبه،
-وأفضل 3 يطلعون بميداليات.
-
-**الحساب (اختياري)**: يقدر الطالب يسجل حساب بإيميل وكلمة مرور واسم يختاره،
-مع مرحلته الدراسية ومستواه. يعطيه هذا: لوحة "أدائي" تتتبع نتائجه ونقاط ضعفه
-عبر الوقت، ومكتبة شخصية تحفظ الملفات اللي رفعها قبل عشان يعيد استخدامها
-بدون ما يرفعها من جديد كل مرة. بدون حساب يقدر يستخدم كل شي عادي بس بدون حفظ.
-
-جاوب بس عن أسئلة تخص الموقع وكيفية استخدامه. لو سُئلت عن شي مو متعلق بالموقع،
-وضّح بلطف إنك مختص بمساعدة الطلاب يفهمون المنصة بس."""
+# ============================================================================
+# ---------- المساعد الذكي (محادثات محفوظة متعددة + تلخيص كتب عند الطلب) ----------
+# ============================================================================
+# سلسلة المحادثة الفعلية مع Gemini محفوظة عند Google نفسها (كل رد مبني على
+# آخر interaction_id) - إحنا بس نخزّن النصوص للعرض بقائمة المحادثات + آخر
+# interaction_id عشان نكمل نفس السلسلة بدل ما نبدأ وحدة جديدة كل رسالة.
+AI_ASSISTANT_SYSTEM_PROMPT = """أنت "ذكيّ" - مساعد دراسي ودود جوّا منصة ذكيّ التعليمية. تسولف مع الطالب
+بأي موضوع يبيه، تجاوب أسئلته العامة أو الدراسية بأسلوب واضح ومبسّط وقريب منه،
+بالعربية، بدون رموز Markdown. خلك ودود ومرح بأسلوبك، مو رسمي وجاف. لو طلب
+منك تلخّص كتاب أو محتوى معيّن، لخصه بوضوح وبنقاط مرتبة تسهّل عليه المراجعة."""
 
 
-@app.route("/api/site-help", methods=["POST"])
-def site_help():
-    data = request.get_json()
-    message = data.get("message")
-    interaction_id = data.get("interaction_id")
+def _ai_conversation_title(text):
+    text = " ".join(text.strip().split())
+    return text[:40] + ("…" if len(text) > 40 else "")
+
+
+@app.route("/api/ai/conversations", methods=["GET"])
+@require_auth
+def list_ai_conversations():
+    rows = (
+        supabase_admin.table("ai_conversations")
+        .select("id, title, book_title, updated_at")
+        .eq("user_id", request.user_id)
+        .order("updated_at", desc=True)
+        .execute()
+    ).data
+    return jsonify({"conversations": rows}), 200
+
+
+@app.route("/api/ai/conversations", methods=["POST"])
+@require_auth
+def create_ai_conversation():
+    row = (
+        supabase_admin.table("ai_conversations")
+        .insert({"user_id": request.user_id, "title": ""})
+        .execute()
+        .data[0]
+    )
+    return jsonify(row), 200
+
+
+@app.route("/api/ai/conversations/<conversation_id>", methods=["GET"])
+@require_auth
+def get_ai_conversation(conversation_id):
+    convo = (
+        supabase_admin.table("ai_conversations").select("*").eq("id", conversation_id).eq("user_id", request.user_id)
+        .limit(1).execute()
+    ).data
+    if not convo:
+        return jsonify({"error": "المحادثة مو موجودة"}), 404
+    messages = (
+        supabase_admin.table("ai_messages").select("role, content, created_at").eq("conversation_id", conversation_id)
+        .order("created_at").execute()
+    ).data
+    result = convo[0]
+    result["messages"] = messages
+    return jsonify(result), 200
+
+
+@app.route("/api/ai/conversations/<conversation_id>", methods=["DELETE"])
+@require_auth
+def delete_ai_conversation(conversation_id):
+    res = (
+        supabase_admin.table("ai_conversations").delete().eq("id", conversation_id).eq("user_id", request.user_id).execute()
+    )
+    if not res.data:
+        return jsonify({"error": "المحادثة مو موجودة"}), 404
+    return jsonify({"ok": True}), 200
+
+
+@app.route("/api/ai/conversations/<conversation_id>/messages", methods=["POST"])
+@require_auth
+def send_ai_message(conversation_id):
+    """رسالة عادية ({content}) أو طلب تلخيص كتاب ({book_title, book_text}) -
+    الاثنين يمرون بنفس مسار الحفظ/الرد، بس نص الطلب المُرسل فعليًا لـ Gemini
+    يختلف (الرسالة المعروضة بالمحادثة تبقى مختصرة "📚 لخّص: العنوان")."""
+    convo_rows = (
+        supabase_admin.table("ai_conversations").select("*").eq("id", conversation_id).eq("user_id", request.user_id)
+        .limit(1).execute()
+    ).data
+    if not convo_rows:
+        return jsonify({"error": "المحادثة مو موجودة"}), 404
+    convo = convo_rows[0]
+
+    data = request.get_json(silent=True) or {}
     lang = data.get("lang", "ar")
+    book_title = (data.get("book_title") or "").strip()
+    book_text = data.get("book_text") or ""
 
-    if not message:
+    if book_title and book_text:
+        display_message = f"📚 لخّص: {book_title}"
+        prompt_message = (
+            f'لخّص لي محتوى الكتاب/الملف التالي بعنوان "{book_title}" بشكل واضح ومنظم '
+            f"بنقاط، يركّز على أهم الأفكار والمعلومات اللي تفيد الطالب وقت المراجعة:\n\n{book_text}"
+        )
+    else:
+        display_message = (data.get("content") or "").strip()
+        prompt_message = display_message
+    if not display_message:
         return jsonify({"error": "لازم ترسل رسالة"}), 400
 
     try:
-        if interaction_id:
-            input_text = f"{message}{lang_directive(lang)}"
+        if convo.get("last_interaction_id"):
+            input_text = f"{prompt_message}{lang_directive(lang)}"
         else:
-            input_text = f"{SITE_HELP_SYSTEM_PROMPT}{lang_directive(lang)}\n\nسؤال الطالب: {message}"
+            input_text = f"{AI_ASSISTANT_SYSTEM_PROMPT}{lang_directive(lang)}\n\nالطالب: {prompt_message}"
 
         kwargs = {
             "model": GEMINI_MODEL,
             "input": input_text,
-            "generation_config": {"max_output_tokens": 600, "thinking_level": "minimal"},
+            "generation_config": {"max_output_tokens": 800, "thinking_level": "minimal"},
         }
-        if interaction_id:
-            kwargs["previous_interaction_id"] = interaction_id
+        if convo.get("last_interaction_id"):
+            kwargs["previous_interaction_id"] = convo["last_interaction_id"]
 
         interaction = create_interaction(**kwargs)
-        return jsonify(
-            {"reply": interaction.output_text, "interaction_id": interaction.id}
-        ), 200
+        reply = interaction.output_text
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+    supabase_admin.table("ai_messages").insert(
+        [
+            {"conversation_id": conversation_id, "role": "user", "content": display_message},
+            {"conversation_id": conversation_id, "role": "assistant", "content": reply},
+        ]
+    ).execute()
+
+    patch = {"last_interaction_id": interaction.id, "updated_at": datetime.now(timezone.utc).isoformat()}
+    if not convo.get("title"):
+        patch["title"] = _ai_conversation_title(display_message)
+    if book_title and not convo.get("book_title"):
+        patch["book_title"] = book_title
+    supabase_admin.table("ai_conversations").update(patch).eq("id", conversation_id).execute()
+
+    return jsonify({"reply": reply, "title": patch.get("title", convo.get("title"))}), 200
 
 
 # ---------- تقييم تلقائي للجلسة + حساب سلسلة الأيام المتتالية ----------

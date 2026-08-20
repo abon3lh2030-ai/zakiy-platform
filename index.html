@@ -4006,12 +4006,6 @@ document.getElementById('assignmentsBtn').addEventListener('click', () => {
   showAssignmentsScreen();
   updateGlobalBackButton();
 });
-document.getElementById('sidebarAiHelpBtn').addEventListener('click', () => {
-  if (!requireAuthOrPrompt()) return;
-  pushNavSnapshot();
-  showAiListScreen();
-  updateGlobalBackButton();
-});
 
 async function loadArchive() {
   try {

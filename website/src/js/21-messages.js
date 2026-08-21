@@ -19,18 +19,22 @@ async function refreshUnreadBadge() {
 }
 socket.on('new_notification', () => refreshUnreadBadge());
 
-document.getElementById('messagesBtn').addEventListener('click', () => {
-  if (!requireAuthOrPrompt()) return;
-  pushNavSnapshot();
+function showMessagesScreen() {
   TOP_LEVEL_SCREENS.forEach(hide);
   hide('pomodoroWidget'); // خلّه يختفي كل ما غادرنا الشاشة الحالية بالكامل - يظهر بس أثناء جلسة المذاكرة الفردية نفسها
   hide('paymentModalOverlay'); // نفس المبدأ - نافذة الدفع ما تضل عالقة لو المستخدم غادر الإعدادات بدون ما يسكّرها صراحة
   hide('login-form'); hide('signup-form');
   show('sidebar');
   show('step-messages');
-  updateGlobalBackButton();
   loadConversations();
   loadNotifications();
+}
+
+document.getElementById('messagesBtn').addEventListener('click', () => {
+  if (!requireAuthOrPrompt()) return;
+  pushNavSnapshot();
+  showMessagesScreen();
+  updateGlobalBackButton();
 });
 
 document.querySelectorAll('#step-messages .role-tab').forEach(tabBtn => {

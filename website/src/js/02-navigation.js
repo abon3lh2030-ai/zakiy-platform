@@ -25,6 +25,52 @@ function updateGlobalBackButton() {
   const visible = currentVisibleTopLevelScreens();
   const shouldShow = navHistory.length > 0 && !visible.some(id => BACK_BUTTON_HIDDEN_ON.includes(id));
   document.getElementById('globalBackBtn').classList.toggle('hidden', !shouldShow);
+  saveCurrentScreenToSession(visible);
+}
+
+// ---------- استعادة آخر شاشة بعد Reload (نفس التبويب/الجلسة بس -
+// sessionStorage) - بدون هذا، Reload كان يرجّعك دايمًا للرئيسية بغض النظر
+// وين كنت واقف، لأن كل حالة التنقّل (navHistory + DOM) بالذاكرة بس ----------
+const LAST_SCREEN_KEY = 'zakiy-last-screen';
+// شاشات بسيطة ما تحتاج معرّف عنصر معيّن (تفتح بحالتها الافتراضية دايمًا) -
+// شاشات التفاصيل (محرر ملاحظة/واجب وحد/محادثة وحدة) ترجع لقائمتها بدل
+// محاولة فتح نفس العنصر بالضبط، لأننا ما نحفظ أي معرّف، بس اسم الشاشة
+const RESTORABLE_SCREENS = {
+  'step-settings': () => showSettingsScreen(),
+  'step-notes': () => showNotesScreen(),
+  'step-note-editor': () => showNotesScreen(),
+  'step-assignments': () => showAssignmentsScreen(),
+  'step-assignment-detail': () => showAssignmentsScreen(),
+  'step-ai-list': () => showAiListScreen(),
+  'step-ai-conversation': () => showAiListScreen(),
+  'step-ai-book-picker': () => showAiListScreen(),
+  'step-library': () => showLibraryScreen(),
+  'step-friends': () => showFriendsScreen(),
+  'step-archive': () => showArchiveScreen(),
+  'step-performance': () => showPerformanceDashboard(),
+  'step-messages': () => showMessagesScreen(),
+};
+
+function saveCurrentScreenToSession(visible) {
+  const current = visible.find(id => RESTORABLE_SCREENS[id]);
+  if (current) sessionStorage.setItem(LAST_SCREEN_KEY, current);
+  else sessionStorage.removeItem(LAST_SCREEN_KEY);
+}
+
+// تُنادى مرة وحدة بعد ما يتحدد الحساب/الدور (proceedToApp أو routeByRole) -
+// لو فيه شاشة محفوظة من قبل الـ Reload نرجّعك لها بدل الشاشة الافتراضية،
+// بشرط تكون متاحة لدورك الحالي. ترجع true لو رجّعت شاشة فعليًا
+function tryRestoreLastScreen() {
+  const saved = sessionStorage.getItem(LAST_SCREEN_KEY);
+  const restoreFn = saved && RESTORABLE_SCREENS[saved];
+  if (!restoreFn) return false;
+  // دفتر الملاحظات ميزة حساب فردي بس
+  if ((saved === 'step-notes' || saved === 'step-note-editor') && currentUserRole) return false;
+  // دفتر الواجبات معلم/طالب بس
+  if ((saved === 'step-assignments' || saved === 'step-assignment-detail') &&
+      !(currentUserRole === 'teacher' || currentUserRole === 'student')) return false;
+  restoreFn();
+  return true;
 }
 document.getElementById('globalBackBtn').addEventListener('click', () => {
   const prev = navHistory.pop();

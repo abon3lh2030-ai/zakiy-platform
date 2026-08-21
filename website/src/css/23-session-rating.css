@@ -1,0 +1,10 @@
+    display: inline-flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, #FF6B35, #FFC93C);
+    color: #fff; font-weight: 800; font-size: 15px;
+    padding: 8px 18px; border-radius: 999px; margin-bottom: 14px;
+    box-shadow: 0 4px 14px rgba(255,107,53,0.35);
+  }
+  .streak-badge .flame { font-size: 20px; display: inline-block; animation: streak-pulse 1.4s ease-in-out infinite; }
+  @keyframes streak-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.18); }

@@ -1,0 +1,52 @@
+    padding: 16px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .plan-card.current-plan { border-color: var(--teal); border-width: 2px; }
+  .plan-card .plan-name { font-weight: 800; font-size: 16px; }
+  .plan-card .plan-price { font-weight: 800; font-size: 20px; color: var(--teal); }
+  .plan-card .plan-price small { font-weight: 600; font-size: 12px; color: var(--ink-soft); }
+  .plan-card .plan-features { font-size: 13px; color: var(--ink-soft); line-height: 1.8; flex-grow: 1; }
+  .plan-card .plan-current-badge {
+    text-align: center; padding: 8px; border-radius: 8px; background: var(--paper-dim);
+    color: var(--teal); font-weight: 700; font-size: 13px;
+  }
+
+  /* ---------- دفتر الملاحظات ---------- */
+  .notes-folders-row {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;
+  }
+  .folder-chip {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
+    padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--ink-soft);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .folder-chip.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+  .folder-chip .folder-chip-del { opacity: .7; font-size: 11px; }
+  .folder-chip .folder-chip-del:hover { opacity: 1; }
+  .folder-chip-add { border-style: dashed; }
+
+  .note-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .note-card:hover { border-color: var(--teal); }
+  .note-card .note-card-top { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+  .note-card .note-card-title { font-weight: 700; font-size: 15px; color: var(--ink); }
+  .note-card .note-card-title.untitled { color: var(--ink-soft); font-weight: 500; }
+  .note-card .note-card-preview { font-size: 13px; color: var(--ink-soft); line-height: 1.6; }
+  .note-card .note-card-meta { font-size: 11.5px; color: var(--ink-soft); display: flex; gap: 10px; margin-top: 2px; }
+  .note-card .note-pin-icon { font-size: 13px; }
+
+  .note-type-btn.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+  .note-title-input { font-size: 18px; font-weight: 700; font-family: 'Almarai', sans-serif; margin-bottom: 10px; }
+  .note-content-textarea {
+    width: 100%; min-height: 320px; resize: vertical; line-height: 1.9; font-family: inherit;
+  }
+  #notePinBtn.pinned { background: var(--highlighter-soft); border-color: var(--highlighter); }
+
+  .checklist-row {
+    display: flex; align-items: center; gap: 10px; padding: 9px 4px; border-bottom: 1px solid var(--line);
+  }
+  .checklist-toggle {
+    width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;

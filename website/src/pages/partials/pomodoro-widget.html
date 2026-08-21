@@ -1,0 +1,33 @@
+<!-- مؤقت بومودورو: يظهر بالوضع الفردي بس -->
+<div class="pomodoro-widget hidden collapsed" id="pomodoroWidget">
+  <div class="pomodoro-header" id="pomodoroHeader">
+    <span data-i18n="pomodoro_title">🍅 بومودورو</span>
+    <button class="pomodoro-toggle" id="pomodoroToggleBtn">+</button>
+  </div>
+  <div class="pomodoro-body" id="pomodoroBody">
+    <div class="pomodoro-phase" id="pomodoroPhaseLabel" data-i18n="pomodoro_phase_focus">🧠 مذاكرة</div>
+    <div class="pomodoro-time" id="pomodoroTimeDisplay">25:00</div>
+    <div class="pomodoro-settings">
+      <label>
+        <span data-i18n="pomodoro_focus_label">مذاكرة (د)</span>
+        <input type="number" id="pomodoroFocusInput" class="text-input" value="25" min="1" max="120">
+      </label>
+      <label>
+        <span data-i18n="pomodoro_break_label">راحة (د)</span>
+        <input type="number" id="pomodoroBreakInput" class="text-input" value="5" min="1" max="60">
+      </label>
+    </div>
+    <div class="pomodoro-controls">
+      <button class="primary" id="pomodoroStartBtn" data-i18n="btn_pomodoro_start">▶️ تشغيل</button>
+      <button class="ghost hidden" id="pomodoroPauseBtn" data-i18n="btn_pomodoro_pause">⏸️ إيقاف</button>
+      <button class="ghost" id="pomodoroResetBtn" data-i18n="btn_pomodoro_reset">🔄 تصفير</button>
+    </div>
+    <div class="pomodoro-alert hidden" id="pomodoroAlert">
+      <p id="pomodoroAlertText"></p>
+      <div class="pomodoro-controls">
+        <button class="primary" id="pomodoroNextBtn"></button>
+        <button class="ghost" id="pomodoroDismissBtn" data-i18n="btn_pomodoro_dismiss">🔕 إيقاف المنبه</button>
+      </div>
+    </div>
+  </div>
+</div>

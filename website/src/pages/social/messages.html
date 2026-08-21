@@ -1,0 +1,31 @@
+  <!-- الرسائل والتنبيهات - محادثات ثنائية مع أي مستخدم + تنبيهات (رسالة
+       جديدة/بث جماعي/تذكير حصة/بدء حصة) -->
+  <section class="card hidden" id="step-messages">
+    <span class="step-label" data-i18n="messages_label">💬 الرسائل</span>
+    <h2 data-i18n="messages_heading">الرسائل والتنبيهات</h2>
+
+    <div class="role-tabs">
+      <button class="role-tab active" data-msg-tab="conversations" data-i18n="tab_conversations">💬 المحادثات</button>
+      <button class="role-tab" data-msg-tab="notifications" data-i18n="tab_notifications">🔔 التنبيهات</button>
+    </div>
+
+    <div id="msgTab-conversations" class="msg-tab-panel">
+      <input type="text" id="newConversationSearch" class="text-input" placeholder="ابحث باسم مستخدم لبدء محادثة" data-i18n-ph="ph_search_username" style="margin-bottom:10px;">
+      <div id="newConversationResults"></div>
+
+      <div id="conversationsList"></div>
+
+      <div id="activeThreadBox" class="hidden" style="margin-top:16px; border-top:1px solid var(--line); padding-top:14px;">
+        <h3 class="sub-heading" id="activeThreadTitle" style="margin-top:0;"></h3>
+        <div class="chat-messages" id="threadMessages"></div>
+        <div class="actions">
+          <input type="text" id="threadInput" class="text-input" placeholder="اكتب رسالة..." data-i18n-ph="ph_chat_message">
+          <button class="ghost" id="threadSendBtn" data-i18n="btn_send">إرسال</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="msgTab-notifications" class="msg-tab-panel hidden">
+      <div id="notificationsList"></div>
+    </div>
+  </section>

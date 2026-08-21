@@ -1,0 +1,58 @@
+    line-height: 1.9;
+  }
+  .summary-block {
+    border-right: 4px solid var(--highlighter);
+    background: var(--highlighter-soft);
+    border-radius: 0 10px 10px 0;
+    padding: 20px 22px;
+    font-size: 15px;
+    white-space: pre-wrap;
+    line-height: 2;
+  }
+
+  /* ---------- Quiz ---------- */
+  .question {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .question .q-num {
+    font-family: 'Almarai', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--teal);
+    margin-bottom: 8px;
+  }
+  .question .q-text { font-weight: 600; margin-bottom: 14px; font-size: 15.5px; }
+  .options { display: flex; flex-direction: column; gap: 8px; }
+  .option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 11px 14px;
+    cursor: pointer;
+    font-size: 14.5px;
+    transition: all .15s;
+  }
+  .option:hover { background: var(--paper-dim); }
+  .option.selected { border-color: var(--ink); background: var(--paper-dim); font-weight: 600; }
+  .option.correct { border-color: var(--teal); background: var(--teal-dim); font-weight: 600; }
+  .option.wrong { border-color: var(--danger); background: var(--danger-soft); font-weight: 600; }
+
+  .explanation {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: var(--teal-dim);
+    border-right: 3px solid var(--teal);
+    border-radius: 0 8px 8px 0;
+    font-size: 13.5px;
+    color: var(--ink);
+    line-height: 1.7;
+  }
+
+  .score-banner {
+    text-align: center;
+    padding: 28px;

@@ -1,0 +1,18 @@
+  <!-- Step 3: Summary -->
+  <section class="card hidden" id="step-summary">
+    <span class="step-label" data-i18n="summary_step_label">٣ — الملخص</span>
+    <h2 data-i18n="summary_heading">ملخص ذكيّ</h2>
+    <div class="blur-wrap">
+      <div class="summary-block blur-target" id="summaryText"></div>
+      <div class="exam-overlay hidden" id="summaryTextOverlay"><button data-target="summaryText" data-i18n="exam_overlay_btn">🔒 أنت في اختبار</button></div>
+    </div>
+    <div class="actions">
+      <label style="display:flex; align-items:center; gap:8px; font-size:14px;">
+        <span data-i18n="label_num_questions">عدد الأسئلة (٥-٢٠):</span>
+        <input type="number" id="numQuestionsInput" class="text-input" value="5" min="5" max="20" style="width:80px;">
+      </label>
+      <button class="primary" id="quizBtn" data-i18n="btn_generate_quiz">ولّد اختبار من هذا المحتوى</button>
+      <button class="ghost hidden" id="shareSummaryBtn" data-i18n="btn_share_summary">📤 شارك الملخص مع الطلاب</button>
+    </div>
+    <div id="quizError"></div>
+  </section>

@@ -1,0 +1,14 @@
+  }
+
+  /* ---------- زر إغلاق عام (مودالات متعددة) ---------- */
+  .ai-help-close {
+    background: none;
+    border: none;
+    color: var(--emphasis-text);
+    font-size: 16px;
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  /* ---------- مودال "الميزة تحتاج حساب" ---------- */
+  .login-required-modal {

@@ -1,0 +1,25 @@
+  #qrCanvasContainer canvas { border-radius: 8px; }
+
+  /* ---------- الأصدقاء والأرشيف ---------- */
+  .friend-row, .friend-request-row, .archive-row {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px;
+  }
+  .friend-search-results { margin-top: 10px; }
+
+  /* ---------- زري اختيار اللغة بشاشة الإعدادات ---------- */
+  .lang-choice-btn.active { background: var(--emphasis-bg); color: var(--emphasis-text); border-color: var(--emphasis-bg); }
+
+  /* ---------- مفتاح تبديل (سويتش) لخيارات الخصوصية ---------- */
+  .privacy-toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 2px; border-bottom: 1px solid var(--line);
+  }
+  .privacy-toggle-row:last-child { border-bottom: none; }
+  .privacy-toggle-label { font-size: 14px; font-weight: 600; color: var(--ink); }
+  .switch { position: relative; display: inline-block; width: 42px; height: 24px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch-slider {
+    position: absolute; cursor: pointer; inset: 0; background: var(--line);
+    border-radius: 999px; transition: background .2s;
+  }

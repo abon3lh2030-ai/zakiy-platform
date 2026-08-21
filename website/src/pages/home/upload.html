@@ -1,0 +1,34 @@
+  <!-- Step 1: Upload (فردي أو الهوست داخل الغرفة) -->
+  <section class="card hidden" id="step-upload">
+    <span class="step-label" data-i18n="upload_step_label">١ — رفع الملف</span>
+    <h2 data-i18n="upload_heading">ارفع ملفك</h2>
+    <p class="desc" data-i18n="upload_desc">يدعم النظام حاليًا ملفات PDF فقط</p>
+
+    <div id="uploadFromLibrarySection" class="hidden">
+      <h3 class="sub-heading" data-i18n="upload_from_library_heading">📚 اختر من مكتبتك</h3>
+      <div id="uploadLibraryList"></div>
+      <p class="desc hidden" id="uploadLibraryEmptyState" data-i18n="upload_library_empty">مكتبتك فاضية - ارفع ملف جديد من جهازك بالأسفل.</p>
+      <button class="link-btn" id="switchToDeviceUploadBtn" data-i18n="btn_switch_device_upload">📱 أو ارفع ملف جديد من جهازك</button>
+    </div>
+
+    <div id="uploadFromDeviceSection">
+      <div class="dropzone" id="dropzone">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#5C6B7A" stroke-width="1.6"><path d="M12 16V4M12 4l-4 4M12 4l4 4M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>
+        <div class="main-text" data-i18n="dropzone_main_text_file">اسحب الملف هنا أو اضغط للاختيار</div>
+        <div class="sub-text" data-i18n="dropzone_sub_text_pdf">PDF — حتى 20 صفحة تقريبًا</div>
+        <input type="file" id="fileInput" accept="application/pdf">
+      </div>
+
+      <div class="file-chip" id="fileChip">
+        <span>📄</span>
+        <span class="name" id="fileName"></span>
+        <button class="ghost" id="removeFile" style="padding:4px 12px;" data-i18n="btn_remove">إزالة</button>
+      </div>
+
+      <div class="actions">
+        <button class="primary" id="uploadBtn" disabled data-i18n="btn_upload_process">رفع ومعالجة الملف</button>
+      </div>
+      <button class="link-btn hidden" id="switchToLibraryBtn" data-i18n="btn_switch_library">📚 أو اختر من مكتبتك</button>
+    </div>
+    <div id="uploadError"></div>
+  </section>

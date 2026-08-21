@@ -1,0 +1,38 @@
+  .exam-overlay button {
+    background: var(--danger);
+    color: white;
+    border: none;
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* ---------- نافذة الدفع (ميسر) ---------- */
+  .payment-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 24, 31, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 16px;
+  }
+  .payment-modal-box {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 26px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .payment-modal-box h3 {
+    font-family: 'Almarai', sans-serif;
+    font-size: 18px;
+    margin-bottom: 16px;
+  }

@@ -1,0 +1,38 @@
+  <section class="card hidden auth-card" id="signup-form">
+    <span class="auth-logo">ذكيّ</span>
+    <h2 data-i18n="signup_title">إنشاء حساب جديد</h2>
+    <p class="desc" data-i18n="signup_desc">يحفظ تقدمك ويحلل نقاط ضعفك بعد كل اختبار</p>
+    <div class="auth-fields">
+      <input type="text" id="signupUsername" class="text-input" placeholder="الأسم الكريم" data-i18n-ph="ph_username">
+      <input type="email" id="signupEmail" class="text-input" placeholder="الإيميل" data-i18n-ph="ph_email">
+      <input type="password" id="signupPassword" class="text-input" placeholder="كلمة المرور (٦ أحرف عالأقل)" data-i18n-ph="ph_password_signup">
+    </div>
+    <div class="auth-levels">
+      <label>
+        <span data-i18n="label_education_level">المرحلة الدراسية</span>
+        <select id="signupEducationLevel" class="text-input">
+          <option value="ابتدائي" data-i18n="edu_elementary">ابتدائي</option>
+          <option value="متوسط" data-i18n="edu_middle">متوسط</option>
+          <option value="ثانوي" data-i18n="edu_high">ثانوي</option>
+          <option value="جامعي" data-i18n="edu_university">جامعي</option>
+        </select>
+      </label>
+      <label>
+        <span data-i18n="label_proficiency_level">مستواك</span>
+        <select id="signupProficiencyLevel" class="text-input">
+          <option value="ضعيف" data-i18n="prof_weak">ضعيف</option>
+          <option value="متوسط" data-i18n="prof_medium">متوسط</option>
+          <option value="متمكن" data-i18n="prof_strong">متمكن</option>
+          <option value="ما ادرس" data-i18n="prof_not_studying">ما ادرس</option>
+        </select>
+      </label>
+    </div>
+    <div class="auth-actions-stack">
+      <button class="primary" id="signupSubmitBtn" data-i18n="btn_create_account">إنشاء الحساب</button>
+    </div>
+    <div id="signupError"></div>
+    <div class="auth-switch">
+      <button class="link-btn" id="goToLoginBtn" data-i18n="link_go_login">🔑 عندك حساب؟ سجّل دخولك</button>
+      <button class="link-btn" id="guestFromSignupBtn" data-i18n="link_continue_guest">➡️ استمر بدون حساب</button>
+    </div>
+  </section>

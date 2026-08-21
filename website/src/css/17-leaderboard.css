@@ -1,0 +1,36 @@
+  .payment-modal-close {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink);
+    border-radius: 999px;
+    width: 32px; height: 32px;
+    font-size: 15px;
+    cursor: pointer;
+    float: left;
+  }
+  #paymentModalMsg { margin-top: 12px; font-size: 14px; color: var(--ink-soft); }
+
+  /* ---------- التوب 3 ---------- */
+  .podium {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .podium-card {
+    flex: 1;
+    min-width: 130px;
+    text-align: center;
+    background: var(--paper-dim);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px 10px;
+  }
+  .podium-card .medal { font-size: 26px; margin-bottom: 6px; }
+  .podium-card .p-name { font-weight: 700; font-size: 14.5px; margin-bottom: 4px; }
+  .podium-card .p-score { color: var(--teal); font-weight: 700; font-size: 14px; }
+  .podium-card .p-time { color: var(--ink-soft); font-size: 12.5px; margin-top: 2px; }
+
+  .my-result-banner {
+    text-align: center;
+    padding: 22px;

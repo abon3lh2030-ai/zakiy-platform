@@ -1,0 +1,15 @@
+  <!-- Step 2: Extracted text -->
+  <section class="card hidden" id="step-text">
+    <span class="step-label" data-i18n="text_step_label">٢ — النص المستخرج</span>
+    <h2 data-i18n="text_heading">محتوى الملف</h2>
+    <p class="desc" data-i18n="text_desc">هذا النص المستخرج من الملف قبل التلخيص</p>
+    <div class="blur-wrap">
+      <div class="text-block blur-target" id="extractedText"></div>
+      <div class="exam-overlay hidden" id="extractedTextOverlay"><button data-target="extractedText" data-i18n="exam_overlay_btn">🔒 أنت في اختبار</button></div>
+    </div>
+    <div class="actions">
+      <button class="primary" id="summarizeBtn" data-i18n="btn_summarize">لخّص المحتوى</button>
+      <button class="ghost hidden" id="saveToLibraryBtn" data-i18n="btn_save_to_library_short">💾 احفظ بمكتبتك</button>
+    </div>
+    <div id="summarizeError"></div>
+  </section>

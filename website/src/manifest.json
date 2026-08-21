@@ -1,0 +1,178 @@
+[
+  {
+    "type": "file",
+    "path": "pages/partials/sidebar.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/partials/login-required-modal.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/partials/global-back-btn.html"
+  },
+  {
+    "type": "literal",
+    "text": "<div class=\"wrap\">\n\n"
+  },
+  {
+    "type": "file",
+    "path": "pages/home/header.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/home/hero.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/auth/login-form.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/auth/signup-form.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/auth/force-password-change.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/school-system/admin-dashboard.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/school-system/school-dashboard.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/school-system/teacher-dashboard.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/school-system/student-schedule.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/social/messages.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/social/performance.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/social/archive.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/social/friends.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/library/library.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/notes/notes-list.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/notes/note-editor.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/assignments/assignments-list.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/assignments/assignment-detail.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/ai-assistant/ai-conversations-list.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/ai-assistant/ai-conversation.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/ai-assistant/ai-book-picker.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/settings/settings.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/settings/payment-modal.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/social/profile.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/home/mode-select.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/home/room-mode-select.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/home/room-create-form.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/home/room-join-form.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/home/room-lobby.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/home/classroom.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/home/upload.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/home/text-extracted.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/home/chat.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/home/summary.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/home/quiz.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/home/footer.html"
+  },
+  {
+    "type": "literal",
+    "text": "</div>\n"
+  },
+  {
+    "type": "file",
+    "path": "pages/partials/pomodoro-widget.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/partials/qr-modal.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/partials/invite-friend-modal.html"
+  }
+]

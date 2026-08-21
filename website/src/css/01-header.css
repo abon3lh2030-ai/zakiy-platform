@@ -1,0 +1,34 @@
+    font-family: 'IBM Plex Sans Arabic', sans-serif;
+    line-height: 1.7;
+    min-height: 100vh;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px);
+    background-size: 100% 42px;
+    background-attachment: local;
+    transition: background-color .2s, color .2s;
+  }
+
+  .wrap { max-width: 880px; margin: 0 auto; padding: 48px 24px 100px; }
+
+  /* ---------- Header ---------- */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 56px;
+  }
+  .logo {
+    font-family: 'Almarai', sans-serif;
+    font-weight: 800;
+    font-size: 28px;
+    color: var(--ink);
+    position: relative;
+    display: inline-block;
+  }
+  .logo::after {
+    content: "";
+    position: absolute;
+    right: 0; left: 0; bottom: 2px;
+    height: 10px;
+    background: var(--highlighter);
+    z-index: -1;

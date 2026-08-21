@@ -1,0 +1,27 @@
+  .switch-slider::before {
+    content: ""; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px;
+    background: white; border-radius: 50%; transition: transform .2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  }
+  .switch input:checked + .switch-slider { background: var(--teal); }
+  /* الدائرة تنحط بـ left:3px دائمًا (خاصية فيزيائية ما تتأثر بـ RTL/LTR)، فتحريكها
+     وقت التفعيل لازم يكون بنفس الاتجاه الفيزيائي (يمين) بكل الحالتين - وإلا تطلع
+     برا حدود المفتاح بدل ما تنزلق جواه */
+  .switch input:checked + .switch-slider::before { transform: translateX(18px); }
+  .switch input:disabled + .switch-slider { opacity: .45; cursor: not-allowed; }
+
+  /* ---------- صفحة البروفايل ---------- */
+  .profile-header { text-align: center; padding: 10px 0 6px; }
+  .profile-avatar {
+    width: 84px; height: 84px; border-radius: 50%; margin: 0 auto 14px;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, var(--emphasis-bg), var(--teal));
+    color: #fff; font-family: 'Almarai', sans-serif; font-weight: 800; font-size: 32px;
+    box-shadow: 0 6px 18px rgba(27,42,74,0.25);
+  }
+  .profile-header h2 { margin-bottom: 4px; }
+  .profile-school { color: var(--teal); font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+  .profile-bio { color: var(--ink-soft); font-size: 14.5px; max-width: 480px; margin: 0 auto; line-height: 1.6; }
+  .card-notice {
+    text-align: center; padding: 30px 16px; background: var(--paper-dim);
+    border-radius: var(--radius); margin-top: 18px; color: var(--ink-soft); font-weight: 600;

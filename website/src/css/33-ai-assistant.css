@@ -1,0 +1,78 @@
+    font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; flex-shrink: 0; white-space: nowrap;
+  }
+  .assignment-status.pending { background: var(--danger-soft); color: var(--danger); }
+  .assignment-status.done { background: var(--teal-dim); color: var(--teal); }
+
+  .assignment-student-row {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px;
+  }
+  .assignment-student-row .student-name { font-weight: 600; min-width: 120px; }
+  .assignment-student-row .grade-input { width: 90px; }
+
+  /* ---------- المساعد الذكي (محادثات محفوظة) ---------- */
+  .ai-list-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .ai-list-card:hover { border-color: var(--teal); }
+  .ai-list-card .ai-list-icon {
+    width: 40px; height: 40px; border-radius: 50%; background: var(--teal-dim); color: var(--teal);
+    display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+  }
+  .ai-list-card .ai-list-title { font-weight: 700; font-size: 15px; color: var(--ink); }
+  .ai-list-card .ai-list-title.untitled { color: var(--ink-soft); font-weight: 500; }
+  .ai-list-card .ai-list-meta { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+
+  .ai-chat-page { display: flex; flex-direction: column; height: calc(100vh - 96px); }
+  .ai-chat-header {
+    display: flex; align-items: center; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--line); margin-bottom: 14px;
+  }
+  .ai-chat-back-btn {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
+    width: 36px; height: 36px; font-size: 18px; cursor: pointer; color: var(--ink); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ai-chat-back-btn:hover { border-color: var(--teal); }
+  .ai-chat-title { font-family: 'Almarai', sans-serif; font-weight: 800; font-size: 17px; color: var(--ink); }
+
+  .ai-chat-messages {
+    flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding: 4px 2px 16px;
+  }
+  .ai-bubble-row { display: flex; gap: 10px; max-width: 82%; }
+  .ai-bubble-row.user { align-self: flex-end; flex-direction: row-reverse; }
+  .ai-bubble-row.assistant { align-self: flex-start; }
+  .ai-bubble-avatar {
+    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--teal-dim); color: var(--teal);
+  }
+  .ai-bubble-row.user .ai-bubble-avatar { background: var(--emphasis-bg); color: var(--highlighter); }
+  .ai-bubble {
+    padding: 12px 15px; border-radius: 14px; font-size: 14.5px; line-height: 1.8; white-space: pre-wrap; word-wrap: break-word;
+  }
+  .ai-bubble-row.assistant .ai-bubble { background: var(--surface); border: 1px solid var(--line); color: var(--ink); border-radius: 14px 14px 14px 4px; }
+  .ai-bubble-row.user .ai-bubble { background: var(--emphasis-bg); color: var(--emphasis-text); border-radius: 14px 14px 4px 14px; }
+
+  .ai-typing-dots { display: inline-flex; gap: 4px; align-items: center; padding: 6px 2px; }
+  .ai-typing-dots span {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--teal); opacity: .4;
+    animation: ai-typing-bounce 1s infinite ease-in-out;
+  }
+  .ai-typing-dots span:nth-child(2) { animation-delay: .15s; }
+  .ai-typing-dots span:nth-child(3) { animation-delay: .3s; }
+  @keyframes ai-typing-bounce { 0%, 60%, 100% { opacity: .4; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+
+  .ai-chat-inputbar { display: flex; align-items: flex-end; gap: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .ai-book-btn {
+    background: var(--highlighter-soft); border: 1px solid var(--highlighter); color: var(--ink);
+    border-radius: 12px; width: 46px; height: 46px; font-size: 19px; cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ai-book-btn:hover { opacity: .85; }
+  .ai-chat-inputbar .text-input { flex: 1; }
+  .ai-chat-inputbar button.primary { flex-shrink: 0; }
+
+  .ai-book-source-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .ai-book-source-tabs button.ghost.active { background: var(--teal); color: #fff; border-color: var(--teal); }

@@ -1,0 +1,41 @@
+  :root {
+    --paper: #FAF9F5;
+    --paper-dim: #F0EEE6;
+    --ink: #1B2A4A;
+    --ink-soft: #5C6B7A;
+    --highlighter: #FFC93C;
+    --highlighter-soft: #FFF0C2;
+    --teal: #2E8B77;
+    --teal-dim: #E4F2EE;
+    --danger: #C7554A;
+    --danger-soft: #FBEAE8;
+    --line: #E2DFD4;
+    --surface: #FFFFFF;
+    /* لوحات تمييز داكنة ثابتة (زر أساسي، نتيجة، فقاعة "أنت") - ما تنعكس مع
+       الثيم عشان النص الأبيض فوقها يضل مقروء دائمًا بغض النظر عن الوضع */
+    --emphasis-bg: #1B2A4A;
+    --emphasis-text: #FFFFFF;
+    --radius: 14px;
+    --sidebar-width: 220px;
+  }
+
+  [data-theme="dark"] {
+    --paper: #14181F;
+    --paper-dim: #1C222C;
+    --ink: #E8EAF0;
+    --ink-soft: #98A2B3;
+    --highlighter: #FFC93C;
+    --highlighter-soft: #3A3220;
+    --teal: #4FC3A1;
+    --teal-dim: #163B32;
+    --danger: #D2665A;
+    --danger-soft: #3A2020;
+    --line: #2A313D;
+    --surface: #1B212B;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);

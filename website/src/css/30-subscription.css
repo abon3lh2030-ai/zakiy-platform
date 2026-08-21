@@ -1,0 +1,19 @@
+  }
+  #profileSections { margin-top: 10px; }
+  .profile-section {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 18px; margin-top: 16px;
+  }
+  .profile-section .sub-heading { margin-bottom: 12px; }
+  .profile-library-row, .profile-archive-row, .profile-friend-row {
+    padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 6px; font-size: 14px;
+  }
+  .profile-archive-row .archive-participant.is-host { font-weight: 800; color: var(--teal); }
+
+  /* ---------- الاشتراكات ---------- */
+  .sub-period-btn.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+  .subscription-plans-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-top: 6px;
+  }
+  .plan-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);

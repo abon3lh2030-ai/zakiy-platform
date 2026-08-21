@@ -1,0 +1,109 @@
+    border-radius: var(--radius);
+    background: var(--emphasis-bg);
+    color: var(--emphasis-text);
+    margin-bottom: 20px;
+  }
+  .my-result-banner .big {
+    font-family: 'Almarai', sans-serif;
+    font-size: 34px;
+    font-weight: 800;
+    color: var(--highlighter);
+  }
+
+  /* ---------- الحساب ولوحة الأداء ---------- */
+  select.text-input { cursor: pointer; }
+
+  .auth-card {
+    max-width: 420px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 44px 36px;
+  }
+  .auth-card .auth-logo {
+    font-family: 'Almarai', sans-serif;
+    font-weight: 800;
+    font-size: 30px;
+    color: var(--ink);
+    position: relative;
+    display: inline-block;
+    margin-bottom: 10px;
+  }
+  .auth-card .auth-logo::after {
+    content: "";
+    position: absolute;
+    right: 0; left: 0; bottom: 2px;
+    height: 10px;
+    background: var(--highlighter);
+    z-index: -1;
+    opacity: .75;
+    transform: skewX(-8deg);
+  }
+  .auth-card h2 { text-align: center; }
+  .auth-card .desc { text-align: center; }
+
+  .auth-fields { display: flex; flex-direction: column; gap: 14px; margin: 22px 0; }
+  .auth-fields .text-input, .auth-levels .text-input {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 15px;
+  }
+  .auth-levels {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 22px;
+    text-align: right;
+  }
+  .auth-levels label {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+  }
+  .auth-actions-stack { display: flex; flex-direction: column; gap: 10px; }
+  .auth-actions-stack button.primary,
+  .auth-actions-stack button.ghost {
+    width: 100%;
+    padding: 15px;
+    font-size: 15.5px;
+  }
+
+  .auth-switch {
+    margin-top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .link-btn {
+    background: none;
+    border: none;
+    color: var(--teal);
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px;
+  }
+  .link-btn:hover { text-decoration: underline; }
+
+  .stat-row { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+  .stat-tile {
+    flex: 1;
+    min-width: 120px;
+    background: var(--paper-dim);
+    border-radius: 12px;
+    padding: 18px;
+    text-align: center;
+  }
+  .stat-tile .stat-value {
+    font-family: 'Almarai', sans-serif;
+    font-weight: 800;
+    font-size: 28px;
+    color: var(--ink);
+  }
+  .stat-tile .stat-label { font-size: 12.5px; color: var(--ink-soft); margin-top: 4px; }
+
+  .weak-topic-row { margin-bottom: 12px; }
+  .weak-topic-row .wt-label {
+    display: flex;

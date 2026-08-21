@@ -1,0 +1,13 @@
+    border-radius: var(--radius); touch-action: none; cursor: crosshair; display: block;
+  }
+  .hand-raised-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 6px;
+  }
+  .lucky-draw-display {
+    text-align: center; font-size: 20px; font-weight: 800; padding: 18px; margin: 10px 0;
+    background: var(--highlighter-soft); border-radius: var(--radius); transition: background .2s, color .2s;
+  }
+  .lucky-draw-display.winner { background: var(--teal-dim); color: var(--teal); }
+
+  /* ---------- مودال QR ---------- */

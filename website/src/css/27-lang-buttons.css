@@ -1,0 +1,3 @@
+  }
+  .qr-modal-box .ai-help-close { position: absolute; top: 10px; left: 10px; color: var(--ink-soft); }
+  #qrCanvasContainer { display: flex; justify-content: center; margin: 14px 0; }

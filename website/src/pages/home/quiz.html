@@ -1,0 +1,17 @@
+  <!-- Step 4: Quiz -->
+  <section class="card hidden" id="step-quiz">
+    <span class="step-label" data-i18n="quiz_step_label">٤ — الاختبار</span>
+    <h2 data-i18n="quiz_heading">اختبر فهمك</h2>
+    <p class="desc" data-i18n="quiz_desc">اختر إجابة لكل سؤال ثم اضغط "تحقق من النتيجة"</p>
+    <div id="quizContainer"></div>
+    <div class="actions">
+      <button class="primary" id="checkBtn" data-i18n="btn_check_result">تحقق من النتيجة</button>
+      <button class="ghost" id="restartBtn" data-i18n="btn_restart">ابدأ من جديد</button>
+    </div>
+
+    <div class="actions hidden" id="hostQuizControls">
+      <input type="number" id="quizDurationInput" class="text-input" placeholder="مدة الاختبار (دقائق)" min="1" style="max-width:200px;" data-i18n-ph="ph_quiz_duration">
+      <button class="primary" id="hostStartQuizBtn" data-i18n="btn_start_quiz_all">🚀 ابدأ الاختبار للجميع</button>
+    </div>
+    <div id="hostStartQuizError"></div>
+  </section>

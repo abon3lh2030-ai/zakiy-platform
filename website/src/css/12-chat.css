@@ -1,0 +1,39 @@
+  .data-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+  table.data-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table.data-table th, table.data-table td { padding: 9px 12px; text-align: start; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  table.data-table th { color: var(--ink-soft); font-weight: 600; background: var(--paper-dim); }
+  table.data-table tr:last-child td { border-bottom: none; }
+  .role-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .role-tab { padding: 7px 14px; border-radius: 20px; border: 1px solid var(--line); background: var(--paper); cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--ink-soft); }
+  .role-tab.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+  .credential-reveal { border: 1px dashed var(--teal); background: var(--teal-dim); border-radius: 10px; padding: 12px 14px; margin-top: 10px; font-size: 14px; }
+  .account-usage-meter { height: 8px; border-radius: 6px; background: var(--paper-dim); overflow: hidden; margin: 6px 0 14px; }
+  .account-usage-meter > div { height: 100%; background: var(--teal); }
+
+  /* ---------- Chat (AI + room) ---------- */
+  .chat-messages {
+    max-height: 260px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 4px;
+  }
+  .chat-bubble {
+    max-width: 80%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.6;
+    word-wrap: break-word;
+  }
+  .chat-bubble .who { display: block; font-weight: 700; font-size: 12px; margin-bottom: 3px; }
+  .chat-bubble.me { align-self: flex-start; background: var(--emphasis-bg); color: var(--emphasis-text); }
+  .chat-bubble.me .who { color: var(--highlighter); }
+  .chat-bubble.other { align-self: flex-end; background: var(--paper-dim); color: var(--ink); }
+  .chat-bubble.ai { align-self: flex-start; background: var(--teal-dim); color: var(--ink); border: 1px solid var(--teal); }
+
+  .typing-indicator {
+    font-size: 12.5px;
+    color: var(--ink-soft);

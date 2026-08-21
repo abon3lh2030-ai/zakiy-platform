@@ -1,0 +1,29 @@
+  <!-- صفحة ملاحظة وحدة (كل ملاحظة بصفحتها الخاصة) -->
+  <section class="card hidden" id="step-note-editor">
+    <div class="actions" style="justify-content:space-between; margin-bottom:14px;">
+      <div class="actions" style="margin:0;">
+        <button class="ghost note-type-btn active" id="noteTypeTextBtn" data-i18n="note_type_text">📝 نص</button>
+        <button class="ghost note-type-btn" id="noteTypeChecklistBtn" data-i18n="note_type_checklist">☑️ قائمة المهام</button>
+      </div>
+      <div class="actions" style="margin:0;">
+        <button class="ghost" id="notePinBtn" title="تثبيت">📌</button>
+        <button class="ghost" id="noteDeleteBtn" data-i18n="btn_delete">🗑️ حذف</button>
+      </div>
+    </div>
+
+    <input type="text" id="noteTitleInput" class="text-input note-title-input" placeholder="عنوان الملاحظة" data-i18n-ph="ph_note_title">
+
+    <select id="noteFolderSelect" class="text-input" style="margin-bottom:12px;"></select>
+
+    <textarea id="noteContentTextarea" class="text-input note-content-textarea" placeholder="اكتب ملاحظتك هنا..." data-i18n-ph="ph_note_content"></textarea>
+
+    <div id="noteChecklistWrap" class="hidden">
+      <div id="noteChecklistItems"></div>
+      <div class="actions">
+        <input type="text" id="noteChecklistNewInput" class="text-input" style="flex:1;" placeholder="إضافة عنصر..." data-i18n-ph="ph_checklist_item">
+        <button class="ghost" id="noteChecklistAddBtn" data-i18n="btn_add">➕ إضافة</button>
+      </div>
+    </div>
+
+    <p class="desc" id="noteSavedIndicator" style="margin-top:10px;"></p>
+  </section>

@@ -1,0 +1,22 @@
+    font-size: 13px; font-weight: 800; color: transparent; cursor: pointer;
+    background: var(--paper-dim); transition: background .15s, border-color .15s, color .15s;
+  }
+  .checklist-toggle:hover { border-color: var(--teal); }
+  .checklist-toggle.done { background: var(--teal); border-color: var(--teal); color: #fff; }
+  .checklist-row .checklist-text-input {
+    flex: 1; border: none; background: transparent; font-family: inherit; font-size: 14.5px; color: var(--ink); padding: 4px;
+  }
+  .checklist-row .checklist-text-input:focus { outline: none; }
+  .checklist-row.done .checklist-text-input { text-decoration: line-through; color: var(--ink-soft); }
+  .checklist-row .checklist-del-btn { color: var(--danger); cursor: pointer; font-size: 13px; flex-shrink: 0; }
+
+  /* ---------- دفتر الواجبات ---------- */
+  .assignment-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s;
+  }
+  .assignment-card:hover { border-color: var(--teal); }
+  .assignment-card .assignment-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .assignment-card .assignment-title { font-weight: 700; font-size: 15px; color: var(--ink); }
+  .assignment-card .assignment-meta { font-size: 12px; color: var(--ink-soft); margin-top: 3px; }
+  .assignment-status {

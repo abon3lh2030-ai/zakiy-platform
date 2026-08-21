@@ -1,0 +1,19 @@
+    font-style: italic;
+    min-height: 18px;
+    margin-bottom: 6px;
+  }
+
+  footer {
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 13px;
+    margin-top: 40px;
+  }
+
+  /* ---------- زر رجوع عام (ملاصق يمين السايد بار دائمًا) ---------- */
+  .global-back-btn {
+    position: fixed;
+    top: 18px;
+    left: calc(var(--sidebar-width) + 18px);
+    z-index: 600;
+    background: var(--surface);

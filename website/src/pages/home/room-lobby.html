@@ -1,0 +1,51 @@
+  <!-- لوحة الغرفة الدائمة: تظهر بعد الانضمام وتبقى طول ما الغرفة مفتوحة -->
+  <section class="card hidden" id="step-room">
+    <span class="step-label" data-i18n="room_step_label">🎓 غرفة المذاكرة</span>
+    <h2 data-i18n="room_step_heading">غرفة المذاكرة الحية</h2>
+    <div class="room-code-badge" id="roomCodeBadge"></div>
+    <button class="link-btn" id="showQrBtn" data-i18n="btn_show_qr">📱 اعرض QR للانضمام</button>
+    <button class="link-btn" id="inviteFriendBtn" data-i18n="btn_invite_friend">📨 ادعُ صديق</button>
+    <p class="desc" id="roomElapsedTimer">⏱️ الغرفة مفتوحة من: 00:00</p>
+
+    <div class="room-code-badge hidden" id="quizCountdownBadge" style="background:var(--highlighter-soft); color:#8a6d00; font-size:18px;"></div>
+
+    <div id="myResultBox" class="hidden"></div>
+
+    <div id="participantsSection">
+      <div class="podium hidden" id="podiumContainer"></div>
+
+      <div id="sharedSummaryBox" class="hidden" style="margin-bottom:20px;">
+        <h3 class="sub-heading" data-i18n="shared_summary_heading">📚 ملخص المضيف</h3>
+        <div class="summary-block" id="sharedSummaryText"></div>
+      </div>
+
+      <h3 class="sub-heading" data-i18n="participants_heading">👥 المشاركين</h3>
+      <div class="leaderboard" id="leaderboardContainer"></div>
+
+      <div id="roomChatBox" style="margin-top:24px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+          <h3 class="sub-heading" style="margin:0;" data-i18n="room_chat_heading">💬 شات الغرفة</h3>
+          <button class="ghost hidden" id="chatToggleBtn" style="padding:6px 12px;"></button>
+        </div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="typing-indicator" id="typingIndicator"></div>
+        <p class="desc hidden" id="chatLockedNote" data-i18n="chat_locked_note">🔒 المدرس قفل الشات مؤقتًا</p>
+        <div class="actions" id="chatInputRow">
+          <input type="text" id="chatInput" class="text-input" placeholder="اكتب رسالة لزملائك..." data-i18n-ph="ph_chat_message">
+          <button class="ghost" id="chatSendBtn" data-i18n="btn_send">إرسال</button>
+        </div>
+      </div>
+
+      <div id="voiceChatBox" style="margin-top:24px;">
+        <h3 class="sub-heading" data-i18n="voice_heading">🎙️ الصوت الجماعي</h3>
+        <p class="desc" style="margin-bottom:12px;" data-i18n="voice_desc">صوت مباشر بينك وبين زملائك بالغرفة، اختياري تمامًا</p>
+        <div class="actions">
+          <button class="primary" id="voiceJoinBtn" data-i18n="btn_voice_join">🎙️ انضم للصوت</button>
+          <button class="ghost hidden" id="voiceMuteBtn" data-i18n="btn_voice_mute">🔇 كتم المايك</button>
+          <button class="ghost hidden" id="voiceLeaveBtn" data-i18n="btn_voice_leave">📴 غادر الصوت</button>
+        </div>
+        <div id="voiceError"></div>
+      </div>
+    </div>
+    <div id="inQuizNote" class="hidden" style="margin-top:16px; color:var(--ink-soft); font-size:13.5px;" data-i18n="in_quiz_note">🔒 الشات وقائمة المشاركين تظهر لك بعد ما تسلّم الاختبار.</div>
+  </section>

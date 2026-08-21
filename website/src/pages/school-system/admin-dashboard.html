@@ -1,0 +1,29 @@
+  <!-- لوحة الأدمن العام: إدارة المدارس والاشتراكات -->
+  <section class="card hidden" id="step-admin-dashboard">
+    <span class="step-label" data-i18n="admin_dash_label">🛠️ لوحة الإدارة العامة</span>
+    <h2 data-i18n="admin_dash_heading">المدارس المشتركة</h2>
+
+    <h3 class="sub-heading" data-i18n="admin_add_school_heading">➕ إضافة مدرسة جديدة</h3>
+    <div class="actions" style="flex-wrap:wrap;">
+      <input type="text" id="newSchoolName" class="text-input" placeholder="اسم المدرسة" data-i18n-ph="ph_school_name">
+      <input type="email" id="newSchoolAdminEmail" class="text-input" placeholder="إيميل مدير المدرسة" data-i18n-ph="ph_school_admin_email">
+      <input type="number" id="newSchoolMaxAccounts" class="text-input" placeholder="الحد الأقصى للحسابات" data-i18n-ph="ph_max_accounts" min="0" style="max-width:160px;">
+      <button class="primary" id="createSchoolBtn" data-i18n="btn_create_school">إنشاء المدرسة</button>
+    </div>
+    <div id="createSchoolError"></div>
+    <div id="createSchoolResult" class="credential-reveal hidden"></div>
+
+    <h3 class="sub-heading" data-i18n="admin_schools_list_heading">🏫 كل المدارس</h3>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr>
+          <th data-i18n="th_school_name">المدرسة</th>
+          <th data-i18n="th_admin_email">إيميل المدير</th>
+          <th data-i18n="th_accounts_usage">الحسابات</th>
+          <th data-i18n="th_status">الحالة</th>
+          <th data-i18n="th_actions">إجراء</th>
+        </tr></thead>
+        <tbody id="adminSchoolsTableBody"></tbody>
+      </table>
+    </div>
+  </section>

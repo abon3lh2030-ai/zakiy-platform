@@ -1,0 +1,51 @@
+  <!-- صفحة البروفايل - بروفايلك أو بروفايل شخص ثاني (عبر بحث/QR)، حسب إعدادات الخصوصية -->
+  <section class="card hidden" id="step-profile">
+    <span class="step-label" data-i18n="profile_step_label">👤 البروفايل</span>
+
+    <div class="profile-header">
+      <div class="profile-avatar" id="profileAvatar"></div>
+      <h2 id="profileUsername"></h2>
+      <p class="profile-school hidden" id="profileSchool"></p>
+      <p class="profile-bio hidden" id="profileBio"></p>
+    </div>
+
+    <div class="actions" id="profileActionsRow" style="justify-content:center;">
+      <button class="ghost hidden" id="profileShowQrBtn" data-i18n="btn_show_qr_profile">📱 QR بروفايلك</button>
+      <button class="primary hidden" id="profileAddFriendBtn" data-i18n="btn_add_friend_short">➕ أضف صديق</button>
+      <span class="badge hidden" id="profileFriendBadge"></span>
+    </div>
+
+    <div class="card-notice hidden" id="profilePrivateNotice">
+      <div style="font-size:28px;">🔒</div>
+      <p data-i18n="profile_is_private_notice">هذا البروفايل خاص</p>
+    </div>
+
+    <div id="profileSections">
+      <div class="profile-section hidden" id="profilePerformanceSection">
+        <h3 class="sub-heading" data-i18n="nav_performance">📊 أدائي</h3>
+        <div class="stat-row">
+          <div class="stat-tile"><div class="stat-value" id="profileStatAttempts">0</div><div class="stat-label" data-i18n="stat_attempts">عدد المحاولات</div></div>
+          <div class="stat-tile"><div class="stat-value" id="profileStatAvg">٠٪</div><div class="stat-label" data-i18n="stat_avg">متوسط الدرجة</div></div>
+          <div class="stat-tile study-hours"><div class="stat-value" id="profileStatMinutes">٠</div><div class="stat-label" data-i18n="stat_study_minutes">⏱️ دقائق مذاكرة</div></div>
+        </div>
+        <div class="streak-badge hidden" id="profileStreakBadge" style="margin-top:12px;"><span class="flame">🔥</span><span id="profileStreakText"></span></div>
+      </div>
+
+      <div class="profile-section hidden" id="profileLibrarySection">
+        <h3 class="sub-heading" data-i18n="nav_library">📚 مكتبتي</h3>
+        <div id="profileLibraryList"></div>
+      </div>
+
+      <div class="profile-section hidden" id="profileArchiveSection">
+        <h3 class="sub-heading" data-i18n="nav_archive">📂 الأرشيف</h3>
+        <div id="profileArchiveList"></div>
+      </div>
+
+      <div class="profile-section hidden" id="profileFriendsSection">
+        <h3 class="sub-heading" data-i18n="nav_friends">👥 الأصدقاء</h3>
+        <div id="profileFriendsListDisplay"></div>
+      </div>
+    </div>
+
+    <p class="desc hidden" id="profileNoSectionsNotice" data-i18n="profile_no_visible_sections">هذا الطالب ما فعّل عرض أي قسم إضافي.</p>
+  </section>

@@ -1,0 +1,24 @@
+  <!-- الأصدقاء - شاشة مستقلة (تظهر عبر زر "👥 الأصدقاء" بالسايد بار) -->
+  <section class="card hidden" id="step-friends">
+    <span class="step-label" data-i18n="friends_step_label">👥 الأصدقاء</span>
+    <h2 data-i18n="friends_heading">أصدقاؤك</h2>
+
+    <button class="ghost" id="showFriendQrBtn" data-i18n="friend_qr_btn">📱 QR يضيفك كصديق</button>
+    <p class="desc" style="margin-top:8px;" data-i18n="friend_qr_desc">وريه لصديقك يمسحه بجواله، بيضيفك فورًا زي لو دوّر على اسمك بالضبط</p>
+
+    <h3 class="sub-heading" style="margin-top:22px;" data-i18n="session_invites_heading">📩 دعوات جلسات</h3>
+    <div id="sessionInvitesList"><p class="desc" data-i18n="session_invites_empty">ما فيه دعوات جديدة</p></div>
+
+    <h3 class="sub-heading" style="margin-top:22px;" data-i18n="friend_search_heading">🔍 دور على صديق</h3>
+    <div class="actions">
+      <input type="text" id="friendSearchInput" class="text-input" placeholder="اسم المستخدم..." data-i18n-ph="ph_username_search">
+      <button class="ghost" id="friendSearchBtn" data-i18n="btn_search">بحث</button>
+    </div>
+    <div class="friend-search-results" id="friendSearchResults"></div>
+
+    <h3 class="sub-heading" style="margin-top:22px;" data-i18n="friend_requests_heading">📨 طلبات الصداقة</h3>
+    <div id="friendRequestsList"><p class="desc" data-i18n="friend_requests_empty">ما فيه طلبات جديدة</p></div>
+
+    <h3 class="sub-heading" style="margin-top:22px;" data-i18n="friends_list_subheading">👥 أصدقاؤك</h3>
+    <div id="friendsList"><p class="desc" data-i18n="friends_list_empty">ما ضفت أصدقاء لحد الحين</p></div>
+  </section>

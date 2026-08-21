@@ -1,0 +1,15 @@
+  <!-- دفتر الملاحظات (حساب فردي بس - يُخفى تمامًا لأي حساب مؤسسي) -->
+  <section class="card hidden" id="step-notes">
+    <span class="step-label" data-i18n="notes_step_label">📝 ملاحظاتي</span>
+    <h2 data-i18n="notes_heading">دفتر ملاحظاتك</h2>
+
+    <div class="actions" style="margin-bottom:14px;">
+      <input type="text" id="notesSearchInput" class="text-input" style="flex:1;" placeholder="ابحث بالملاحظات..." data-i18n-ph="ph_notes_search">
+      <button class="primary" id="notesNewBtn" data-i18n="btn_new_note">➕ ملاحظة جديدة</button>
+    </div>
+
+    <div class="notes-folders-row" id="notesFoldersRow"></div>
+
+    <div id="notesList"></div>
+    <p class="desc hidden" id="notesEmptyState" data-i18n="notes_empty">ما فيه ملاحظات هنا لحد الحين.</p>
+  </section>

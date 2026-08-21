@@ -1,0 +1,46 @@
+
+  /* ---------- Misc ---------- */
+  .hidden { display: none !important; }
+  .error-msg {
+    color: var(--danger);
+    background: var(--danger-soft);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+    margin-top: 14px;
+  }
+
+  /* ---------- Room / Live study ---------- */
+  .text-input {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 11px 14px;
+    font-family: inherit;
+    font-size: 14.5px;
+    background: var(--paper-dim);
+    color: var(--ink);
+  }
+  .text-input:focus { outline: none; border-color: var(--teal); }
+  #joinRoomCode { width: 130px; letter-spacing: 2px; text-transform: uppercase; }
+
+  .room-code-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Almarai', sans-serif;
+    font-weight: 800;
+    font-size: 26px;
+    letter-spacing: 4px;
+    background: var(--teal-dim);
+    color: var(--teal);
+    padding: 10px 20px;
+    border-radius: 12px;
+    margin-bottom: 18px;
+  }
+
+  .leaderboard { display: flex; flex-direction: column; gap: 8px; }
+  .leaderboard-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid var(--line);

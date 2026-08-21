@@ -1,0 +1,10 @@
+     زي بوابة إجبار تغيير كلمة السر تطلع مزاحة يمين بدل انها بالنص فعليًا */
+  body.with-sidebar { padding-left: var(--sidebar-width); }
+
+  @media (max-width: 720px) {
+    :root { --sidebar-width: 60px; }
+    .sidebar { padding: 16px 6px; }
+    .sidebar-logo { font-size: 0; }
+    .sidebar-logo::first-letter { font-size: 20px; }
+    .sidebar-btn { justify-content: center; padding: 12px 4px; }
+    .sidebar-btn .label { display: none; }

@@ -1,0 +1,60 @@
+    justify-content: space-between;
+    font-size: 13.5px;
+    margin-bottom: 4px;
+  }
+  .weak-topic-row .wt-bar-bg {
+    background: var(--paper-dim);
+    border-radius: 6px;
+    height: 10px;
+    overflow: hidden;
+  }
+  .weak-topic-row .wt-bar-fill { background: var(--danger); height: 100%; border-radius: 6px; }
+
+  /* ---------- السايد بار ---------- */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-width);
+    background: var(--surface);
+    border-right: 1px solid var(--line);
+    z-index: 700;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 14px;
+    overflow-y: auto;
+  }
+  .sidebar-logo {
+    font-family: 'Almarai', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--ink);
+    text-align: center;
+    margin-bottom: 26px;
+  }
+  .sidebar-nav { display: flex; flex-direction: column; gap: 6px; }
+  .sidebar-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--ink);
+    padding: 11px 12px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: right;
+  }
+  .sidebar-btn:hover { background: var(--paper-dim); }
+  .sidebar-btn .sidebar-icon { font-size: 16px; }
+  .sidebar-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 6px; padding-top: 14px; }
+  .unread-badge {
+    background: #d9453f; color: #fff; border-radius: 999px; font-size: 11px;
+    font-weight: 700; padding: 1px 7px; margin-inline-start: auto; line-height: 1.5;
+  }
+
+  /* padding الجسم يتفعّل بس لما السايد بار فعليًا ظاهر (كلاس with-sidebar
+     تتحكم فيه show('sidebar')/hide('sidebar')) - وإلا شاشات بلا سايد بار

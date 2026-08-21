@@ -1,0 +1,34 @@
+  <!-- لوحة تحليل الأداء (تظهر بأي وقت للمسجّلين عبر زر "📊 أدائي") -->
+  <section class="card hidden" id="step-performance">
+    <span class="step-label">📊 أدائي</span>
+    <h2 id="performanceHeading" data-i18n="performance_heading_default">لوحة تحليل أدائك</h2>
+
+    <p class="desc" id="performanceEmptyState" data-i18n="performance_empty">لسا ما حليت أي اختبار وأنت مسجّل دخول.</p>
+
+    <div id="performanceContent" class="hidden">
+      <div class="stat-row">
+        <div class="stat-tile">
+          <div class="stat-value" id="statAttempts">0</div>
+          <div class="stat-label" data-i18n="stat_attempts">عدد المحاولات</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value" id="statAvg">٠٪</div>
+          <div class="stat-label" data-i18n="stat_avg">متوسط الدرجة</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value" id="statBest">٠٪</div>
+          <div class="stat-label" data-i18n="stat_best">أفضل نتيجة</div>
+        </div>
+        <div class="stat-tile study-hours">
+          <div class="stat-value" id="statStudyMinutes">٠</div>
+          <div class="stat-label" data-i18n="stat_study_minutes">⏱️ دقائق مذاكرة</div>
+        </div>
+      </div>
+
+      <h3 class="sub-heading" data-i18n="performance_trend_heading">📈 تطور درجاتك</h3>
+      <svg id="trendChart" width="100%" height="120" style="overflow:visible; margin-bottom:24px;"></svg>
+
+      <h3 class="sub-heading" data-i18n="performance_weak_heading">🎯 نقاط تحتاج مراجعة</h3>
+      <div id="weakTopicsList"></div>
+    </div>
+  </section>

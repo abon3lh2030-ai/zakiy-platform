@@ -1,0 +1,48 @@
+  <!-- الكلاس المباشر: نفس آلية الدخول (كود غرفة) بس محتوى مختلف تمامًا من جوا -->
+  <section class="card hidden" id="step-classroom">
+    <span class="step-label" data-i18n="classroom_step_label">🖍️ كلاس مباشر</span>
+    <h2 data-i18n="classroom_heading">سبورة الشرح المباشرة</h2>
+    <div class="room-code-badge" id="classroomCodeBadge"></div>
+    <button class="link-btn" id="showQrBtnClassroom" data-i18n="btn_show_qr">📱 اعرض QR للانضمام</button>
+    <button class="link-btn" id="inviteFriendBtnClassroom" data-i18n="btn_invite_friend">📨 ادعُ صديق</button>
+
+    <div id="classroomWaiting" class="hidden">
+      <p class="desc" data-i18n="classroom_waiting">⏳ بانتظار المدرس يبدأ الحصة...</p>
+    </div>
+
+    <button class="primary hidden" id="startClassBtn" style="margin:14px 0;" data-i18n="btn_start_class">▶️ ابدأ الحصة</button>
+    <button class="ghost hidden" id="startClassroomQuizBtn" style="margin:14px 0;" data-i18n="btn_start_classroom_quiz">📝 ابدأ اختبار للطلاب</button>
+
+    <div id="classroomBoardArea" class="hidden">
+      <div class="classroom-toolbar hidden" id="classroomTeacherToolbar">
+        <button class="classroom-color-swatch active" data-color="#1B2A4A" style="background:#1B2A4A;"></button>
+        <button class="classroom-color-swatch" data-color="#C7554A" style="background:#C7554A;"></button>
+        <button class="classroom-color-swatch" data-color="#2E8B77" style="background:#2E8B77;"></button>
+        <button class="classroom-color-swatch" data-color="#FFC93C" style="background:#FFC93C;"></button>
+        <button class="ghost" id="classroomEraserBtn" style="padding:6px 12px;" data-i18n="btn_eraser">🧽 ممحاة</button>
+        <button class="ghost" id="classroomTextBtn" style="padding:6px 12px;" data-i18n="btn_text_tool">🔤 نص</button>
+        <button class="ghost" id="classroomMoveBtn" style="padding:6px 12px;" data-i18n="btn_move_tool">↔️ تحريك</button>
+        <button class="ghost" id="classroomShrinkBtn" style="padding:6px 10px;" disabled>🔤➖</button>
+        <button class="ghost" id="classroomGrowBtn" style="padding:6px 10px;" disabled>🔤➕</button>
+        <button class="ghost" id="classroomClearBtn" style="padding:6px 12px;" data-i18n="btn_clear_board">🧹 امسح الكل</button>
+      </div>
+      <canvas id="classroomCanvas" width="960" height="540"></canvas>
+    </div>
+
+    <button class="ghost hidden" id="raiseHandBtn" style="margin-top:14px;">🙋 رفع الإيد</button>
+
+    <div id="luckyDrawSection" class="hidden" style="margin-top:16px;">
+      <button class="primary hidden" id="luckyDrawBtn" data-i18n="btn_lucky_draw">🎡 لفة حظ</button>
+      <div class="lucky-draw-display hidden" id="luckyDrawDisplay"></div>
+    </div>
+
+    <h3 class="sub-heading" style="margin-top:22px;" data-i18n="raised_hands_heading">✋ رافعين الإيد</h3>
+    <div id="raisedHandsList"><p class="desc" data-i18n="raised_hands_empty">محد رافع إيده لحد الحين</p></div>
+
+    <h3 class="sub-heading" style="margin-top:22px;" data-i18n="participants_heading">👥 المشاركين</h3>
+    <div id="classroomParticipantsList"></div>
+
+    <div id="classroomSummarySlot" style="margin-top:24px;"></div>
+    <div id="classroomChatSlot" style="margin-top:24px;"></div>
+    <div id="classroomVoiceSlot" style="margin-top:24px;"></div>
+  </section>

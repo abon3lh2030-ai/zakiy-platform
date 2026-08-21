@@ -1,0 +1,35 @@
+  <!-- صفحة واجب وحد (كل واجب بصفحته الخاصة) -->
+  <section class="card hidden" id="step-assignment-detail">
+    <span class="step-label" id="assignmentDetailSubjectLabel"></span>
+    <h2 id="assignmentDetailTitle"></h2>
+    <p class="desc" id="assignmentDetailContent" style="white-space:pre-wrap; margin:14px 0; line-height:1.9;"></p>
+
+    <!-- عرض الطالب -->
+    <div id="studentSubmissionView" class="hidden">
+      <div class="highlight-box hidden" id="studentSubmissionInfo"></div>
+      <div id="studentSubmitForm">
+        <h3 class="sub-heading" data-i18n="assignment_submit_heading">📎 حل الواجب</h3>
+        <div class="dropzone" id="assignmentFileDropzone">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#5C6B7A" stroke-width="1.6"><path d="M12 16V4M12 4l-4 4M12 4l4 4M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>
+          <div class="main-text" data-i18n="assignment_dropzone_text">اسحب ملف الحل هنا أو اضغط للاختيار</div>
+          <input type="file" id="assignmentFileInput">
+        </div>
+        <div class="file-chip" id="assignmentFileChip">
+          <span>📄</span>
+          <span class="name" id="assignmentFileName"></span>
+          <button class="ghost" id="assignmentRemoveFile" style="padding:4px 12px;" data-i18n="btn_remove">إزالة</button>
+        </div>
+        <textarea id="assignmentNoteTextarea" class="text-input" placeholder="ملاحظة (اختياري)" data-i18n-ph="ph_assignment_note" style="margin-top:10px; min-height:80px;"></textarea>
+        <div class="actions" style="margin-top:10px;">
+          <button class="primary" id="assignmentSubmitBtn" disabled data-i18n="btn_submit_assignment">تسليم الواجب</button>
+        </div>
+        <div id="assignmentSubmitError"></div>
+      </div>
+    </div>
+
+    <!-- عرض المعلم -->
+    <div id="teacherStudentsView" class="hidden">
+      <h3 class="sub-heading" data-i18n="assignment_students_heading">👥 حالة التسليم</h3>
+      <div id="assignmentStudentsList"></div>
+    </div>
+  </section>

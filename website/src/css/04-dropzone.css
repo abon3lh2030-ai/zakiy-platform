@@ -1,0 +1,31 @@
+  .card h2 {
+    font-family: 'Almarai', sans-serif;
+    font-size: 21px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .card .desc {
+    color: var(--ink-soft);
+    font-size: 14.5px;
+    margin-bottom: 22px;
+  }
+
+  /* ---------- Dropzone ---------- */
+  .dropzone {
+    border: 2px dashed var(--line);
+    border-radius: var(--radius);
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+  }
+  .dropzone:hover, .dropzone.drag {
+    border-color: var(--teal);
+    background: var(--teal-dim);
+  }
+  .dropzone svg { margin-bottom: 12px; }
+  .dropzone .main-text { font-weight: 600; font-size: 15px; }
+  .dropzone .sub-text { color: var(--ink-soft); font-size: 13px; margin-top: 4px; }
+  input[type=file] { display: none; }
+
+  .file-chip {

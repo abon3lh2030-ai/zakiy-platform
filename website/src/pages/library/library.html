@@ -1,0 +1,27 @@
+  <!-- مكتبة الكتب الشخصية (تظهر بأي وقت للمسجّلين عبر زر "📚 مكتبتي") -->
+  <section class="card hidden" id="step-library">
+    <span class="step-label" data-i18n="library_step_label">📚 مكتبتي</span>
+    <h2 data-i18n="library_heading">مكتبة كتبك</h2>
+    <p class="desc" data-i18n="library_desc">كتب حفظتها قبل - تقدر تستخدمها بأي جلسة بدون ما ترفعها من جديد</p>
+
+    <div id="libraryList"></div>
+    <p class="desc hidden" id="libraryEmptyState" data-i18n="library_empty">مكتبتك فاضية لحد الحين - ضيف كتاب من تحت.</p>
+
+    <h3 class="sub-heading" data-i18n="library_add_heading">➕ ضيف كتاب جديد</h3>
+    <div class="dropzone" id="libraryDropzone">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#5C6B7A" stroke-width="1.6"><path d="M12 16V4M12 4l-4 4M12 4l4 4M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>
+      <div class="main-text" data-i18n="dropzone_main_text">اسحب ملف PDF هنا أو اضغط للاختيار</div>
+      <div class="sub-text" data-i18n="dropzone_sub_text">حتى 20 صفحة تقريبًا</div>
+      <input type="file" id="libraryFileInput" accept="application/pdf">
+    </div>
+    <div class="file-chip" id="libraryFileChip">
+      <span>📄</span>
+      <span class="name" id="libraryFileName"></span>
+      <button class="ghost" id="libraryRemoveFile" style="padding:4px 12px;" data-i18n="btn_remove">إزالة</button>
+    </div>
+    <div class="actions">
+      <input type="text" id="libraryTitleInput" class="text-input" placeholder="اسم الكتاب بمكتبتك" data-i18n-ph="ph_book_title">
+      <button class="primary" id="libraryAddBtn" disabled data-i18n="btn_save_to_library">احفظ بالمكتبة</button>
+    </div>
+    <div id="libraryError"></div>
+  </section>

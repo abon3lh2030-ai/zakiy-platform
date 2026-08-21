@@ -1,0 +1,70 @@
+  <!-- لوحة المعلم -->
+  <section class="card hidden" id="step-teacher-dashboard">
+    <span class="step-label" data-i18n="teacher_dash_label">👨‍🏫 لوحة المعلم</span>
+    <h2 data-i18n="teacher_dash_heading">فصولي</h2>
+    <div class="actions" style="flex-wrap:wrap; margin-bottom:14px;">
+      <select id="teacherClassSelect" class="text-input" style="max-width:220px;"></select>
+      <button class="primary" id="teacherStartClassBtn" data-i18n="btn_start_live_class">🖍️ ابدأ درس مباشر</button>
+    </div>
+    <div id="teacherStartClassError"></div>
+
+    <div class="role-tabs">
+      <button class="role-tab active" data-tab="roster" data-i18n="tab_roster">👥 الطلاب</button>
+      <button class="role-tab" data-tab="performance" data-i18n="tab_performance">📊 الأداء</button>
+      <button class="role-tab" data-tab="schedule" data-i18n="tab_schedule">🗓️ جدولي</button>
+      <button class="role-tab" data-tab="attendance" data-i18n="tab_attendance">📋 الحضور</button>
+    </div>
+
+    <div id="teacherTab-roster" class="teacher-tab-panel">
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr><th data-i18n="th_student">الطالب</th><th data-i18n="th_actions">إجراء</th></tr></thead>
+          <tbody id="teacherRosterTableBody"></tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-heading" data-i18n="broadcast_students_heading">📢 رسالة جماعية لطلاب الفصل المختار</h3>
+      <textarea id="teacherBroadcastInput" class="text-input" rows="3" placeholder="اكتب رسالتك هنا..." data-i18n-ph="ph_broadcast_body" style="width:100%; resize:vertical; font-family:inherit;"></textarea>
+      <div class="actions" style="margin-top:8px;">
+        <button class="primary" id="teacherBroadcastBtn" data-i18n="btn_send_broadcast">إرسال للجميع</button>
+      </div>
+      <div id="teacherBroadcastError"></div>
+    </div>
+    <div id="teacherTab-performance" class="teacher-tab-panel hidden">
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th data-i18n="th_student">الطالب</th>
+            <th data-i18n="th_attempts">عدد المحاولات</th>
+            <th data-i18n="th_avg_score">متوسط الدرجات</th>
+            <th data-i18n="th_study_minutes">دقائق المذاكرة</th>
+            <th data-i18n="th_streak">الستريك</th>
+          </tr></thead>
+          <tbody id="teacherPerformanceTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="teacherTab-schedule" class="teacher-tab-panel hidden">
+      <div class="data-table-wrap" id="teacherScheduleWrap"></div>
+    </div>
+    <div id="teacherTab-attendance" class="teacher-tab-panel hidden">
+      <h3 class="sub-heading" style="margin-top:0;" data-i18n="manual_attendance_heading">📋 تسجيل حضور اليوم</h3>
+      <input type="date" id="manualAttendanceDate" class="text-input" style="max-width:180px; margin-bottom:10px;">
+      <div id="manualAttendanceFormWrap"></div>
+
+      <h3 class="sub-heading" data-i18n="auto_attendance_heading">🔗 الحضور التلقائي (من الانضمام للكلاس المباشر)</h3>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr><th data-i18n="th_student">الطالب</th><th data-i18n="th_join_time">وقت الانضمام</th></tr></thead>
+          <tbody id="teacherAttendanceTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="teacherStudentProfileModal" class="qr-modal hidden">
+      <div class="qr-modal-box" style="width:380px; text-align:start;">
+        <button class="ai-help-close" id="teacherStudentProfileClose">✕</button>
+        <div id="teacherStudentProfileContent"></div>
+      </div>
+    </div>
+  </section>

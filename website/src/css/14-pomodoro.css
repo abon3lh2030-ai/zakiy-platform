@@ -1,0 +1,80 @@
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 9px 18px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(27,42,74,0.1);
+  }
+  .global-back-btn:hover { border-color: var(--ink); }
+
+  /* ---------- مؤقت بومودورو (فردي بس) ---------- */
+  .pomodoro-widget {
+    position: fixed;
+    bottom: 20px;
+    left: calc(var(--sidebar-width) + 20px);
+    width: 220px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: 0 6px 20px rgba(27,42,74,0.15);
+    z-index: 500;
+    overflow: hidden;
+  }
+  .pomodoro-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--emphasis-bg);
+    color: var(--emphasis-text);
+    font-weight: 700;
+    font-size: 13.5px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .pomodoro-header .pomodoro-toggle {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+  }
+  .pomodoro-body { padding: 16px; }
+  .pomodoro-widget.collapsed .pomodoro-body { display: none; }
+
+  .pomodoro-phase {
+    text-align: center;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--teal);
+    margin-bottom: 4px;
+  }
+  .pomodoro-phase.break { color: #B8860B; }
+  [data-theme="dark"] .pomodoro-phase.break { color: #E0B84D; }
+  .pomodoro-time {
+    text-align: center;
+    font-family: 'Almarai', sans-serif;
+    font-weight: 800;
+    font-size: 34px;
+    color: var(--ink);
+    margin-bottom: 14px;
+    letter-spacing: 1px;
+  }
+  .pomodoro-settings { display: flex; gap: 8px; margin-bottom: 14px; }
+  .pomodoro-settings label {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+  .pomodoro-settings input.text-input { padding: 6px 8px; font-size: 13px; }
+  .pomodoro-controls { display: flex; gap: 8px; }
+  .pomodoro-controls button { flex: 1; padding: 9px; font-size: 12.5px; }
+  .pomodoro-alert {

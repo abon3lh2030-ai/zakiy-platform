@@ -1,0 +1,20 @@
+  }
+
+  /* ---------- تقييم الجلسة التلقائي ---------- */
+  .session-rating { margin-top: 10px; font-size: 15px; }
+  .session-rating .stars { color: #FFC93C; letter-spacing: 2px; font-size: 18px; }
+  .session-rating .fast-badge {
+    display: inline-block; margin-inline-start: 8px; font-size: 12px; font-weight: 700;
+    background: var(--teal-dim); color: var(--teal); padding: 3px 10px; border-radius: 999px;
+  }
+
+  .stat-tile.study-hours { background: var(--highlighter-soft); }
+
+  /* ---------- الكلاس المباشر (سبورة، رفع يد، لفة حظ) ---------- */
+  .classroom-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .classroom-color-swatch {
+    width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); cursor: pointer; padding: 0;
+  }
+  .classroom-color-swatch.active { border-color: var(--ink); box-shadow: 0 0 0 2px var(--paper); }
+  #classroomCanvas {
+    width: 100%; max-width: 100%; aspect-ratio: 16/9; background: #fff; border: 1px solid var(--line);

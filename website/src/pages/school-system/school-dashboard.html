@@ -1,0 +1,164 @@
+  <!-- لوحة إدارة المدرسة (School Admin و School Administration) -->
+  <section class="card hidden" id="step-school-dashboard">
+    <span class="step-label" data-i18n="school_dash_label">🏫 لوحة إدارة المدرسة</span>
+    <h2 data-i18n="school_dash_heading">إدارة المدرسة</h2>
+    <div class="account-usage-meter"><div id="schoolUsageBar" style="width:0%;"></div></div>
+    <p class="desc" id="schoolUsageText"></p>
+
+    <div class="role-tabs">
+      <button class="role-tab active" data-tab="teachers" data-i18n="tab_teachers">👨‍🏫 المعلمون</button>
+      <button class="role-tab" data-tab="students" data-i18n="tab_students">👥 الطلاب</button>
+      <button class="role-tab" data-tab="classes" data-i18n="tab_classes">🏷️ الفصول والجدول</button>
+      <button class="role-tab" data-tab="bulk" data-i18n="tab_bulk_students">➕ إضافة طلاب</button>
+      <button class="role-tab" data-tab="attendance" data-i18n="tab_attendance">📋 الحضور</button>
+    </div>
+
+    <div id="schoolTab-teachers" class="school-tab-panel">
+      <div class="actions" style="flex-wrap:wrap;">
+        <input type="text" id="newTeacherName" class="text-input" placeholder="اسم المعلم" data-i18n-ph="ph_teacher_name">
+        <input type="email" id="newTeacherEmail" class="text-input" placeholder="إيميل المعلم" data-i18n-ph="ph_teacher_email">
+        <button class="primary" id="addTeacherBtn" data-i18n="btn_add_teacher">إضافة معلم</button>
+      </div>
+      <div id="addTeacherError"></div>
+      <div id="addTeacherResult" class="credential-reveal hidden"></div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th data-i18n="th_name">الاسم</th>
+            <th data-i18n="th_classes">الفصول</th>
+            <th data-i18n="th_student_count">عدد الطلاب</th>
+            <th data-i18n="th_last_login">آخر دخول</th>
+            <th data-i18n="th_actions">إجراء</th>
+          </tr></thead>
+          <tbody id="schoolTeachersTableBody"></tbody>
+        </table>
+      </div>
+      <div id="schoolTeachersResult" class="credential-reveal hidden"></div>
+
+      <!-- إداريو المدرسة (school_administration) - نفس صلاحيات مدير المدرسة
+           على المعلمين/الطلاب/الحضور، إلا إدارة حساب مدير/إداري ثاني. زر
+           الإضافة يُخفى لحساب إداري (يشوف القائمة بس، ما يضيف/يحذف) -->
+      <h3 class="sub-heading" style="margin-top:22px;" data-i18n="admin_staff_heading">🧑‍💼 إداريو المدرسة</h3>
+      <div class="actions" style="flex-wrap:wrap;" id="addAdministrationForm">
+        <input type="text" id="newAdminName" class="text-input" placeholder="اسم الإداري" data-i18n-ph="ph_admin_staff_name">
+        <input type="email" id="newAdminEmail" class="text-input" placeholder="إيميل الإداري" data-i18n-ph="ph_admin_staff_email">
+        <button class="primary" id="addAdministrationBtn" data-i18n="btn_add_admin_staff">إضافة إداري</button>
+      </div>
+      <div id="addAdministrationError"></div>
+      <div id="addAdministrationResult" class="credential-reveal hidden"></div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th data-i18n="th_name">الاسم</th>
+            <th data-i18n="th_last_login">آخر دخول</th>
+            <th data-i18n="th_actions">إجراء</th>
+          </tr></thead>
+          <tbody id="schoolAdministrationTableBody"></tbody>
+        </table>
+      </div>
+      <div id="schoolAdministrationResult" class="credential-reveal hidden"></div>
+
+      <h3 class="sub-heading" data-i18n="broadcast_teachers_heading">📢 رسالة جماعية لكل معلمي المدرسة</h3>
+      <textarea id="schoolBroadcastInput" class="text-input" rows="3" placeholder="اكتب رسالتك هنا..." data-i18n-ph="ph_broadcast_body" style="width:100%; resize:vertical; font-family:inherit;"></textarea>
+      <div class="actions" style="margin-top:8px;">
+        <button class="primary" id="schoolBroadcastBtn" data-i18n="btn_send_broadcast">إرسال للجميع</button>
+      </div>
+      <div id="schoolBroadcastError"></div>
+    </div>
+
+    <div id="schoolTab-students" class="school-tab-panel hidden">
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th data-i18n="th_full_name">الاسم الكامل</th>
+            <th data-i18n="th_username">اسم المستخدم</th>
+            <th data-i18n="th_class_name">الفصل</th>
+            <th data-i18n="th_actions">إجراء</th>
+          </tr></thead>
+          <tbody id="schoolStudentsTableBody"></tbody>
+        </table>
+      </div>
+      <div id="schoolStudentsResult" class="credential-reveal hidden"></div>
+    </div>
+
+    <div id="schoolTab-classes" class="school-tab-panel hidden">
+      <div class="actions" style="flex-wrap:wrap;">
+        <input type="text" id="newClassName" class="text-input" placeholder="اسم الفصل" data-i18n-ph="ph_class_name">
+        <select id="newClassTeacher" class="text-input"></select>
+        <button class="primary" id="addClassBtn" data-i18n="btn_add_class">إضافة فصل</button>
+      </div>
+      <div id="addClassError"></div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th data-i18n="th_class_name">الفصل</th>
+            <th data-i18n="th_teacher">المعلم</th>
+            <th data-i18n="th_student_count">عدد الطلاب</th>
+            <th data-i18n="th_actions">إجراء</th>
+          </tr></thead>
+          <tbody id="schoolClassesTableBody"></tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-heading" data-i18n="schedule_heading">🗓️ جدول الحصص</h3>
+      <div class="actions" style="flex-wrap:wrap;">
+        <select id="scheduleClassSelect" class="text-input"></select>
+        <select id="scheduleDay" class="text-input">
+          <option value="0" data-i18n="day_0">الأحد</option>
+          <option value="1" data-i18n="day_1">الاثنين</option>
+          <option value="2" data-i18n="day_2">الثلاثاء</option>
+          <option value="3" data-i18n="day_3">الأربعاء</option>
+          <option value="4" data-i18n="day_4">الخميس</option>
+          <option value="5" data-i18n="day_5">الجمعة</option>
+          <option value="6" data-i18n="day_6">السبت</option>
+        </select>
+        <input type="time" id="scheduleStart" class="text-input" style="max-width:120px;">
+        <input type="time" id="scheduleEnd" class="text-input" style="max-width:120px;">
+        <input type="text" id="scheduleSubject" class="text-input" placeholder="المادة" data-i18n-ph="ph_subject" style="max-width:140px;">
+        <button class="primary" id="addScheduleBtn" data-i18n="btn_add_schedule">إضافة حصة</button>
+      </div>
+      <div id="addScheduleError"></div>
+      <div id="scheduleTableWrap" class="data-table-wrap"></div>
+    </div>
+
+    <div id="schoolTab-bulk" class="school-tab-panel hidden">
+      <p class="desc" data-i18n="bulk_add_desc">اكتب اسم طالب بكل سطر - النظام يولّد اسم مستخدم وكلمة سر لكل واحد تلقائيًا</p>
+      <select id="bulkClassSelect" class="text-input" style="margin-bottom:10px;"></select>
+      <textarea id="bulkNamesInput" class="text-input" rows="8" placeholder="سارة أحمد&#10;محمد علي&#10;..." data-i18n-ph="ph_bulk_names" style="width:100%; resize:vertical; font-family:inherit;"></textarea>
+      <div class="actions" style="margin-top:10px;">
+        <button class="primary" id="bulkAddStudentsBtn" data-i18n="btn_bulk_add">إضافة الطلاب</button>
+      </div>
+      <div id="bulkAddError"></div>
+      <div id="bulkAddResultWrap" class="hidden">
+        <h3 class="sub-heading" data-i18n="bulk_result_heading">✅ الحسابات المولّدة (احفظها الحين - كلمة السر ما تتكرر عرضها)</h3>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead><tr>
+              <th data-i18n="th_name">الاسم</th>
+              <th data-i18n="th_username">اسم المستخدم</th>
+              <th data-i18n="th_password">كلمة السر</th>
+            </tr></thead>
+            <tbody id="bulkAddResultBody"></tbody>
+          </table>
+        </div>
+        <div class="actions" style="margin-top:10px;">
+          <button class="ghost" id="bulkExportCsvBtn" data-i18n="btn_export_csv">⬇️ تصدير CSV</button>
+          <button class="ghost" id="bulkExportPdfBtn" data-i18n="btn_export_pdf">🖨️ تصدير PDF</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="schoolTab-attendance" class="school-tab-panel hidden">
+      <select id="attendanceClassFilter" class="text-input" style="margin-bottom:10px;"></select>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th data-i18n="th_student">الطالب</th>
+            <th data-i18n="th_class_name">الفصل</th>
+            <th data-i18n="th_join_time">وقت الانضمام</th>
+          </tr></thead>
+          <tbody id="schoolAttendanceTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>

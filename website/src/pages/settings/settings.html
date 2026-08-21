@@ -1,0 +1,89 @@
+  <!-- الإعدادات - شاشة مستقلة (زر ⚙️ بالسايد بار). اللغة متاحة للجميع، بقية
+       الحقول (اسم/كلمة مرور/جوال) تحتاج تسجيل دخول -->
+  <section class="card hidden" id="step-settings">
+    <span class="step-label" data-i18n="settings_step_label">⚙️ الإعدادات</span>
+    <h2 data-i18n="settings_heading">إعدادات حسابك</h2>
+
+    <h3 class="sub-heading" data-i18n="settings_language_heading">🌐 اللغة</h3>
+    <div class="actions">
+      <button class="ghost lang-choice-btn" id="langArBtn" data-lang="ar">🇸🇦 العربية</button>
+      <button class="ghost lang-choice-btn" id="langEnBtn" data-lang="en">🇬🇧 English</button>
+    </div>
+
+    <p class="desc hidden" id="settingsAccountGate" data-i18n="settings_guest_gate">باقي الإعدادات (الاسم، كلمة المرور، رقم الجوال) تحتاج تسجيل دخول.</p>
+
+    <div id="settingsAccountFields" class="hidden">
+      <h3 class="sub-heading" style="margin-top:22px;" data-i18n="settings_name_heading">✏️ الاسم</h3>
+      <div class="actions">
+        <input type="text" id="settingsUsernameInput" class="text-input" placeholder="اسمك" data-i18n-ph="ph_your_name">
+        <button class="primary" id="settingsSaveNameBtn" data-i18n="btn_save">حفظ</button>
+      </div>
+      <div id="settingsNameMsg"></div>
+
+      <h3 class="sub-heading" style="margin-top:22px;" data-i18n="settings_password_heading">🔒 كلمة المرور</h3>
+      <div class="actions">
+        <input type="password" id="settingsNewPassword" class="text-input" placeholder="كلمة مرور جديدة" data-i18n-ph="ph_new_password">
+        <input type="password" id="settingsConfirmPassword" class="text-input" placeholder="أعد كتابتها" data-i18n-ph="ph_confirm_password">
+        <button class="primary" id="settingsSavePasswordBtn" data-i18n="btn_save">حفظ</button>
+      </div>
+      <div id="settingsPasswordMsg"></div>
+
+      <h3 class="sub-heading" style="margin-top:22px;" data-i18n="settings_phone_heading">📱 رقم الجوال</h3>
+      <div class="actions">
+        <input type="tel" id="settingsPhoneInput" class="text-input" placeholder="05xxxxxxxx" data-i18n-ph="ph_phone">
+        <button class="primary" id="settingsSavePhoneBtn" data-i18n="btn_save">حفظ</button>
+      </div>
+      <div id="settingsPhoneMsg"></div>
+
+      <h3 class="sub-heading" style="margin-top:22px;" data-i18n="settings_profile_heading">👤 البروفايل</h3>
+      <div class="actions" style="flex-direction:column; align-items:stretch;">
+        <textarea id="settingsBioInput" class="text-input" rows="3" maxlength="300" placeholder="اكتب نبذة قصيرة عنك..." data-i18n-ph="ph_bio" style="resize:vertical; font-family:inherit;"></textarea>
+        <input type="text" id="settingsSchoolInput" class="text-input" placeholder="اسم مدرستك/جامعتك" data-i18n-ph="ph_school">
+      </div>
+
+      <div class="privacy-toggle-row">
+        <label class="privacy-toggle-label" data-i18n="settings_private_profile">🔒 بروفايل خاص بالكامل</label>
+        <label class="switch"><input type="checkbox" id="settingsPrivateToggle"><span class="switch-slider"></span></label>
+      </div>
+      <p class="desc" data-i18n="settings_private_profile_desc">لو فعّلته، محد يقدر يشوف بروفايلك غير اسمك</p>
+
+      <div id="settingsVisibilityToggles">
+        <div class="privacy-toggle-row">
+          <label class="privacy-toggle-label" data-i18n="settings_show_performance">📊 إظهار الأداء بالبروفايل</label>
+          <label class="switch"><input type="checkbox" id="settingsShowPerformance" checked><span class="switch-slider"></span></label>
+        </div>
+        <div class="privacy-toggle-row">
+          <label class="privacy-toggle-label" data-i18n="settings_show_library">📚 إظهار المكتبة بالبروفايل</label>
+          <label class="switch"><input type="checkbox" id="settingsShowLibrary" checked><span class="switch-slider"></span></label>
+        </div>
+        <div class="privacy-toggle-row">
+          <label class="privacy-toggle-label" data-i18n="settings_show_archive">📂 إظهار الأرشيف بالبروفايل</label>
+          <label class="switch"><input type="checkbox" id="settingsShowArchive" checked><span class="switch-slider"></span></label>
+        </div>
+        <div class="privacy-toggle-row">
+          <label class="privacy-toggle-label" data-i18n="settings_show_friends">👥 إظهار الأصدقاء بالبروفايل</label>
+          <label class="switch"><input type="checkbox" id="settingsShowFriends" checked><span class="switch-slider"></span></label>
+        </div>
+      </div>
+
+      <div class="actions" style="margin-top:14px;">
+        <button class="primary" id="settingsSaveProfileBtn" data-i18n="btn_save">حفظ</button>
+        <button class="ghost" id="settingsViewProfileBtn" data-i18n="btn_view_my_profile">👁️ شاهد بروفايلك</button>
+      </div>
+      <div id="settingsProfileMsg"></div>
+
+      <!-- حسابات مؤسسية (role موجود - طالب/معلم/إدارة مدرسة) وصولها محكوم
+           بعضوية مدرستها، ما تشترك شخصيًا - هذا القسم يُخفى لها بالكامل عبر JS -->
+      <div id="settingsSubscriptionSection">
+        <h3 class="sub-heading" style="margin-top:22px;" data-i18n="settings_subscription_heading">👑 الاشتراك</h3>
+        <p class="desc" id="subscriptionCurrentPlan"></p>
+        <p class="desc hidden" id="subscriptionDaysRemaining" style="color: var(--teal);"></p>
+        <div class="actions" style="margin-bottom:10px;">
+          <button class="ghost sub-period-btn active" data-period="monthly" data-i18n="period_monthly">شهري</button>
+          <button class="ghost sub-period-btn" data-period="annual" data-i18n="period_annual">سنوي</button>
+        </div>
+        <div id="subscriptionPlansGrid" class="subscription-plans-grid"></div>
+        <div id="subscriptionMsg"></div>
+      </div>
+    </div>
+  </section>

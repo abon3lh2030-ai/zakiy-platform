@@ -1,0 +1,34 @@
+  <!-- المساعد الذكي - اختيار كتاب للتلخيص (من المكتبة أو رفع ملف) -->
+  <section class="card hidden" id="step-ai-book-picker">
+    <span class="step-label" data-i18n="ai_book_picker_step_label">📚 لخّص كتاب</span>
+    <h2 data-i18n="ai_book_picker_heading">اختر كتاب يلخّصه لك ذكيّ</h2>
+
+    <div class="ai-book-source-tabs">
+      <button class="ghost ai-book-source-btn active" data-source="library" data-i18n="ai_source_library">من مكتبتك</button>
+      <button class="ghost ai-book-source-btn" data-source="upload" data-i18n="ai_source_upload">ارفع ملف</button>
+    </div>
+
+    <div id="aiBookLibrarySource">
+      <div id="aiBookLibraryList"></div>
+      <p class="desc hidden" id="aiBookLibraryEmpty" data-i18n="library_empty">مكتبتك فاضية لحد الحين - ضيف كتاب من تحت.</p>
+    </div>
+
+    <div id="aiBookUploadSource" class="hidden">
+      <div class="dropzone" id="aiBookDropzone">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#5C6B7A" stroke-width="1.6"><path d="M12 16V4M12 4l-4 4M12 4l4 4M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>
+        <div class="main-text" data-i18n="dropzone_main_text">اسحب ملف PDF هنا أو اضغط للاختيار</div>
+        <div class="sub-text" data-i18n="dropzone_sub_text">حتى 20 صفحة تقريبًا</div>
+        <input type="file" id="aiBookFileInput" accept="application/pdf">
+      </div>
+      <div class="file-chip" id="aiBookFileChip">
+        <span>📄</span>
+        <span class="name" id="aiBookFileName"></span>
+        <button class="ghost" id="aiBookRemoveFile" style="padding:4px 12px;" data-i18n="btn_remove">إزالة</button>
+      </div>
+      <div class="actions" style="margin-top:12px;">
+        <button class="primary" id="aiBookSummarizeUploadBtn" disabled data-i18n="ai_summarize_btn">لخّص هذا الملف</button>
+      </div>
+    </div>
+
+    <div id="aiBookPickerError"></div>
+  </section>

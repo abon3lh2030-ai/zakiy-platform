@@ -5,19 +5,37 @@ async function loadAdminDashboard() {
   try {
     const data = await apiCall('GET', '/api/admin/schools');
     if (!data.schools.length) { tbody.innerHTML = `<tr><td colspan="5">${t('admin_no_schools')}</td></tr>`; return; }
-    tbody.innerHTML = data.schools.map(s => `
+    tbody.innerHTML = data.schools.map(s => {
+      const overLimitBadge = s.over_limit_since
+        ? `<br><span style="color:#c0392b; font-size:12px; font-weight:700;">${s.over_limit_expired ? `⏰ ${t('admin_over_limit_expired_badge')}` : `⚠️ ${t('admin_over_limit_badge')}`}</span>`
+        : '';
+      return `
       <tr>
         <td>${escapeHtml(s.name)}</td>
         <td>${escapeHtml(s.admin_email || '—')}</td>
-        <td>${s.accounts_used} / ${s.max_accounts}</td>
+        <td>${s.accounts_used} / ${s.max_accounts}${overLimitBadge}</td>
         <td>${s.is_active ? t('status_active') : t('status_inactive')}</td>
         <td style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button class="ghost" data-edit-limit="${s.id}" data-current="${s.max_accounts}" style="padding:4px 10px;">✏️ ${t('btn_edit_max_accounts')}</button>
           <button class="ghost" data-toggle-school="${s.id}" data-active="${s.is_active}" style="padding:4px 10px;">${s.is_active ? t('btn_deactivate') : t('btn_activate')}</button>
           <button class="ghost" data-reset-school-pw="${s.id}" style="padding:4px 10px;">${t('btn_reset_password')}</button>
           <button class="ghost" data-delete-school="${s.id}" style="padding:4px 10px; color:#c0392b;">${t('btn_delete')}</button>
         </td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
+    tbody.querySelectorAll('[data-edit-limit]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const input = prompt(t('prompt_new_max_accounts'), btn.dataset.current);
+        if (input === null) return;
+        const newLimit = parseInt(input, 10);
+        if (Number.isNaN(newLimit) || newLimit < 0) { alert(t('err_invalid_number')); return; }
+        try {
+          await apiCall('PATCH', `/api/admin/schools/${btn.dataset.editLimit}`, { max_accounts: newLimit });
+          loadAdminDashboard();
+        } catch (e) { alert(e.message); }
+      });
+    });
     tbody.querySelectorAll('[data-toggle-school]').forEach(btn => {
       btn.addEventListener('click', async () => {
         try {

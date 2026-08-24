@@ -67,6 +67,19 @@ async function loadSchoolInfo() {
     const pct = info.max_accounts > 0 ? Math.min(100, Math.round((info.accounts_used / info.max_accounts) * 100)) : 0;
     document.getElementById('schoolUsageBar').style.width = `${pct}%`;
     document.getElementById('schoolUsageText').textContent = t('school_usage_text', { used: info.accounts_used, max: info.max_accounts });
+
+    const banner = document.getElementById('schoolOverLimitBanner');
+    if (info.over_limit_since) {
+      const over = info.accounts_used - info.max_accounts;
+      const deadline = new Date(info.over_limit_deadline);
+      const deadlineStr = deadline.toLocaleString(currentLang === 'ar' ? 'ar' : 'en');
+      banner.textContent = info.over_limit_expired
+        ? `⏰ ${t('school_over_limit_expired', { n: over, deadline: deadlineStr })}`
+        : `⚠️ ${t('school_over_limit_warning', { n: over, deadline: deadlineStr })}`;
+      banner.classList.remove('hidden');
+    } else {
+      banner.classList.add('hidden');
+    }
   } catch { /* غير حرج لعمل بقية اللوحة */ }
 }
 

@@ -2483,8 +2483,6 @@ def admin_create_school():
 @require_role("admin")
 def admin_list_schools():
     schools_res = supabase_admin.table("schools").select("*").order("created_at", desc=True).execute().data
-    counts = supabase_admin.table("profiles").select("school_id").not_.is_("school_id", "null").execute().data
-    usage = Counter(r["school_id"] for r in counts)
 
     # إيميل مدير كل مدرسة - ما نخزّن كلمة السر الأصلية بأي مكان (أمان)، بس
     # الإيميل معلومة عادية نقدر نعرضها دايمًا بدون أي مشكلة
@@ -2494,7 +2492,13 @@ def admin_list_schools():
     admin_by_school = {a["school_id"]: a["user_id"] for a in admins}
 
     for s in schools_res:
-        s["accounts_used"] = usage.get(s["id"], 0)
+        # نفس تعريف _school_account_usage بالضبط (يستثني حساب school_admin
+        # نفسه من العد) - كان فيه عدّاد مختلف هنا يحسب أي profile.school_id
+        # بما فيه school_admin، يعطي رقم أعلى من الحقيقي ويناقض عداد لوحة
+        # المدرسة نفسها
+        usage = _school_account_usage(s["id"])
+        s["accounts_used"] = usage
+        s.update(_sync_school_over_limit_state(s, usage))
         admin_uid = admin_by_school.get(s["id"])
         s["admin_email"] = None
         if admin_uid:
@@ -2595,6 +2599,37 @@ def _school_account_usage(school_id):
     return used.count or 0
 
 
+OVER_LIMIT_GRACE_HOURS = 24
+
+
+def _sync_school_over_limit_state(school_row, usage):
+    """يتأكد إن over_limit_since مطابق للواقع الحالي (usage مقابل max_accounts)
+    ويحدّثه بقاعدة البيانات لو تغيّر - أول لحظة نكتشف فيها التجاوز (مثلاً
+    مدير المنصة قلّل max_accounts) نسجّلها كبداية مهلة الـ٢٤ ساعة، ولو رجعت
+    المدرسة تحت الحد (حذفوا حسابات) نمسح المهلة. يرجّع dict فيه over_limit_since/
+    over_limit_deadline/over_limit_expired جاهزة تُضاف لرد أي endpoint يعرض
+    معلومات المدرسة."""
+    is_over = usage > school_row["max_accounts"]
+    current = school_row.get("over_limit_since")
+
+    if is_over and not current:
+        current = datetime.now(timezone.utc).isoformat()
+        supabase_admin.table("schools").update({"over_limit_since": current}).eq("id", school_row["id"]).execute()
+    elif not is_over and current:
+        current = None
+        supabase_admin.table("schools").update({"over_limit_since": None}).eq("id", school_row["id"]).execute()
+
+    deadline = None
+    expired = False
+    if current:
+        started = datetime.fromisoformat(str(current).replace("Z", "+00:00"))
+        deadline_dt = started + timedelta(hours=OVER_LIMIT_GRACE_HOURS)
+        deadline = deadline_dt.isoformat()
+        expired = datetime.now(timezone.utc) > deadline_dt
+
+    return {"over_limit_since": current, "over_limit_deadline": deadline, "over_limit_expired": expired}
+
+
 @app.route("/api/school/info", methods=["GET"])
 @require_role("school_admin", "school_administration", "teacher", "student")
 def school_info():
@@ -2605,7 +2640,9 @@ def school_info():
     if not school:
         return jsonify({"error": "مدرستك غير موجودة"}), 404
     result = school[0]
-    result["accounts_used"] = _school_account_usage(school_id)
+    usage = _school_account_usage(school_id)
+    result["accounts_used"] = usage
+    result.update(_sync_school_over_limit_state(result, usage))
     return jsonify(result), 200
 
 

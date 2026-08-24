@@ -1321,6 +1321,7 @@
     <h2 data-i18n="school_dash_heading">إدارة المدرسة</h2>
     <div class="account-usage-meter"><div id="schoolUsageBar" style="width:0%;"></div></div>
     <p class="desc" id="schoolUsageText"></p>
+    <div id="schoolOverLimitBanner" class="error-msg hidden" style="margin-bottom:16px;"></div>
 
     <div class="role-tabs">
       <button class="role-tab active" data-tab="teachers" data-i18n="tab_teachers">👨‍🏫 المعلمون</button>
@@ -2866,6 +2867,13 @@ const I18N = {
     school_dash_label: '🏫 لوحة إدارة المدرسة',
     school_dash_heading: 'إدارة المدرسة',
     school_usage_text: 'الحسابات المستخدمة: {used} من {max}',
+    school_over_limit_warning: 'مدرستك تجاوزت الحد المسموح بـ {n} حساب - لازم تحذف الحسابات الزيادة قبل {deadline} وإلا راح يتواصل معك إدارة المنصة.',
+    school_over_limit_expired: 'انتهت مهلة الـ٢٤ ساعة (كانت تنتهي {deadline}) وعندك {n} حساب زيادة عن الحد المسموح - احذف الحسابات الزيادة فورًا.',
+    btn_edit_max_accounts: 'تعديل الحد',
+    prompt_new_max_accounts: 'الحد الأقصى الجديد لعدد حسابات هذي المدرسة:',
+    err_invalid_number: 'رقم غير صحيح',
+    admin_over_limit_badge: 'تجاوزت الحد - عليها مهلة ٢٤ ساعة',
+    admin_over_limit_expired_badge: 'انتهت مهلة الـ٢٤ ساعة',
     tab_teachers: '👨‍🏫 المعلمون', tab_classes: '🏷️ الفصول والجدول', tab_bulk_students: '➕ إضافة طلاب', tab_attendance: '📋 الحضور',
     ph_teacher_name: 'اسم المعلم', ph_teacher_email: 'إيميل المعلم', btn_add_teacher: 'إضافة معلم',
     school_no_teachers: 'ما فيه معلمين مضافين بعد',
@@ -3432,6 +3440,13 @@ const I18N = {
     school_dash_label: '🏫 School Dashboard',
     school_dash_heading: 'Manage School',
     school_usage_text: 'Accounts used: {used} of {max}',
+    school_over_limit_warning: 'Your school is over its account limit by {n} account(s) - you must delete the extra accounts before {deadline}, otherwise the platform admin will follow up with you.',
+    school_over_limit_expired: 'The 24-hour grace period ended (it expired {deadline}) and you still have {n} account(s) over the limit - delete the extra accounts right away.',
+    btn_edit_max_accounts: 'Edit limit',
+    prompt_new_max_accounts: 'New maximum account count for this school:',
+    err_invalid_number: 'Invalid number',
+    admin_over_limit_badge: 'Over limit - 24h grace period',
+    admin_over_limit_expired_badge: 'Grace period expired',
     tab_teachers: '👨‍🏫 Teachers', tab_classes: '🏷️ Classes & Schedule', tab_bulk_students: '➕ Add Students', tab_attendance: '📋 Attendance',
     ph_teacher_name: "Teacher's name", ph_teacher_email: "Teacher's email", btn_add_teacher: 'Add Teacher',
     school_no_teachers: 'No teachers added yet',
@@ -7239,19 +7254,37 @@ async function loadAdminDashboard() {
   try {
     const data = await apiCall('GET', '/api/admin/schools');
     if (!data.schools.length) { tbody.innerHTML = `<tr><td colspan="5">${t('admin_no_schools')}</td></tr>`; return; }
-    tbody.innerHTML = data.schools.map(s => `
+    tbody.innerHTML = data.schools.map(s => {
+      const overLimitBadge = s.over_limit_since
+        ? `<br><span style="color:#c0392b; font-size:12px; font-weight:700;">${s.over_limit_expired ? `⏰ ${t('admin_over_limit_expired_badge')}` : `⚠️ ${t('admin_over_limit_badge')}`}</span>`
+        : '';
+      return `
       <tr>
         <td>${escapeHtml(s.name)}</td>
         <td>${escapeHtml(s.admin_email || '—')}</td>
-        <td>${s.accounts_used} / ${s.max_accounts}</td>
+        <td>${s.accounts_used} / ${s.max_accounts}${overLimitBadge}</td>
         <td>${s.is_active ? t('status_active') : t('status_inactive')}</td>
         <td style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button class="ghost" data-edit-limit="${s.id}" data-current="${s.max_accounts}" style="padding:4px 10px;">✏️ ${t('btn_edit_max_accounts')}</button>
           <button class="ghost" data-toggle-school="${s.id}" data-active="${s.is_active}" style="padding:4px 10px;">${s.is_active ? t('btn_deactivate') : t('btn_activate')}</button>
           <button class="ghost" data-reset-school-pw="${s.id}" style="padding:4px 10px;">${t('btn_reset_password')}</button>
           <button class="ghost" data-delete-school="${s.id}" style="padding:4px 10px; color:#c0392b;">${t('btn_delete')}</button>
         </td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
+    tbody.querySelectorAll('[data-edit-limit]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const input = prompt(t('prompt_new_max_accounts'), btn.dataset.current);
+        if (input === null) return;
+        const newLimit = parseInt(input, 10);
+        if (Number.isNaN(newLimit) || newLimit < 0) { alert(t('err_invalid_number')); return; }
+        try {
+          await apiCall('PATCH', `/api/admin/schools/${btn.dataset.editLimit}`, { max_accounts: newLimit });
+          loadAdminDashboard();
+        } catch (e) { alert(e.message); }
+      });
+    });
     tbody.querySelectorAll('[data-toggle-school]').forEach(btn => {
       btn.addEventListener('click', async () => {
         try {
@@ -7374,6 +7407,19 @@ async function loadSchoolInfo() {
     const pct = info.max_accounts > 0 ? Math.min(100, Math.round((info.accounts_used / info.max_accounts) * 100)) : 0;
     document.getElementById('schoolUsageBar').style.width = `${pct}%`;
     document.getElementById('schoolUsageText').textContent = t('school_usage_text', { used: info.accounts_used, max: info.max_accounts });
+
+    const banner = document.getElementById('schoolOverLimitBanner');
+    if (info.over_limit_since) {
+      const over = info.accounts_used - info.max_accounts;
+      const deadline = new Date(info.over_limit_deadline);
+      const deadlineStr = deadline.toLocaleString(currentLang === 'ar' ? 'ar' : 'en');
+      banner.textContent = info.over_limit_expired
+        ? `⏰ ${t('school_over_limit_expired', { n: over, deadline: deadlineStr })}`
+        : `⚠️ ${t('school_over_limit_warning', { n: over, deadline: deadlineStr })}`;
+      banner.classList.remove('hidden');
+    } else {
+      banner.classList.add('hidden');
+    }
   } catch { /* غير حرج لعمل بقية اللوحة */ }
 }
 

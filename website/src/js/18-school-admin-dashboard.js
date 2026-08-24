@@ -16,8 +16,25 @@ async function loadSchoolDashboard() {
   // زر إضافة إداري محجوز على مدير المدرسة (school_admin) بس - نفس القيد
   // اللي الباك إند يفرضه أصلًا (إداري ما يقدر يدير حساب مدير/إداري ثاني)
   document.getElementById('addAdministrationForm').classList.toggle('hidden', currentUserRole !== 'school_admin');
+  // زر "حذف كل الحسابات" خطير جدًا - محجوز على school_admin بس، نفس قيد الباك إند
+  document.getElementById('deleteAllAccountsWrap').classList.toggle('hidden', currentUserRole !== 'school_admin');
   await Promise.all([loadSchoolInfo(), loadSchoolTeachers(), loadSchoolAdministration(), loadSchoolClasses()]);
 }
+
+// ---------- حذف كل حسابات المدرسة إلا حساب المدير نفسه - إجراء خطير وغير
+// قابل للتراجع، فنطلب تأكيدين: تأكيد عادي، ثم كتابة كلمة "حذف" حرفيًا ----------
+document.getElementById('deleteAllAccountsBtn').addEventListener('click', async () => {
+  if (!confirm(t('confirm_delete_all_accounts_1'))) return;
+  const typed = prompt(t('confirm_delete_all_accounts_2'));
+  if (typed !== t('delete_confirm_word')) { alert(t('err_delete_confirm_mismatch')); return; }
+  try {
+    const res = await apiCall('POST', '/api/school/accounts/delete-all');
+    alert(t('delete_all_accounts_done', { count: res.deleted_count }));
+    loadSchoolDashboard();
+  } catch (e) {
+    alert(e.message);
+  }
+});
 
 async function loadSchoolAdministration() {
   const tbody = document.getElementById('schoolAdministrationTableBody');

@@ -6,6 +6,12 @@
     <p class="desc" id="schoolUsageText"></p>
     <div id="schoolOverLimitBanner" class="error-msg hidden" style="margin-bottom:16px;"></div>
 
+    <!-- منطقة خطر - حذف كل الحسابات إلا حساب المدير نفسه - school_admin بس
+         (مو school_administration)، محجوبة افتراضيًا وتظهر بـ loadSchoolDashboard -->
+    <div id="deleteAllAccountsWrap" class="hidden" style="margin-bottom:16px; text-align:end;">
+      <button class="ghost" id="deleteAllAccountsBtn" style="color:#c0392b; border-color:#c0392b;" data-i18n="btn_delete_all_accounts">🗑️ حذف كل الحسابات</button>
+    </div>
+
     <div class="role-tabs">
       <button class="role-tab active" data-tab="teachers" data-i18n="tab_teachers">👨‍🏫 المعلمون</button>
       <button class="role-tab" data-tab="students" data-i18n="tab_students">👥 الطلاب</button>

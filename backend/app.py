@@ -2823,6 +2823,31 @@ def school_delete_account(user_id):
     return jsonify({"ok": True}), 200
 
 
+@app.route("/api/school/accounts/delete-all", methods=["POST"])
+@require_role("school_admin")
+def school_delete_all_accounts():
+    """يحذف كل حسابات مدرسة صاحب الطلب (معلمين + إداريين + طلاب) إلا حسابه
+    هو نفسه - محجوز على school_admin بس (مو school_administration)، إجراء
+    خطير وغير قابل للتراجع لازم تأكيد صريح من الواجهة قبل ما توصل هنا."""
+    school_id = request.profile["school_id"]
+    targets = (
+        supabase_admin.table("profiles").select("user_id")
+        .eq("school_id", school_id).neq("user_id", request.user_id).execute()
+    ).data
+    deleted = 0
+    for row in targets:
+        uid = row["user_id"]
+        # نفس ترتيب school_delete_account - نمسح صف profiles أول عشان حذف
+        # حساب Auth ما يفشل بسبب مفتاح خارجي لسا يشير له
+        supabase_admin.table("profiles").delete().eq("user_id", uid).execute()
+        try:
+            supabase_admin.auth.admin.delete_user(uid)
+        except Exception:
+            pass
+        deleted += 1
+    return jsonify({"ok": True, "deleted_count": deleted}), 200
+
+
 @app.route("/api/school/accounts/<user_id>/reset-password", methods=["POST"])
 @require_role("school_admin", "school_administration")
 def school_reset_account_password(user_id):

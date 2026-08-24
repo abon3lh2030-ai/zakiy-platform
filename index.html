@@ -1324,6 +1324,12 @@
     <p class="desc" id="schoolUsageText"></p>
     <div id="schoolOverLimitBanner" class="error-msg hidden" style="margin-bottom:16px;"></div>
 
+    <!-- منطقة خطر - حذف كل الحسابات إلا حساب المدير نفسه - school_admin بس
+         (مو school_administration)، محجوبة افتراضيًا وتظهر بـ loadSchoolDashboard -->
+    <div id="deleteAllAccountsWrap" class="hidden" style="margin-bottom:16px; text-align:end;">
+      <button class="ghost" id="deleteAllAccountsBtn" style="color:#c0392b; border-color:#c0392b;" data-i18n="btn_delete_all_accounts">🗑️ حذف كل الحسابات</button>
+    </div>
+
     <div class="role-tabs">
       <button class="role-tab active" data-tab="teachers" data-i18n="tab_teachers">👨‍🏫 المعلمون</button>
       <button class="role-tab" data-tab="students" data-i18n="tab_students">👥 الطلاب</button>
@@ -2928,6 +2934,12 @@ const I18N = {
     btn_export_csv: '⬇️ تصدير CSV', btn_export_pdf: '🖨️ تصدير PDF', btn_export_qr: '📱 تصدير QR',
     qr_export_title: 'رموز QR للطلاب', qr_export_login_heading: '🔑 بيانات الدخول',
     qr_export_platform_heading: '🌐 فتح المنصة',
+    btn_delete_all_accounts: '🗑️ حذف كل الحسابات',
+    confirm_delete_all_accounts_1: 'هذا الإجراء بيحذف كل حسابات المعلمين والإداريين والطلاب بمدرستك نهائيًا (إلا حسابك أنت) - ما يرجع فيه. متأكد تبي تكمل؟',
+    confirm_delete_all_accounts_2: 'اكتب كلمة "حذف" بالضبط عشان تأكد الحذف:',
+    delete_confirm_word: 'حذف',
+    err_delete_confirm_mismatch: 'ما تطابقت الكلمة - ما تم الحذف',
+    delete_all_accounts_done: 'تم حذف {count} حساب بنجاح',
     // ---- لوحة المعلم ----
     teacher_dash_label: '👨‍🏫 لوحة المعلم', teacher_dash_heading: 'فصولي',
     tab_roster: '👥 الطلاب', tab_schedule: '🗓️ جدولي', tab_performance: '📊 الأداء',
@@ -3510,6 +3522,12 @@ const I18N = {
     btn_export_csv: '⬇️ Export CSV', btn_export_pdf: '🖨️ Export PDF', btn_export_qr: '📱 Export QR',
     qr_export_title: 'Students QR codes', qr_export_login_heading: '🔑 Login info',
     qr_export_platform_heading: '🌐 Open platform',
+    btn_delete_all_accounts: '🗑️ Delete all accounts',
+    confirm_delete_all_accounts_1: 'This permanently deletes every teacher, administration, and student account at your school (except your own) - it cannot be undone. Continue?',
+    confirm_delete_all_accounts_2: 'Type "delete" exactly to confirm:',
+    delete_confirm_word: 'delete',
+    err_delete_confirm_mismatch: "That didn't match - nothing was deleted",
+    delete_all_accounts_done: '{count} account(s) deleted successfully',
     // ---- Teacher dashboard ----
     teacher_dash_label: '👨‍🏫 Teacher Dashboard', teacher_dash_heading: 'My Classes',
     tab_roster: '👥 Students', tab_schedule: '🗓️ My Schedule', tab_performance: '📊 Performance',
@@ -7490,8 +7508,25 @@ async function loadSchoolDashboard() {
   // زر إضافة إداري محجوز على مدير المدرسة (school_admin) بس - نفس القيد
   // اللي الباك إند يفرضه أصلًا (إداري ما يقدر يدير حساب مدير/إداري ثاني)
   document.getElementById('addAdministrationForm').classList.toggle('hidden', currentUserRole !== 'school_admin');
+  // زر "حذف كل الحسابات" خطير جدًا - محجوز على school_admin بس، نفس قيد الباك إند
+  document.getElementById('deleteAllAccountsWrap').classList.toggle('hidden', currentUserRole !== 'school_admin');
   await Promise.all([loadSchoolInfo(), loadSchoolTeachers(), loadSchoolAdministration(), loadSchoolClasses()]);
 }
+
+// ---------- حذف كل حسابات المدرسة إلا حساب المدير نفسه - إجراء خطير وغير
+// قابل للتراجع، فنطلب تأكيدين: تأكيد عادي، ثم كتابة كلمة "حذف" حرفيًا ----------
+document.getElementById('deleteAllAccountsBtn').addEventListener('click', async () => {
+  if (!confirm(t('confirm_delete_all_accounts_1'))) return;
+  const typed = prompt(t('confirm_delete_all_accounts_2'));
+  if (typed !== t('delete_confirm_word')) { alert(t('err_delete_confirm_mismatch')); return; }
+  try {
+    const res = await apiCall('POST', '/api/school/accounts/delete-all');
+    alert(t('delete_all_accounts_done', { count: res.deleted_count }));
+    loadSchoolDashboard();
+  } catch (e) {
+    alert(e.message);
+  }
+});
 
 async function loadSchoolAdministration() {
   const tbody = document.getElementById('schoolAdministrationTableBody');

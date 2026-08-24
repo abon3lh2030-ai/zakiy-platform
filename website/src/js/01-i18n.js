@@ -411,7 +411,9 @@ const I18N = {
     ph_bulk_names: 'سارة أحمد\nمحمد علي\n...',
     btn_bulk_add: 'إضافة الطلاب',
     bulk_result_heading: '✅ الحسابات المولّدة (احفظها الحين - كلمة السر ما تتكرر عرضها)',
-    btn_export_csv: '⬇️ تصدير CSV', btn_export_pdf: '🖨️ تصدير PDF',
+    btn_export_csv: '⬇️ تصدير CSV', btn_export_pdf: '🖨️ تصدير PDF', btn_export_qr: '📱 تصدير QR',
+    qr_export_title: 'رموز QR للطلاب', qr_export_login_heading: '🔑 بيانات الدخول',
+    qr_export_platform_heading: '🌐 فتح المنصة',
     // ---- لوحة المعلم ----
     teacher_dash_label: '👨‍🏫 لوحة المعلم', teacher_dash_heading: 'فصولي',
     tab_roster: '👥 الطلاب', tab_schedule: '🗓️ جدولي', tab_performance: '📊 الأداء',
@@ -991,7 +993,9 @@ const I18N = {
     ph_bulk_names: 'Sara Ahmed\nMohammed Ali\n...',
     btn_bulk_add: 'Add Students',
     bulk_result_heading: '✅ Generated Accounts (save now - passwords are shown only once)',
-    btn_export_csv: '⬇️ Export CSV', btn_export_pdf: '🖨️ Export PDF',
+    btn_export_csv: '⬇️ Export CSV', btn_export_pdf: '🖨️ Export PDF', btn_export_qr: '📱 Export QR',
+    qr_export_title: 'Students QR codes', qr_export_login_heading: '🔑 Login info',
+    qr_export_platform_heading: '🌐 Open platform',
     // ---- Teacher dashboard ----
     teacher_dash_label: '👨‍🏫 Teacher Dashboard', teacher_dash_heading: 'My Classes',
     tab_roster: '👥 Students', tab_schedule: '🗓️ My Schedule', tab_performance: '📊 Performance',

@@ -322,6 +322,9 @@ document.getElementById('bulkExportCsvBtn').addEventListener('click', () => {
 document.getElementById('bulkExportPdfBtn').addEventListener('click', () => {
   exportPdfViaPrint(t('bulk_result_heading'), lastBulkAddResult.map(s => [s.name, s.username, s.password]), [t('th_name'), t('th_username'), t('th_password')]);
 });
+document.getElementById('bulkExportQrBtn').addEventListener('click', () => {
+  exportQrBooklet(lastBulkAddResult);
+});
 
 async function loadSchoolAttendance() {
   const tbody = document.getElementById('schoolAttendanceTableBody');

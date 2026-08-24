@@ -1463,6 +1463,7 @@
         <div class="actions" style="margin-top:10px;">
           <button class="ghost" id="bulkExportCsvBtn" data-i18n="btn_export_csv">⬇️ تصدير CSV</button>
           <button class="ghost" id="bulkExportPdfBtn" data-i18n="btn_export_pdf">🖨️ تصدير PDF</button>
+          <button class="ghost" id="bulkExportQrBtn" data-i18n="btn_export_qr">📱 تصدير QR</button>
         </div>
       </div>
     </div>
@@ -2924,7 +2925,9 @@ const I18N = {
     ph_bulk_names: 'سارة أحمد\nمحمد علي\n...',
     btn_bulk_add: 'إضافة الطلاب',
     bulk_result_heading: '✅ الحسابات المولّدة (احفظها الحين - كلمة السر ما تتكرر عرضها)',
-    btn_export_csv: '⬇️ تصدير CSV', btn_export_pdf: '🖨️ تصدير PDF',
+    btn_export_csv: '⬇️ تصدير CSV', btn_export_pdf: '🖨️ تصدير PDF', btn_export_qr: '📱 تصدير QR',
+    qr_export_title: 'رموز QR للطلاب', qr_export_login_heading: '🔑 بيانات الدخول',
+    qr_export_platform_heading: '🌐 فتح المنصة',
     // ---- لوحة المعلم ----
     teacher_dash_label: '👨‍🏫 لوحة المعلم', teacher_dash_heading: 'فصولي',
     tab_roster: '👥 الطلاب', tab_schedule: '🗓️ جدولي', tab_performance: '📊 الأداء',
@@ -3504,7 +3507,9 @@ const I18N = {
     ph_bulk_names: 'Sara Ahmed\nMohammed Ali\n...',
     btn_bulk_add: 'Add Students',
     bulk_result_heading: '✅ Generated Accounts (save now - passwords are shown only once)',
-    btn_export_csv: '⬇️ Export CSV', btn_export_pdf: '🖨️ Export PDF',
+    btn_export_csv: '⬇️ Export CSV', btn_export_pdf: '🖨️ Export PDF', btn_export_qr: '📱 Export QR',
+    qr_export_title: 'Students QR codes', qr_export_login_heading: '🔑 Login info',
+    qr_export_platform_heading: '🌐 Open platform',
     // ---- Teacher dashboard ----
     teacher_dash_label: '👨‍🏫 Teacher Dashboard', teacher_dash_heading: 'My Classes',
     tab_roster: '👥 Students', tab_schedule: '🗓️ My Schedule', tab_performance: '📊 Performance',
@@ -3904,6 +3909,19 @@ function goToJoinRoomWithCode(code) {
   document.getElementById('joinRoomCode').value = code.toUpperCase();
   updateGlobalBackButton();
 }
+
+// ---------- تعبئة تلقائية لحقلي الدخول من رابط QR "الحساب" (?login_user=&login_pass=)
+// المولّد من تصدير QR بلوحة المدرسة - نعبّي الحقلين بس (بدون تسجيل دخول
+// تلقائي)، الطالب يضغط "دخول" بنفسه بعد ما يشوف بياناته معبّاة جاهزة ----------
+(function prefillLoginFromQr() {
+  const params = new URLSearchParams(location.search);
+  const qUser = params.get('login_user');
+  const qPass = params.get('login_pass');
+  if (!qUser && !qPass) return;
+  history.replaceState(null, '', location.pathname); // نشيل الباراميترات عشان ما تتكرر التعبئة لو حدث Reload
+  if (qUser) document.getElementById('loginEmail').value = qUser;
+  if (qPass) document.getElementById('loginPassword').value = qPass;
+})();
 
 // ---------- الحساب (اختياري) ----------
 function proceedToApp() {
@@ -7161,13 +7179,15 @@ function qrBuildMatrix(text) {
   return modules.map(row => row.map(v => v === 1));
 }
 
-function renderQrToCanvas(text, container) {
+// مولّد Canvas مستقل عن أي container بالصفحة - يُستخدم مباشرة (openQrModal)
+// أو يتحوّل لصورة PNG (qrDataUrl) عشان يُضمّن بمستند مطبوع بنافذة ثانية
+// (تصدير QR بالجملة) ما تقدر توصل كودها لعناصر الصفحة الأصلية
+function buildQrCanvas(text) {
   const matrix = qrBuildMatrix(text);
   const size = matrix.length;
   const QUIET_ZONE = 4; // هامش أبيض إلزامي حول رمز QR - بدونه أغلب الماسحات ما تكتشفه
   const moduleSize = Math.max(2, Math.floor(220 / (size + QUIET_ZONE * 2)));
   const px = moduleSize * (size + QUIET_ZONE * 2);
-  container.innerHTML = '';
   const canvas = document.createElement('canvas');
   canvas.width = px; canvas.height = px;
   const ctx = canvas.getContext('2d');
@@ -7181,7 +7201,14 @@ function renderQrToCanvas(text, container) {
       }
     }
   }
-  container.appendChild(canvas);
+  return canvas;
+}
+function renderQrToCanvas(text, container) {
+  container.innerHTML = '';
+  container.appendChild(buildQrCanvas(text));
+}
+function qrDataUrl(text) {
+  return buildQrCanvas(text).toDataURL('image/png');
 }
 
 function openQrModalWithText(payloadText, captionText) {
@@ -7298,6 +7325,57 @@ function exportPdfViaPrint(title, rows, headers) {
       <tbody>${rows.map(r => `<tr>${r.map(v => `<td>${escapeHtml(v)}</td>`).join('')}</tr>`).join('')}</tbody>
     </table>`;
   win.document.write(`<html><head><title>${escapeHtml(title)}</title></head><body>${tableHtml}</body></html>`);
+  win.document.close();
+  win.focus();
+  win.print();
+}
+
+// ---------- تصدير QR بالجملة (طالب واحد لكل صفحة مطبوعة) - بطاقة كل طالب
+// فيها: الاسم، ثم QR "بيانات الدخول" (يفتح صفحة الدخول معبّاة تلقائيًا
+// باسم المستخدم وكلمة السر عبر ?login_user=&login_pass=، شوف 03-auth.js)،
+// ثم QR "فتح المنصة" (يفتح الرابط العادي بدون أي بيانات). النافذة الجديدة
+// مستقلة عن DOM الصفحة الأصلية فنولّد كل QR كصورة PNG (data URL) عبر
+// qrDataUrl بدل ما نحاول ننقل عناصر canvas بين النافذتين ----------
+function exportQrBooklet(students) {
+  if (!students || !students.length) return;
+  const baseUrl = `${location.origin}${location.pathname}`;
+  const pagesHtml = students.map(s => {
+    const loginUrl = `${baseUrl}?login_user=${encodeURIComponent(s.username)}&login_pass=${encodeURIComponent(s.password)}`;
+    let loginQrImg = '';
+    let platformQrImg = '';
+    try { loginQrImg = `<img src="${qrDataUrl(loginUrl)}" width="220" height="220" alt="QR">`; }
+    catch { loginQrImg = `<p>${escapeHtml(t('err_qr_generation'))}</p>`; }
+    try { platformQrImg = `<img src="${qrDataUrl(baseUrl)}" width="220" height="220" alt="QR">`; }
+    catch { platformQrImg = `<p>${escapeHtml(t('err_qr_generation'))}</p>`; }
+    return `
+      <div class="qr-export-page">
+        <h2>${escapeHtml(s.name)}</h2>
+        <div class="qr-export-block">
+          <h3>${escapeHtml(t('qr_export_login_heading'))}</h3>
+          ${loginQrImg}
+          <p>${escapeHtml(t('th_username'))}: <b>${escapeHtml(s.username)}</b><br>${escapeHtml(t('th_password'))}: <b>${escapeHtml(s.password)}</b></p>
+        </div>
+        <div class="qr-export-block">
+          <h3>${escapeHtml(t('qr_export_platform_heading'))}</h3>
+          ${platformQrImg}
+          <p>${escapeHtml(baseUrl)}</p>
+        </div>
+      </div>`;
+  }).join('');
+  const win = window.open('', '_blank');
+  win.document.write(`
+    <html><head><title>${escapeHtml(t('qr_export_title'))}</title>
+    <style>
+      body { font-family: sans-serif; direction: rtl; }
+      .qr-export-page { page-break-after: always; text-align: center; padding: 40px 20px; }
+      .qr-export-page:last-child { page-break-after: auto; }
+      .qr-export-block { margin: 24px 0; }
+      .qr-export-block img { display: block; margin: 12px auto; }
+      h2 { font-size: 28px; }
+      h3 { font-size: 18px; color: #444; }
+      p { font-size: 16px; }
+    </style>
+    </head><body>${pagesHtml}</body></html>`);
   win.document.close();
   win.focus();
   win.print();
@@ -7717,6 +7795,9 @@ document.getElementById('bulkExportCsvBtn').addEventListener('click', () => {
 });
 document.getElementById('bulkExportPdfBtn').addEventListener('click', () => {
   exportPdfViaPrint(t('bulk_result_heading'), lastBulkAddResult.map(s => [s.name, s.username, s.password]), [t('th_name'), t('th_username'), t('th_password')]);
+});
+document.getElementById('bulkExportQrBtn').addEventListener('click', () => {
+  exportQrBooklet(lastBulkAddResult);
 });
 
 async function loadSchoolAttendance() {

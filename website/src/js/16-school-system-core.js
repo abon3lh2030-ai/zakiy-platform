@@ -90,3 +90,54 @@ function exportPdfViaPrint(title, rows, headers) {
   win.print();
 }
 
+// ---------- تصدير QR بالجملة (طالب واحد لكل صفحة مطبوعة) - بطاقة كل طالب
+// فيها: الاسم، ثم QR "بيانات الدخول" (يفتح صفحة الدخول معبّاة تلقائيًا
+// باسم المستخدم وكلمة السر عبر ?login_user=&login_pass=، شوف 03-auth.js)،
+// ثم QR "فتح المنصة" (يفتح الرابط العادي بدون أي بيانات). النافذة الجديدة
+// مستقلة عن DOM الصفحة الأصلية فنولّد كل QR كصورة PNG (data URL) عبر
+// qrDataUrl بدل ما نحاول ننقل عناصر canvas بين النافذتين ----------
+function exportQrBooklet(students) {
+  if (!students || !students.length) return;
+  const baseUrl = `${location.origin}${location.pathname}`;
+  const pagesHtml = students.map(s => {
+    const loginUrl = `${baseUrl}?login_user=${encodeURIComponent(s.username)}&login_pass=${encodeURIComponent(s.password)}`;
+    let loginQrImg = '';
+    let platformQrImg = '';
+    try { loginQrImg = `<img src="${qrDataUrl(loginUrl)}" width="220" height="220" alt="QR">`; }
+    catch { loginQrImg = `<p>${escapeHtml(t('err_qr_generation'))}</p>`; }
+    try { platformQrImg = `<img src="${qrDataUrl(baseUrl)}" width="220" height="220" alt="QR">`; }
+    catch { platformQrImg = `<p>${escapeHtml(t('err_qr_generation'))}</p>`; }
+    return `
+      <div class="qr-export-page">
+        <h2>${escapeHtml(s.name)}</h2>
+        <div class="qr-export-block">
+          <h3>${escapeHtml(t('qr_export_login_heading'))}</h3>
+          ${loginQrImg}
+          <p>${escapeHtml(t('th_username'))}: <b>${escapeHtml(s.username)}</b><br>${escapeHtml(t('th_password'))}: <b>${escapeHtml(s.password)}</b></p>
+        </div>
+        <div class="qr-export-block">
+          <h3>${escapeHtml(t('qr_export_platform_heading'))}</h3>
+          ${platformQrImg}
+          <p>${escapeHtml(baseUrl)}</p>
+        </div>
+      </div>`;
+  }).join('');
+  const win = window.open('', '_blank');
+  win.document.write(`
+    <html><head><title>${escapeHtml(t('qr_export_title'))}</title>
+    <style>
+      body { font-family: sans-serif; direction: rtl; }
+      .qr-export-page { page-break-after: always; text-align: center; padding: 40px 20px; }
+      .qr-export-page:last-child { page-break-after: auto; }
+      .qr-export-block { margin: 24px 0; }
+      .qr-export-block img { display: block; margin: 12px auto; }
+      h2 { font-size: 28px; }
+      h3 { font-size: 18px; color: #444; }
+      p { font-size: 16px; }
+    </style>
+    </head><body>${pagesHtml}</body></html>`);
+  win.document.close();
+  win.focus();
+  win.print();
+}
+

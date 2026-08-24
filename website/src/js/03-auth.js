@@ -1,3 +1,16 @@
+// ---------- تعبئة تلقائية لحقلي الدخول من رابط QR "الحساب" (?login_user=&login_pass=)
+// المولّد من تصدير QR بلوحة المدرسة - نعبّي الحقلين بس (بدون تسجيل دخول
+// تلقائي)، الطالب يضغط "دخول" بنفسه بعد ما يشوف بياناته معبّاة جاهزة ----------
+(function prefillLoginFromQr() {
+  const params = new URLSearchParams(location.search);
+  const qUser = params.get('login_user');
+  const qPass = params.get('login_pass');
+  if (!qUser && !qPass) return;
+  history.replaceState(null, '', location.pathname); // نشيل الباراميترات عشان ما تتكرر التعبئة لو حدث Reload
+  if (qUser) document.getElementById('loginEmail').value = qUser;
+  if (qPass) document.getElementById('loginPassword').value = qPass;
+})();
+
 // ---------- الحساب (اختياري) ----------
 function proceedToApp() {
   hide('login-form'); hide('signup-form'); hide('step-force-password-change');

@@ -225,13 +225,15 @@ function qrBuildMatrix(text) {
   return modules.map(row => row.map(v => v === 1));
 }
 
-function renderQrToCanvas(text, container) {
+// مولّد Canvas مستقل عن أي container بالصفحة - يُستخدم مباشرة (openQrModal)
+// أو يتحوّل لصورة PNG (qrDataUrl) عشان يُضمّن بمستند مطبوع بنافذة ثانية
+// (تصدير QR بالجملة) ما تقدر توصل كودها لعناصر الصفحة الأصلية
+function buildQrCanvas(text) {
   const matrix = qrBuildMatrix(text);
   const size = matrix.length;
   const QUIET_ZONE = 4; // هامش أبيض إلزامي حول رمز QR - بدونه أغلب الماسحات ما تكتشفه
   const moduleSize = Math.max(2, Math.floor(220 / (size + QUIET_ZONE * 2)));
   const px = moduleSize * (size + QUIET_ZONE * 2);
-  container.innerHTML = '';
   const canvas = document.createElement('canvas');
   canvas.width = px; canvas.height = px;
   const ctx = canvas.getContext('2d');
@@ -245,7 +247,14 @@ function renderQrToCanvas(text, container) {
       }
     }
   }
-  container.appendChild(canvas);
+  return canvas;
+}
+function renderQrToCanvas(text, container) {
+  container.innerHTML = '';
+  container.appendChild(buildQrCanvas(text));
+}
+function qrDataUrl(text) {
+  return buildQrCanvas(text).toDataURL('image/png');
 }
 
 function openQrModalWithText(payloadText, captionText) {

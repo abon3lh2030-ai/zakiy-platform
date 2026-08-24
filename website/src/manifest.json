@@ -117,6 +117,10 @@
   },
   {
     "type": "file",
+    "path": "pages/ai-assistant/ai-book-scope.html"
+  },
+  {
+    "type": "file",
     "path": "pages/settings/settings.html"
   },
   {

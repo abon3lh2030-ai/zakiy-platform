@@ -1,0 +1,14 @@
+  <!-- اختيار نطاق التلخيص: الكتاب كامل أو جزء منه (وحدة معينة) - يظهر
+       بعد اختيار/رفع الكتاب، قبل إرسال طلب التلخيص فعليًا -->
+  <section class="card hidden" id="step-ai-book-scope">
+    <span class="step-label" data-i18n="ai_book_scope_step_label">📖 تلخيص</span>
+    <h2 id="aiBookScopeTitle"></h2>
+    <p class="desc" data-i18n="ai_book_scope_hint">لخّص الكتاب كامل زي ما هو، أو احذف أي جزء ما تبيه بالتلخيص (مثلاً خله على وحدة معيّنة بس) قبل ما تضغط لخّص.</p>
+
+    <textarea id="aiBookScopeText" class="text-input" style="min-height:320px; font-family:'IBM Plex Sans Arabic',sans-serif; line-height:1.8;"></textarea>
+
+    <div class="actions" style="margin-top:14px;">
+      <button class="primary" id="aiBookScopeSummarizeBtn" data-i18n="ai_summarize_btn">لخّص</button>
+    </div>
+    <div id="aiBookScopeError"></div>
+  </section>

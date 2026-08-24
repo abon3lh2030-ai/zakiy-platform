@@ -203,15 +203,39 @@ async function pickLibraryBookForAiSummary(bookId) {
   clearError('aiBookPickerError');
   try {
     const book = await apiCall('GET', `/api/library/${bookId}`);
-    document.getElementById('globalBackBtn').click(); // نرجع لصفحة المحادثة
-    await sendAiPayload(
-      { book_title: book.title, book_text: book.extracted_text },
-      `📚 ${t('ai_summarize_label')}: ${book.title}`
-    );
+    pushNavSnapshot();
+    openAiBookScopeScreen(book.title, book.extracted_text);
+    updateGlobalBackButton();
   } catch (e) {
     showError('aiBookPickerError', e.message);
   }
 }
+
+// ---------- اختيار نطاق التلخيص (الكتاب كامل أو جزء منه) قبل الإرسال ----------
+let aiBookScopeBookTitle = '';
+
+function openAiBookScopeScreen(bookTitle, fullText) {
+  showAccountScreen('step-ai-book-scope');
+  clearError('aiBookScopeError');
+  aiBookScopeBookTitle = bookTitle;
+  document.getElementById('aiBookScopeTitle').textContent = bookTitle;
+  document.getElementById('aiBookScopeText').value = fullText;
+}
+
+document.getElementById('aiBookScopeSummarizeBtn').addEventListener('click', async () => {
+  const text = document.getElementById('aiBookScopeText').value.trim();
+  clearError('aiBookScopeError');
+  if (!text) { showError('aiBookScopeError', t('err_text_required')); return; }
+  const title = aiBookScopeBookTitle;
+  // نرجع خطوتين (صفحة اختيار النطاق ← صفحة اختيار الكتاب ← المحادثة) قبل
+  // ما نرسل، عشان المستخدم يشوف الرد يتكون بصفحة المحادثة نفسها
+  document.getElementById('globalBackBtn').click();
+  document.getElementById('globalBackBtn').click();
+  await sendAiPayload(
+    { book_title: title, book_text: text },
+    `📚 ${t('ai_summarize_label')}: ${title}`
+  );
+});
 
 // ---------- رفع ملف جديد للتلخيص ----------
 let aiBookSelectedFile = null;
@@ -275,11 +299,9 @@ document.getElementById('aiBookSummarizeUploadBtn').addEventListener('click', as
     aiBookSelectedFile = null;
     aiBookFileInput.value = '';
     updateAiBookFileChip();
-    document.getElementById('globalBackBtn').click(); // نرجع لصفحة المحادثة
-    await sendAiPayload(
-      { book_title: bookTitle, book_text: extractData.text },
-      `📚 ${t('ai_summarize_label')}: ${bookTitle}`
-    );
+    pushNavSnapshot();
+    openAiBookScopeScreen(bookTitle, extractData.text);
+    updateGlobalBackButton();
   } catch (e) {
     showError('aiBookPickerError', e.message);
   } finally {

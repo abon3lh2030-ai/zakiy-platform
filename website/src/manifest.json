@@ -105,6 +105,10 @@
   },
   {
     "type": "file",
+    "path": "pages/school-system/gradesheet.html"
+  },
+  {
+    "type": "file",
     "path": "pages/ai-assistant/ai-conversations-list.html"
   },
   {

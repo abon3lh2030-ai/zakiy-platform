@@ -7,7 +7,7 @@ const TOP_LEVEL_SCREENS = [
   'step-quiz', 'step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings',
   'step-profile', 'step-notes', 'step-note-editor', 'step-assignments', 'step-assignment-detail',
   'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker', 'step-ai-book-scope',
-  'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take',
+  'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take', 'step-gradesheet',
   // لوحات نظام إدارة حسابات المدارس - step-force-password-change مو من ضمنها
   // عمدًا (بوابة صلبة، ما تدخل نظام الرجوع/التنقل العادي)
   'step-admin-dashboard', 'step-school-dashboard', 'step-teacher-dashboard', 'step-student-schedule',
@@ -46,6 +46,7 @@ const RESTORABLE_SCREENS = {
   'step-assignment-detail': () => showAssignmentsScreen(),
   'step-quizzes': () => showQuizzesScreen(),
   'step-quiz-detail': () => showQuizzesScreen(),
+  'step-gradesheet': () => showGradesheetScreen(),
   'step-ai-list': () => showAiListScreen(),
   'step-ai-conversation': () => showAiListScreen(),
   'step-ai-book-picker': () => showAiListScreen(),
@@ -78,6 +79,8 @@ function tryRestoreLastScreen() {
   // دفتر الاختبارات معلم/طالب بس
   if ((saved === 'step-quizzes' || saved === 'step-quiz-detail') &&
       !(currentUserRole === 'teacher' || currentUserRole === 'student')) return false;
+  // كشف الدرجات معلم بس
+  if (saved === 'step-gradesheet' && currentUserRole !== 'teacher') return false;
   restoreFn();
   return true;
 }

@@ -3115,6 +3115,151 @@ def teacher_view_student(user_id):
     return jsonify(profile), 200
 
 
+# ---------- كشف الدرجات (معلم بس - مشاركة/مهام أدائية يدوية + واجبات/
+# اختبارات محسوبة تلقائيًا من درجاتها الموجودة أصلًا + مجموع يُحسب لحظيًا) ----------
+def _parse_grade_number(grade):
+    """يحاول يفهم درجة نصية حرة (زي ما تُخزَّن أصلًا بـ assignment_submissions/
+    quiz_attempts.grade) كرقم. صيغة "X/Y" (تصحيح اختبارات تلقائي) تُطبَّع
+    لمقياس من ١٠ عشان تنجمع بمنطقية مع درجات الواجبات المكتوبة يدويًا.
+    أي نص ما نقدر نفهمه رقم (زي "ممتاز") يُتجاهل بالحساب - مو خطأ، بس ما
+    يدخل بالمجموع."""
+    if grade is None:
+        return None
+    grade = str(grade).strip()
+    if not grade:
+        return None
+    if "/" in grade:
+        parts = grade.split("/")
+        if len(parts) == 2:
+            try:
+                num, den = float(parts[0]), float(parts[1])
+                if den > 0:
+                    return round((num / den) * 10, 2)
+            except ValueError:
+                pass
+        return None
+    try:
+        return float(grade)
+    except ValueError:
+        return None
+
+
+def _avg(values):
+    nums = [v for v in values if v is not None]
+    if not nums:
+        return None
+    return round(sum(nums) / len(nums), 2)
+
+
+@app.route("/api/teacher/gradesheet", methods=["GET"])
+@require_role("teacher")
+def teacher_gradesheet():
+    class_id = request.args.get("class_id")
+    if not class_id:
+        return jsonify({"error": "لازم تختار فصل"}), 400
+    owns = (
+        supabase_admin.table("classes").select("id").eq("id", class_id).eq("teacher_id", request.user_id)
+        .limit(1).execute()
+    ).data
+    if not owns:
+        return jsonify({"error": "الفصل مو تابع لك"}), 403
+
+    students = (
+        supabase_admin.table("profiles").select("user_id, username, full_name")
+        .eq("role", "student").eq("class_id", class_id).execute()
+    ).data
+
+    participation_rows = {
+        r["student_id"]: r
+        for r in supabase_admin.table("class_participation_grades").select("*").eq("class_id", class_id).execute().data
+    }
+
+    # الواجبات: كل واجبات هذا الفصل التابعة للمعلم + درجات تسليمها
+    assignment_ids = [
+        a["id"]
+        for a in supabase_admin.table("assignments").select("id").eq("class_id", class_id)
+        .eq("teacher_id", request.user_id).execute().data
+    ]
+    submissions_by_student = {}
+    if assignment_ids:
+        for sub in (
+            supabase_admin.table("assignment_submissions").select("student_id, grade")
+            .in_("assignment_id", assignment_ids).execute().data
+        ):
+            submissions_by_student.setdefault(sub["student_id"], []).append(_parse_grade_number(sub.get("grade")))
+
+    # الاختبارات: كل اختبارات هذا الفصل التابعة للمعلم + درجات محاولاتها
+    quiz_ids = [
+        q["id"]
+        for q in supabase_admin.table("quizzes").select("id").eq("class_id", class_id)
+        .eq("teacher_id", request.user_id).execute().data
+    ]
+    attempts_by_student = {}
+    if quiz_ids:
+        for att in (
+            supabase_admin.table("quiz_attempts").select("student_id, grade, is_graded")
+            .in_("quiz_id", quiz_ids).execute().data
+        ):
+            if att.get("is_graded"):
+                attempts_by_student.setdefault(att["student_id"], []).append(_parse_grade_number(att.get("grade")))
+
+    result = []
+    for s in students:
+        uid = s["user_id"]
+        p_row = participation_rows.get(uid, {})
+        participation = float(p_row.get("participation", 0) or 0)
+        performance_tasks = float(p_row.get("performance_tasks", 0) or 0)
+        assignments_avg = _avg(submissions_by_student.get(uid, []))
+        quizzes_avg = _avg(attempts_by_student.get(uid, []))
+        total = participation + performance_tasks + (assignments_avg or 0) + (quizzes_avg or 0)
+        result.append(
+            {
+                "user_id": uid, "username": s["username"], "full_name": s.get("full_name"),
+                "participation": participation, "performance_tasks": performance_tasks,
+                "assignments_avg": assignments_avg, "assignments_count": len(submissions_by_student.get(uid, [])),
+                "quizzes_avg": quizzes_avg, "quizzes_count": len(attempts_by_student.get(uid, [])),
+                "total": round(total, 2),
+            }
+        )
+    return jsonify({"students": result}), 200
+
+
+@app.route("/api/teacher/gradesheet/<student_id>", methods=["PATCH"])
+@require_role("teacher")
+def update_gradesheet_row(student_id):
+    data = request.get_json(silent=True) or {}
+    class_id = data.get("class_id")
+    if not class_id:
+        return jsonify({"error": "لازم تحدد الفصل"}), 400
+    owns = (
+        supabase_admin.table("classes").select("id").eq("id", class_id).eq("teacher_id", request.user_id)
+        .limit(1).execute()
+    ).data
+    if not owns:
+        return jsonify({"error": "الفصل مو تابع لك"}), 403
+    belongs = (
+        supabase_admin.table("profiles").select("user_id").eq("user_id", student_id)
+        .eq("role", "student").eq("class_id", class_id).limit(1).execute()
+    ).data
+    if not belongs:
+        return jsonify({"error": "هذا الطالب مو بهذا الفصل"}), 400
+
+    patch = {"class_id": class_id, "student_id": student_id, "updated_at": datetime.now(timezone.utc).isoformat()}
+    for key in ("participation", "performance_tasks"):
+        if key in data:
+            try:
+                patch[key] = float(data[key])
+            except (TypeError, ValueError):
+                return jsonify({"error": "الدرجة لازم تكون رقم"}), 400
+    row = (
+        supabase_admin.table("class_participation_grades")
+        .upsert(patch, on_conflict="class_id,student_id")
+        .execute()
+        .data[0]
+    )
+    return jsonify(row), 200
+
+
 @app.route("/api/teacher/schedule", methods=["GET"])
 @require_role("teacher")
 def teacher_schedule():

@@ -1173,6 +1173,7 @@
     <button class="sidebar-btn hidden" id="studentScheduleNavBtn"><span class="sidebar-icon">🗓️</span><span class="label" data-i18n="nav_my_schedule">جدولي</span></button>
     <button class="sidebar-btn hidden" id="assignmentsBtn"><span class="sidebar-icon">📚</span><span class="label" data-i18n="nav_assignments">الواجبات</span></button>
     <button class="sidebar-btn hidden" id="quizzesBtn"><span class="sidebar-icon">📝</span><span class="label" data-i18n="nav_quizzes">الاختبارات</span></button>
+    <button class="sidebar-btn hidden" id="gradesheetBtn"><span class="sidebar-icon">📋</span><span class="label" data-i18n="nav_gradesheet">كشف الدرجات</span></button>
   </nav>
   <div class="sidebar-bottom">
     <button class="sidebar-btn" id="settingsBtn"><span class="sidebar-icon">⚙️</span><span class="label" data-i18n="nav_settings">الإعدادات</span></button>
@@ -1898,6 +1899,33 @@
     <div id="quizTakeResult" class="hidden">
       <div class="quiz-result-box" id="quizResultBox"></div>
     </div>
+  </section>
+
+  <!-- كشف الدرجات (معلم بس) - مشاركة ومهام أدائية يدوية، واجبات واختبارات
+       محسوبة تلقائيًا من درجاتها الموجودة أصلًا، ومجموع يُحسب لحظيًا -
+       المعلم ما يقدر يعدّل المجموع نفسه -->
+  <section class="card hidden" id="step-gradesheet">
+    <span class="step-label" data-i18n="gradesheet_step_label">📋 كشف الدرجات</span>
+    <h2 data-i18n="gradesheet_heading">كشف درجات الطلاب</h2>
+    <p class="desc" data-i18n="gradesheet_desc">حط درجة المشاركة والمهام الأدائية لكل طالب - درجتي الواجبات والاختبارات تُحسب تلقائيًا من تصحيحك لها، والمجموع يُحسب لحظيًا بدون ما تقدر تعدّله.</p>
+
+    <select id="gradesheetClassSelect" class="text-input" style="margin-bottom:14px;"></select>
+
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr>
+          <th data-i18n="th_name">الاسم</th>
+          <th data-i18n="th_participation">المشاركة</th>
+          <th data-i18n="th_performance_tasks">المهام الأدائية</th>
+          <th data-i18n="th_assignments_avg">الواجبات</th>
+          <th data-i18n="th_quizzes_avg">الاختبارات</th>
+          <th data-i18n="th_total">المجموع</th>
+          <th data-i18n="th_actions">إجراء</th>
+        </tr></thead>
+        <tbody id="gradesheetTableBody"></tbody>
+      </table>
+    </div>
+    <div id="gradesheetError"></div>
   </section>
 
   <!-- المساعد الذكي - قائمة المحادثات (تفتح من زر السايد بار) -->
@@ -2841,6 +2869,13 @@ const I18N = {
     th_name: 'الاسم', th_classes: 'الفصول', th_student_count: 'عدد الطلاب', th_last_login: 'آخر دخول',
     th_class_name: 'الفصل', th_teacher: 'المعلم', th_day: 'اليوم', th_time: 'الوقت', th_subject: 'المادة',
     th_student: 'الطالب', th_join_time: 'وقت الانضمام', th_username: 'اسم المستخدم', th_password: 'كلمة السر',
+    // ---- كشف الدرجات ----
+    nav_gradesheet: 'كشف الدرجات', gradesheet_step_label: '📋 كشف الدرجات',
+    gradesheet_heading: 'كشف درجات الطلاب',
+    gradesheet_desc: 'حط درجة المشاركة والمهام الأدائية لكل طالب - درجتي الواجبات والاختبارات تُحسب تلقائيًا من تصحيحك لها، والمجموع يُحسب لحظيًا بدون ما تقدر تعدّله.',
+    th_participation: 'المشاركة', th_performance_tasks: 'المهام الأدائية',
+    th_assignments_avg: 'الواجبات', th_quizzes_avg: 'الاختبارات', th_total: 'المجموع',
+    gradesheet_empty: 'ما فيه طلاب بهذا الفصل',
     // ---- لوحة الأدمن العام ----
     admin_dash_label: '🛠️ لوحة الإدارة العامة',
     admin_dash_heading: 'المدارس المشتركة',
@@ -3414,6 +3449,13 @@ const I18N = {
     th_name: 'Name', th_classes: 'Classes', th_student_count: 'Students', th_last_login: 'Last login',
     th_class_name: 'Class', th_teacher: 'Teacher', th_day: 'Day', th_time: 'Time', th_subject: 'Subject',
     th_student: 'Student', th_join_time: 'Joined at', th_username: 'Username', th_password: 'Password',
+    // ---- Gradesheet ----
+    nav_gradesheet: 'Gradesheet', gradesheet_step_label: '📋 Gradesheet',
+    gradesheet_heading: "Students' gradesheet",
+    gradesheet_desc: "Enter each student's participation and performance-task grades - assignment and quiz grades are computed automatically from your grading, and the total updates live and can't be edited.",
+    th_participation: 'Participation', th_performance_tasks: 'Performance tasks',
+    th_assignments_avg: 'Assignments', th_quizzes_avg: 'Quizzes', th_total: 'Total',
+    gradesheet_empty: 'No students in this class',
     // ---- Platform admin dashboard ----
     admin_dash_label: '🛠️ Platform Admin',
     admin_dash_heading: 'Subscribed Schools',
@@ -3694,7 +3736,7 @@ const TOP_LEVEL_SCREENS = [
   'step-quiz', 'step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings',
   'step-profile', 'step-notes', 'step-note-editor', 'step-assignments', 'step-assignment-detail',
   'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker', 'step-ai-book-scope',
-  'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take',
+  'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take', 'step-gradesheet',
   // لوحات نظام إدارة حسابات المدارس - step-force-password-change مو من ضمنها
   // عمدًا (بوابة صلبة، ما تدخل نظام الرجوع/التنقل العادي)
   'step-admin-dashboard', 'step-school-dashboard', 'step-teacher-dashboard', 'step-student-schedule',
@@ -3733,6 +3775,7 @@ const RESTORABLE_SCREENS = {
   'step-assignment-detail': () => showAssignmentsScreen(),
   'step-quizzes': () => showQuizzesScreen(),
   'step-quiz-detail': () => showQuizzesScreen(),
+  'step-gradesheet': () => showGradesheetScreen(),
   'step-ai-list': () => showAiListScreen(),
   'step-ai-conversation': () => showAiListScreen(),
   'step-ai-book-picker': () => showAiListScreen(),
@@ -3765,6 +3808,8 @@ function tryRestoreLastScreen() {
   // دفتر الاختبارات معلم/طالب بس
   if ((saved === 'step-quizzes' || saved === 'step-quiz-detail') &&
       !(currentUserRole === 'teacher' || currentUserRole === 'student')) return false;
+  // كشف الدرجات معلم بس
+  if (saved === 'step-gradesheet' && currentUserRole !== 'teacher') return false;
   restoreFn();
   return true;
 }
@@ -3969,6 +4014,10 @@ function onAuthSuccess(session) {
       document.getElementById('quizzesBtn').classList.toggle(
         'hidden', !(currentUserRole === 'teacher' || currentUserRole === 'student')
       );
+      // كشف الدرجات معلم بس - هو الوحيد الي يحط الدرجات، الطالب ما يدخله من هنا
+      document.getElementById('gradesheetBtn').classList.toggle(
+        'hidden', currentUserRole !== 'teacher'
+      );
 
       if (me.must_change_password) {
         TOP_LEVEL_SCREENS.forEach(hide);
@@ -4169,7 +4218,7 @@ document.getElementById('guestLoginPromptBtn').addEventListener('click', () => {
 
 // ---------- شاشات الحساب (أدائي / الأرشيف / الأصدقاء / مكتبتي) - كل وحدة
 // مستقلة بزر سايد بار خاص فيها، بدل ما تكون تبويبات جوا شاشة وحدة ----------
-const ACCOUNT_SCREENS = ['step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings', 'step-profile', 'step-notes', 'step-note-editor', 'step-assignments', 'step-assignment-detail', 'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker', 'step-ai-book-scope', 'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take'];
+const ACCOUNT_SCREENS = ['step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings', 'step-profile', 'step-notes', 'step-note-editor', 'step-assignments', 'step-assignment-detail', 'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker', 'step-ai-book-scope', 'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take', 'step-gradesheet'];
 function showAccountScreen(id) {
   ['login-form', 'signup-form', 'step-force-password-change', 'mode-select', 'room-mode-select', 'room-create-form',
    'room-join-form', 'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary', 'step-quiz',
@@ -4188,6 +4237,7 @@ function showNotesScreen() { showAccountScreen('step-notes'); loadNotesScreen();
 function showAssignmentsScreen() { showAccountScreen('step-assignments'); loadAssignmentsScreen(); }
 function showAiListScreen() { showAccountScreen('step-ai-list'); loadAiConversationsList(); }
 function showQuizzesScreen() { showAccountScreen('step-quizzes'); loadQuizzesScreen(); }
+function showGradesheetScreen() { showAccountScreen('step-gradesheet'); loadGradesheetScreen(); }
 
 // ---------- صفحة البروفايل (بروفايلك أو بروفايل شخص ثاني) ----------
 async function showProfileScreen(userId) {
@@ -4382,6 +4432,12 @@ document.getElementById('quizzesBtn').addEventListener('click', () => {
   if (!requireAuthOrPrompt()) return;
   pushNavSnapshot();
   showQuizzesScreen();
+  updateGlobalBackButton();
+});
+document.getElementById('gradesheetBtn').addEventListener('click', () => {
+  if (!requireAuthOrPrompt()) return;
+  pushNavSnapshot();
+  showGradesheetScreen();
   updateGlobalBackButton();
 });
 
@@ -9471,6 +9527,84 @@ function showQuizResult(attempt) {
     `;
   }
 }
+// ---------- كشف الدرجات (معلم بس) - مشاركة ومهام أدائية يحطهم المعلم يدويًا،
+// والواجبات والاختبارات تُحسب تلقائيًا من درجاتها الموجودة أصلًا، والمجموع
+// يُحسب لحظيًا بدون ما يقدر المعلم يعدّله ----------
+let gradesheetClassesCache = [];
+
+async function loadGradesheetScreen() {
+  document.getElementById('gradesheetError').innerHTML = '';
+  document.getElementById('gradesheetTableBody').innerHTML = '';
+  try {
+    const roster = await apiCall('GET', '/api/teacher/roster');
+    gradesheetClassesCache = roster.classes || [];
+    document.getElementById('gradesheetClassSelect').innerHTML =
+      gradesheetClassesCache.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+    if (gradesheetClassesCache.length) {
+      await loadGradesheetTable();
+    }
+  } catch (e) {
+    document.getElementById('gradesheetError').innerHTML = `<p class="desc">${escapeHtml(e.message)}</p>`;
+  }
+}
+
+async function loadGradesheetTable() {
+  const classId = document.getElementById('gradesheetClassSelect').value;
+  const tbody = document.getElementById('gradesheetTableBody');
+  const errBox = document.getElementById('gradesheetError');
+  errBox.innerHTML = '';
+  if (!classId) { tbody.innerHTML = ''; return; }
+  tbody.innerHTML = `<tr><td colspan="7">${t('loading')}</td></tr>`;
+  try {
+    const { students } = await apiCall('GET', `/api/teacher/gradesheet?class_id=${classId}`);
+    if (!students.length) {
+      tbody.innerHTML = `<tr><td colspan="7">${t('gradesheet_empty')}</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = students.map(s => `
+      <tr data-student-id="${s.user_id}">
+        <td>${escapeHtml(s.full_name || s.username)}</td>
+        <td><input type="number" step="0.01" class="text-input gs-participation-input" style="width:80px;" value="${s.participation}"></td>
+        <td><input type="number" step="0.01" class="text-input gs-performance-input" style="width:80px;" value="${s.performance_tasks}"></td>
+        <td>${s.assignments_avg === null ? '—' : s.assignments_avg} <span class="desc">(${s.assignments_count})</span></td>
+        <td>${s.quizzes_avg === null ? '—' : s.quizzes_avg} <span class="desc">(${s.quizzes_count})</span></td>
+        <td class="gs-total-cell" style="font-weight:700;">${s.total}</td>
+        <td><button class="ghost gs-save-btn" style="padding:4px 10px;">${t('btn_save')}</button></td>
+      </tr>
+    `).join('');
+    wireGradesheetRowEvents(classId);
+  } catch (e) {
+    tbody.innerHTML = '';
+    errBox.innerHTML = `<p class="desc">${escapeHtml(e.message)}</p>`;
+  }
+}
+
+function wireGradesheetRowEvents(classId) {
+  document.querySelectorAll('#gradesheetTableBody .gs-save-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const row = btn.closest('tr');
+      const studentId = row.dataset.studentId;
+      const participation = row.querySelector('.gs-participation-input').value;
+      const performanceTasks = row.querySelector('.gs-performance-input').value;
+      btn.disabled = true;
+      try {
+        await apiCall('PATCH', `/api/teacher/gradesheet/${studentId}`, {
+          class_id: classId,
+          participation: participation === '' ? 0 : Number(participation),
+          performance_tasks: performanceTasks === '' ? 0 : Number(performanceTasks),
+        });
+        await loadGradesheetTable();
+      } catch (e) {
+        document.getElementById('gradesheetError').innerHTML = `<p class="desc">${escapeHtml(e.message)}</p>`;
+        btn.disabled = false;
+      }
+    });
+  });
+}
+
+document.getElementById('gradesheetClassSelect').addEventListener('change', () => {
+  loadGradesheetTable();
+});
 </script>
 </body>
 </html>

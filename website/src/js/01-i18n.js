@@ -356,6 +356,13 @@ const I18N = {
     th_name: 'الاسم', th_classes: 'الفصول', th_student_count: 'عدد الطلاب', th_last_login: 'آخر دخول',
     th_class_name: 'الفصل', th_teacher: 'المعلم', th_day: 'اليوم', th_time: 'الوقت', th_subject: 'المادة',
     th_student: 'الطالب', th_join_time: 'وقت الانضمام', th_username: 'اسم المستخدم', th_password: 'كلمة السر',
+    // ---- كشف الدرجات ----
+    nav_gradesheet: 'كشف الدرجات', gradesheet_step_label: '📋 كشف الدرجات',
+    gradesheet_heading: 'كشف درجات الطلاب',
+    gradesheet_desc: 'حط درجة المشاركة والمهام الأدائية لكل طالب - درجتي الواجبات والاختبارات تُحسب تلقائيًا من تصحيحك لها، والمجموع يُحسب لحظيًا بدون ما تقدر تعدّله.',
+    th_participation: 'المشاركة', th_performance_tasks: 'المهام الأدائية',
+    th_assignments_avg: 'الواجبات', th_quizzes_avg: 'الاختبارات', th_total: 'المجموع',
+    gradesheet_empty: 'ما فيه طلاب بهذا الفصل',
     // ---- لوحة الأدمن العام ----
     admin_dash_label: '🛠️ لوحة الإدارة العامة',
     admin_dash_heading: 'المدارس المشتركة',
@@ -929,6 +936,13 @@ const I18N = {
     th_name: 'Name', th_classes: 'Classes', th_student_count: 'Students', th_last_login: 'Last login',
     th_class_name: 'Class', th_teacher: 'Teacher', th_day: 'Day', th_time: 'Time', th_subject: 'Subject',
     th_student: 'Student', th_join_time: 'Joined at', th_username: 'Username', th_password: 'Password',
+    // ---- Gradesheet ----
+    nav_gradesheet: 'Gradesheet', gradesheet_step_label: '📋 Gradesheet',
+    gradesheet_heading: "Students' gradesheet",
+    gradesheet_desc: "Enter each student's participation and performance-task grades - assignment and quiz grades are computed automatically from your grading, and the total updates live and can't be edited.",
+    th_participation: 'Participation', th_performance_tasks: 'Performance tasks',
+    th_assignments_avg: 'Assignments', th_quizzes_avg: 'Quizzes', th_total: 'Total',
+    gradesheet_empty: 'No students in this class',
     // ---- Platform admin dashboard ----
     admin_dash_label: '🛠️ Platform Admin',
     admin_dash_heading: 'Subscribed Schools',

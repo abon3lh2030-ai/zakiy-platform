@@ -1,0 +1,26 @@
+  <!-- كشف الدرجات (معلم بس) - مشاركة ومهام أدائية يدوية، واجبات واختبارات
+       محسوبة تلقائيًا من درجاتها الموجودة أصلًا، ومجموع يُحسب لحظيًا -
+       المعلم ما يقدر يعدّل المجموع نفسه -->
+  <section class="card hidden" id="step-gradesheet">
+    <span class="step-label" data-i18n="gradesheet_step_label">📋 كشف الدرجات</span>
+    <h2 data-i18n="gradesheet_heading">كشف درجات الطلاب</h2>
+    <p class="desc" data-i18n="gradesheet_desc">حط درجة المشاركة والمهام الأدائية لكل طالب - درجتي الواجبات والاختبارات تُحسب تلقائيًا من تصحيحك لها، والمجموع يُحسب لحظيًا بدون ما تقدر تعدّله.</p>
+
+    <select id="gradesheetClassSelect" class="text-input" style="margin-bottom:14px;"></select>
+
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr>
+          <th data-i18n="th_name">الاسم</th>
+          <th data-i18n="th_participation">المشاركة</th>
+          <th data-i18n="th_performance_tasks">المهام الأدائية</th>
+          <th data-i18n="th_assignments_avg">الواجبات</th>
+          <th data-i18n="th_quizzes_avg">الاختبارات</th>
+          <th data-i18n="th_total">المجموع</th>
+          <th data-i18n="th_actions">إجراء</th>
+        </tr></thead>
+        <tbody id="gradesheetTableBody"></tbody>
+      </table>
+    </div>
+    <div id="gradesheetError"></div>
+  </section>

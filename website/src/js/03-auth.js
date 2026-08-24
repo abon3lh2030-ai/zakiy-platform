@@ -107,6 +107,10 @@ function onAuthSuccess(session) {
       document.getElementById('quizzesBtn').classList.toggle(
         'hidden', !(currentUserRole === 'teacher' || currentUserRole === 'student')
       );
+      // كشف الدرجات معلم بس - هو الوحيد الي يحط الدرجات، الطالب ما يدخله من هنا
+      document.getElementById('gradesheetBtn').classList.toggle(
+        'hidden', currentUserRole !== 'teacher'
+      );
 
       if (me.must_change_password) {
         TOP_LEVEL_SCREENS.forEach(hide);

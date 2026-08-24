@@ -41,7 +41,7 @@ JS_ORDER = [
     "13-voice", "14-pomodoro", "15-qr", "16-school-system-core",
     "17-admin-dashboard", "18-school-admin-dashboard", "19-teacher-dashboard",
     "20-student-schedule", "21-messages", "22-broadcast-attendance",
-    "23-notes", "24-assignments", "25-ai-assistant", "26-quizzes",
+    "23-notes", "24-assignments", "25-ai-assistant", "26-quizzes", "27-gradesheet",
 ]
 
 

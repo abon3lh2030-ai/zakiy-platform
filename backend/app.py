@@ -4050,7 +4050,13 @@ _DAILY_LIMIT_KEYS = {"solo_session": "solo_daily", "group_room": "group_daily", 
 
 def _resolved_plan_for_user(user_id):
     """يرجّع dict حدود الباقة الفعّالة (من SUBSCRIPTION_PLANS) لحساب معيّن -
-    اختصار مشترك تستخدمه أي endpoint محتاجة تقصّر عرضها حسب الباقة (أداء/أرشيف)."""
+    اختصار مشترك تستخدمه أي endpoint محتاجة تقصّر عرضها حسب الباقة (أداء/أرشيف/
+    مكتبة/حدود يومية للغرف). حساب مؤسسي (أي role) يرجع دايمًا بحدود owner
+    (بلا حدود) - _resolve_subscription يرجّع tier="school" لهم وunlimited=True،
+    بس "school" نفسها مو مفتاح موجود بـ SUBSCRIPTION_PLANS (ما لها باقة تُباع)،
+    فلازم نتحقق من unlimited صراحة هنا بدل الاعتماد على .get() يلقى مفتاح مو
+    موجود ويرجع للمجاني بالغلط - هذا بالضبط كان يسبب حظر حسابات المدارس
+    بحدود الباقة المجانية (غرف/مكتبة/أداء/أرشيف) رغم إنها المفروض بلا حدود."""
     rows = (
         supabase_admin.table("profiles")
         .select("role, subscription_tier, subscription_expires_at")
@@ -4059,6 +4065,8 @@ def _resolved_plan_for_user(user_id):
         .execute()
     ).data
     resolved = _resolve_subscription(rows[0] if rows else {})
+    if resolved.get("unlimited"):
+        return SUBSCRIPTION_PLANS["owner"]
     return SUBSCRIPTION_PLANS.get(resolved["tier"], SUBSCRIPTION_PLANS["free"])
 
 
@@ -4113,7 +4121,10 @@ def subscription_me():
     ).data
     profile = rows[0] if rows else {}
     resolved = _resolve_subscription(profile)
-    plan_key = resolved["tier"] if resolved["tier"] in SUBSCRIPTION_PLANS else "free"
+    # نفس منطق _resolved_plan_for_user - tier="school" (حساب مؤسسي) مو مفتاح
+    # موجود بـ SUBSCRIPTION_PLANS فعلًا، لازم نتحقق من unlimited صراحة وإلا
+    # يرجع للمجاني بالغلط ويعرض حدود خاطئة بشاشة الإعدادات لحساب بلا حدود
+    plan_key = "owner" if resolved.get("unlimited") else (resolved["tier"] if resolved["tier"] in SUBSCRIPTION_PLANS else "free")
     return jsonify({**resolved, "limits": SUBSCRIPTION_PLANS[plan_key]}), 200
 
 

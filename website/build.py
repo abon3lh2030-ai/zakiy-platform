@@ -31,7 +31,7 @@ CSS_ORDER = [
     "21-guest-modal", "22-streak-badge", "23-session-rating", "24-live-class",
     "25-qr-modal", "26-friends-archive", "27-lang-buttons", "28-privacy-toggle",
     "29-profile", "30-subscription", "31-notes", "32-assignments",
-    "33-ai-assistant",
+    "33-ai-assistant", "34-quizzes",
 ]
 
 JS_ORDER = [
@@ -41,7 +41,7 @@ JS_ORDER = [
     "13-voice", "14-pomodoro", "15-qr", "16-school-system-core",
     "17-admin-dashboard", "18-school-admin-dashboard", "19-teacher-dashboard",
     "20-student-schedule", "21-messages", "22-broadcast-attendance",
-    "23-notes", "24-assignments", "25-ai-assistant",
+    "23-notes", "24-assignments", "25-ai-assistant", "26-quizzes",
 ]
 
 

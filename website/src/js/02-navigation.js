@@ -7,12 +7,15 @@ const TOP_LEVEL_SCREENS = [
   'step-quiz', 'step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings',
   'step-profile', 'step-notes', 'step-note-editor', 'step-assignments', 'step-assignment-detail',
   'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker',
+  'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take',
   // لوحات نظام إدارة حسابات المدارس - step-force-password-change مو من ضمنها
   // عمدًا (بوابة صلبة، ما تدخل نظام الرجوع/التنقل العادي)
   'step-admin-dashboard', 'step-school-dashboard', 'step-teacher-dashboard', 'step-student-schedule',
   'step-messages',
 ];
-const BACK_BUTTON_HIDDEN_ON = ['mode-select', 'login-form', 'signup-form', 'step-quiz'];
+// step-quiz-take زيها زي step-quiz (اختبار الفردي) - ما نبي زر رجوع يظهر
+// وقت اختبار عليه مؤقت شغّال، يقلل احتمال مغادرة غير مقصودة
+const BACK_BUTTON_HIDDEN_ON = ['mode-select', 'login-form', 'signup-form', 'step-quiz', 'step-quiz-take'];
 let navHistory = [];
 
 function currentVisibleTopLevelScreens() {
@@ -41,6 +44,8 @@ const RESTORABLE_SCREENS = {
   'step-note-editor': () => showNotesScreen(),
   'step-assignments': () => showAssignmentsScreen(),
   'step-assignment-detail': () => showAssignmentsScreen(),
+  'step-quizzes': () => showQuizzesScreen(),
+  'step-quiz-detail': () => showQuizzesScreen(),
   'step-ai-list': () => showAiListScreen(),
   'step-ai-conversation': () => showAiListScreen(),
   'step-ai-book-picker': () => showAiListScreen(),
@@ -68,6 +73,9 @@ function tryRestoreLastScreen() {
   if ((saved === 'step-notes' || saved === 'step-note-editor') && currentUserRole) return false;
   // دفتر الواجبات معلم/طالب بس
   if ((saved === 'step-assignments' || saved === 'step-assignment-detail') &&
+      !(currentUserRole === 'teacher' || currentUserRole === 'student')) return false;
+  // دفتر الاختبارات معلم/طالب بس
+  if ((saved === 'step-quizzes' || saved === 'step-quiz-detail') &&
       !(currentUserRole === 'teacher' || currentUserRole === 'student')) return false;
   restoreFn();
   return true;

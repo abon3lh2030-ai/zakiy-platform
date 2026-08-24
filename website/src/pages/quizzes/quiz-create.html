@@ -1,0 +1,21 @@
+  <!-- إنشاء/تعديل اختبار (معلم بس) -->
+  <section class="card hidden" id="step-quiz-create">
+    <span class="step-label" data-i18n="quiz_create_step_label">📝 اختبار جديد</span>
+    <h2 id="quizCreateHeading" data-i18n="quiz_create_heading">إنشاء اختبار</h2>
+
+    <select id="quizClassSelect" class="text-input"></select>
+    <input type="text" id="quizSubjectInput" class="text-input" placeholder="اسم المادة" data-i18n-ph="ph_quiz_subject" style="margin-top:10px;">
+    <input type="text" id="quizTitleInput" class="text-input" placeholder="عنوان الاختبار" data-i18n-ph="ph_quiz_title" style="margin-top:10px;">
+    <input type="number" id="quizTimeInput" class="text-input" placeholder="الوقت بالدقايق" data-i18n-ph="ph_quiz_time" min="1" style="margin-top:10px;">
+
+    <h3 class="sub-heading" style="margin-top:24px;" data-i18n="quiz_questions_heading">📋 الأسئلة</h3>
+    <div id="quizQuestionsList"></div>
+    <div class="actions" style="margin-top:8px;">
+      <button class="ghost" id="quizAddQuestionBtn" data-i18n="btn_add_question">➕ إضافة سؤال</button>
+    </div>
+
+    <div class="actions" style="margin-top:22px;">
+      <button class="primary" id="quizSaveBtn" data-i18n="btn_save_quiz">حفظ الاختبار</button>
+    </div>
+    <div id="quizCreateError"></div>
+  </section>

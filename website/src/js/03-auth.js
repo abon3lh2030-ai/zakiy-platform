@@ -103,6 +103,10 @@ function onAuthSuccess(session) {
       document.getElementById('assignmentsBtn').classList.toggle(
         'hidden', !(currentUserRole === 'teacher' || currentUserRole === 'student')
       );
+      // دفتر الاختبارات نفس شرط الواجبات بالضبط - معلم أو طالب بس
+      document.getElementById('quizzesBtn').classList.toggle(
+        'hidden', !(currentUserRole === 'teacher' || currentUserRole === 'student')
+      );
 
       if (me.must_change_password) {
         TOP_LEVEL_SCREENS.forEach(hide);

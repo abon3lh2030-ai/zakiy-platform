@@ -25,16 +25,7 @@ async function loadAssignmentsScreen() {
 function populateAssignmentClassSelect() {
   const classSelect = document.getElementById('assignmentClassSelect');
   classSelect.innerHTML = assignmentsRosterCache.classes.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
-  populateAssignmentTargetSelect();
 }
-function populateAssignmentTargetSelect() {
-  const classId = document.getElementById('assignmentClassSelect').value;
-  const targetSelect = document.getElementById('assignmentTargetSelect');
-  const studentsInClass = assignmentsRosterCache.students.filter(s => s.class_id === classId);
-  targetSelect.innerHTML = `<option value="">${t('assignment_target_all')}</option>` +
-    studentsInClass.map(s => `<option value="${s.user_id}">${escapeHtml(s.full_name || s.username)}</option>`).join('');
-}
-document.getElementById('assignmentClassSelect').addEventListener('change', populateAssignmentTargetSelect);
 
 function renderAssignmentsList(items, isTeacher) {
   const list = document.getElementById('assignmentsList');
@@ -66,14 +57,13 @@ function renderAssignmentsList(items, isTeacher) {
 document.getElementById('assignmentCreateBtn').addEventListener('click', async () => {
   clearError('assignmentCreateError');
   const classId = document.getElementById('assignmentClassSelect').value;
-  const targetStudentId = document.getElementById('assignmentTargetSelect').value || null;
   const subject = document.getElementById('assignmentSubjectInput').value.trim();
   const title = document.getElementById('assignmentTitleInput').value.trim();
   const content = document.getElementById('assignmentContentTextarea').value.trim();
   if (!classId) { showError('assignmentCreateError', t('err_assignment_need_class')); return; }
   if (!subject || !title) { showError('assignmentCreateError', t('err_name_required')); return; }
   try {
-    await apiCall('POST', '/api/teacher/assignments', { class_id: classId, target_student_id: targetStudentId, subject, title, content });
+    await apiCall('POST', '/api/teacher/assignments', { class_id: classId, subject, title, content });
     document.getElementById('assignmentSubjectInput').value = '';
     document.getElementById('assignmentTitleInput').value = '';
     document.getElementById('assignmentContentTextarea').value = '';

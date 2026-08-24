@@ -1,0 +1,18 @@
+  <!-- حل اختبار (طالب بس) - عدّاد وقت + أسئلة، وإرسال تلقائي أول ما يخلص الوقت -->
+  <section class="card hidden" id="step-quiz-take">
+    <span class="step-label" id="quizTakeSubjectLabel"></span>
+    <h2 id="quizTakeTitle"></h2>
+
+    <div id="quizTakeActive" class="hidden">
+      <div class="quiz-timer-badge" id="quizTimerBadge">⏱ 00:00</div>
+      <div id="quizTakeQuestionsList"></div>
+      <div class="actions" style="margin-top:18px;">
+        <button class="primary" id="quizSubmitBtn" data-i18n="btn_submit_quiz">تسليم الاختبار</button>
+      </div>
+      <div id="quizTakeError"></div>
+    </div>
+
+    <div id="quizTakeResult" class="hidden">
+      <div class="quiz-result-box" id="quizResultBox"></div>
+    </div>
+  </section>

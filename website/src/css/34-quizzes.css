@@ -1,0 +1,32 @@
+
+  /* ---------- دفتر الاختبارات (معلم/طالب) ---------- */
+  .quiz-timer-badge {
+    display: inline-block; background: var(--emphasis-bg); color: var(--emphasis-text);
+    font-family: 'Almarai', sans-serif; font-weight: 800; font-size: 15px;
+    padding: 8px 16px; border-radius: 999px; margin-bottom: 18px;
+  }
+  .quiz-timer-badge.low-time { background: var(--danger-soft); color: var(--danger); }
+
+  .quiz-result-box {
+    text-align: center; padding: 28px; border-radius: var(--radius);
+    background: var(--teal-dim); border: 1px solid var(--teal);
+  }
+  .quiz-result-box.pending { background: var(--paper-dim); border-color: var(--line); }
+  .quiz-result-box .quiz-result-score { font-family: 'Almarai', sans-serif; font-weight: 800; font-size: 32px; color: var(--teal); }
+  .quiz-result-box.pending .quiz-result-score { color: var(--ink); font-size: 20px; }
+  .quiz-result-box .quiz-result-label { font-size: 14px; color: var(--ink-soft); margin-top: 6px; }
+
+  .quiz-question-editor {
+    border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 14px;
+  }
+  .quiz-question-editor .qe-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+  .quiz-question-editor .qe-num { font-family: 'Almarai', sans-serif; font-weight: 700; font-size: 13px; color: var(--teal); }
+  .quiz-question-editor .qe-remove-btn { color: var(--danger); cursor: pointer; font-size: 13px; background: none; border: none; }
+  .quiz-question-editor .qe-type-select { margin-bottom: 10px; }
+  .quiz-question-editor .qe-choice-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .quiz-question-editor .qe-choice-row input[type="text"] { flex: 1; }
+  .quiz-question-editor .qe-add-choice-btn { margin-top: 10px; padding: 6px 14px; font-size: 12.5px; }
+  .quiz-question-editor .qe-hint { font-size: 12px; color: var(--ink-soft); margin-top: 8px; }
+  .quiz-question-editor .qe-tf-row { display: flex; gap: 16px; margin-top: 8px; }
+  .quiz-question-editor .qe-tf-row label { display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; }
+  .quiz-answers-panel { margin: 4px 0 14px; }

@@ -1,0 +1,23 @@
+  <!-- صفحة اختبار وحد (معلم: تعديل/نشر قبل النشر، تصحيح بعد النشر) -->
+  <section class="card hidden" id="step-quiz-detail">
+    <span class="step-label" id="quizDetailSubjectLabel"></span>
+    <h2 id="quizDetailTitle"></h2>
+    <p class="desc" id="quizDetailMeta"></p>
+
+    <!-- قبل النشر -->
+    <div id="quizUnpublishedActions" class="hidden">
+      <p class="desc" data-i18n="quiz_unpublished_hint">الاختبار لسا ما نُشر - الطلاب ما يشوفونه إلا بعد النشر.</p>
+      <div class="actions">
+        <button class="primary" id="quizPublishBtn" data-i18n="btn_publish_quiz">📢 نشر الاختبار</button>
+        <button class="ghost" id="quizEditBtn" data-i18n="btn_edit_quiz">✏️ تعديل</button>
+        <button class="ghost" id="quizDeleteBtn" data-i18n="btn_delete">🗑️ حذف</button>
+      </div>
+    </div>
+
+    <!-- بعد النشر -->
+    <div id="quizPublishedView" class="hidden">
+      <h3 class="sub-heading" data-i18n="quiz_students_heading">👥 حالة التسليم والتصحيح</h3>
+      <div id="quizStudentsList"></div>
+    </div>
+    <div id="quizDetailError"></div>
+  </section>

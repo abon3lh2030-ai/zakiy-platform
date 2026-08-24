@@ -1105,6 +1105,38 @@
 
   .ai-book-source-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
   .ai-book-source-tabs button.ghost.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+
+  /* ---------- دفتر الاختبارات (معلم/طالب) ---------- */
+  .quiz-timer-badge {
+    display: inline-block; background: var(--emphasis-bg); color: var(--emphasis-text);
+    font-family: 'Almarai', sans-serif; font-weight: 800; font-size: 15px;
+    padding: 8px 16px; border-radius: 999px; margin-bottom: 18px;
+  }
+  .quiz-timer-badge.low-time { background: var(--danger-soft); color: var(--danger); }
+
+  .quiz-result-box {
+    text-align: center; padding: 28px; border-radius: var(--radius);
+    background: var(--teal-dim); border: 1px solid var(--teal);
+  }
+  .quiz-result-box.pending { background: var(--paper-dim); border-color: var(--line); }
+  .quiz-result-box .quiz-result-score { font-family: 'Almarai', sans-serif; font-weight: 800; font-size: 32px; color: var(--teal); }
+  .quiz-result-box.pending .quiz-result-score { color: var(--ink); font-size: 20px; }
+  .quiz-result-box .quiz-result-label { font-size: 14px; color: var(--ink-soft); margin-top: 6px; }
+
+  .quiz-question-editor {
+    border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 14px;
+  }
+  .quiz-question-editor .qe-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+  .quiz-question-editor .qe-num { font-family: 'Almarai', sans-serif; font-weight: 700; font-size: 13px; color: var(--teal); }
+  .quiz-question-editor .qe-remove-btn { color: var(--danger); cursor: pointer; font-size: 13px; background: none; border: none; }
+  .quiz-question-editor .qe-type-select { margin-bottom: 10px; }
+  .quiz-question-editor .qe-choice-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .quiz-question-editor .qe-choice-row input[type="text"] { flex: 1; }
+  .quiz-question-editor .qe-add-choice-btn { margin-top: 10px; padding: 6px 14px; font-size: 12.5px; }
+  .quiz-question-editor .qe-hint { font-size: 12px; color: var(--ink-soft); margin-top: 8px; }
+  .quiz-question-editor .qe-tf-row { display: flex; gap: 16px; margin-top: 8px; }
+  .quiz-question-editor .qe-tf-row label { display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; }
+  .quiz-answers-panel { margin: 4px 0 14px; }
 </style>
 </head>
 <body class="with-sidebar">
@@ -1140,6 +1172,7 @@
     <button class="sidebar-btn" id="sidebarAiHelpBtn"><span class="sidebar-icon">🤖</span><span class="label" data-i18n="nav_ai_help">مساعد ذكيّ</span></button>
     <button class="sidebar-btn hidden" id="studentScheduleNavBtn"><span class="sidebar-icon">🗓️</span><span class="label" data-i18n="nav_my_schedule">جدولي</span></button>
     <button class="sidebar-btn hidden" id="assignmentsBtn"><span class="sidebar-icon">📚</span><span class="label" data-i18n="nav_assignments">الواجبات</span></button>
+    <button class="sidebar-btn hidden" id="quizzesBtn"><span class="sidebar-icon">📝</span><span class="label" data-i18n="nav_quizzes">الاختبارات</span></button>
   </nav>
   <div class="sidebar-bottom">
     <button class="sidebar-btn" id="settingsBtn"><span class="sidebar-icon">⚙️</span><span class="label" data-i18n="nav_settings">الإعدادات</span></button>
@@ -1707,10 +1740,7 @@
     <!-- يظهر للمعلم بس -->
     <div id="assignmentCreateForm" class="hidden">
       <h3 class="sub-heading" data-i18n="assignment_new_heading">➕ واجب جديد</h3>
-      <div class="actions">
-        <select id="assignmentClassSelect" class="text-input" style="flex:1;"></select>
-        <select id="assignmentTargetSelect" class="text-input" style="flex:1;"></select>
-      </div>
+      <select id="assignmentClassSelect" class="text-input"></select>
       <input type="text" id="assignmentSubjectInput" class="text-input" placeholder="اسم المادة" data-i18n-ph="ph_assignment_subject" style="margin-top:10px;">
       <input type="text" id="assignmentTitleInput" class="text-input" placeholder="عنوان الواجب" data-i18n-ph="ph_assignment_title" style="margin-top:10px;">
       <textarea id="assignmentContentTextarea" class="text-input" placeholder="محتوى الواجب" data-i18n-ph="ph_assignment_content" style="margin-top:10px; min-height:110px;"></textarea>
@@ -1758,6 +1788,85 @@
     <div id="teacherStudentsView" class="hidden">
       <h3 class="sub-heading" data-i18n="assignment_students_heading">👥 حالة التسليم</h3>
       <div id="assignmentStudentsList"></div>
+    </div>
+  </section>
+
+  <!-- دفتر الاختبارات (معلم/طالب بس - محجوب عن الحساب الفردي) -->
+  <section class="card hidden" id="step-quizzes">
+    <span class="step-label" data-i18n="quizzes_step_label">📝 الاختبارات</span>
+    <h2 data-i18n="quizzes_heading">دفتر الاختبارات</h2>
+
+    <!-- يظهر للمعلم بس -->
+    <div class="actions hidden" id="quizCreateBtnWrap" style="margin-bottom:18px;">
+      <button class="primary" id="quizCreateNewBtn" data-i18n="btn_create_quiz">➕ اختبار جديد</button>
+    </div>
+
+    <div id="quizzesList"></div>
+    <p class="desc hidden" id="quizzesEmptyState" data-i18n="quizzes_empty">ما فيه اختبارات لحد الحين.</p>
+  </section>
+
+  <!-- إنشاء/تعديل اختبار (معلم بس) -->
+  <section class="card hidden" id="step-quiz-create">
+    <span class="step-label" data-i18n="quiz_create_step_label">📝 اختبار جديد</span>
+    <h2 id="quizCreateHeading" data-i18n="quiz_create_heading">إنشاء اختبار</h2>
+
+    <select id="quizClassSelect" class="text-input"></select>
+    <input type="text" id="quizSubjectInput" class="text-input" placeholder="اسم المادة" data-i18n-ph="ph_quiz_subject" style="margin-top:10px;">
+    <input type="text" id="quizTitleInput" class="text-input" placeholder="عنوان الاختبار" data-i18n-ph="ph_quiz_title" style="margin-top:10px;">
+    <input type="number" id="quizTimeInput" class="text-input" placeholder="الوقت بالدقايق" data-i18n-ph="ph_quiz_time" min="1" style="margin-top:10px;">
+
+    <h3 class="sub-heading" style="margin-top:24px;" data-i18n="quiz_questions_heading">📋 الأسئلة</h3>
+    <div id="quizQuestionsList"></div>
+    <div class="actions" style="margin-top:8px;">
+      <button class="ghost" id="quizAddQuestionBtn" data-i18n="btn_add_question">➕ إضافة سؤال</button>
+    </div>
+
+    <div class="actions" style="margin-top:22px;">
+      <button class="primary" id="quizSaveBtn" data-i18n="btn_save_quiz">حفظ الاختبار</button>
+    </div>
+    <div id="quizCreateError"></div>
+  </section>
+
+  <!-- صفحة اختبار وحد (معلم: تعديل/نشر قبل النشر، تصحيح بعد النشر) -->
+  <section class="card hidden" id="step-quiz-detail">
+    <span class="step-label" id="quizDetailSubjectLabel"></span>
+    <h2 id="quizDetailTitle"></h2>
+    <p class="desc" id="quizDetailMeta"></p>
+
+    <!-- قبل النشر -->
+    <div id="quizUnpublishedActions" class="hidden">
+      <p class="desc" data-i18n="quiz_unpublished_hint">الاختبار لسا ما نُشر - الطلاب ما يشوفونه إلا بعد النشر.</p>
+      <div class="actions">
+        <button class="primary" id="quizPublishBtn" data-i18n="btn_publish_quiz">📢 نشر الاختبار</button>
+        <button class="ghost" id="quizEditBtn" data-i18n="btn_edit_quiz">✏️ تعديل</button>
+        <button class="ghost" id="quizDeleteBtn" data-i18n="btn_delete">🗑️ حذف</button>
+      </div>
+    </div>
+
+    <!-- بعد النشر -->
+    <div id="quizPublishedView" class="hidden">
+      <h3 class="sub-heading" data-i18n="quiz_students_heading">👥 حالة التسليم والتصحيح</h3>
+      <div id="quizStudentsList"></div>
+    </div>
+    <div id="quizDetailError"></div>
+  </section>
+
+  <!-- حل اختبار (طالب بس) - عدّاد وقت + أسئلة، وإرسال تلقائي أول ما يخلص الوقت -->
+  <section class="card hidden" id="step-quiz-take">
+    <span class="step-label" id="quizTakeSubjectLabel"></span>
+    <h2 id="quizTakeTitle"></h2>
+
+    <div id="quizTakeActive" class="hidden">
+      <div class="quiz-timer-badge" id="quizTimerBadge">⏱ 00:00</div>
+      <div id="quizTakeQuestionsList"></div>
+      <div class="actions" style="margin-top:18px;">
+        <button class="primary" id="quizSubmitBtn" data-i18n="btn_submit_quiz">تسليم الاختبار</button>
+      </div>
+      <div id="quizTakeError"></div>
+    </div>
+
+    <div id="quizTakeResult" class="hidden">
+      <div class="quiz-result-box" id="quizResultBox"></div>
     </div>
   </section>
 
@@ -2574,6 +2683,56 @@ const I18N = {
     assignment_grade_shown: '🏆 الدرجة: {grade}',
     assignment_not_graded_yet: '⏳ لسا ما تصحح',
     err_assignment_need_class: 'لازم تختار الفصل',
+    nav_quizzes: 'الاختبارات',
+    quizzes_step_label: '📝 الاختبارات',
+    quizzes_heading: 'دفتر الاختبارات',
+    btn_create_quiz: '➕ اختبار جديد',
+    quizzes_empty: 'ما فيه اختبارات لحد الحين.',
+    quiz_create_step_label: '📝 اختبار جديد',
+    quiz_create_heading: 'إنشاء اختبار',
+    quiz_edit_heading: 'تعديل الاختبار',
+    ph_quiz_subject: 'اسم المادة',
+    ph_quiz_title: 'عنوان الاختبار',
+    ph_quiz_time: 'الوقت بالدقايق',
+    quiz_questions_heading: '📋 الأسئلة',
+    btn_add_question: '➕ إضافة سؤال',
+    btn_save_quiz: 'حفظ الاختبار',
+    quiz_type_mcq: 'اختيارات',
+    quiz_type_true_false: 'صح وخطأ',
+    quiz_type_essay: 'مقالي',
+    ph_quiz_choice: 'اكتب الاختيار...',
+    btn_add_choice: '➕ إضافة اختيار',
+    quiz_correct_hint: 'حدد الإجابة الصحيحة (اختياري - لو حددتها كل الأسئلة يتصحح الاختبار تلقائيًا)',
+    quiz_true_label: 'صح',
+    quiz_false_label: 'خطأ',
+    quiz_essay_hint: 'سؤال مقالي - يحتاج تصحيح يدوي منك بعد التسليم',
+    quiz_question_label: 'سؤال',
+    ph_quiz_question_text: 'نص السؤال',
+    err_quiz_need_time: 'لازم تحط وقت صحيح للاختبار',
+    err_quiz_need_question: 'لازم سؤال واحد على الأقل',
+    err_quiz_question_text_required: 'فيه سؤال بدون نص',
+    err_quiz_choices_required: 'سؤال الاختيارات لازم فيه اختيارين على الأقل',
+    quiz_unpublished_hint: 'الاختبار لسا ما نُشر - الطلاب ما يشوفونه إلا بعد النشر.',
+    btn_publish_quiz: '📢 نشر الاختبار',
+    btn_edit_quiz: '✏️ تعديل',
+    quiz_students_heading: '👥 حالة التسليم والتصحيح',
+    confirm_publish_quiz: 'تنشر الاختبار؟ ما تقدر تعدّله بعدها.',
+    confirm_delete_quiz: 'تحذف هذا الاختبار نهائيًا؟',
+    quiz_status_draft: '📝 مسودة',
+    quiz_submitted_count: '{done}/{total} سلّموا',
+    quiz_status_not_taken: 'لم يُحل بعد',
+    quiz_status_awaiting_grade: '⏳ لسا ما تصحح',
+    quiz_grade_shown: '🏆 الدرجة: {grade}',
+    quiz_minutes_label: 'دقيقة',
+    quiz_questions_count_label: 'سؤال',
+    btn_view_answers: 'عرض الإجابات',
+    quiz_student_answer_label: 'إجابة الطالب',
+    quiz_correct_answer_label: 'الإجابة الصحيحة',
+    btn_submit_quiz: 'تسليم الاختبار',
+    ph_quiz_essay_answer: 'اكتب إجابتك هنا...',
+    quiz_result_graded_label: 'درجتك بهذا الاختبار',
+    quiz_submitted_label: 'تم تسليم الاختبار',
+    quiz_result_pending_label: 'الاختبار ما تصحح للحين - راح تشوف درجتك أول ما يصححه المعلم',
     ai_step_label: '🤖 المساعد الذكي',
     ai_list_heading: 'محادثاتك',
     ai_list_desc: 'تقدر تكمل محادثة سابقة، أو تبدأ وحدة جديدة وتسولف مع ذكيّ عن أي شي - حتى تلخيص كتاب كامل.',
@@ -3082,6 +3241,56 @@ const I18N = {
     assignment_grade_shown: '🏆 Grade: {grade}',
     assignment_not_graded_yet: '⏳ Not graded yet',
     err_assignment_need_class: 'You need to pick a class',
+    nav_quizzes: 'Quizzes',
+    quizzes_step_label: '📝 Quizzes',
+    quizzes_heading: 'Quizzes',
+    btn_create_quiz: '➕ New quiz',
+    quizzes_empty: 'No quizzes yet.',
+    quiz_create_step_label: '📝 New quiz',
+    quiz_create_heading: 'Create a quiz',
+    quiz_edit_heading: 'Edit quiz',
+    ph_quiz_subject: 'Subject name',
+    ph_quiz_title: 'Quiz title',
+    ph_quiz_time: 'Time limit in minutes',
+    quiz_questions_heading: '📋 Questions',
+    btn_add_question: '➕ Add question',
+    btn_save_quiz: 'Save quiz',
+    quiz_type_mcq: 'Multiple choice',
+    quiz_type_true_false: 'True/False',
+    quiz_type_essay: 'Essay',
+    ph_quiz_choice: 'Type the choice...',
+    btn_add_choice: '➕ Add choice',
+    quiz_correct_hint: 'Mark the correct answer (optional - if every question has one, the quiz auto-grades)',
+    quiz_true_label: 'True',
+    quiz_false_label: 'False',
+    quiz_essay_hint: 'Essay question - needs manual grading after submission',
+    quiz_question_label: 'Question',
+    ph_quiz_question_text: 'Question text',
+    err_quiz_need_time: 'You need a valid time limit',
+    err_quiz_need_question: 'You need at least one question',
+    err_quiz_question_text_required: 'A question is missing its text',
+    err_quiz_choices_required: 'A multiple-choice question needs at least 2 choices',
+    quiz_unpublished_hint: 'This quiz isn\'t published yet - students won\'t see it until you publish it.',
+    btn_publish_quiz: '📢 Publish quiz',
+    btn_edit_quiz: '✏️ Edit',
+    quiz_students_heading: '👥 Submission & grading status',
+    confirm_publish_quiz: 'Publish this quiz? You won\'t be able to edit it afterward.',
+    confirm_delete_quiz: 'Delete this quiz permanently?',
+    quiz_status_draft: '📝 Draft',
+    quiz_submitted_count: '{done}/{total} submitted',
+    quiz_status_not_taken: 'Not taken yet',
+    quiz_status_awaiting_grade: '⏳ Not graded yet',
+    quiz_grade_shown: '🏆 Grade: {grade}',
+    quiz_minutes_label: 'min',
+    quiz_questions_count_label: 'questions',
+    btn_view_answers: 'View answers',
+    quiz_student_answer_label: 'Student\'s answer',
+    quiz_correct_answer_label: 'Correct answer',
+    btn_submit_quiz: 'Submit quiz',
+    ph_quiz_essay_answer: 'Type your answer here...',
+    quiz_result_graded_label: 'Your grade for this quiz',
+    quiz_submitted_label: 'Quiz submitted',
+    quiz_result_pending_label: 'Not graded yet - you\'ll see your grade once your teacher grades it',
     ai_step_label: '🤖 AI Assistant',
     ai_list_heading: 'Your conversations',
     ai_list_desc: 'Continue a previous conversation, or start a new one and chat with Zakiy about anything - even summarize a whole book.',
@@ -3412,12 +3621,15 @@ const TOP_LEVEL_SCREENS = [
   'step-quiz', 'step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings',
   'step-profile', 'step-notes', 'step-note-editor', 'step-assignments', 'step-assignment-detail',
   'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker',
+  'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take',
   // لوحات نظام إدارة حسابات المدارس - step-force-password-change مو من ضمنها
   // عمدًا (بوابة صلبة، ما تدخل نظام الرجوع/التنقل العادي)
   'step-admin-dashboard', 'step-school-dashboard', 'step-teacher-dashboard', 'step-student-schedule',
   'step-messages',
 ];
-const BACK_BUTTON_HIDDEN_ON = ['mode-select', 'login-form', 'signup-form', 'step-quiz'];
+// step-quiz-take زيها زي step-quiz (اختبار الفردي) - ما نبي زر رجوع يظهر
+// وقت اختبار عليه مؤقت شغّال، يقلل احتمال مغادرة غير مقصودة
+const BACK_BUTTON_HIDDEN_ON = ['mode-select', 'login-form', 'signup-form', 'step-quiz', 'step-quiz-take'];
 let navHistory = [];
 
 function currentVisibleTopLevelScreens() {
@@ -3446,6 +3658,8 @@ const RESTORABLE_SCREENS = {
   'step-note-editor': () => showNotesScreen(),
   'step-assignments': () => showAssignmentsScreen(),
   'step-assignment-detail': () => showAssignmentsScreen(),
+  'step-quizzes': () => showQuizzesScreen(),
+  'step-quiz-detail': () => showQuizzesScreen(),
   'step-ai-list': () => showAiListScreen(),
   'step-ai-conversation': () => showAiListScreen(),
   'step-ai-book-picker': () => showAiListScreen(),
@@ -3473,6 +3687,9 @@ function tryRestoreLastScreen() {
   if ((saved === 'step-notes' || saved === 'step-note-editor') && currentUserRole) return false;
   // دفتر الواجبات معلم/طالب بس
   if ((saved === 'step-assignments' || saved === 'step-assignment-detail') &&
+      !(currentUserRole === 'teacher' || currentUserRole === 'student')) return false;
+  // دفتر الاختبارات معلم/طالب بس
+  if ((saved === 'step-quizzes' || saved === 'step-quiz-detail') &&
       !(currentUserRole === 'teacher' || currentUserRole === 'student')) return false;
   restoreFn();
   return true;
@@ -3672,6 +3889,10 @@ function onAuthSuccess(session) {
       document.getElementById('notesBtn').classList.toggle('hidden', !!currentUserRole);
       // دفتر الواجبات عكسها تمامًا - معلم أو طالب بس، محجوب عن الحساب الفردي
       document.getElementById('assignmentsBtn').classList.toggle(
+        'hidden', !(currentUserRole === 'teacher' || currentUserRole === 'student')
+      );
+      // دفتر الاختبارات نفس شرط الواجبات بالضبط - معلم أو طالب بس
+      document.getElementById('quizzesBtn').classList.toggle(
         'hidden', !(currentUserRole === 'teacher' || currentUserRole === 'student')
       );
 
@@ -3874,7 +4095,7 @@ document.getElementById('guestLoginPromptBtn').addEventListener('click', () => {
 
 // ---------- شاشات الحساب (أدائي / الأرشيف / الأصدقاء / مكتبتي) - كل وحدة
 // مستقلة بزر سايد بار خاص فيها، بدل ما تكون تبويبات جوا شاشة وحدة ----------
-const ACCOUNT_SCREENS = ['step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings', 'step-profile', 'step-notes', 'step-note-editor', 'step-assignments', 'step-assignment-detail', 'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker'];
+const ACCOUNT_SCREENS = ['step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings', 'step-profile', 'step-notes', 'step-note-editor', 'step-assignments', 'step-assignment-detail', 'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker', 'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take'];
 function showAccountScreen(id) {
   ['login-form', 'signup-form', 'step-force-password-change', 'mode-select', 'room-mode-select', 'room-create-form',
    'room-join-form', 'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary', 'step-quiz',
@@ -3892,6 +4113,7 @@ function showProfileScreen() { showAccountScreen('step-profile'); }
 function showNotesScreen() { showAccountScreen('step-notes'); loadNotesScreen(); }
 function showAssignmentsScreen() { showAccountScreen('step-assignments'); loadAssignmentsScreen(); }
 function showAiListScreen() { showAccountScreen('step-ai-list'); loadAiConversationsList(); }
+function showQuizzesScreen() { showAccountScreen('step-quizzes'); loadQuizzesScreen(); }
 
 // ---------- صفحة البروفايل (بروفايلك أو بروفايل شخص ثاني) ----------
 async function showProfileScreen(userId) {
@@ -4080,6 +4302,12 @@ document.getElementById('assignmentsBtn').addEventListener('click', () => {
   if (!requireAuthOrPrompt()) return;
   pushNavSnapshot();
   showAssignmentsScreen();
+  updateGlobalBackButton();
+});
+document.getElementById('quizzesBtn').addEventListener('click', () => {
+  if (!requireAuthOrPrompt()) return;
+  pushNavSnapshot();
+  showQuizzesScreen();
   updateGlobalBackButton();
 });
 
@@ -7992,16 +8220,7 @@ async function loadAssignmentsScreen() {
 function populateAssignmentClassSelect() {
   const classSelect = document.getElementById('assignmentClassSelect');
   classSelect.innerHTML = assignmentsRosterCache.classes.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
-  populateAssignmentTargetSelect();
 }
-function populateAssignmentTargetSelect() {
-  const classId = document.getElementById('assignmentClassSelect').value;
-  const targetSelect = document.getElementById('assignmentTargetSelect');
-  const studentsInClass = assignmentsRosterCache.students.filter(s => s.class_id === classId);
-  targetSelect.innerHTML = `<option value="">${t('assignment_target_all')}</option>` +
-    studentsInClass.map(s => `<option value="${s.user_id}">${escapeHtml(s.full_name || s.username)}</option>`).join('');
-}
-document.getElementById('assignmentClassSelect').addEventListener('change', populateAssignmentTargetSelect);
 
 function renderAssignmentsList(items, isTeacher) {
   const list = document.getElementById('assignmentsList');
@@ -8033,14 +8252,13 @@ function renderAssignmentsList(items, isTeacher) {
 document.getElementById('assignmentCreateBtn').addEventListener('click', async () => {
   clearError('assignmentCreateError');
   const classId = document.getElementById('assignmentClassSelect').value;
-  const targetStudentId = document.getElementById('assignmentTargetSelect').value || null;
   const subject = document.getElementById('assignmentSubjectInput').value.trim();
   const title = document.getElementById('assignmentTitleInput').value.trim();
   const content = document.getElementById('assignmentContentTextarea').value.trim();
   if (!classId) { showError('assignmentCreateError', t('err_assignment_need_class')); return; }
   if (!subject || !title) { showError('assignmentCreateError', t('err_name_required')); return; }
   try {
-    await apiCall('POST', '/api/teacher/assignments', { class_id: classId, target_student_id: targetStudentId, subject, title, content });
+    await apiCall('POST', '/api/teacher/assignments', { class_id: classId, subject, title, content });
     document.getElementById('assignmentSubjectInput').value = '';
     document.getElementById('assignmentTitleInput').value = '';
     document.getElementById('assignmentContentTextarea').value = '';
@@ -8481,6 +8699,510 @@ document.getElementById('aiBookSummarizeUploadBtn').addEventListener('click', as
     setLoading(btn, false, btnLabel);
   }
 });
+// ================= دفتر الاختبارات (معلم/طالب بس) =================
+let quizRosterCache = { classes: [], students: [] };
+let currentQuizId = null;
+let currentQuizDetailData = null;
+let quizQuestionsDraft = [];
+let quizEditMode = false;
+
+async function loadQuizzesScreen() {
+  const isTeacher = currentUserRole === 'teacher';
+  document.getElementById('quizCreateBtnWrap').classList.toggle('hidden', !isTeacher);
+  document.getElementById('quizzesList').innerHTML = '';
+  try {
+    if (isTeacher) {
+      const { quizzes } = await apiCall('GET', '/api/teacher/quizzes');
+      renderQuizzesList(quizzes, true);
+    } else {
+      const { quizzes } = await apiCall('GET', '/api/student/quizzes');
+      renderQuizzesList(quizzes, false);
+    }
+  } catch (e) {
+    document.getElementById('quizzesList').innerHTML = `<p class="desc">${escapeHtml(e.message)}</p>`;
+  }
+}
+
+function renderQuizzesList(items, isTeacher) {
+  const list = document.getElementById('quizzesList');
+  const empty = document.getElementById('quizzesEmptyState');
+  empty.classList.toggle('hidden', items.length > 0);
+  list.innerHTML = items.map(q => {
+    let statusHtml;
+    if (isTeacher) {
+      const cls = q.is_published ? 'done' : 'pending';
+      const text = q.is_published
+        ? t('quiz_submitted_count', { done: q.submitted_count, total: q.total_count })
+        : t('quiz_status_draft');
+      statusHtml = `<span class="assignment-status ${cls}">${text}</span>`;
+    } else {
+      let cls = 'pending';
+      let text = t('quiz_status_not_taken');
+      if (q.submitted) {
+        if (q.is_graded) { cls = 'done'; text = t('quiz_grade_shown', { grade: q.grade }); }
+        else { text = t('quiz_status_awaiting_grade'); }
+      }
+      statusHtml = `<span class="assignment-status ${cls}">${text}</span>`;
+    }
+    return `
+      <div class="assignment-card" data-quiz-id="${q.id}">
+        <div class="assignment-top">
+          <span class="assignment-title">${escapeHtml(q.title)}</span>
+          ${statusHtml}
+        </div>
+        <div class="assignment-meta">${escapeHtml(q.subject)}${q.class_name ? ' · ' + escapeHtml(q.class_name) : ''} · ⏱ ${q.time_limit_minutes} ${t('quiz_minutes_label')}</div>
+      </div>
+    `;
+  }).join('');
+  list.querySelectorAll('.assignment-card').forEach(card => {
+    card.addEventListener('click', () => {
+      pushNavSnapshot();
+      if (isTeacher) openQuizDetail(card.dataset.quizId);
+      else openQuizTake(card.dataset.quizId);
+      updateGlobalBackButton();
+    });
+  });
+}
+
+document.getElementById('quizCreateNewBtn').addEventListener('click', () => {
+  pushNavSnapshot();
+  openQuizCreateScreen(null);
+  updateGlobalBackButton();
+});
+
+// ---------- إنشاء/تعديل اختبار (معلم بس) ----------
+async function openQuizCreateScreen(existingQuiz) {
+  showAccountScreen('step-quiz-create');
+  clearError('quizCreateError');
+  quizEditMode = !!existingQuiz;
+  currentQuizId = existingQuiz ? existingQuiz.id : null;
+  document.getElementById('quizCreateHeading').textContent = t(quizEditMode ? 'quiz_edit_heading' : 'quiz_create_heading');
+
+  try {
+    quizRosterCache = await apiCall('GET', '/api/teacher/roster');
+    populateQuizClassSelect();
+  } catch (e) {
+    showError('quizCreateError', e.message);
+  }
+
+  if (existingQuiz) {
+    document.getElementById('quizClassSelect').value = existingQuiz.class_id;
+    document.getElementById('quizSubjectInput').value = existingQuiz.subject;
+    document.getElementById('quizTitleInput').value = existingQuiz.title;
+    document.getElementById('quizTimeInput').value = existingQuiz.time_limit_minutes;
+    quizQuestionsDraft = (existingQuiz.questions || []).map(q => ({
+      question_type: q.question_type, question_text: q.question_text,
+      choices: q.choices ? [...q.choices] : [], correct_answer: q.correct_answer || '',
+    }));
+  } else {
+    document.getElementById('quizSubjectInput').value = '';
+    document.getElementById('quizTitleInput').value = '';
+    document.getElementById('quizTimeInput').value = '';
+    quizQuestionsDraft = [];
+  }
+  renderQuizQuestionsEditor();
+}
+
+function populateQuizClassSelect() {
+  document.getElementById('quizClassSelect').innerHTML =
+    quizRosterCache.classes.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+}
+
+function newDraftQuestion(type) {
+  return { question_type: type, question_text: '', choices: type === 'mcq' ? ['', ''] : [], correct_answer: '' };
+}
+
+document.getElementById('quizAddQuestionBtn').addEventListener('click', () => {
+  quizQuestionsDraft.push(newDraftQuestion('mcq'));
+  renderQuizQuestionsEditor();
+});
+
+function renderQuizQuestionsEditor() {
+  const wrap = document.getElementById('quizQuestionsList');
+  wrap.innerHTML = quizQuestionsDraft.map((q, i) => questionEditorHtml(q, i)).join('');
+  wireQuestionEditorEvents();
+}
+
+function questionEditorHtml(q, i) {
+  const typeOptions = [
+    ['mcq', 'quiz_type_mcq'], ['true_false', 'quiz_type_true_false'], ['essay', 'quiz_type_essay'],
+  ].map(([val, key]) => `<option value="${val}" ${q.question_type === val ? 'selected' : ''}>${t(key)}</option>`).join('');
+
+  let bodyHtml = '';
+  if (q.question_type === 'mcq') {
+    bodyHtml = `
+      <div class="qe-choices">
+        ${q.choices.map((c, ci) => `
+          <div class="qe-choice-row">
+            <input type="radio" name="qe-correct-${i}" ${q.correct_answer === c && c !== '' ? 'checked' : ''} data-qi="${i}" data-ci="${ci}" class="qe-choice-radio">
+            <input type="text" class="text-input qe-choice-text" data-qi="${i}" data-ci="${ci}" value="${escapeHtml(c)}" placeholder="${t('ph_quiz_choice')}">
+            <button class="qe-remove-btn qe-remove-choice" data-qi="${i}" data-ci="${ci}" type="button">✕</button>
+          </div>
+        `).join('')}
+      </div>
+      <button class="ghost qe-add-choice-btn qe-add-choice" data-qi="${i}" type="button">${t('btn_add_choice')}</button>
+      <p class="qe-hint">${t('quiz_correct_hint')}</p>
+    `;
+  } else if (q.question_type === 'true_false') {
+    bodyHtml = `
+      <div class="qe-tf-row">
+        <label><input type="radio" name="qe-tf-${i}" data-qi="${i}" value="true" class="qe-tf-radio" ${q.correct_answer === 'true' ? 'checked' : ''}> ${t('quiz_true_label')}</label>
+        <label><input type="radio" name="qe-tf-${i}" data-qi="${i}" value="false" class="qe-tf-radio" ${q.correct_answer === 'false' ? 'checked' : ''}> ${t('quiz_false_label')}</label>
+      </div>
+      <p class="qe-hint">${t('quiz_correct_hint')}</p>
+    `;
+  } else {
+    bodyHtml = `<p class="qe-hint">${t('quiz_essay_hint')}</p>`;
+  }
+
+  return `
+    <div class="quiz-question-editor" data-qi="${i}">
+      <div class="qe-top">
+        <span class="qe-num">${t('quiz_question_label')} ${i + 1}</span>
+        <button class="qe-remove-btn qe-remove-question" data-qi="${i}" type="button">🗑️ ${t('btn_remove')}</button>
+      </div>
+      <select class="text-input qe-type-select" data-qi="${i}">${typeOptions}</select>
+      <input type="text" class="text-input qe-text-input" data-qi="${i}" value="${escapeHtml(q.question_text)}" placeholder="${t('ph_quiz_question_text')}" style="margin-top:8px;">
+      ${bodyHtml}
+    </div>
+  `;
+}
+
+function wireQuestionEditorEvents() {
+  const wrap = document.getElementById('quizQuestionsList');
+
+  wrap.querySelectorAll('.qe-remove-question').forEach(btn => {
+    btn.addEventListener('click', () => {
+      quizQuestionsDraft.splice(Number(btn.dataset.qi), 1);
+      renderQuizQuestionsEditor();
+    });
+  });
+  wrap.querySelectorAll('.qe-type-select').forEach(sel => {
+    sel.addEventListener('change', () => {
+      const i = Number(sel.dataset.qi);
+      const oldText = quizQuestionsDraft[i].question_text;
+      quizQuestionsDraft[i] = newDraftQuestion(sel.value);
+      quizQuestionsDraft[i].question_text = oldText;
+      renderQuizQuestionsEditor();
+    });
+  });
+  wrap.querySelectorAll('.qe-text-input').forEach(inp => {
+    inp.addEventListener('input', () => {
+      quizQuestionsDraft[Number(inp.dataset.qi)].question_text = inp.value;
+    });
+  });
+  wrap.querySelectorAll('.qe-choice-text').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const q = quizQuestionsDraft[Number(inp.dataset.qi)];
+      const oldVal = q.choices[Number(inp.dataset.ci)];
+      if (q.correct_answer === oldVal) q.correct_answer = inp.value;
+      q.choices[Number(inp.dataset.ci)] = inp.value;
+    });
+  });
+  wrap.querySelectorAll('.qe-remove-choice').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const q = quizQuestionsDraft[Number(btn.dataset.qi)];
+      const removed = q.choices[Number(btn.dataset.ci)];
+      if (q.correct_answer === removed) q.correct_answer = '';
+      q.choices.splice(Number(btn.dataset.ci), 1);
+      renderQuizQuestionsEditor();
+    });
+  });
+  wrap.querySelectorAll('.qe-add-choice').forEach(btn => {
+    btn.addEventListener('click', () => {
+      quizQuestionsDraft[Number(btn.dataset.qi)].choices.push('');
+      renderQuizQuestionsEditor();
+    });
+  });
+  wrap.querySelectorAll('.qe-choice-radio').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const q = quizQuestionsDraft[Number(radio.dataset.qi)];
+      q.correct_answer = q.choices[Number(radio.dataset.ci)];
+    });
+  });
+  wrap.querySelectorAll('.qe-tf-radio').forEach(radio => {
+    radio.addEventListener('change', () => {
+      quizQuestionsDraft[Number(radio.dataset.qi)].correct_answer = radio.value;
+    });
+  });
+}
+
+document.getElementById('quizSaveBtn').addEventListener('click', async () => {
+  clearError('quizCreateError');
+  const classId = document.getElementById('quizClassSelect').value;
+  const subject = document.getElementById('quizSubjectInput').value.trim();
+  const title = document.getElementById('quizTitleInput').value.trim();
+  const timeLimitMinutes = parseInt(document.getElementById('quizTimeInput').value, 10);
+  if (!classId) { showError('quizCreateError', t('err_assignment_need_class')); return; }
+  if (!subject || !title) { showError('quizCreateError', t('err_name_required')); return; }
+  if (!timeLimitMinutes || timeLimitMinutes <= 0) { showError('quizCreateError', t('err_quiz_need_time')); return; }
+  if (!quizQuestionsDraft.length) { showError('quizCreateError', t('err_quiz_need_question')); return; }
+  for (const q of quizQuestionsDraft) {
+    if (!q.question_text.trim()) { showError('quizCreateError', t('err_quiz_question_text_required')); return; }
+    if (q.question_type === 'mcq' && q.choices.filter(c => c.trim()).length < 2) {
+      showError('quizCreateError', t('err_quiz_choices_required')); return;
+    }
+  }
+
+  const payload = {
+    class_id: classId, subject, title, time_limit_minutes: timeLimitMinutes,
+    questions: quizQuestionsDraft.map(q => ({
+      question_type: q.question_type, question_text: q.question_text.trim(),
+      choices: q.question_type === 'mcq' ? q.choices.filter(c => c.trim()) : undefined,
+      correct_answer: q.question_type !== 'essay' ? ((q.correct_answer || '').trim() || null) : null,
+    })),
+  };
+  const btn = document.getElementById('quizSaveBtn');
+  setLoading(btn, true, t('btn_save_quiz'));
+  try {
+    if (quizEditMode && currentQuizId) {
+      await apiCall('PATCH', `/api/teacher/quizzes/${currentQuizId}`, payload);
+    } else {
+      await apiCall('POST', '/api/teacher/quizzes', payload);
+    }
+    document.getElementById('globalBackBtn').click();
+  } catch (e) {
+    showError('quizCreateError', e.message);
+  } finally {
+    setLoading(btn, false, t('btn_save_quiz'));
+  }
+});
+
+// ---------- صفحة اختبار وحد (معلم) ----------
+async function openQuizDetail(id) {
+  showAccountScreen('step-quiz-detail');
+  currentQuizId = id;
+  clearError('quizDetailError');
+  try {
+    const quiz = await apiCall('GET', `/api/teacher/quizzes/${id}`);
+    currentQuizDetailData = quiz;
+    renderQuizDetailHeader(quiz);
+    document.getElementById('quizUnpublishedActions').classList.toggle('hidden', quiz.is_published);
+    document.getElementById('quizPublishedView').classList.toggle('hidden', !quiz.is_published);
+    if (quiz.is_published) renderQuizStudentsList(quiz.students, quiz.questions);
+  } catch (e) {
+    document.getElementById('quizDetailMeta').textContent = e.message;
+  }
+}
+
+function renderQuizDetailHeader(quiz) {
+  document.getElementById('quizDetailSubjectLabel').textContent = `📝 ${quiz.subject}`;
+  document.getElementById('quizDetailTitle').textContent = quiz.title;
+  document.getElementById('quizDetailMeta').textContent =
+    `⏱ ${quiz.time_limit_minutes} ${t('quiz_minutes_label')} · ${(quiz.questions || []).length} ${t('quiz_questions_count_label')}`;
+}
+
+document.getElementById('quizPublishBtn').addEventListener('click', async () => {
+  if (!currentQuizId || !confirm(t('confirm_publish_quiz'))) return;
+  try {
+    await apiCall('POST', `/api/teacher/quizzes/${currentQuizId}/publish`, {});
+    await openQuizDetail(currentQuizId);
+  } catch (e) { showError('quizDetailError', e.message); }
+});
+document.getElementById('quizEditBtn').addEventListener('click', () => {
+  if (!currentQuizDetailData) return;
+  pushNavSnapshot();
+  openQuizCreateScreen(currentQuizDetailData);
+  updateGlobalBackButton();
+});
+document.getElementById('quizDeleteBtn').addEventListener('click', async () => {
+  if (!currentQuizId || !confirm(t('confirm_delete_quiz'))) return;
+  try {
+    await apiCall('DELETE', `/api/teacher/quizzes/${currentQuizId}`);
+    document.getElementById('globalBackBtn').click();
+  } catch (e) { showError('quizDetailError', e.message); }
+});
+
+function renderQuizStudentsList(students, questions) {
+  const wrap = document.getElementById('quizStudentsList');
+  if (!students.length) {
+    wrap.innerHTML = `<p class="desc">${t('assignment_no_students')}</p>`;
+    return;
+  }
+  wrap.innerHTML = students.map(s => {
+    const statusCls = s.submitted ? 'done' : 'pending';
+    const statusText = !s.submitted
+      ? t('assignment_status_pending')
+      : (s.is_graded ? t('quiz_grade_shown', { grade: s.grade }) : t('quiz_status_awaiting_grade'));
+    return `
+      <div class="assignment-student-row" data-student-id="${s.user_id}">
+        <span class="student-name">${escapeHtml(s.full_name || s.username)}</span>
+        <span class="assignment-status ${statusCls}">${statusText}</span>
+        ${s.submitted ? `
+          <button class="ghost view-answers-btn" data-student-id="${s.user_id}" type="button">${t('btn_view_answers')}</button>
+          <input type="text" class="text-input grade-input" placeholder="${t('assignment_grade_label')}" value="${escapeHtml(s.grade || '')}">
+          <button class="ghost save-grade-btn" data-student-id="${s.user_id}" type="button">${t('btn_save_grade')}</button>
+        ` : ''}
+      </div>
+      <div class="quiz-answers-panel hidden" id="quizAnswers-${s.user_id}"></div>
+    `;
+  }).join('');
+
+  wrap.querySelectorAll('.view-answers-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const panel = document.getElementById(`quizAnswers-${btn.dataset.studentId}`);
+      if (panel.classList.contains('hidden')) {
+        const s = students.find(x => x.user_id === btn.dataset.studentId);
+        panel.innerHTML = renderStudentAnswersHtml(s, questions);
+      }
+      panel.classList.toggle('hidden');
+    });
+  });
+  wrap.querySelectorAll('.save-grade-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const row = wrap.querySelector(`.assignment-student-row[data-student-id="${btn.dataset.studentId}"]`);
+      const grade = row.querySelector('.grade-input').value.trim();
+      try {
+        await apiCall('PATCH', `/api/teacher/quizzes/${currentQuizId}/attempts/${btn.dataset.studentId}`, { grade });
+        btn.textContent = t('btn_save_grade') + ' ✅';
+        setTimeout(() => { btn.textContent = t('btn_save_grade'); }, 1500);
+      } catch (e) { alert(e.message); }
+    });
+  });
+}
+
+function renderStudentAnswersHtml(student, questions) {
+  const answers = student.answers || {};
+  return questions.map((q, i) => `
+    <div class="quiz-question-editor">
+      <div class="qe-top"><span class="qe-num">${t('quiz_question_label')} ${i + 1}</span></div>
+      <p style="font-weight:600;">${escapeHtml(q.question_text)}</p>
+      <p class="desc">${t('quiz_student_answer_label')}: ${escapeHtml(String(answers[q.id] ?? '—'))}</p>
+      ${q.correct_answer ? `<p class="desc">${t('quiz_correct_answer_label')}: ${escapeHtml(q.correct_answer)}</p>` : ''}
+    </div>
+  `).join('');
+}
+
+// ---------- حل اختبار (طالب) ----------
+let quizTimerInterval = null;
+let quizDeadlineMs = null;
+let quizAnswers = {};
+
+async function openQuizTake(id) {
+  showAccountScreen('step-quiz-take');
+  currentQuizId = id;
+  clearError('quizTakeError');
+  stopQuizTimer();
+  document.getElementById('quizTakeActive').classList.add('hidden');
+  document.getElementById('quizTakeResult').classList.add('hidden');
+
+  try {
+    const quiz = await apiCall('GET', `/api/student/quizzes/${id}`);
+    document.getElementById('quizTakeSubjectLabel').textContent = `📝 ${quiz.subject}`;
+    document.getElementById('quizTakeTitle').textContent = quiz.title;
+
+    if (quiz.attempt && quiz.attempt.submitted_at) {
+      showQuizResult(quiz.attempt);
+      return;
+    }
+
+    const attempt = await apiCall('POST', `/api/student/quizzes/${id}/start`, {});
+    quizAnswers = {};
+    document.getElementById('quizTakeActive').classList.remove('hidden');
+    renderQuizTakeQuestions(quiz.questions);
+
+    const startedMs = new Date(attempt.started_at).getTime();
+    quizDeadlineMs = startedMs + quiz.time_limit_minutes * 60000;
+    startQuizTimer();
+  } catch (e) {
+    showError('quizTakeError', e.message);
+  }
+}
+
+function renderQuizTakeQuestions(questions) {
+  const wrap = document.getElementById('quizTakeQuestionsList');
+  wrap.innerHTML = questions.map((q, i) => {
+    let bodyHtml = '';
+    if (q.question_type === 'mcq') {
+      bodyHtml = `<div class="options">${(q.choices || []).map(c => `
+        <label class="option" data-qid="${q.id}">
+          <input type="radio" name="quiz-take-${q.id}" value="${escapeHtml(c)}" style="margin-left:6px;">
+          ${escapeHtml(c)}
+        </label>
+      `).join('')}</div>`;
+    } else if (q.question_type === 'true_false') {
+      bodyHtml = `<div class="options">
+        <label class="option" data-qid="${q.id}"><input type="radio" name="quiz-take-${q.id}" value="true" style="margin-left:6px;"> ${t('quiz_true_label')}</label>
+        <label class="option" data-qid="${q.id}"><input type="radio" name="quiz-take-${q.id}" value="false" style="margin-left:6px;"> ${t('quiz_false_label')}</label>
+      </div>`;
+    } else {
+      bodyHtml = `<textarea class="text-input quiz-essay-answer" data-qid="${q.id}" style="min-height:90px;" placeholder="${t('ph_quiz_essay_answer')}"></textarea>`;
+    }
+    return `
+      <div class="question">
+        <div class="q-num">${t('quiz_question_label')} ${i + 1}</div>
+        <div class="q-text">${escapeHtml(q.question_text)}</div>
+        ${bodyHtml}
+      </div>
+    `;
+  }).join('');
+
+  wrap.querySelectorAll('input[type="radio"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const qid = radio.closest('[data-qid]').dataset.qid;
+      quizAnswers[qid] = radio.value;
+    });
+  });
+  wrap.querySelectorAll('.quiz-essay-answer').forEach(ta => {
+    ta.addEventListener('input', () => { quizAnswers[ta.dataset.qid] = ta.value; });
+  });
+}
+
+function startQuizTimer() {
+  updateQuizTimerDisplay();
+  quizTimerInterval = setInterval(() => {
+    const remaining = quizDeadlineMs - Date.now();
+    if (remaining <= 0) {
+      stopQuizTimer();
+      submitQuizAttempt(true);
+      return;
+    }
+    updateQuizTimerDisplay();
+  }, 1000);
+}
+function stopQuizTimer() {
+  if (quizTimerInterval) { clearInterval(quizTimerInterval); quizTimerInterval = null; }
+}
+function updateQuizTimerDisplay() {
+  const remaining = Math.max(0, quizDeadlineMs - Date.now());
+  const badge = document.getElementById('quizTimerBadge');
+  badge.textContent = `⏱ ${formatTime(Math.floor(remaining / 1000))}`;
+  badge.classList.toggle('low-time', remaining < 60000);
+}
+
+document.getElementById('quizSubmitBtn').addEventListener('click', () => submitQuizAttempt(false));
+
+async function submitQuizAttempt(autoSubmitted) {
+  stopQuizTimer();
+  clearError('quizTakeError');
+  try {
+    const attempt = await apiCall('POST', `/api/student/quizzes/${currentQuizId}/submit`, {
+      answers: quizAnswers, auto_submitted: autoSubmitted,
+    });
+    showQuizResult(attempt);
+  } catch (e) {
+    showError('quizTakeError', e.message);
+  }
+}
+
+function showQuizResult(attempt) {
+  document.getElementById('quizTakeActive').classList.add('hidden');
+  document.getElementById('quizTakeResult').classList.remove('hidden');
+  const box = document.getElementById('quizResultBox');
+  if (attempt.is_graded) {
+    box.classList.remove('pending');
+    box.innerHTML = `
+      <div class="quiz-result-score">${escapeHtml(attempt.grade || '')}</div>
+      <div class="quiz-result-label">${t('quiz_result_graded_label')}</div>
+    `;
+  } else {
+    box.classList.add('pending');
+    box.innerHTML = `
+      <div class="quiz-result-score">✅ ${t('quiz_submitted_label')}</div>
+      <div class="quiz-result-label">${t('quiz_result_pending_label')}</div>
+    `;
+  }
+}
 </script>
 </body>
 </html>

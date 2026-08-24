@@ -3282,7 +3282,6 @@ def create_assignment():
     subject = (data.get("subject") or "").strip()
     title = (data.get("title") or "").strip()
     content = data.get("content") or ""
-    target_student_id = data.get("target_student_id") or None
     if not class_id or not subject or not title:
         return jsonify({"error": "لازم الفصل والمادة وعنوان الواجب"}), 400
 
@@ -3293,21 +3292,16 @@ def create_assignment():
     if not owns:
         return jsonify({"error": "الفصل مو تابع لك"}), 403
 
-    if target_student_id:
-        belongs = (
-            supabase_admin.table("profiles").select("user_id").eq("user_id", target_student_id)
-            .eq("role", "student").eq("class_id", class_id).limit(1).execute()
-        ).data
-        if not belongs:
-            return jsonify({"error": "هذا الطالب مو بهذا الفصل"}), 400
-
+    # الواجبات دايمًا لكل طلاب الفصل (target_student_id فاضية دايمًا بأي واجب
+    # جديد) - خيار استهداف طالب وحد اتشال، العمود نفسه باقٍ بالجدول توافقًا
+    # مع أي صفوف قديمة من قبل هذا التبسيط
     assignment = (
         supabase_admin.table("assignments")
         .insert(
             {
                 "teacher_id": request.user_id,
                 "class_id": class_id,
-                "target_student_id": target_student_id,
+                "target_student_id": None,
                 "subject": subject,
                 "title": title,
                 "content": content,
@@ -3317,17 +3311,13 @@ def create_assignment():
         .data[0]
     )
 
-    # نبلّغ الطالب المستهدف، أو كل طلاب الفصل لو الواجب عام
     notif_title = "📚 واجب جديد"
     notif_body = f"{subject} - {title}"
-    if target_student_id:
-        _create_notification(target_student_id, "new_assignment", notif_title, notif_body, class_id=class_id)
-    else:
-        students = (
-            supabase_admin.table("profiles").select("user_id").eq("role", "student").eq("class_id", class_id).execute()
-        ).data
-        for s in students:
-            _create_notification(s["user_id"], "new_assignment", notif_title, notif_body, class_id=class_id)
+    students = (
+        supabase_admin.table("profiles").select("user_id").eq("role", "student").eq("class_id", class_id).execute()
+    ).data
+    for s in students:
+        _create_notification(s["user_id"], "new_assignment", notif_title, notif_body, class_id=class_id)
 
     return jsonify(assignment), 200
 
@@ -3409,8 +3399,8 @@ def teacher_assignment_detail(assignment_id):
 @require_role("teacher")
 def grade_assignment_submission(assignment_id, student_id):
     owns = (
-        supabase_admin.table("assignments").select("id").eq("id", assignment_id).eq("teacher_id", request.user_id)
-        .limit(1).execute()
+        supabase_admin.table("assignments").select("id, title, class_id").eq("id", assignment_id)
+        .eq("teacher_id", request.user_id).limit(1).execute()
     ).data
     if not owns:
         return jsonify({"error": "الواجب مو تابع لك"}), 403
@@ -3424,6 +3414,11 @@ def grade_assignment_submission(assignment_id, student_id):
     )
     if not res.data:
         return jsonify({"error": "الطالب ما سلّم الواجب بعد"}), 404
+    _create_notification(
+        student_id, "assignment_graded", "✅ تم تصحيح واجبك",
+        f"{owns[0]['title']} - الدرجة: {grade}" if grade else owns[0]["title"],
+        class_id=owns[0]["class_id"],
+    )
     return jsonify(res.data[0]), 200
 
 
@@ -3560,6 +3555,378 @@ def student_download_own_submission(assignment_id):
         return jsonify({"error": "ما سلّمت هذا الواجب بعد"}), 404
     signed = supabase_admin.storage.from_(ASSIGNMENT_SUBMISSIONS_BUCKET).create_signed_url(sub[0]["file_path"], 3600)
     return jsonify({"url": signed["signedURL"]}), 200
+
+
+# ============================================================================
+# ---------- دفتر الاختبارات (معلم/طالب بس - محجوب عن الحسابات الفردية) ----------
+# ============================================================================
+QUESTION_TYPES = {"mcq", "true_false", "essay"}
+
+
+def _quiz_questions_public(questions):
+    """نسخة تُرسل للطالب - بدون correct_answer إطلاقًا (ولا حتى null) عشان
+    ما نسرب الإجابة الصحيحة بالـ payload قبل التسليم"""
+    return [
+        {
+            "id": q["id"],
+            "order_index": q["order_index"],
+            "question_type": q["question_type"],
+            "question_text": q["question_text"],
+            "choices": q.get("choices"),
+        }
+        for q in questions
+    ]
+
+
+@app.route("/api/teacher/quizzes", methods=["POST"])
+@require_role("teacher")
+def create_quiz():
+    data = request.get_json(silent=True) or {}
+    class_id = data.get("class_id")
+    subject = (data.get("subject") or "").strip()
+    title = (data.get("title") or "").strip()
+    time_limit_minutes = data.get("time_limit_minutes")
+    questions = data.get("questions") or []
+    if not class_id or not subject or not title:
+        return jsonify({"error": "لازم الفصل والمادة وعنوان الاختبار"}), 400
+    if not isinstance(time_limit_minutes, int) or time_limit_minutes <= 0:
+        return jsonify({"error": "لازم وقت صحيح للاختبار"}), 400
+    if not questions:
+        return jsonify({"error": "لازم سؤال واحد على الأقل"}), 400
+
+    owns = (
+        supabase_admin.table("classes").select("id").eq("id", class_id).eq("teacher_id", request.user_id)
+        .limit(1).execute()
+    ).data
+    if not owns:
+        return jsonify({"error": "الفصل مو تابع لك"}), 403
+
+    for q in questions:
+        if q.get("question_type") not in QUESTION_TYPES or not (q.get("question_text") or "").strip():
+            return jsonify({"error": "فيه سؤال ناقص بياناته"}), 400
+        if q["question_type"] == "mcq" and len(q.get("choices") or []) < 2:
+            return jsonify({"error": "سؤال الاختيارات لازم فيه اختيارين على الأقل"}), 400
+
+    quiz = (
+        supabase_admin.table("quizzes")
+        .insert(
+            {
+                "teacher_id": request.user_id, "class_id": class_id, "subject": subject,
+                "title": title, "time_limit_minutes": time_limit_minutes,
+            }
+        )
+        .execute()
+        .data[0]
+    )
+    rows = [
+        {
+            "quiz_id": quiz["id"], "order_index": i,
+            "question_type": q["question_type"], "question_text": q["question_text"].strip(),
+            "choices": q.get("choices") if q["question_type"] == "mcq" else None,
+            "correct_answer": (q.get("correct_answer") or "").strip() or None if q["question_type"] != "essay" else None,
+        }
+        for i, q in enumerate(questions)
+    ]
+    supabase_admin.table("quiz_questions").insert(rows).execute()
+    return jsonify(quiz), 200
+
+
+@app.route("/api/teacher/quizzes", methods=["GET"])
+@require_role("teacher")
+def list_teacher_quizzes():
+    class_id = request.args.get("class_id")
+    query = supabase_admin.table("quizzes").select("*").eq("teacher_id", request.user_id)
+    if class_id:
+        query = query.eq("class_id", class_id)
+    quizzes = query.order("created_at", desc=True).execute().data
+
+    class_names = {
+        c["id"]: c["name"]
+        for c in supabase_admin.table("classes").select("id, name").eq("teacher_id", request.user_id).execute().data
+    }
+    submitted_counts = Counter(
+        r["quiz_id"]
+        for r in supabase_admin.table("quiz_attempts").select("quiz_id").not_.is_("submitted_at", "null").execute().data
+    )
+    for q in quizzes:
+        q["class_name"] = class_names.get(q["class_id"])
+        q["submitted_count"] = submitted_counts.get(q["id"], 0)
+        q["total_count"] = (
+            supabase_admin.table("profiles").select("user_id", count="exact")
+            .eq("role", "student").eq("class_id", q["class_id"]).execute().count or 0
+        )
+    return jsonify({"quizzes": quizzes}), 200
+
+
+@app.route("/api/teacher/quizzes/<quiz_id>", methods=["GET"])
+@require_role("teacher")
+def teacher_quiz_detail(quiz_id):
+    rows = (
+        supabase_admin.table("quizzes").select("*").eq("id", quiz_id).eq("teacher_id", request.user_id)
+        .limit(1).execute()
+    ).data
+    if not rows:
+        return jsonify({"error": "الاختبار مو موجود"}), 404
+    quiz = rows[0]
+    quiz["questions"] = (
+        supabase_admin.table("quiz_questions").select("*").eq("quiz_id", quiz_id).order("order_index").execute().data
+    )
+
+    students = (
+        supabase_admin.table("profiles").select("user_id, username, full_name")
+        .eq("role", "student").eq("class_id", quiz["class_id"]).execute()
+    ).data
+    attempts_by_student = {
+        a["student_id"]: a
+        for a in supabase_admin.table("quiz_attempts").select("*").eq("quiz_id", quiz_id).execute().data
+    }
+    result_students = []
+    for s in students:
+        a = attempts_by_student.get(s["user_id"])
+        result_students.append(
+            {
+                "user_id": s["user_id"], "username": s["username"], "full_name": s.get("full_name"),
+                "submitted": bool(a and a.get("submitted_at")),
+                "submitted_at": a.get("submitted_at") if a else None,
+                "auto_submitted": a.get("auto_submitted") if a else False,
+                "answers": a.get("answers") if a else None,
+                "is_graded": a.get("is_graded") if a else False,
+                "score": a.get("score") if a else None,
+                "total_questions": a.get("total_questions") if a else None,
+                "grade": a.get("grade") if a else None,
+            }
+        )
+    quiz["students"] = result_students
+    return jsonify(quiz), 200
+
+
+@app.route("/api/teacher/quizzes/<quiz_id>", methods=["PATCH"])
+@require_role("teacher")
+def update_quiz(quiz_id):
+    rows = (
+        supabase_admin.table("quizzes").select("*").eq("id", quiz_id).eq("teacher_id", request.user_id)
+        .limit(1).execute()
+    ).data
+    if not rows:
+        return jsonify({"error": "الاختبار مو موجود"}), 404
+    if rows[0]["is_published"]:
+        return jsonify({"error": "الاختبار منشور، ما تقدر تعدّله"}), 400
+
+    data = request.get_json(silent=True) or {}
+    patch = {}
+    if "subject" in data:
+        patch["subject"] = (data.get("subject") or "").strip()
+    if "title" in data:
+        patch["title"] = (data.get("title") or "").strip()
+    if "time_limit_minutes" in data:
+        patch["time_limit_minutes"] = data.get("time_limit_minutes")
+    patch["updated_at"] = datetime.now(timezone.utc).isoformat()
+    quiz = supabase_admin.table("quizzes").update(patch).eq("id", quiz_id).execute().data[0]
+
+    if "questions" in data:
+        questions = data.get("questions") or []
+        for q in questions:
+            if q.get("question_type") not in QUESTION_TYPES or not (q.get("question_text") or "").strip():
+                return jsonify({"error": "فيه سؤال ناقص بياناته"}), 400
+        supabase_admin.table("quiz_questions").delete().eq("quiz_id", quiz_id).execute()
+        new_rows = [
+            {
+                "quiz_id": quiz_id, "order_index": i,
+                "question_type": q["question_type"], "question_text": q["question_text"].strip(),
+                "choices": q.get("choices") if q["question_type"] == "mcq" else None,
+                "correct_answer": (q.get("correct_answer") or "").strip() or None if q["question_type"] != "essay" else None,
+            }
+            for i, q in enumerate(questions)
+        ]
+        if new_rows:
+            supabase_admin.table("quiz_questions").insert(new_rows).execute()
+
+    return jsonify(quiz), 200
+
+
+@app.route("/api/teacher/quizzes/<quiz_id>/publish", methods=["POST"])
+@require_role("teacher")
+def publish_quiz(quiz_id):
+    rows = (
+        supabase_admin.table("quizzes").select("*").eq("id", quiz_id).eq("teacher_id", request.user_id)
+        .limit(1).execute()
+    ).data
+    if not rows:
+        return jsonify({"error": "الاختبار مو موجود"}), 404
+    quiz = supabase_admin.table("quizzes").update({"is_published": True}).eq("id", quiz_id).execute().data[0]
+
+    students = (
+        supabase_admin.table("profiles").select("user_id").eq("role", "student").eq("class_id", quiz["class_id"]).execute()
+    ).data
+    for s in students:
+        _create_notification(
+            s["user_id"], "new_quiz", "📝 اختبار جديد", f"{quiz['subject']} - {quiz['title']}",
+            class_id=quiz["class_id"],
+        )
+    return jsonify(quiz), 200
+
+
+@app.route("/api/teacher/quizzes/<quiz_id>/attempts/<student_id>", methods=["PATCH"])
+@require_role("teacher")
+def grade_quiz_attempt(quiz_id, student_id):
+    quiz_rows = (
+        supabase_admin.table("quizzes").select("subject, title, class_id").eq("id", quiz_id)
+        .eq("teacher_id", request.user_id).limit(1).execute()
+    ).data
+    if not quiz_rows:
+        return jsonify({"error": "الاختبار مو تابع لك"}), 403
+    grade = (request.get_json(silent=True) or {}).get("grade")
+    res = (
+        supabase_admin.table("quiz_attempts")
+        .update({"grade": grade, "is_graded": True, "graded_at": datetime.now(timezone.utc).isoformat()})
+        .eq("quiz_id", quiz_id).eq("student_id", student_id)
+        .execute()
+    )
+    if not res.data:
+        return jsonify({"error": "الطالب ما سلّم الاختبار بعد"}), 404
+    quiz = quiz_rows[0]
+    _create_notification(
+        student_id, "quiz_graded", "✅ تم تصحيح اختبارك",
+        f"{quiz['subject']} - {quiz['title']} - الدرجة: {grade}" if grade else f"{quiz['subject']} - {quiz['title']}",
+        class_id=quiz["class_id"],
+    )
+    return jsonify(res.data[0]), 200
+
+
+@app.route("/api/teacher/quizzes/<quiz_id>", methods=["DELETE"])
+@require_role("teacher")
+def delete_quiz(quiz_id):
+    res = supabase_admin.table("quizzes").delete().eq("id", quiz_id).eq("teacher_id", request.user_id).execute()
+    if not res.data:
+        return jsonify({"error": "الاختبار مو موجود"}), 404
+    return jsonify({"ok": True}), 200
+
+
+@app.route("/api/student/quizzes", methods=["GET"])
+@require_role("student")
+def list_student_quizzes():
+    class_id = request.profile.get("class_id")
+    if not class_id:
+        return jsonify({"quizzes": []}), 200
+    quizzes = (
+        supabase_admin.table("quizzes").select("*").eq("class_id", class_id).eq("is_published", True)
+        .order("created_at", desc=True).execute()
+    ).data
+    my_attempts = {
+        a["quiz_id"]: a
+        for a in supabase_admin.table("quiz_attempts").select("*").eq("student_id", request.user_id).execute().data
+    }
+    for q in quizzes:
+        a = my_attempts.get(q["id"])
+        q["submitted"] = bool(a and a.get("submitted_at"))
+        q["is_graded"] = a.get("is_graded") if a else False
+        q["score"] = a.get("score") if a else None
+        q["total_questions"] = a.get("total_questions") if a else None
+        q["grade"] = a.get("grade") if a else None
+    return jsonify({"quizzes": quizzes}), 200
+
+
+def _student_can_see_quiz(quiz, student_profile):
+    return quiz["is_published"] and quiz["class_id"] == student_profile.get("class_id")
+
+
+@app.route("/api/student/quizzes/<quiz_id>", methods=["GET"])
+@require_role("student")
+def student_quiz_detail(quiz_id):
+    rows = supabase_admin.table("quizzes").select("*").eq("id", quiz_id).limit(1).execute().data
+    if not rows or not _student_can_see_quiz(rows[0], request.profile):
+        return jsonify({"error": "الاختبار مو موجود"}), 404
+    quiz = rows[0]
+    questions = (
+        supabase_admin.table("quiz_questions").select("*").eq("quiz_id", quiz_id).order("order_index").execute().data
+    )
+    quiz["questions"] = _quiz_questions_public(questions)
+
+    attempt = (
+        supabase_admin.table("quiz_attempts").select("*").eq("quiz_id", quiz_id).eq("student_id", request.user_id)
+        .limit(1).execute()
+    ).data
+    quiz["attempt"] = attempt[0] if attempt else None
+    return jsonify(quiz), 200
+
+
+@app.route("/api/student/quizzes/<quiz_id>/start", methods=["POST"])
+@require_role("student")
+def start_quiz_attempt(quiz_id):
+    rows = supabase_admin.table("quizzes").select("*").eq("id", quiz_id).limit(1).execute().data
+    if not rows or not _student_can_see_quiz(rows[0], request.profile):
+        return jsonify({"error": "الاختبار مو موجود"}), 404
+
+    existing = (
+        supabase_admin.table("quiz_attempts").select("*").eq("quiz_id", quiz_id).eq("student_id", request.user_id)
+        .limit(1).execute()
+    ).data
+    if existing:
+        return jsonify(existing[0]), 200
+    attempt = (
+        supabase_admin.table("quiz_attempts")
+        .insert({"quiz_id": quiz_id, "student_id": request.user_id, "started_at": datetime.now(timezone.utc).isoformat()})
+        .execute()
+        .data[0]
+    )
+    return jsonify(attempt), 200
+
+
+@app.route("/api/student/quizzes/<quiz_id>/submit", methods=["POST"])
+@require_role("student")
+def submit_quiz_attempt(quiz_id):
+    rows = supabase_admin.table("quizzes").select("*").eq("id", quiz_id).limit(1).execute().data
+    if not rows or not _student_can_see_quiz(rows[0], request.profile):
+        return jsonify({"error": "الاختبار مو موجود"}), 404
+    quiz = rows[0]
+
+    data = request.get_json(silent=True) or {}
+    answers = data.get("answers") or {}
+    auto_submitted = bool(data.get("auto_submitted"))
+    if not isinstance(answers, dict):
+        return jsonify({"error": "صيغة الإجابات غلط"}), 400
+
+    questions = (
+        supabase_admin.table("quiz_questions").select("*").eq("quiz_id", quiz_id).execute().data
+    )
+    total = len(questions)
+    auto_gradable = total > 0 and all(q.get("correct_answer") for q in questions)
+    score = None
+    is_graded = False
+    if auto_gradable:
+        score = sum(
+            1 for q in questions
+            if str(answers.get(str(q["id"]), "")).strip() == q["correct_answer"]
+        )
+        is_graded = True
+
+    attempt = (
+        supabase_admin.table("quiz_attempts")
+        .upsert(
+            {
+                "quiz_id": quiz_id, "student_id": request.user_id,
+                "submitted_at": datetime.now(timezone.utc).isoformat(),
+                "auto_submitted": auto_submitted, "answers": answers,
+                "is_graded": is_graded, "score": score, "total_questions": total,
+                "grade": f"{score}/{total}" if is_graded else None,
+                "graded_at": datetime.now(timezone.utc).isoformat() if is_graded else None,
+            },
+            on_conflict="quiz_id,student_id",
+        )
+        .execute()
+        .data[0]
+    )
+
+    my_username_rows = (
+        supabase_admin.table("profiles").select("username").eq("user_id", request.user_id).limit(1).execute().data
+    )
+    my_username = my_username_rows[0]["username"] if my_username_rows else ""
+    _create_notification(
+        quiz["teacher_id"], "quiz_submitted", "✅ تسليم اختبار جديد",
+        f"{my_username} سلّم اختبار {quiz['title']}".strip(),
+        sender_id=request.user_id, class_id=quiz["class_id"],
+    )
+    return jsonify(attempt), 200
 
 
 # ============================================================================

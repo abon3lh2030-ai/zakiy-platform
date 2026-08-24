@@ -89,6 +89,22 @@
   },
   {
     "type": "file",
+    "path": "pages/quizzes/quizzes-list.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/quizzes/quiz-create.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/quizzes/quiz-detail.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/quizzes/quiz-take.html"
+  },
+  {
+    "type": "file",
     "path": "pages/ai-assistant/ai-conversations-list.html"
   },
   {

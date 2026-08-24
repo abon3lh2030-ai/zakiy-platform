@@ -2598,6 +2598,7 @@ const I18N = {
     settings_name_heading: '✏️ الاسم',
     ph_your_name: 'اسمك',
     btn_save: 'حفظ',
+    btn_edit: '✏️ تعديل', btn_cancel: 'إلغاء',
     settings_password_heading: '🔒 كلمة المرور',
     ph_new_password: 'كلمة مرور جديدة',
     ph_confirm_password: 'أعد كتابتها',
@@ -3186,6 +3187,7 @@ const I18N = {
     settings_name_heading: '✏️ Name',
     ph_your_name: 'Your name',
     btn_save: 'Save',
+    btn_edit: '✏️ Edit', btn_cancel: 'Cancel',
     settings_password_heading: '🔒 Password',
     ph_new_password: 'New password',
     ph_confirm_password: 'Confirm it',
@@ -7690,6 +7692,11 @@ async function loadSchoolClasses() {
 
     const classOptions = schoolClassesCache.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
     document.getElementById('scheduleClassSelect').innerHTML = classOptions;
+    // تعبئة القائمة بس ما تولّد حدث change تلقائيًا - بدون هذا السطر، جدول
+    // الفصل المختار افتراضيًا (أول فصل بالقائمة) ما يظهر إطلاقًا لين
+    // المستخدم يبدّل الاختيار يدويًا (وحتى لو رجع لنفس أول فصل، ما يتحرك
+    // شي لأن قيمة القائمة أصلًا ما تغيّرت)
+    renderScheduleTable(document.getElementById('scheduleClassSelect').value);
     document.getElementById('bulkClassSelect').innerHTML = classOptions || `<option value="">${t('opt_create_class_first')}</option>`;
     document.getElementById('attendanceClassFilter').innerHTML = `<option value="">${t('opt_all_classes')}</option>${classOptions}`;
 
@@ -7776,6 +7783,12 @@ async function loadSchoolStudents() {
   }
 }
 
+// نبنيها لحظة الاستخدام (مو مرة وحدة بأول تحميل الملف) عشان تطابق اللغة
+// الحالية دايمًا حتى لو المستخدم بدّل اللغة بعد فتح الصفحة
+function buildScheduleDayOptionsHtml() {
+  return [0, 1, 2, 3, 4, 5, 6].map(d => `<option value="${d}" data-i18n="day_${d}">${t(`day_${d}`)}</option>`).join('');
+}
+
 async function renderScheduleTable(classId) {
   const wrap = document.getElementById('scheduleTableWrap');
   if (!classId) { wrap.innerHTML = ''; return; }
@@ -7786,11 +7799,14 @@ async function renderScheduleTable(classId) {
     wrap.innerHTML = `<table class="data-table"><thead><tr>
         <th>${t('th_day')}</th><th>${t('th_time')}</th><th>${t('th_subject')}</th><th>${t('th_actions')}</th>
       </tr></thead><tbody>${data.schedule.map(s => `
-        <tr>
+        <tr data-schedule-row="${s.id}" data-day="${s.day_of_week}" data-start="${escapeHtml(s.start_time)}" data-end="${escapeHtml(s.end_time)}" data-subject="${escapeHtml(s.subject || '')}">
           <td>${dayNames[s.day_of_week] || s.day_of_week}</td>
           <td>${escapeHtml(s.start_time)} - ${escapeHtml(s.end_time)}</td>
           <td>${escapeHtml(s.subject || '—')}</td>
-          <td><button class="ghost" data-delete-schedule="${s.id}" style="padding:4px 10px;">${t('btn_delete')}</button></td>
+          <td>
+            <button class="ghost" data-edit-schedule="${s.id}" style="padding:4px 10px;">${t('btn_edit')}</button>
+            <button class="ghost" data-delete-schedule="${s.id}" style="padding:4px 10px;">${t('btn_delete')}</button>
+          </td>
         </tr>`).join('')}</tbody></table>`;
     wrap.querySelectorAll('[data-delete-schedule]').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -7798,9 +7814,52 @@ async function renderScheduleTable(classId) {
         catch (e) { alert(e.message); }
       });
     });
+    wrap.querySelectorAll('[data-edit-schedule]').forEach(btn => {
+      btn.addEventListener('click', () => openScheduleRowEditor(btn.closest('tr'), classId));
+    });
   } catch (e) {
     wrap.innerHTML = `<p class="desc">${escapeHtml(e.message)}</p>`;
   }
+}
+
+// يفتح تعديل صفي مباشر (بدل الحقول الثابتة) بنفس عناصر التحكم اللي بفورم
+// الإضافة - يوم/وقت بداية/وقت نهاية/مادة، مع حفظ/إلغاء
+function openScheduleRowEditor(row, classId) {
+  const scheduleId = row.dataset.scheduleRow;
+  row.innerHTML = `
+    <td>
+      <select class="text-input" id="editScheduleDay-${scheduleId}" style="padding:4px 8px; font-size:13px;">${buildScheduleDayOptionsHtml()}</select>
+    </td>
+    <td style="white-space:nowrap;">
+      <input type="time" class="text-input" id="editScheduleStart-${scheduleId}" style="max-width:100px; padding:4px 8px; font-size:13px;">
+      -
+      <input type="time" class="text-input" id="editScheduleEnd-${scheduleId}" style="max-width:100px; padding:4px 8px; font-size:13px;">
+    </td>
+    <td><input type="text" class="text-input" id="editScheduleSubject-${scheduleId}" style="padding:4px 8px; font-size:13px;"></td>
+    <td>
+      <button class="primary" data-save-schedule="${scheduleId}" style="padding:4px 10px;">${t('btn_save')}</button>
+      <button class="ghost" data-cancel-schedule="${scheduleId}" style="padding:4px 10px;">${t('btn_cancel')}</button>
+    </td>
+  `;
+  document.getElementById(`editScheduleDay-${scheduleId}`).value = row.dataset.day;
+  document.getElementById(`editScheduleStart-${scheduleId}`).value = row.dataset.start;
+  document.getElementById(`editScheduleEnd-${scheduleId}`).value = row.dataset.end;
+  document.getElementById(`editScheduleSubject-${scheduleId}`).value = row.dataset.subject;
+
+  row.querySelector('[data-cancel-schedule]').addEventListener('click', () => renderScheduleTable(classId));
+  row.querySelector('[data-save-schedule]').addEventListener('click', async () => {
+    const day_of_week = parseInt(document.getElementById(`editScheduleDay-${scheduleId}`).value, 10);
+    const start_time = document.getElementById(`editScheduleStart-${scheduleId}`).value;
+    const end_time = document.getElementById(`editScheduleEnd-${scheduleId}`).value;
+    const subject = document.getElementById(`editScheduleSubject-${scheduleId}`).value.trim();
+    if (!start_time || !end_time) { alert(t('err_schedule_time_required')); return; }
+    try {
+      await apiCall('PATCH', `/api/school/schedule/${scheduleId}`, { day_of_week, start_time, end_time, subject });
+      renderScheduleTable(classId);
+    } catch (e) {
+      alert(e.message);
+    }
+  });
 }
 document.getElementById('scheduleClassSelect').addEventListener('change', e => renderScheduleTable(e.target.value));
 document.getElementById('addScheduleBtn').addEventListener('click', async () => {

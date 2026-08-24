@@ -2936,9 +2936,30 @@ def school_delete_class(class_id):
     return jsonify({"ok": True}), 200
 
 
+def _class_scope_check(class_row):
+    """يتحقق إن الفصل المُمرَّر فعلًا يخص صاحب الطلب الحالي (حسب دوره) - يمنع
+    أي حساب مؤسسي (مدرسة/معلم/طالب) من قراءة أو تعديل جدول فصل غير تابع له،
+    حتى لو خمّن class_id/schedule_id صحيح لمدرسة/فصل ثاني."""
+    if not class_row:
+        return False
+    role = request.profile["role"]
+    if role in ("school_admin", "school_administration"):
+        return class_row.get("school_id") == request.profile["school_id"]
+    if role == "teacher":
+        return class_row.get("teacher_id") == request.user_id
+    if role == "student":
+        return class_row.get("id") == request.profile.get("class_id")
+    return False
+
+
 @app.route("/api/school/classes/<class_id>/schedule", methods=["POST"])
 @require_role("school_admin", "school_administration")
 def school_add_schedule(class_id):
+    class_row = (
+        supabase_admin.table("classes").select("id, school_id, teacher_id").eq("id", class_id).limit(1).execute()
+    ).data
+    if not _class_scope_check(class_row[0] if class_row else None):
+        return jsonify({"error": "الفصل مو تابع لمدرستك"}), 403
     data = request.get_json(silent=True) or {}
     row = {
         "class_id": class_id,
@@ -2957,13 +2978,57 @@ def school_add_schedule(class_id):
 @app.route("/api/school/classes/<class_id>/schedule", methods=["GET"])
 @require_role("school_admin", "school_administration", "teacher", "student")
 def school_get_schedule(class_id):
+    class_row = (
+        supabase_admin.table("classes").select("id, school_id, teacher_id").eq("id", class_id).limit(1).execute()
+    ).data
+    if not _class_scope_check(class_row[0] if class_row else None):
+        return jsonify({"error": "الفصل مو تابع لك"}), 403
     schedule = supabase_admin.table("class_schedule").select("*").eq("class_id", class_id).execute().data
     return jsonify({"schedule": schedule}), 200
+
+
+@app.route("/api/school/schedule/<schedule_id>", methods=["PATCH"])
+@require_role("school_admin", "school_administration")
+def school_update_schedule(schedule_id):
+    existing = (
+        supabase_admin.table("class_schedule").select("id, class_id").eq("id", schedule_id).limit(1).execute()
+    ).data
+    if not existing:
+        return jsonify({"error": "الحصة غير موجودة"}), 404
+    class_row = (
+        supabase_admin.table("classes").select("id, school_id, teacher_id").eq("id", existing[0]["class_id"])
+        .limit(1).execute()
+    ).data
+    if not _class_scope_check(class_row[0] if class_row else None):
+        return jsonify({"error": "الحصة مو تابعة لمدرستك"}), 403
+
+    data = request.get_json(silent=True) or {}
+    patch = {}
+    for key in ("day_of_week", "start_time", "end_time", "subject"):
+        if key in data:
+            patch[key] = data[key]
+    if patch:
+        try:
+            supabase_admin.table("class_schedule").update(patch).eq("id", schedule_id).execute()
+        except Exception as e:
+            return jsonify({"error": f"تعذّر تعديل الحصة: {e}"}), 400
+    return jsonify({"ok": True}), 200
 
 
 @app.route("/api/school/schedule/<schedule_id>", methods=["DELETE"])
 @require_role("school_admin", "school_administration")
 def school_delete_schedule(schedule_id):
+    existing = (
+        supabase_admin.table("class_schedule").select("id, class_id").eq("id", schedule_id).limit(1).execute()
+    ).data
+    if not existing:
+        return jsonify({"ok": True}), 200
+    class_row = (
+        supabase_admin.table("classes").select("id, school_id, teacher_id").eq("id", existing[0]["class_id"])
+        .limit(1).execute()
+    ).data
+    if not _class_scope_check(class_row[0] if class_row else None):
+        return jsonify({"error": "الحصة مو تابعة لمدرستك"}), 403
     supabase_admin.table("class_schedule").delete().eq("id", schedule_id).execute()
     return jsonify({"ok": True}), 200
 

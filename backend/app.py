@@ -19,7 +19,7 @@ import string
 import time
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
-from pypdf import PdfReader
+import fitz  # PyMuPDF - أسرع وأثبت بكثير من pypdf باستخراج نص من ملفات كبيرة/معقّدة
 from google import genai
 from google.genai import errors as genai_errors
 from supabase import create_client, Client
@@ -189,13 +189,16 @@ def upload_file():
 
 
 # ---------- استخراج النص من PDF ----------
+# PyMuPDF (fitz) بدل pypdf - أسرع بكثير (خصوصًا مع ملفات كبيرة زي كتاب ٤٠٠
+# صفحة) وأثبت مع ملفات PDF معقّدة/مش قياسية، يقلل احتمال انقطاع الطلب بسبب
+# مهلة السيرفر (gunicorn/Render) وقت استخراج ملف كبير
 def extract_text_from_pdf(filepath):
     text = ""
-    reader = PdfReader(filepath)
-    for page in reader.pages:
-        page_text = page.extract_text()
-        if page_text:
-            text += page_text + "\n"
+    with fitz.open(filepath) as doc:
+        for page in doc:
+            page_text = page.get_text()
+            if page_text:
+                text += page_text + "\n"
     return text.strip()
 
 

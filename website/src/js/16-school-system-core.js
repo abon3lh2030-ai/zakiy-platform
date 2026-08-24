@@ -137,7 +137,19 @@ function exportQrBooklet(students) {
     </style>
     </head><body>${pagesHtml}</body></html>`);
   win.document.close();
-  win.focus();
-  win.print();
+  // صور QR (data URL) تحتاج وقت فك ترميز/رسم غير متزامن رغم إنها محلية -
+  // لو نادينا win.print() فورًا، نافذة الطباعة تفتح ورموز QR لسا فاضية
+  // (مربعات بيضاء بدون رسم) - ننتظر كل صورة توصل load/error قبل الطباعة
+  const imgs = Array.from(win.document.images);
+  const waitForImages = imgs.length
+    ? Promise.all(imgs.map(img => (img.complete ? Promise.resolve() : new Promise(res => {
+        img.addEventListener('load', res, { once: true });
+        img.addEventListener('error', res, { once: true });
+      }))))
+    : Promise.resolve();
+  waitForImages.then(() => {
+    win.focus();
+    win.print();
+  });
 }
 

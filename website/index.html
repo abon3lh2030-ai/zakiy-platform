@@ -7395,19 +7395,23 @@ function exportQrBooklet(students) {
     </style>
     </head><body>${pagesHtml}</body></html>`);
   win.document.close();
-  // صور QR (data URL) تحتاج وقت فك ترميز/رسم غير متزامن رغم إنها محلية -
-  // لو نادينا win.print() فورًا، نافذة الطباعة تفتح ورموز QR لسا فاضية
-  // (مربعات بيضاء بدون رسم) - ننتظر كل صورة توصل load/error قبل الطباعة
+  // صور QR (data URL) تحتاج وقت فك ترميز/تركيب (paint) غير متزامن رغم إنها
+  // محلية - انتظار حدث load بس ما كفى (الصورة "محمّلة" لكن المتصفح لسا ما
+  // رسمها فعليًا لحظة فتح نافذة الطباعة، فتطلع فاضية بالمعاينة/PDF التلقائي
+  // بس تظهر صح لو المستخدم سكّر النافذة وطبع يدويًا بنفسه). الحل الأوثق:
+  // img.decode() (يضمن جهوزية الصورة للرسم فعليًا، مو بس "تحمّلت") + إطاري
+  // requestAnimationFrame متتاليين يضمنون إن المتصفح خلص يرسم فعليًا قبل
+  // ما ننادي print() - مع مهلة أمان (timeout) لو decode() تعلّق لأي سبب
   const imgs = Array.from(win.document.images);
-  const waitForImages = imgs.length
-    ? Promise.all(imgs.map(img => (img.complete ? Promise.resolve() : new Promise(res => {
-        img.addEventListener('load', res, { once: true });
-        img.addEventListener('error', res, { once: true });
-      }))))
-    : Promise.resolve();
-  waitForImages.then(() => {
-    win.focus();
-    win.print();
+  const decodeAll = Promise.all(imgs.map(img => (img.decode ? img.decode().catch(() => {}) : Promise.resolve())));
+  const safetyTimeout = new Promise(res => setTimeout(res, 1500));
+  Promise.race([decodeAll, safetyTimeout]).then(() => {
+    win.requestAnimationFrame(() => {
+      win.requestAnimationFrame(() => {
+        win.focus();
+        win.print();
+      });
+    });
   });
 }
 

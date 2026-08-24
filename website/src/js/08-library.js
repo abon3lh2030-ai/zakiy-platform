@@ -16,11 +16,15 @@ function renderLibraryManageList(books) {
     return;
   }
   hide('libraryEmptyState');
+  // كتب المدرسة (source: 'school') مو ملك الطالب - يقدر يقرأها بس، بدون
+  // تعديل اسم أو حذف (المدير/الإدارة يديرونها من قسم مكتبة المدرسة)
   container.innerHTML = books.map(b => `
     <div class="leaderboard-row">
-      <span class="name">${b.title}</span>
-      <button class="ghost rename-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">✏️ ${t('btn_rename')}</button>
-      <button class="ghost delete-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">🗑️ ${t('btn_delete')}</button>
+      <span class="name">${b.source === 'school' ? '🏫 ' : ''}${escapeHtml(b.title)}</span>
+      ${b.source === 'school' ? '' : `
+        <button class="ghost rename-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">✏️ ${t('btn_rename')}</button>
+        <button class="ghost delete-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">🗑️ ${t('btn_delete')}</button>
+      `}
     </div>
   `).join('');
 
@@ -71,6 +75,143 @@ document.getElementById('sidebarLibraryBtn').addEventListener('click', () => {
   updateGlobalBackButton();
   clearError('libraryError');
   loadLibraryManageScreen();
+  const isSchoolAdmin = currentUserRole === 'school_admin' || currentUserRole === 'school_administration';
+  document.getElementById('schoolLibrarySection').classList.toggle('hidden', !isSchoolAdmin);
+  if (isSchoolAdmin) loadSchoolLibrarySection();
+});
+
+// ---------- مكتبة المدرسة (مدير/إدارة المدرسة بس) ----------
+async function loadSchoolLibrarySection() {
+  clearError('schoolLibraryError');
+  try {
+    const classesRes = await apiCall('GET', '/api/school/classes');
+    const classSelect = document.getElementById('schoolLibraryClassSelect');
+    classSelect.innerHTML = `<option value="">${t('school_library_all_classes')}</option>` +
+      classesRes.classes.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+
+    const { books } = await apiCall('GET', '/api/school/library');
+    renderSchoolLibraryList(books);
+  } catch (e) {
+    showError('schoolLibraryError', e.message);
+  }
+}
+
+function renderSchoolLibraryList(books) {
+  const container = document.getElementById('schoolLibraryList');
+  const empty = document.getElementById('schoolLibraryEmptyState');
+  empty.classList.toggle('hidden', books.length > 0);
+  container.innerHTML = books.map(b => `
+    <div class="leaderboard-row">
+      <span class="name">${escapeHtml(b.title)} <span class="desc" style="display:inline;">— ${b.class_name ? escapeHtml(b.class_name) : t('school_library_all_classes')}</span></span>
+      <button class="ghost rename-school-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">✏️ ${t('btn_rename')}</button>
+      <button class="ghost delete-school-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">🗑️ ${t('btn_delete')}</button>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.rename-school-book-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const newTitle = prompt(t('rename_prompt'));
+      if (!newTitle || !newTitle.trim()) return;
+      try {
+        await apiCall('PATCH', `/api/school/library/${btn.dataset.id}`, { title: newTitle.trim() });
+        loadSchoolLibrarySection();
+      } catch (e) { alert(e.message); }
+    });
+  });
+  container.querySelectorAll('.delete-school-book-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm(t('confirm_delete_book'))) return;
+      try {
+        await apiCall('DELETE', `/api/school/library/${btn.dataset.id}`);
+        loadSchoolLibrarySection();
+      } catch (e) { alert(e.message); }
+    });
+  });
+}
+
+const schoolLibraryDropzone = document.getElementById('schoolLibraryDropzone');
+const schoolLibraryFileInput = document.getElementById('schoolLibraryFileInput');
+const schoolLibraryFileChip = document.getElementById('schoolLibraryFileChip');
+const schoolLibraryFileName = document.getElementById('schoolLibraryFileName');
+const schoolLibraryAddBtn = document.getElementById('schoolLibraryAddBtn');
+const schoolLibraryRemoveFile = document.getElementById('schoolLibraryRemoveFile');
+const schoolLibraryTitleInput = document.getElementById('schoolLibraryTitleInput');
+let schoolLibrarySelectedFile = null;
+
+schoolLibraryDropzone.addEventListener('click', () => schoolLibraryFileInput.click());
+schoolLibraryDropzone.addEventListener('dragover', e => { e.preventDefault(); schoolLibraryDropzone.classList.add('drag'); });
+schoolLibraryDropzone.addEventListener('dragleave', () => schoolLibraryDropzone.classList.remove('drag'));
+schoolLibraryDropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  schoolLibraryDropzone.classList.remove('drag');
+  if (e.dataTransfer.files.length) handleSchoolLibraryFile(e.dataTransfer.files[0]);
+});
+schoolLibraryFileInput.addEventListener('change', e => {
+  if (e.target.files.length) handleSchoolLibraryFile(e.target.files[0]);
+});
+
+function handleSchoolLibraryFile(file) {
+  if (file.type !== 'application/pdf') {
+    showError('schoolLibraryError', t('err_must_be_pdf'));
+    return;
+  }
+  schoolLibrarySelectedFile = file;
+  schoolLibraryFileName.textContent = file.name;
+  schoolLibraryFileChip.classList.add('show');
+  if (!schoolLibraryTitleInput.value.trim()) schoolLibraryTitleInput.value = file.name.replace(/\.pdf$/i, '');
+  updateSchoolLibraryAddBtnState();
+  clearError('schoolLibraryError');
+}
+
+schoolLibraryRemoveFile.addEventListener('click', () => {
+  schoolLibrarySelectedFile = null;
+  schoolLibraryFileInput.value = '';
+  schoolLibraryFileChip.classList.remove('show');
+  updateSchoolLibraryAddBtnState();
+});
+
+schoolLibraryTitleInput.addEventListener('input', updateSchoolLibraryAddBtnState);
+function updateSchoolLibraryAddBtnState() {
+  schoolLibraryAddBtn.disabled = !(schoolLibrarySelectedFile && schoolLibraryTitleInput.value.trim());
+}
+
+schoolLibraryAddBtn.addEventListener('click', async () => {
+  if (!schoolLibrarySelectedFile) return;
+  clearError('schoolLibraryError');
+  setLoading(schoolLibraryAddBtn, true, t('btn_add_to_school_library'));
+  try {
+    const formData = new FormData();
+    formData.append('file', schoolLibrarySelectedFile);
+    formData.append('context', 'library');
+    const uploadRes = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: formData });
+    const uploadData = await uploadRes.json();
+    if (!uploadRes.ok) throw new Error(uploadData.error || t('err_upload_failed'));
+
+    const extractRes = await fetch(`${API_BASE}/api/extract`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename: uploadData.filename }),
+    });
+    const extractData = await extractRes.json();
+    if (!extractRes.ok) throw new Error(extractData.error || t('err_extract_failed'));
+
+    await apiCall('POST', '/api/school/library', {
+      title: schoolLibraryTitleInput.value.trim(),
+      extracted_text: extractData.text,
+      class_id: document.getElementById('schoolLibraryClassSelect').value || null,
+    });
+
+    schoolLibrarySelectedFile = null;
+    schoolLibraryFileInput.value = '';
+    schoolLibraryFileChip.classList.remove('show');
+    schoolLibraryTitleInput.value = '';
+    updateSchoolLibraryAddBtnState();
+    loadSchoolLibrarySection();
+  } catch (err) {
+    showError('schoolLibraryError', err.message || t('err_unexpected'));
+  } finally {
+    setLoading(schoolLibraryAddBtn, false, t('btn_add_to_school_library'));
+  }
 });
 
 // ---------- إضافة كتاب جديد بالمكتبة (من شاشة المكتبة نفسها) ----------

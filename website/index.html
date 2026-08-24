@@ -1660,6 +1660,37 @@
 
   <!-- مكتبة الكتب الشخصية (تظهر بأي وقت للمسجّلين عبر زر "📚 مكتبتي") -->
   <section class="card hidden" id="step-library">
+    <!-- مكتبة المدرسة - تظهر لمدير/إدارة المدرسة بس - كتب لفصل معيّن أو
+         لكل فصول المدرسة، تنضم تلقائيًا لمكتبة أي طالب مستهدف -->
+    <div id="schoolLibrarySection" class="hidden">
+      <span class="step-label" data-i18n="school_library_step_label">🏫 مكتبة المدرسة</span>
+      <h2 data-i18n="school_library_heading">كتب المدرسة</h2>
+      <p class="desc" data-i18n="school_library_desc">كتب تضيفها لفصل معيّن أو لكل فصول المدرسة، تظهر تلقائيًا بمكتبة أي طالب مستهدف بدون ما يسوي شي.</p>
+
+      <div id="schoolLibraryList"></div>
+      <p class="desc hidden" id="schoolLibraryEmptyState" data-i18n="school_library_empty">ما فيه كتب مضافة للمدرسة بعد.</p>
+
+      <h3 class="sub-heading" style="margin-top:20px;" data-i18n="school_library_add_heading">➕ ضيف كتاب للمدرسة</h3>
+      <select id="schoolLibraryClassSelect" class="text-input"></select>
+      <div class="dropzone" id="schoolLibraryDropzone" style="margin-top:10px;">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#5C6B7A" stroke-width="1.6"><path d="M12 16V4M12 4l-4 4M12 4l4 4M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>
+        <div class="main-text" data-i18n="dropzone_main_text">اسحب ملف PDF هنا أو اضغط للاختيار</div>
+        <div class="sub-text" data-i18n="dropzone_sub_text">حتى 20 صفحة تقريبًا</div>
+        <input type="file" id="schoolLibraryFileInput" accept="application/pdf">
+      </div>
+      <div class="file-chip" id="schoolLibraryFileChip">
+        <span>📄</span>
+        <span class="name" id="schoolLibraryFileName"></span>
+        <button class="ghost" id="schoolLibraryRemoveFile" style="padding:4px 12px;" data-i18n="btn_remove">إزالة</button>
+      </div>
+      <div class="actions">
+        <input type="text" id="schoolLibraryTitleInput" class="text-input" placeholder="اسم الكتاب" data-i18n-ph="ph_book_title">
+        <button class="primary" id="schoolLibraryAddBtn" disabled data-i18n="btn_add_to_school_library">أضفه للمدرسة</button>
+      </div>
+      <div id="schoolLibraryError"></div>
+      <hr style="margin:26px 0; border:none; border-top:1px solid var(--line);">
+    </div>
+
     <span class="step-label" data-i18n="library_step_label">📚 مكتبتي</span>
     <h2 data-i18n="library_heading">مكتبة كتبك</h2>
     <p class="desc" data-i18n="library_desc">كتب حفظتها قبل - تقدر تستخدمها بأي جلسة بدون ما ترفعها من جديد</p>
@@ -2946,6 +2977,13 @@ const I18N = {
     archive_step_label: '📂 الأرشيف',
     friends_step_label: '👥 الأصدقاء',
     friends_list_subheading: '👥 أصدقاؤك',
+    school_library_step_label: '🏫 مكتبة المدرسة',
+    school_library_heading: 'كتب المدرسة',
+    school_library_desc: 'كتب تضيفها لفصل معيّن أو لكل فصول المدرسة، تظهر تلقائيًا بمكتبة أي طالب مستهدف بدون ما يسوي شي.',
+    school_library_empty: 'ما فيه كتب مضافة للمدرسة بعد.',
+    school_library_add_heading: '➕ ضيف كتاب للمدرسة',
+    school_library_all_classes: 'كل فصول المدرسة',
+    btn_add_to_school_library: 'أضفه للمدرسة',
     library_step_label: '📚 مكتبتي',
     ai_help_panel_title: '🤖 مساعد ذكيّ',
     btn_invite_friend: '📨 ادعُ صديق',
@@ -3504,6 +3542,13 @@ const I18N = {
     archive_step_label: '📂 Archive',
     friends_step_label: '👥 Friends',
     friends_list_subheading: '👥 Your Friends',
+    school_library_step_label: '🏫 School Library',
+    school_library_heading: 'School Books',
+    school_library_desc: 'Books you add for a specific class or the whole school - they appear automatically in the library of any targeted student, no action needed on their part.',
+    school_library_empty: 'No school books added yet.',
+    school_library_add_heading: '➕ Add a book for the school',
+    school_library_all_classes: 'All classes in the school',
+    btn_add_to_school_library: 'Add to school',
     library_step_label: '📚 My Library',
     ai_help_panel_title: '🤖 Site Assistant',
     btn_invite_friend: '📨 Invite a Friend',
@@ -4949,11 +4994,15 @@ function renderLibraryManageList(books) {
     return;
   }
   hide('libraryEmptyState');
+  // كتب المدرسة (source: 'school') مو ملك الطالب - يقدر يقرأها بس، بدون
+  // تعديل اسم أو حذف (المدير/الإدارة يديرونها من قسم مكتبة المدرسة)
   container.innerHTML = books.map(b => `
     <div class="leaderboard-row">
-      <span class="name">${b.title}</span>
-      <button class="ghost rename-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">✏️ ${t('btn_rename')}</button>
-      <button class="ghost delete-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">🗑️ ${t('btn_delete')}</button>
+      <span class="name">${b.source === 'school' ? '🏫 ' : ''}${escapeHtml(b.title)}</span>
+      ${b.source === 'school' ? '' : `
+        <button class="ghost rename-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">✏️ ${t('btn_rename')}</button>
+        <button class="ghost delete-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">🗑️ ${t('btn_delete')}</button>
+      `}
     </div>
   `).join('');
 
@@ -5004,6 +5053,143 @@ document.getElementById('sidebarLibraryBtn').addEventListener('click', () => {
   updateGlobalBackButton();
   clearError('libraryError');
   loadLibraryManageScreen();
+  const isSchoolAdmin = currentUserRole === 'school_admin' || currentUserRole === 'school_administration';
+  document.getElementById('schoolLibrarySection').classList.toggle('hidden', !isSchoolAdmin);
+  if (isSchoolAdmin) loadSchoolLibrarySection();
+});
+
+// ---------- مكتبة المدرسة (مدير/إدارة المدرسة بس) ----------
+async function loadSchoolLibrarySection() {
+  clearError('schoolLibraryError');
+  try {
+    const classesRes = await apiCall('GET', '/api/school/classes');
+    const classSelect = document.getElementById('schoolLibraryClassSelect');
+    classSelect.innerHTML = `<option value="">${t('school_library_all_classes')}</option>` +
+      classesRes.classes.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+
+    const { books } = await apiCall('GET', '/api/school/library');
+    renderSchoolLibraryList(books);
+  } catch (e) {
+    showError('schoolLibraryError', e.message);
+  }
+}
+
+function renderSchoolLibraryList(books) {
+  const container = document.getElementById('schoolLibraryList');
+  const empty = document.getElementById('schoolLibraryEmptyState');
+  empty.classList.toggle('hidden', books.length > 0);
+  container.innerHTML = books.map(b => `
+    <div class="leaderboard-row">
+      <span class="name">${escapeHtml(b.title)} <span class="desc" style="display:inline;">— ${b.class_name ? escapeHtml(b.class_name) : t('school_library_all_classes')}</span></span>
+      <button class="ghost rename-school-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">✏️ ${t('btn_rename')}</button>
+      <button class="ghost delete-school-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">🗑️ ${t('btn_delete')}</button>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.rename-school-book-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const newTitle = prompt(t('rename_prompt'));
+      if (!newTitle || !newTitle.trim()) return;
+      try {
+        await apiCall('PATCH', `/api/school/library/${btn.dataset.id}`, { title: newTitle.trim() });
+        loadSchoolLibrarySection();
+      } catch (e) { alert(e.message); }
+    });
+  });
+  container.querySelectorAll('.delete-school-book-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm(t('confirm_delete_book'))) return;
+      try {
+        await apiCall('DELETE', `/api/school/library/${btn.dataset.id}`);
+        loadSchoolLibrarySection();
+      } catch (e) { alert(e.message); }
+    });
+  });
+}
+
+const schoolLibraryDropzone = document.getElementById('schoolLibraryDropzone');
+const schoolLibraryFileInput = document.getElementById('schoolLibraryFileInput');
+const schoolLibraryFileChip = document.getElementById('schoolLibraryFileChip');
+const schoolLibraryFileName = document.getElementById('schoolLibraryFileName');
+const schoolLibraryAddBtn = document.getElementById('schoolLibraryAddBtn');
+const schoolLibraryRemoveFile = document.getElementById('schoolLibraryRemoveFile');
+const schoolLibraryTitleInput = document.getElementById('schoolLibraryTitleInput');
+let schoolLibrarySelectedFile = null;
+
+schoolLibraryDropzone.addEventListener('click', () => schoolLibraryFileInput.click());
+schoolLibraryDropzone.addEventListener('dragover', e => { e.preventDefault(); schoolLibraryDropzone.classList.add('drag'); });
+schoolLibraryDropzone.addEventListener('dragleave', () => schoolLibraryDropzone.classList.remove('drag'));
+schoolLibraryDropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  schoolLibraryDropzone.classList.remove('drag');
+  if (e.dataTransfer.files.length) handleSchoolLibraryFile(e.dataTransfer.files[0]);
+});
+schoolLibraryFileInput.addEventListener('change', e => {
+  if (e.target.files.length) handleSchoolLibraryFile(e.target.files[0]);
+});
+
+function handleSchoolLibraryFile(file) {
+  if (file.type !== 'application/pdf') {
+    showError('schoolLibraryError', t('err_must_be_pdf'));
+    return;
+  }
+  schoolLibrarySelectedFile = file;
+  schoolLibraryFileName.textContent = file.name;
+  schoolLibraryFileChip.classList.add('show');
+  if (!schoolLibraryTitleInput.value.trim()) schoolLibraryTitleInput.value = file.name.replace(/\.pdf$/i, '');
+  updateSchoolLibraryAddBtnState();
+  clearError('schoolLibraryError');
+}
+
+schoolLibraryRemoveFile.addEventListener('click', () => {
+  schoolLibrarySelectedFile = null;
+  schoolLibraryFileInput.value = '';
+  schoolLibraryFileChip.classList.remove('show');
+  updateSchoolLibraryAddBtnState();
+});
+
+schoolLibraryTitleInput.addEventListener('input', updateSchoolLibraryAddBtnState);
+function updateSchoolLibraryAddBtnState() {
+  schoolLibraryAddBtn.disabled = !(schoolLibrarySelectedFile && schoolLibraryTitleInput.value.trim());
+}
+
+schoolLibraryAddBtn.addEventListener('click', async () => {
+  if (!schoolLibrarySelectedFile) return;
+  clearError('schoolLibraryError');
+  setLoading(schoolLibraryAddBtn, true, t('btn_add_to_school_library'));
+  try {
+    const formData = new FormData();
+    formData.append('file', schoolLibrarySelectedFile);
+    formData.append('context', 'library');
+    const uploadRes = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: formData });
+    const uploadData = await uploadRes.json();
+    if (!uploadRes.ok) throw new Error(uploadData.error || t('err_upload_failed'));
+
+    const extractRes = await fetch(`${API_BASE}/api/extract`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename: uploadData.filename }),
+    });
+    const extractData = await extractRes.json();
+    if (!extractRes.ok) throw new Error(extractData.error || t('err_extract_failed'));
+
+    await apiCall('POST', '/api/school/library', {
+      title: schoolLibraryTitleInput.value.trim(),
+      extracted_text: extractData.text,
+      class_id: document.getElementById('schoolLibraryClassSelect').value || null,
+    });
+
+    schoolLibrarySelectedFile = null;
+    schoolLibraryFileInput.value = '';
+    schoolLibraryFileChip.classList.remove('show');
+    schoolLibraryTitleInput.value = '';
+    updateSchoolLibraryAddBtnState();
+    loadSchoolLibrarySection();
+  } catch (err) {
+    showError('schoolLibraryError', err.message || t('err_unexpected'));
+  } finally {
+    setLoading(schoolLibraryAddBtn, false, t('btn_add_to_school_library'));
+  }
 });
 
 // ---------- إضافة كتاب جديد بالمكتبة (من شاشة المكتبة نفسها) ----------

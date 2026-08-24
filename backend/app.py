@@ -665,7 +665,31 @@ def list_library_books():
             .order("created_at", desc=True)
             .execute()
         )
-        return jsonify({"books": res.data}), 200
+        books = [{**b, "source": "personal"} for b in res.data]
+
+        # طالب مؤسسي: نضيف كتب المدرسة المستهدفة له (فصله بالذات + كتب عامة
+        # لكل المدرسة) - قراءة حيّة من school_library_books، مو نسخ فعلي،
+        # فتنضم للطالب تلقائيًا حتى لو صارت إضافتها قبل ما ينضم للفصل. هذا
+        # الـ endpoint تحت require_auth بس (مو require_role) فما فيه
+        # request.profile جاهزة - نجيبها يدوي هنا
+        profile_rows = (
+            supabase_admin.table("profiles").select("role, school_id, class_id")
+            .eq("user_id", request.user_id).limit(1).execute()
+        ).data
+        profile = profile_rows[0] if profile_rows else {}
+        if profile.get("role") == "student" and profile.get("school_id"):
+            school_books = (
+                supabase_admin.table("school_library_books")
+                .select("id, title, created_at, class_id")
+                .eq("school_id", profile["school_id"])
+                .execute()
+            ).data
+            class_id = profile.get("class_id")
+            visible = [b for b in school_books if b["class_id"] is None or b["class_id"] == class_id]
+            books += [{"id": b["id"], "title": b["title"], "created_at": b["created_at"], "source": "school"} for b in visible]
+            books.sort(key=lambda b: b["created_at"], reverse=True)
+
+        return jsonify({"books": books}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -682,11 +706,115 @@ def get_library_book(book_id):
             .limit(1)
             .execute()
         )
-        if not res.data:
-            return jsonify({"error": "الكتاب مو موجود"}), 404
-        return jsonify(res.data[0]), 200
+        if res.data:
+            return jsonify(res.data[0]), 200
+
+        # مو بمكتبته الشخصية - جرّب كتب المدرسة (طالب بس، وبشرط يكون الكتاب
+        # مستهدف فصله أو عام لكل المدرسة)
+        profile_rows = (
+            supabase_admin.table("profiles").select("role, school_id, class_id")
+            .eq("user_id", request.user_id).limit(1).execute()
+        ).data
+        profile = profile_rows[0] if profile_rows else {}
+        if profile.get("role") == "student" and profile.get("school_id"):
+            school_res = (
+                supabase_admin.table("school_library_books")
+                .select("title, extracted_text, class_id, school_id")
+                .eq("id", book_id)
+                .limit(1)
+                .execute()
+            )
+            if school_res.data:
+                b = school_res.data[0]
+                same_school = b["school_id"] == profile["school_id"]
+                targeted = b["class_id"] is None or b["class_id"] == profile.get("class_id")
+                if same_school and targeted:
+                    return jsonify({"title": b["title"], "extracted_text": b["extracted_text"]}), 200
+
+        return jsonify({"error": "الكتاب مو موجود"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# ---------- مكتبة المدرسة (مدير/إدارة المدرسة يضيفون كتب لفصل أو لكل
+# المدرسة - تظهر تلقائيًا بمكتبة أي طالب مستهدف عبر list_library_books فوق) ----------
+@app.route("/api/school/library", methods=["POST"])
+@require_role("school_admin", "school_administration")
+def create_school_library_book():
+    data = request.get_json(silent=True) or {}
+    title = (data.get("title") or "").strip()
+    extracted_text = data.get("extracted_text") or ""
+    class_id = data.get("class_id") or None
+    if not title or not extracted_text:
+        return jsonify({"error": "لازم عنوان ونص مستخرج"}), 400
+    if class_id:
+        owns = (
+            supabase_admin.table("classes").select("id").eq("id", class_id)
+            .eq("school_id", request.profile["school_id"]).limit(1).execute()
+        ).data
+        if not owns:
+            return jsonify({"error": "الفصل مو تابع لمدرستك"}), 403
+    row = (
+        supabase_admin.table("school_library_books")
+        .insert(
+            {
+                "school_id": request.profile["school_id"], "class_id": class_id,
+                "added_by": request.user_id, "title": title, "extracted_text": extracted_text,
+            }
+        )
+        .execute()
+        .data[0]
+    )
+    return jsonify(row), 200
+
+
+@app.route("/api/school/library", methods=["GET"])
+@require_role("school_admin", "school_administration")
+def list_school_library_books():
+    class_id = request.args.get("class_id")
+    q = (
+        supabase_admin.table("school_library_books")
+        .select("id, title, class_id, created_at")
+        .eq("school_id", request.profile["school_id"])
+    )
+    if class_id:
+        q = q.eq("class_id", class_id)
+    books = q.order("created_at", desc=True).execute().data
+
+    class_names = {
+        c["id"]: c["name"]
+        for c in supabase_admin.table("classes").select("id, name").eq("school_id", request.profile["school_id"]).execute().data
+    }
+    for b in books:
+        b["class_name"] = class_names.get(b["class_id"]) if b["class_id"] else None
+    return jsonify({"books": books}), 200
+
+
+@app.route("/api/school/library/<book_id>", methods=["PATCH"])
+@require_role("school_admin", "school_administration")
+def rename_school_library_book(book_id):
+    title = (request.get_json(silent=True) or {}).get("title", "").strip()
+    if not title:
+        return jsonify({"error": "لازم عنوان"}), 400
+    res = (
+        supabase_admin.table("school_library_books").update({"title": title})
+        .eq("id", book_id).eq("school_id", request.profile["school_id"]).execute()
+    )
+    if not res.data:
+        return jsonify({"error": "الكتاب مو موجود"}), 404
+    return jsonify(res.data[0]), 200
+
+
+@app.route("/api/school/library/<book_id>", methods=["DELETE"])
+@require_role("school_admin", "school_administration")
+def delete_school_library_book(book_id):
+    res = (
+        supabase_admin.table("school_library_books").delete()
+        .eq("id", book_id).eq("school_id", request.profile["school_id"]).execute()
+    )
+    if not res.data:
+        return jsonify({"error": "الكتاب مو موجود"}), 404
+    return jsonify({"ok": True}), 200
 
 
 @app.route("/api/library", methods=["POST"])

@@ -84,10 +84,16 @@ document.getElementById('sidebarLibraryBtn').addEventListener('click', () => {
 async function loadSchoolLibrarySection() {
   clearError('schoolLibraryError');
   try {
-    const classesRes = await apiCall('GET', '/api/school/classes');
+    const [classesRes, teachersRes] = await Promise.all([
+      apiCall('GET', '/api/school/classes'),
+      apiCall('GET', '/api/school/teachers'),
+    ]);
     const classSelect = document.getElementById('schoolLibraryClassSelect');
     classSelect.innerHTML = `<option value="">${t('school_library_all_classes')}</option>` +
       classesRes.classes.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+    const teacherSelect = document.getElementById('schoolLibraryTeacherSelect');
+    teacherSelect.innerHTML = `<option value="">${t('school_library_all_teachers')}</option>` +
+      teachersRes.teachers.map(tch => `<option value="${tch.user_id}">${escapeHtml(tch.username)}</option>`).join('');
 
     const { books } = await apiCall('GET', '/api/school/library');
     renderSchoolLibraryList(books);
@@ -102,7 +108,7 @@ function renderSchoolLibraryList(books) {
   empty.classList.toggle('hidden', books.length > 0);
   container.innerHTML = books.map(b => `
     <div class="leaderboard-row">
-      <span class="name">${escapeHtml(b.title)} <span class="desc" style="display:inline;">— ${b.class_name ? escapeHtml(b.class_name) : t('school_library_all_classes')}</span></span>
+      <span class="name">${escapeHtml(b.title)} <span class="desc" style="display:inline;">— ${b.class_name ? escapeHtml(b.class_name) : t('school_library_all_classes')} · ${b.teacher_name ? escapeHtml(b.teacher_name) : t('school_library_all_teachers')}</span></span>
       <button class="ghost rename-school-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">✏️ ${t('btn_rename')}</button>
       <button class="ghost delete-school-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">🗑️ ${t('btn_delete')}</button>
     </div>
@@ -199,6 +205,7 @@ schoolLibraryAddBtn.addEventListener('click', async () => {
       title: schoolLibraryTitleInput.value.trim(),
       extracted_text: extractData.text,
       class_id: document.getElementById('schoolLibraryClassSelect').value || null,
+      teacher_id: document.getElementById('schoolLibraryTeacherSelect').value || null,
     });
 
     schoolLibrarySelectedFile = null;

@@ -683,12 +683,25 @@ def list_library_books():
         if profile.get("role") == "student" and profile.get("school_id"):
             school_books = (
                 supabase_admin.table("school_library_books")
-                .select("id, title, created_at, class_id")
+                .select("id, title, created_at, class_id, teacher_id")
                 .eq("school_id", profile["school_id"])
                 .execute()
             ).data
             class_id = profile.get("class_id")
-            visible = [b for b in school_books if b["class_id"] is None or b["class_id"] == class_id]
+            # معلم فصل الطالب الحالي - لازم لمطابقة كتب مستهدفة بمعلم معيّن
+            # (زيادة على الفصل)، شوف create_school_library_book
+            student_teacher_id = None
+            if class_id:
+                class_row = (
+                    supabase_admin.table("classes").select("teacher_id").eq("id", class_id).limit(1).execute()
+                ).data
+                if class_row:
+                    student_teacher_id = class_row[0].get("teacher_id")
+            visible = [
+                b for b in school_books
+                if (b["class_id"] is None or b["class_id"] == class_id)
+                and (b["teacher_id"] is None or b["teacher_id"] == student_teacher_id)
+            ]
             books += [{"id": b["id"], "title": b["title"], "created_at": b["created_at"], "source": "school"} for b in visible]
             books.sort(key=lambda b: b["created_at"], reverse=True)
 
@@ -722,7 +735,7 @@ def get_library_book(book_id):
         if profile.get("role") == "student" and profile.get("school_id"):
             school_res = (
                 supabase_admin.table("school_library_books")
-                .select("title, extracted_text, class_id, school_id")
+                .select("title, extracted_text, class_id, teacher_id, school_id")
                 .eq("id", book_id)
                 .limit(1)
                 .execute()
@@ -730,8 +743,17 @@ def get_library_book(book_id):
             if school_res.data:
                 b = school_res.data[0]
                 same_school = b["school_id"] == profile["school_id"]
-                targeted = b["class_id"] is None or b["class_id"] == profile.get("class_id")
-                if same_school and targeted:
+                class_targeted = b["class_id"] is None or b["class_id"] == profile.get("class_id")
+                student_teacher_id = None
+                if profile.get("class_id"):
+                    class_row = (
+                        supabase_admin.table("classes").select("teacher_id").eq("id", profile["class_id"])
+                        .limit(1).execute()
+                    ).data
+                    if class_row:
+                        student_teacher_id = class_row[0].get("teacher_id")
+                teacher_targeted = b["teacher_id"] is None or b["teacher_id"] == student_teacher_id
+                if same_school and class_targeted and teacher_targeted:
                     return jsonify({"title": b["title"], "extracted_text": b["extracted_text"]}), 200
 
         return jsonify({"error": "الكتاب مو موجود"}), 404
@@ -748,6 +770,7 @@ def create_school_library_book():
     title = (data.get("title") or "").strip()
     extracted_text = data.get("extracted_text") or ""
     class_id = data.get("class_id") or None
+    teacher_id = data.get("teacher_id") or None
     if not title or not extracted_text:
         return jsonify({"error": "لازم عنوان ونص مستخرج"}), 400
     if class_id:
@@ -757,11 +780,18 @@ def create_school_library_book():
         ).data
         if not owns:
             return jsonify({"error": "الفصل مو تابع لمدرستك"}), 403
+    if teacher_id:
+        owns_teacher = (
+            supabase_admin.table("profiles").select("user_id").eq("user_id", teacher_id)
+            .eq("school_id", request.profile["school_id"]).eq("role", "teacher").limit(1).execute()
+        ).data
+        if not owns_teacher:
+            return jsonify({"error": "المعلم مو تابع لمدرستك"}), 403
     row = (
         supabase_admin.table("school_library_books")
         .insert(
             {
-                "school_id": request.profile["school_id"], "class_id": class_id,
+                "school_id": request.profile["school_id"], "class_id": class_id, "teacher_id": teacher_id,
                 "added_by": request.user_id, "title": title, "extracted_text": extracted_text,
             }
         )
@@ -775,21 +805,30 @@ def create_school_library_book():
 @require_role("school_admin", "school_administration")
 def list_school_library_books():
     class_id = request.args.get("class_id")
+    teacher_id = request.args.get("teacher_id")
     q = (
         supabase_admin.table("school_library_books")
-        .select("id, title, class_id, created_at")
+        .select("id, title, class_id, teacher_id, created_at")
         .eq("school_id", request.profile["school_id"])
     )
     if class_id:
         q = q.eq("class_id", class_id)
+    if teacher_id:
+        q = q.eq("teacher_id", teacher_id)
     books = q.order("created_at", desc=True).execute().data
 
     class_names = {
         c["id"]: c["name"]
         for c in supabase_admin.table("classes").select("id, name").eq("school_id", request.profile["school_id"]).execute().data
     }
+    teacher_names = {
+        p["user_id"]: (p.get("full_name") or p["username"])
+        for p in supabase_admin.table("profiles").select("user_id, username, full_name")
+        .eq("school_id", request.profile["school_id"]).eq("role", "teacher").execute().data
+    }
     for b in books:
         b["class_name"] = class_names.get(b["class_id"]) if b["class_id"] else None
+        b["teacher_name"] = teacher_names.get(b["teacher_id"]) if b["teacher_id"] else None
     return jsonify({"books": books}), 200
 
 

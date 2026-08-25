@@ -109,7 +109,7 @@ async function loadSchoolTeachers() {
     tbody.innerHTML = data.teachers.map(tch => `
       <tr>
         <td>${escapeHtml(tch.username)}</td>
-        <td>${tch.classes.map(c => escapeHtml(c.name)).join('، ') || '—'}</td>
+        <td>${tch.classes.map(c => `${escapeHtml(c.name)} (${escapeHtml(c.subject)})`).join('، ') || '—'}</td>
         <td>${tch.student_count}</td>
         <td>${tch.last_login ? new Date(tch.last_login).toLocaleString(currentLang === 'ar' ? 'ar' : 'en') : t('never_logged_in')}</td>
         <td>
@@ -177,8 +177,7 @@ async function loadSchoolClasses() {
       apiCall('GET', '/api/school/teachers'),
     ]);
     schoolClassesCache = classesData.classes;
-    const teacherOptions = teachersData.teachers.map(tch => `<option value="${tch.user_id}">${escapeHtml(tch.username)}</option>`).join('');
-    document.getElementById('newClassTeacher').innerHTML = `<option value="">${t('opt_no_teacher_yet')}</option>${teacherOptions}`;
+    schoolTeachersOptionsCache = teachersData.teachers;
 
     const classOptions = schoolClassesCache.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
     document.getElementById('scheduleClassSelect').innerHTML = classOptions;
@@ -200,22 +199,12 @@ async function loadSchoolClasses() {
     tbody.innerHTML = schoolClassesCache.map(c => `
       <tr>
         <td>${escapeHtml(c.name)}</td>
-        <td>
-          <select class="text-input" data-reassign-class="${c.id}" style="padding:4px 8px; font-size:13px;">
-            <option value="">${t('opt_no_teacher_yet')}</option>
-            ${teachersData.teachers.map(tch => `<option value="${tch.user_id}" ${tch.user_id === c.teacher_id ? 'selected' : ''}>${escapeHtml(tch.username)}</option>`).join('')}
-          </select>
-        </td>
+        <td>${renderClassTeachersCellHtml(c)}</td>
         <td>${counts[c.id] || 0}</td>
         <td><button class="ghost" data-delete-class="${c.id}" style="padding:4px 10px;">${t('btn_delete')}</button></td>
       </tr>
     `).join('');
-    tbody.querySelectorAll('[data-reassign-class]').forEach(sel => {
-      sel.addEventListener('change', async () => {
-        try { await apiCall('PATCH', `/api/school/classes/${sel.dataset.reassignClass}`, { teacher_id: sel.value || null }); loadSchoolTeachers(); }
-        catch (e) { alert(e.message); }
-      });
-    });
+    wireClassTeachersCellEvents(tbody);
     tbody.querySelectorAll('[data-delete-class]').forEach(btn => {
       btn.addEventListener('click', async () => {
         if (!confirm(t('confirm_delete_class'))) return;
@@ -227,13 +216,66 @@ async function loadSchoolClasses() {
     tbody.innerHTML = `<tr><td colspan="4">${escapeHtml(e.message)}</td></tr>`;
   }
 }
+
+// ---------- تعدد المعلمين لكل فصل (كل معلم بمادته) - خلية "المعلمون
+// والمواد" بجدول الفصول: قائمة بالربطات الحالية (مادة - معلم) مع تعديل
+// المادة/حذف الربط، وفورم صغير لإضافة معلم+مادة جديدة ----------
+let schoolTeachersOptionsCache = [];
+function renderClassTeachersCellHtml(c) {
+  const chips = (c.teachers || []).map(ct => `
+    <span data-ct-id="${ct.id}" style="display:inline-flex; align-items:center; gap:4px; background:var(--card-alt-bg, rgba(127,127,127,.12)); border-radius:8px; padding:2px 8px; margin:2px; font-size:12.5px;">
+      ${escapeHtml(ct.teacher_name)} — ${escapeHtml(ct.subject)}
+      <button class="ct-edit-btn" data-ct-id="${ct.id}" data-current="${escapeHtml(ct.subject)}" title="${t('btn_edit')}" style="border:none; background:none; cursor:pointer;">✏️</button>
+      <button class="ct-remove-btn" data-ct-id="${ct.id}" title="${t('btn_delete')}" style="border:none; background:none; cursor:pointer; color:#c0392b;">✕</button>
+    </span>
+  `).join('');
+  const addFormHtml = schoolTeachersOptionsCache.length ? `
+    <div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:4px;">
+      <select class="text-input ct-add-teacher" data-class-id="${c.id}" style="padding:3px 6px; font-size:12.5px;">
+        ${schoolTeachersOptionsCache.map(tch => `<option value="${tch.user_id}">${escapeHtml(tch.username)}</option>`).join('')}
+      </select>
+      <input type="text" class="text-input ct-add-subject" data-class-id="${c.id}" placeholder="${t('ph_subject')}" style="padding:3px 6px; font-size:12.5px; max-width:100px;">
+      <button class="ghost ct-add-btn" data-class-id="${c.id}" style="padding:3px 8px; font-size:12.5px;">${t('btn_add_class_teacher')}</button>
+    </div>
+  ` : `<p class="desc" style="margin:6px 0 0;">${t('no_teachers_yet_hint')}</p>`;
+  return `<div>${chips || `<span class="desc">${t('no_class_teachers_yet')}</span>`}</div>${addFormHtml}`;
+}
+function wireClassTeachersCellEvents(scope) {
+  scope.querySelectorAll('.ct-remove-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm(t('confirm_delete_class_teacher'))) return;
+      try { await apiCall('DELETE', `/api/school/class-teachers/${btn.dataset.ctId}`); loadSchoolClasses(); }
+      catch (e) { alert(e.message); }
+    });
+  });
+  scope.querySelectorAll('.ct-edit-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const newSubject = prompt(t('prompt_edit_class_teacher_subject'), btn.dataset.current);
+      if (!newSubject || !newSubject.trim()) return;
+      try { await apiCall('PATCH', `/api/school/class-teachers/${btn.dataset.ctId}`, { subject: newSubject.trim() }); loadSchoolClasses(); }
+      catch (e) { alert(e.message); }
+    });
+  });
+  scope.querySelectorAll('.ct-add-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const classId = btn.dataset.classId;
+      const teacherSel = scope.querySelector(`.ct-add-teacher[data-class-id="${classId}"]`);
+      const subjectInput = scope.querySelector(`.ct-add-subject[data-class-id="${classId}"]`);
+      const teacher_id = teacherSel.value;
+      const subject = subjectInput.value.trim();
+      if (!teacher_id || !subject) { alert(t('err_class_teacher_required')); return; }
+      try { await apiCall('POST', `/api/school/classes/${classId}/teachers`, { teacher_id, subject }); loadSchoolClasses(); }
+      catch (e) { alert(e.message); }
+    });
+  });
+}
+
 document.getElementById('addClassBtn').addEventListener('click', async () => {
   clearError('addClassError');
   const name = document.getElementById('newClassName').value.trim();
-  const teacher_id = document.getElementById('newClassTeacher').value || undefined;
   if (!name) { showError('addClassError', t('err_class_name_required')); return; }
   try {
-    await apiCall('POST', '/api/school/classes', { name, teacher_id });
+    await apiCall('POST', '/api/school/classes', { name });
     document.getElementById('newClassName').value = '';
     loadSchoolClasses();
   } catch (e) {

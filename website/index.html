@@ -1409,15 +1409,16 @@
     <div id="schoolTab-classes" class="school-tab-panel hidden">
       <div class="actions" style="flex-wrap:wrap;">
         <input type="text" id="newClassName" class="text-input" placeholder="اسم الفصل" data-i18n-ph="ph_class_name">
-        <select id="newClassTeacher" class="text-input"></select>
         <button class="primary" id="addClassBtn" data-i18n="btn_add_class">إضافة فصل</button>
       </div>
       <div id="addClassError"></div>
+      <!-- كل فصل يقدر يمسكه أكثر من معلم، كل معلم بمادته الخاصة - الربط
+           يُدار من صف موسّع تحت كل فصل (renderClassTeachersPanel) -->
       <div class="data-table-wrap">
         <table class="data-table">
           <thead><tr>
             <th data-i18n="th_class_name">الفصل</th>
-            <th data-i18n="th_teacher">المعلم</th>
+            <th data-i18n="th_class_teachers">المعلمون والمواد</th>
             <th data-i18n="th_student_count">عدد الطلاب</th>
             <th data-i18n="th_actions">إجراء</th>
           </tr></thead>
@@ -2910,7 +2911,6 @@ const I18N = {
     never_logged_in: 'ما دخل بعد',
     no_schedule_yet: 'ما فيه حصص مضافة بعد',
     no_attendance_yet: 'ما فيه سجل حضور بعد',
-    opt_no_teacher_yet: '— بدون معلم بعد —',
     opt_create_class_first: 'أنشئ فصل أول',
     opt_all_classes: 'كل الفصول',
     opt_all_my_classes: 'كل فصولي',
@@ -2920,6 +2920,14 @@ const I18N = {
     th_name: 'الاسم', th_classes: 'الفصول', th_student_count: 'عدد الطلاب', th_last_login: 'آخر دخول',
     th_class_name: 'الفصل', th_teacher: 'المعلم', th_day: 'اليوم', th_time: 'الوقت', th_subject: 'المادة',
     th_student: 'الطالب', th_join_time: 'وقت الانضمام', th_username: 'اسم المستخدم', th_password: 'كلمة السر',
+    // ---- تعدد المعلمين لكل فصل ----
+    th_class_teachers: 'المعلمون والمواد',
+    btn_add_class_teacher: '➕ إضافة',
+    no_class_teachers_yet: 'ما فيه معلم مضاف لهذا الفصل بعد',
+    no_teachers_yet_hint: 'أضف معلم أول من تبويب المعلمون',
+    confirm_delete_class_teacher: 'تشيل هذا المعلم من الفصل؟',
+    prompt_edit_class_teacher_subject: 'اكتب اسم المادة الجديد:',
+    err_class_teacher_required: 'لازم تختار المعلم وتكتب المادة',
     // ---- كشف الدرجات ----
     nav_gradesheet: 'كشف الدرجات', gradesheet_step_label: '📋 كشف الدرجات',
     gradesheet_heading: 'كشف درجات الطلاب',
@@ -3509,7 +3517,6 @@ const I18N = {
     never_logged_in: 'Never logged in',
     no_schedule_yet: 'No classes scheduled yet',
     no_attendance_yet: 'No attendance recorded yet',
-    opt_no_teacher_yet: '— No teacher yet —',
     opt_create_class_first: 'Create a class first',
     opt_all_classes: 'All classes',
     opt_all_my_classes: 'All my classes',
@@ -3519,6 +3526,14 @@ const I18N = {
     th_name: 'Name', th_classes: 'Classes', th_student_count: 'Students', th_last_login: 'Last login',
     th_class_name: 'Class', th_teacher: 'Teacher', th_day: 'Day', th_time: 'Time', th_subject: 'Subject',
     th_student: 'Student', th_join_time: 'Joined at', th_username: 'Username', th_password: 'Password',
+    // ---- Multi-teacher classes ----
+    th_class_teachers: 'Teachers & subjects',
+    btn_add_class_teacher: '➕ Add',
+    no_class_teachers_yet: 'No teacher added to this class yet',
+    no_teachers_yet_hint: 'Add a teacher first from the Teachers tab',
+    confirm_delete_class_teacher: 'Remove this teacher from the class?',
+    prompt_edit_class_teacher_subject: 'Enter the new subject name:',
+    err_class_teacher_required: 'You need to pick a teacher and enter a subject',
     // ---- Gradesheet ----
     nav_gradesheet: 'Gradesheet', gradesheet_step_label: '📋 Gradesheet',
     gradesheet_heading: "Students' gradesheet",
@@ -7705,7 +7720,7 @@ async function loadSchoolTeachers() {
     tbody.innerHTML = data.teachers.map(tch => `
       <tr>
         <td>${escapeHtml(tch.username)}</td>
-        <td>${tch.classes.map(c => escapeHtml(c.name)).join('، ') || '—'}</td>
+        <td>${tch.classes.map(c => `${escapeHtml(c.name)} (${escapeHtml(c.subject)})`).join('، ') || '—'}</td>
         <td>${tch.student_count}</td>
         <td>${tch.last_login ? new Date(tch.last_login).toLocaleString(currentLang === 'ar' ? 'ar' : 'en') : t('never_logged_in')}</td>
         <td>
@@ -7773,8 +7788,7 @@ async function loadSchoolClasses() {
       apiCall('GET', '/api/school/teachers'),
     ]);
     schoolClassesCache = classesData.classes;
-    const teacherOptions = teachersData.teachers.map(tch => `<option value="${tch.user_id}">${escapeHtml(tch.username)}</option>`).join('');
-    document.getElementById('newClassTeacher').innerHTML = `<option value="">${t('opt_no_teacher_yet')}</option>${teacherOptions}`;
+    schoolTeachersOptionsCache = teachersData.teachers;
 
     const classOptions = schoolClassesCache.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
     document.getElementById('scheduleClassSelect').innerHTML = classOptions;
@@ -7796,22 +7810,12 @@ async function loadSchoolClasses() {
     tbody.innerHTML = schoolClassesCache.map(c => `
       <tr>
         <td>${escapeHtml(c.name)}</td>
-        <td>
-          <select class="text-input" data-reassign-class="${c.id}" style="padding:4px 8px; font-size:13px;">
-            <option value="">${t('opt_no_teacher_yet')}</option>
-            ${teachersData.teachers.map(tch => `<option value="${tch.user_id}" ${tch.user_id === c.teacher_id ? 'selected' : ''}>${escapeHtml(tch.username)}</option>`).join('')}
-          </select>
-        </td>
+        <td>${renderClassTeachersCellHtml(c)}</td>
         <td>${counts[c.id] || 0}</td>
         <td><button class="ghost" data-delete-class="${c.id}" style="padding:4px 10px;">${t('btn_delete')}</button></td>
       </tr>
     `).join('');
-    tbody.querySelectorAll('[data-reassign-class]').forEach(sel => {
-      sel.addEventListener('change', async () => {
-        try { await apiCall('PATCH', `/api/school/classes/${sel.dataset.reassignClass}`, { teacher_id: sel.value || null }); loadSchoolTeachers(); }
-        catch (e) { alert(e.message); }
-      });
-    });
+    wireClassTeachersCellEvents(tbody);
     tbody.querySelectorAll('[data-delete-class]').forEach(btn => {
       btn.addEventListener('click', async () => {
         if (!confirm(t('confirm_delete_class'))) return;
@@ -7823,13 +7827,66 @@ async function loadSchoolClasses() {
     tbody.innerHTML = `<tr><td colspan="4">${escapeHtml(e.message)}</td></tr>`;
   }
 }
+
+// ---------- تعدد المعلمين لكل فصل (كل معلم بمادته) - خلية "المعلمون
+// والمواد" بجدول الفصول: قائمة بالربطات الحالية (مادة - معلم) مع تعديل
+// المادة/حذف الربط، وفورم صغير لإضافة معلم+مادة جديدة ----------
+let schoolTeachersOptionsCache = [];
+function renderClassTeachersCellHtml(c) {
+  const chips = (c.teachers || []).map(ct => `
+    <span data-ct-id="${ct.id}" style="display:inline-flex; align-items:center; gap:4px; background:var(--card-alt-bg, rgba(127,127,127,.12)); border-radius:8px; padding:2px 8px; margin:2px; font-size:12.5px;">
+      ${escapeHtml(ct.teacher_name)} — ${escapeHtml(ct.subject)}
+      <button class="ct-edit-btn" data-ct-id="${ct.id}" data-current="${escapeHtml(ct.subject)}" title="${t('btn_edit')}" style="border:none; background:none; cursor:pointer;">✏️</button>
+      <button class="ct-remove-btn" data-ct-id="${ct.id}" title="${t('btn_delete')}" style="border:none; background:none; cursor:pointer; color:#c0392b;">✕</button>
+    </span>
+  `).join('');
+  const addFormHtml = schoolTeachersOptionsCache.length ? `
+    <div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:4px;">
+      <select class="text-input ct-add-teacher" data-class-id="${c.id}" style="padding:3px 6px; font-size:12.5px;">
+        ${schoolTeachersOptionsCache.map(tch => `<option value="${tch.user_id}">${escapeHtml(tch.username)}</option>`).join('')}
+      </select>
+      <input type="text" class="text-input ct-add-subject" data-class-id="${c.id}" placeholder="${t('ph_subject')}" style="padding:3px 6px; font-size:12.5px; max-width:100px;">
+      <button class="ghost ct-add-btn" data-class-id="${c.id}" style="padding:3px 8px; font-size:12.5px;">${t('btn_add_class_teacher')}</button>
+    </div>
+  ` : `<p class="desc" style="margin:6px 0 0;">${t('no_teachers_yet_hint')}</p>`;
+  return `<div>${chips || `<span class="desc">${t('no_class_teachers_yet')}</span>`}</div>${addFormHtml}`;
+}
+function wireClassTeachersCellEvents(scope) {
+  scope.querySelectorAll('.ct-remove-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm(t('confirm_delete_class_teacher'))) return;
+      try { await apiCall('DELETE', `/api/school/class-teachers/${btn.dataset.ctId}`); loadSchoolClasses(); }
+      catch (e) { alert(e.message); }
+    });
+  });
+  scope.querySelectorAll('.ct-edit-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const newSubject = prompt(t('prompt_edit_class_teacher_subject'), btn.dataset.current);
+      if (!newSubject || !newSubject.trim()) return;
+      try { await apiCall('PATCH', `/api/school/class-teachers/${btn.dataset.ctId}`, { subject: newSubject.trim() }); loadSchoolClasses(); }
+      catch (e) { alert(e.message); }
+    });
+  });
+  scope.querySelectorAll('.ct-add-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const classId = btn.dataset.classId;
+      const teacherSel = scope.querySelector(`.ct-add-teacher[data-class-id="${classId}"]`);
+      const subjectInput = scope.querySelector(`.ct-add-subject[data-class-id="${classId}"]`);
+      const teacher_id = teacherSel.value;
+      const subject = subjectInput.value.trim();
+      if (!teacher_id || !subject) { alert(t('err_class_teacher_required')); return; }
+      try { await apiCall('POST', `/api/school/classes/${classId}/teachers`, { teacher_id, subject }); loadSchoolClasses(); }
+      catch (e) { alert(e.message); }
+    });
+  });
+}
+
 document.getElementById('addClassBtn').addEventListener('click', async () => {
   clearError('addClassError');
   const name = document.getElementById('newClassName').value.trim();
-  const teacher_id = document.getElementById('newClassTeacher').value || undefined;
   if (!name) { showError('addClassError', t('err_class_name_required')); return; }
   try {
-    await apiCall('POST', '/api/school/classes', { name, teacher_id });
+    await apiCall('POST', '/api/school/classes', { name });
     document.getElementById('newClassName').value = '';
     loadSchoolClasses();
   } catch (e) {

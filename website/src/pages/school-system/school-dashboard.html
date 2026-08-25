@@ -91,15 +91,16 @@
     <div id="schoolTab-classes" class="school-tab-panel hidden">
       <div class="actions" style="flex-wrap:wrap;">
         <input type="text" id="newClassName" class="text-input" placeholder="اسم الفصل" data-i18n-ph="ph_class_name">
-        <select id="newClassTeacher" class="text-input"></select>
         <button class="primary" id="addClassBtn" data-i18n="btn_add_class">إضافة فصل</button>
       </div>
       <div id="addClassError"></div>
+      <!-- كل فصل يقدر يمسكه أكثر من معلم، كل معلم بمادته الخاصة - الربط
+           يُدار من صف موسّع تحت كل فصل (renderClassTeachersPanel) -->
       <div class="data-table-wrap">
         <table class="data-table">
           <thead><tr>
             <th data-i18n="th_class_name">الفصل</th>
-            <th data-i18n="th_teacher">المعلم</th>
+            <th data-i18n="th_class_teachers">المعلمون والمواد</th>
             <th data-i18n="th_student_count">عدد الطلاب</th>
             <th data-i18n="th_actions">إجراء</th>
           </tr></thead>

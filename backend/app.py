@@ -1641,15 +1641,7 @@ def create_room():
     requested_class_id = data.get("class_id")
     if requested_class_id and uid:
         try:
-            owns_class = (
-                supabase_admin.table("classes")
-                .select("id")
-                .eq("id", requested_class_id)
-                .eq("teacher_id", uid)
-                .limit(1)
-                .execute()
-            ).data
-            if owns_class:
+            if _teacher_owns_class(uid, requested_class_id):
                 class_id = requested_class_id
         except Exception:
             class_id = None
@@ -2717,7 +2709,13 @@ def school_list_teachers():
         .eq("role", "teacher")
         .execute()
     ).data
-    classes = supabase_admin.table("classes").select("id, name, teacher_id").eq("school_id", school_id).execute().data
+    classes = supabase_admin.table("classes").select("id, name").eq("school_id", school_id).execute().data
+    class_names = {c["id"]: c["name"] for c in classes}
+    class_teacher_rows = (
+        supabase_admin.table("class_teachers").select("class_id, teacher_id, subject")
+        .in_("class_id", list(class_names.keys())).execute().data
+        if class_names else []
+    )
     students = (
         supabase_admin.table("profiles").select("class_id").eq("school_id", school_id).eq("role", "student").execute()
     ).data
@@ -2725,7 +2723,8 @@ def school_list_teachers():
 
     result = []
     for t in teachers:
-        my_classes = [c for c in classes if c["teacher_id"] == t["user_id"]]
+        my_rows = [r for r in class_teacher_rows if r["teacher_id"] == t["user_id"]]
+        my_class_ids = {r["class_id"] for r in my_rows}
         try:
             auth_user = supabase_admin.auth.admin.get_user_by_id(t["user_id"])
             last_login = auth_user.user.last_sign_in_at
@@ -2735,8 +2734,13 @@ def school_list_teachers():
             {
                 "user_id": t["user_id"],
                 "username": t["username"],
-                "classes": [{"id": c["id"], "name": c["name"]} for c in my_classes],
-                "student_count": sum(student_counts.get(c["id"], 0) for c in my_classes),
+                # صف لكل (فصل، مادة) - نفس الفصل يتكرر لو المعلم يدرّس فيه أكثر
+                # من مادة
+                "classes": [
+                    {"id": r["class_id"], "name": class_names.get(r["class_id"], ""), "subject": r["subject"]}
+                    for r in my_rows
+                ],
+                "student_count": sum(student_counts.get(cid, 0) for cid in my_class_ids),
                 "last_login": str(last_login) if last_login else None,
             }
         )
@@ -2919,8 +2923,6 @@ def school_create_class():
     if not name:
         return jsonify({"error": "لازم اسم الفصل"}), 400
     row = {"school_id": request.profile["school_id"], "name": name}
-    if data.get("teacher_id"):
-        row["teacher_id"] = data["teacher_id"]
     try:
         created = supabase_admin.table("classes").insert(row).execute().data[0]
     except Exception as e:
@@ -2933,8 +2935,33 @@ def school_create_class():
 def school_list_classes():
     q = supabase_admin.table("classes").select("*").eq("school_id", request.profile["school_id"])
     if request.profile["role"] == "teacher":
-        q = q.eq("teacher_id", request.user_id)
-    return jsonify({"classes": q.execute().data}), 200
+        my_class_ids = _teacher_class_ids(request.user_id)
+        if not my_class_ids:
+            return jsonify({"classes": []}), 200
+        q = q.in_("id", list(my_class_ids))
+    classes = q.execute().data
+
+    # للمدير/الإدارة بس - نضمّن مباشرة قائمة (معلم، مادة) لكل فصل عشان
+    # الواجهة ما تحتاج نداء إضافي لكل فصل لعرض جدول "الفصول والجدول"
+    if request.profile["role"] in ("school_admin", "school_administration") and classes:
+        class_ids = [c["id"] for c in classes]
+        ct_rows = supabase_admin.table("class_teachers").select("id, class_id, teacher_id, subject").in_(
+            "class_id", class_ids
+        ).execute().data
+        names = {
+            p["user_id"]: p["username"]
+            for p in supabase_admin.table("profiles").select("user_id, username")
+            .eq("school_id", request.profile["school_id"]).eq("role", "teacher").execute().data
+        }
+        by_class = {}
+        for r in ct_rows:
+            by_class.setdefault(r["class_id"], []).append(
+                {"id": r["id"], "teacher_id": r["teacher_id"], "teacher_name": names.get(r["teacher_id"], r["teacher_id"]), "subject": r["subject"]}
+            )
+        for c in classes:
+            c["teachers"] = by_class.get(c["id"], [])
+
+    return jsonify({"classes": classes}), 200
 
 
 @app.route("/api/school/classes/<class_id>", methods=["PATCH"])
@@ -2944,8 +2971,6 @@ def school_update_class(class_id):
     patch = {}
     if "name" in data:
         patch["name"] = (data["name"] or "").strip()
-    if "teacher_id" in data:
-        patch["teacher_id"] = data["teacher_id"]
     if patch:
         supabase_admin.table("classes").update(patch).eq("id", class_id).eq(
             "school_id", request.profile["school_id"]
@@ -2960,6 +2985,128 @@ def school_delete_class(class_id):
     return jsonify({"ok": True}), 200
 
 
+# ---------- تعدد المعلمين لكل فصل (كل معلم بمادته الخاصة) - يحل محل عمود
+# classes.teacher_id المفرد القديم. المدير/الإدارة يديرون هذا من نفس تبويب
+# "الفصول والجدول" بالواجهة: يضيفون معلم+مادة لفصل، يعدّلون المادة، أو
+# يحذفون الربط بالكامل. كل معلم يشوف بس محتواه هو (واجباته/اختباراته) حتى
+# لو تشارك بفصل مع معلمين ثانين - هذا سلوك موجود أصلًا (الواجبات/الاختبارات
+# مملوكة لصف teacher_id، مو للفصل نفسه) ولا يحتاج أي تغيير إضافي هنا ----------
+@app.route("/api/school/classes/<class_id>/teachers", methods=["POST"])
+@require_role("school_admin", "school_administration")
+def add_class_teacher(class_id):
+    owns_class = (
+        supabase_admin.table("classes").select("id").eq("id", class_id)
+        .eq("school_id", request.profile["school_id"]).limit(1).execute()
+    ).data
+    if not owns_class:
+        return jsonify({"error": "الفصل مو تابع لمدرستك"}), 403
+    data = request.get_json(silent=True) or {}
+    teacher_id = data.get("teacher_id")
+    subject = (data.get("subject") or "").strip()
+    if not teacher_id or not subject:
+        return jsonify({"error": "لازم تختار المعلم وتكتب المادة"}), 400
+    owns_teacher = (
+        supabase_admin.table("profiles").select("user_id").eq("user_id", teacher_id)
+        .eq("school_id", request.profile["school_id"]).eq("role", "teacher").limit(1).execute()
+    ).data
+    if not owns_teacher:
+        return jsonify({"error": "المعلم مو تابع لمدرستك"}), 403
+    try:
+        row = (
+            supabase_admin.table("class_teachers")
+            .insert({"class_id": class_id, "teacher_id": teacher_id, "subject": subject})
+            .execute()
+            .data[0]
+        )
+    except Exception as e:
+        return jsonify({"error": f"تعذّر إضافة المعلم للفصل: {e}"}), 400
+    return jsonify(row), 200
+
+
+@app.route("/api/school/classes/<class_id>/teachers", methods=["GET"])
+@require_role("school_admin", "school_administration", "teacher")
+def list_class_teachers(class_id):
+    owns_class = (
+        supabase_admin.table("classes").select("id").eq("id", class_id)
+        .eq("school_id", request.profile["school_id"]).limit(1).execute()
+    ).data
+    if not owns_class:
+        return jsonify({"error": "الفصل مو تابع لمدرستك"}), 403
+    rows = (
+        supabase_admin.table("class_teachers").select("id, teacher_id, subject")
+        .eq("class_id", class_id).order("created_at").execute()
+    ).data
+    names = {
+        p["user_id"]: p["username"]
+        for p in supabase_admin.table("profiles").select("user_id, username")
+        .eq("school_id", request.profile["school_id"]).eq("role", "teacher").execute().data
+    }
+    for r in rows:
+        r["teacher_name"] = names.get(r["teacher_id"], r["teacher_id"])
+    return jsonify({"class_teachers": rows}), 200
+
+
+@app.route("/api/school/class-teachers/<row_id>", methods=["PATCH"])
+@require_role("school_admin", "school_administration")
+def update_class_teacher(row_id):
+    existing = supabase_admin.table("class_teachers").select("id, class_id").eq("id", row_id).limit(1).execute().data
+    if not existing:
+        return jsonify({"error": "الربط مو موجود"}), 404
+    class_row = (
+        supabase_admin.table("classes").select("id").eq("id", existing[0]["class_id"])
+        .eq("school_id", request.profile["school_id"]).limit(1).execute()
+    ).data
+    if not class_row:
+        return jsonify({"error": "الفصل مو تابع لمدرستك"}), 403
+    subject = (request.get_json(silent=True) or {}).get("subject", "").strip()
+    if not subject:
+        return jsonify({"error": "لازم مادة"}), 400
+    row = supabase_admin.table("class_teachers").update({"subject": subject}).eq("id", row_id).execute().data[0]
+    return jsonify(row), 200
+
+
+@app.route("/api/school/class-teachers/<row_id>", methods=["DELETE"])
+@require_role("school_admin", "school_administration")
+def delete_class_teacher(row_id):
+    existing = supabase_admin.table("class_teachers").select("id, class_id").eq("id", row_id).limit(1).execute().data
+    if not existing:
+        return jsonify({"ok": True}), 200
+    class_row = (
+        supabase_admin.table("classes").select("id").eq("id", existing[0]["class_id"])
+        .eq("school_id", request.profile["school_id"]).limit(1).execute()
+    ).data
+    if not class_row:
+        return jsonify({"error": "الفصل مو تابع لمدرستك"}), 403
+    supabase_admin.table("class_teachers").delete().eq("id", row_id).execute()
+    return jsonify({"ok": True}), 200
+
+
+def _teacher_class_ids(teacher_id):
+    """كل الفصول اللي المعلم يدرّسها (أي مادة) - عبر class_teachers (نظام
+    تعدد المعلمين/المواد لكل فصل)، مو عمود classes.teacher_id المفرد
+    القديم (باقٍ بالجدول توافقًا مع صفوف قديمة بس ما يُعتمد عليه هنا)."""
+    rows = supabase_admin.table("class_teachers").select("class_id").eq("teacher_id", teacher_id).execute().data
+    return {r["class_id"] for r in rows}
+
+
+def _teacher_owns_class(teacher_id, class_id):
+    if not class_id:
+        return False
+    return bool(
+        supabase_admin.table("class_teachers").select("id").eq("teacher_id", teacher_id)
+        .eq("class_id", class_id).limit(1).execute().data
+    )
+
+
+def _teacher_classes_basic(teacher_id):
+    """[{id, name}] - كل فصول المعلم (أي مادة)، للقوائم المنسدلة بالواجهة
+    (الواجبات/الاختبارات/الجدول/كشف الدرجات/الحضور)."""
+    class_ids = _teacher_class_ids(teacher_id)
+    if not class_ids:
+        return []
+    return supabase_admin.table("classes").select("id, name").in_("id", list(class_ids)).execute().data
+
+
 def _class_scope_check(class_row):
     """يتحقق إن الفصل المُمرَّر فعلًا يخص صاحب الطلب الحالي (حسب دوره) - يمنع
     أي حساب مؤسسي (مدرسة/معلم/طالب) من قراءة أو تعديل جدول فصل غير تابع له،
@@ -2970,7 +3117,7 @@ def _class_scope_check(class_row):
     if role in ("school_admin", "school_administration"):
         return class_row.get("school_id") == request.profile["school_id"]
     if role == "teacher":
-        return class_row.get("teacher_id") == request.user_id
+        return _teacher_owns_class(request.user_id, class_row.get("id"))
     if role == "student":
         return class_row.get("id") == request.profile.get("class_id")
     return False
@@ -3117,10 +3264,7 @@ def school_list_students():
     class_id = request.args.get("class_id")
     q = supabase_admin.table("profiles").select("user_id, username, full_name, class_id").eq("role", "student")
     if request.profile["role"] == "teacher":
-        allowed_ids = [
-            c["id"]
-            for c in supabase_admin.table("classes").select("id").eq("teacher_id", request.user_id).execute().data
-        ]
+        allowed_ids = list(_teacher_class_ids(request.user_id))
         if class_id and class_id not in allowed_ids:
             return jsonify({"error": "الفصل مو تابع لك"}), 403
         q = q.in_("class_id", [class_id] if class_id else (allowed_ids or ["-"]))
@@ -3165,7 +3309,7 @@ def school_attendance_report():
 @app.route("/api/teacher/roster", methods=["GET"])
 @require_role("teacher")
 def teacher_roster():
-    my_classes = supabase_admin.table("classes").select("id, name").eq("teacher_id", request.user_id).execute().data
+    my_classes = _teacher_classes_basic(request.user_id)
     class_ids = [c["id"] for c in my_classes]
     students = []
     if class_ids:
@@ -3185,7 +3329,7 @@ def teacher_performance():
     """لوحة أداء مجمّعة لكل طلاب فصول المعلم دفعة وحدة - بدل ما يفتح كل طالب
     لحاله. تدعم فلترة اختيارية بفصل وحد عبر ?class_id="""
     requested_class_id = request.args.get("class_id")
-    my_classes = supabase_admin.table("classes").select("id, name").eq("teacher_id", request.user_id).execute().data
+    my_classes = _teacher_classes_basic(request.user_id)
     my_class_ids = [c["id"] for c in my_classes]
     class_ids = [requested_class_id] if requested_class_id in my_class_ids else my_class_ids
     students = []
@@ -3220,10 +3364,7 @@ def teacher_view_student(user_id):
     ).data
     if not target:
         return jsonify({"error": "الطالب مو موجود"}), 404
-    my_class_ids = [
-        c["id"] for c in supabase_admin.table("classes").select("id").eq("teacher_id", request.user_id).execute().data
-    ]
-    if target[0]["class_id"] not in my_class_ids:
+    if not _teacher_owns_class(request.user_id, target[0]["class_id"]):
         return jsonify({"error": "هذا الطالب مو بفصلك"}), 403
     profile = _get_institutional_profile(user_id)
     return jsonify(profile), 200
@@ -3271,10 +3412,7 @@ def teacher_gradesheet():
     class_id = request.args.get("class_id")
     if not class_id:
         return jsonify({"error": "لازم تختار فصل"}), 400
-    owns = (
-        supabase_admin.table("classes").select("id").eq("id", class_id).eq("teacher_id", request.user_id)
-        .limit(1).execute()
-    ).data
+    owns = _teacher_owns_class(request.user_id, class_id)
     if not owns:
         return jsonify({"error": "الفصل مو تابع لك"}), 403
 
@@ -3345,10 +3483,7 @@ def update_gradesheet_row(student_id):
     class_id = data.get("class_id")
     if not class_id:
         return jsonify({"error": "لازم تحدد الفصل"}), 400
-    owns = (
-        supabase_admin.table("classes").select("id").eq("id", class_id).eq("teacher_id", request.user_id)
-        .limit(1).execute()
-    ).data
+    owns = _teacher_owns_class(request.user_id, class_id)
     if not owns:
         return jsonify({"error": "الفصل مو تابع لك"}), 403
     belongs = (
@@ -3377,7 +3512,7 @@ def update_gradesheet_row(student_id):
 @app.route("/api/teacher/schedule", methods=["GET"])
 @require_role("teacher")
 def teacher_schedule():
-    my_classes = supabase_admin.table("classes").select("id, name").eq("teacher_id", request.user_id).execute().data
+    my_classes = _teacher_classes_basic(request.user_id)
     class_ids = [c["id"] for c in my_classes]
     schedule = []
     if class_ids:
@@ -3389,9 +3524,7 @@ def teacher_schedule():
 @require_role("teacher")
 def teacher_attendance():
     requested_class_id = request.args.get("class_id")
-    my_class_ids = [
-        c["id"] for c in supabase_admin.table("classes").select("id").eq("teacher_id", request.user_id).execute().data
-    ]
+    my_class_ids = list(_teacher_class_ids(request.user_id))
     class_ids = [requested_class_id] if requested_class_id in my_class_ids else my_class_ids
     rows = []
     if class_ids:
@@ -3622,9 +3755,7 @@ def teacher_broadcast():
     if not body:
         return jsonify({"error": "لازم نص الرسالة"}), 400
     requested_class_id = data.get("class_id")
-    my_class_ids = [
-        c["id"] for c in supabase_admin.table("classes").select("id").eq("teacher_id", request.user_id).execute().data
-    ]
+    my_class_ids = list(_teacher_class_ids(request.user_id))
     class_ids = [requested_class_id] if requested_class_id in my_class_ids else my_class_ids
     if not class_ids:
         return jsonify({"error": "ما عندك فصول"}), 400
@@ -3644,10 +3775,7 @@ def get_manual_attendance():
     date = request.args.get("date")
     if not class_id or not date:
         return jsonify({"error": "لازم class_id وdate"}), 400
-    owns = (
-        supabase_admin.table("classes").select("id").eq("id", class_id).eq("teacher_id", request.user_id)
-        .limit(1).execute()
-    ).data
+    owns = _teacher_owns_class(request.user_id, class_id)
     if not owns:
         return jsonify({"error": "الفصل مو تابع لك"}), 403
     rows = (
@@ -3666,10 +3794,7 @@ def save_manual_attendance():
     records = data.get("records") or []
     if not class_id or not date or not records:
         return jsonify({"error": "لازم class_id وdate وقائمة الحضور"}), 400
-    owns = (
-        supabase_admin.table("classes").select("id").eq("id", class_id).eq("teacher_id", request.user_id)
-        .limit(1).execute()
-    ).data
+    owns = _teacher_owns_class(request.user_id, class_id)
     if not owns:
         return jsonify({"error": "الفصل مو تابع لك"}), 403
 
@@ -3743,11 +3868,7 @@ def create_assignment():
     if err:
         return err
 
-    owns = (
-        supabase_admin.table("classes").select("id, name").eq("id", class_id).eq("teacher_id", request.user_id)
-        .limit(1).execute()
-    ).data
-    if not owns:
+    if not _teacher_owns_class(request.user_id, class_id):
         return jsonify({"error": "الفصل مو تابع لك"}), 403
 
     # الواجبات دايمًا لكل طلاب الفصل (target_student_id فاضية دايمًا بأي واجب
@@ -3791,7 +3912,7 @@ def list_teacher_assignments():
         query = query.eq("class_id", class_id)
     assignments = query.order("created_at", desc=True).execute().data
 
-    class_names = {c["id"]: c["name"] for c in supabase_admin.table("classes").select("id, name").eq("teacher_id", request.user_id).execute().data}
+    class_names = {c["id"]: c["name"] for c in _teacher_classes_basic(request.user_id)}
     submission_counts = Counter(
         r["assignment_id"]
         for r in supabase_admin.table("assignment_submissions").select("assignment_id").execute().data
@@ -4064,10 +4185,7 @@ def create_quiz():
     if err:
         return err
 
-    owns = (
-        supabase_admin.table("classes").select("id").eq("id", class_id).eq("teacher_id", request.user_id)
-        .limit(1).execute()
-    ).data
+    owns = _teacher_owns_class(request.user_id, class_id)
     if not owns:
         return jsonify({"error": "الفصل مو تابع لك"}), 403
 
@@ -4111,10 +4229,7 @@ def list_teacher_quizzes():
         query = query.eq("class_id", class_id)
     quizzes = query.order("created_at", desc=True).execute().data
 
-    class_names = {
-        c["id"]: c["name"]
-        for c in supabase_admin.table("classes").select("id, name").eq("teacher_id", request.user_id).execute().data
-    }
+    class_names = {c["id"]: c["name"] for c in _teacher_classes_basic(request.user_id)}
     submitted_counts = Counter(
         r["quiz_id"]
         for r in supabase_admin.table("quiz_attempts").select("quiz_id").not_.is_("submitted_at", "null").execute().data
@@ -4814,16 +4929,24 @@ def _check_schedule_reminders_once(now=None):
         except Exception:
             continue  # صف موجود أصلًا (اتُرسل التذكير قبل) - نتخطى
 
-        cls = supabase_admin.table("classes").select("name, teacher_id").eq("id", row["class_id"]).limit(1).execute().data
+        cls = supabase_admin.table("classes").select("name").eq("id", row["class_id"]).limit(1).execute().data
         if not cls:
             continue
         class_name = cls[0]["name"]
-        teacher_id = cls[0].get("teacher_id")
         title = "⏰ تذكير: حصة بعد نص ساعة"
         body = f"حصة {row.get('subject') or class_name} تبدأ الساعة {row['start_time']}"
 
-        if teacher_id:
-            _create_notification(teacher_id, "schedule_reminder", title, body, class_id=row["class_id"])
+        # نفضّل تنبيه المعلم المطابق لمادة هذه الحصة بالذات لو محددة (تعدد
+        # معلمين/مواد لكل فصل)، وإلا كل معلمي الفصل
+        class_teacher_rows = (
+            supabase_admin.table("class_teachers").select("teacher_id, subject")
+            .eq("class_id", row["class_id"]).execute()
+        ).data
+        row_subject = (row.get("subject") or "").strip()
+        matching_teacher_ids = [r["teacher_id"] for r in class_teacher_rows if row_subject and r["subject"] == row_subject]
+        teacher_ids = matching_teacher_ids or [r["teacher_id"] for r in class_teacher_rows]
+        for tid in teacher_ids:
+            _create_notification(tid, "schedule_reminder", title, body, class_id=row["class_id"])
         students = (
             supabase_admin.table("profiles").select("user_id").eq("role", "student")
             .eq("class_id", row["class_id"]).execute()

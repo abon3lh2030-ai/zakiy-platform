@@ -692,11 +692,10 @@ def list_library_books():
             visible = [b for b in school_books if b["class_id"] is None or b["class_id"] == class_id]
         elif profile.get("role") == "teacher" and profile.get("school_id"):
             # كتاب لفصل معيّن يظهر لمعلم ذاك الفصل بس، وكتاب "لكل الفصول"
-            # يظهر لأي معلم ماسك فصل ولو واحد بالمدرسة (مو لمعلم بدون فصول)
-            my_class_ids = {
-                c["id"] for c in supabase_admin.table("classes").select("id").eq("school_id", profile["school_id"])
-                .eq("teacher_id", request.user_id).execute().data
-            }
+            # يظهر لأي معلم ماسك فصل ولو واحد بالمدرسة (مو لمعلم بدون فصول) -
+            # عبر class_teachers (تعدد معلمين/مواد لكل فصل)، مو عمود
+            # classes.teacher_id المفرد القديم
+            my_class_ids = _teacher_class_ids(request.user_id)
             if my_class_ids:
                 school_books = (
                     supabase_admin.table("school_library_books")
@@ -750,10 +749,7 @@ def get_library_book(book_id):
                 if profile["role"] == "student":
                     targeted = b["class_id"] is None or b["class_id"] == profile.get("class_id")
                 else:
-                    my_class_ids = {
-                        c["id"] for c in supabase_admin.table("classes").select("id")
-                        .eq("school_id", profile["school_id"]).eq("teacher_id", request.user_id).execute().data
-                    }
+                    my_class_ids = _teacher_class_ids(request.user_id)
                     targeted = bool(my_class_ids) and (b["class_id"] is None or b["class_id"] in my_class_ids)
                 if same_school and targeted:
                     return jsonify({"title": b["title"], "extracted_text": b["extracted_text"]}), 200

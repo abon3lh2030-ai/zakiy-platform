@@ -7,6 +7,39 @@ function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+// ---------- جدولة وقت بداية/نهاية اختيارية (الواجبات والاختبارات) - تحويل
+// بين قيمة عنصر <input type="datetime-local"> (نص محلي بدون منطقة زمنية)
+// وISO UTC كامل يفهمه الباك إند، زائد عرض جاهز لحالة الجدولة ----------
+function localDatetimeToIso(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? null : d.toISOString();
+}
+function isoToLocalDatetimeValue(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+// 'not_open' قبل وقت البداية، 'closed' بعد وقت النهاية، وإلا 'open' - كل
+// طرف اختياري (فاضي = بدون قيد بهالاتجاه)
+function scheduleWindowStatus(openAt, closeAt) {
+  const now = Date.now();
+  if (openAt && now < new Date(openAt).getTime()) return 'not_open';
+  if (closeAt && now > new Date(closeAt).getTime()) return 'closed';
+  return 'open';
+}
+// نص جاهز للعرض بميتا البطاقة/التفاصيل - فاضي لو ما فيه أي جدولة إطلاقًا
+// (نفس المظهر القديم تمامًا بدون هذا التحديث)
+function formatScheduleRangeText(openAt, closeAt) {
+  if (!openAt && !closeAt) return '';
+  const fmt = iso => new Date(iso).toLocaleString(currentLang === 'ar' ? 'ar' : 'en', { dateStyle: 'short', timeStyle: 'short' });
+  if (openAt && closeAt) return t('schedule_range_both', { open: fmt(openAt), close: fmt(closeAt) });
+  if (openAt) return t('schedule_range_open_only', { open: fmt(openAt) });
+  return t('schedule_range_close_only', { close: fmt(closeAt) });
+}
+
 async function apiCall(method, path, body) {
   const opts = { method, headers: { 'Authorization': `Bearer ${currentAccessToken}` } };
   if (body !== undefined) {

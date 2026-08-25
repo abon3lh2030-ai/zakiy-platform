@@ -8,6 +8,17 @@
     <input type="text" id="quizTitleInput" class="text-input" placeholder="عنوان الاختبار" data-i18n-ph="ph_quiz_title" style="margin-top:10px;">
     <input type="number" id="quizTimeInput" class="text-input" placeholder="الوقت بالدقايق" data-i18n-ph="ph_quiz_time" min="1" style="margin-top:10px;">
 
+    <div class="actions" style="flex-wrap:wrap; margin-top:10px;">
+      <label class="desc" style="display:flex; flex-direction:column; gap:4px;">
+        <span data-i18n="label_open_at">يبدأ (اختياري)</span>
+        <input type="datetime-local" id="quizOpenAtInput" class="text-input">
+      </label>
+      <label class="desc" style="display:flex; flex-direction:column; gap:4px;">
+        <span data-i18n="label_close_at">يقفل (اختياري)</span>
+        <input type="datetime-local" id="quizCloseAtInput" class="text-input">
+      </label>
+    </div>
+
     <h3 class="sub-heading" style="margin-top:24px;" data-i18n="quiz_questions_heading">📋 الأسئلة</h3>
     <div id="quizQuestionsList"></div>
     <div class="actions" style="margin-top:8px;">

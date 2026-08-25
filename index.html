@@ -1680,10 +1680,7 @@
       <p class="desc hidden" id="schoolLibraryEmptyState" data-i18n="school_library_empty">ما فيه كتب مضافة للمدرسة بعد.</p>
 
       <h3 class="sub-heading" style="margin-top:20px;" data-i18n="school_library_add_heading">➕ ضيف كتاب للمدرسة</h3>
-      <div class="actions" style="flex-wrap:wrap;">
-        <select id="schoolLibraryClassSelect" class="text-input"></select>
-        <select id="schoolLibraryTeacherSelect" class="text-input"></select>
-      </div>
+      <select id="schoolLibraryClassSelect" class="text-input"></select>
       <div class="dropzone" id="schoolLibraryDropzone" style="margin-top:10px;">
         <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#5C6B7A" stroke-width="1.6"><path d="M12 16V4M12 4l-4 4M12 4l4 4M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>
         <div class="main-text" data-i18n="dropzone_main_text">اسحب ملف PDF هنا أو اضغط للاختيار</div>
@@ -1785,6 +1782,16 @@
       <input type="text" id="assignmentSubjectInput" class="text-input" placeholder="اسم المادة" data-i18n-ph="ph_assignment_subject" style="margin-top:10px;">
       <input type="text" id="assignmentTitleInput" class="text-input" placeholder="عنوان الواجب" data-i18n-ph="ph_assignment_title" style="margin-top:10px;">
       <textarea id="assignmentContentTextarea" class="text-input" placeholder="محتوى الواجب" data-i18n-ph="ph_assignment_content" style="margin-top:10px; min-height:110px;"></textarea>
+      <div class="actions" style="flex-wrap:wrap; margin-top:10px;">
+        <label class="desc" style="display:flex; flex-direction:column; gap:4px;">
+          <span data-i18n="label_open_at">يبدأ (اختياري)</span>
+          <input type="datetime-local" id="assignmentOpenAtInput" class="text-input">
+        </label>
+        <label class="desc" style="display:flex; flex-direction:column; gap:4px;">
+          <span data-i18n="label_close_at">يقفل (اختياري)</span>
+          <input type="datetime-local" id="assignmentCloseAtInput" class="text-input">
+        </label>
+      </div>
       <div class="actions" style="margin-top:10px;">
         <button class="primary" id="assignmentCreateBtn" data-i18n="btn_create_assignment">إنشاء الواجب</button>
       </div>
@@ -1801,6 +1808,12 @@
     <span class="step-label" id="assignmentDetailSubjectLabel"></span>
     <h2 id="assignmentDetailTitle"></h2>
     <p class="desc" id="assignmentDetailContent" style="white-space:pre-wrap; margin:14px 0; line-height:1.9;"></p>
+    <p class="desc hidden" id="assignmentDetailSchedule"></p>
+
+    <!-- حذف الواجب - معلم بس -->
+    <div class="actions hidden" id="assignmentDeleteWrap" style="margin-bottom:10px;">
+      <button class="ghost" id="assignmentDeleteBtn" data-i18n="btn_delete_assignment">🗑️ حذف الواجب</button>
+    </div>
 
     <!-- عرض الطالب -->
     <div id="studentSubmissionView" class="hidden">
@@ -1856,6 +1869,17 @@
     <input type="text" id="quizTitleInput" class="text-input" placeholder="عنوان الاختبار" data-i18n-ph="ph_quiz_title" style="margin-top:10px;">
     <input type="number" id="quizTimeInput" class="text-input" placeholder="الوقت بالدقايق" data-i18n-ph="ph_quiz_time" min="1" style="margin-top:10px;">
 
+    <div class="actions" style="flex-wrap:wrap; margin-top:10px;">
+      <label class="desc" style="display:flex; flex-direction:column; gap:4px;">
+        <span data-i18n="label_open_at">يبدأ (اختياري)</span>
+        <input type="datetime-local" id="quizOpenAtInput" class="text-input">
+      </label>
+      <label class="desc" style="display:flex; flex-direction:column; gap:4px;">
+        <span data-i18n="label_close_at">يقفل (اختياري)</span>
+        <input type="datetime-local" id="quizCloseAtInput" class="text-input">
+      </label>
+    </div>
+
     <h3 class="sub-heading" style="margin-top:24px;" data-i18n="quiz_questions_heading">📋 الأسئلة</h3>
     <div id="quizQuestionsList"></div>
     <div class="actions" style="margin-top:8px;">
@@ -1873,6 +1897,7 @@
     <span class="step-label" id="quizDetailSubjectLabel"></span>
     <h2 id="quizDetailTitle"></h2>
     <p class="desc" id="quizDetailMeta"></p>
+    <p class="desc hidden" id="quizDetailSchedule"></p>
 
     <!-- قبل النشر -->
     <div id="quizUnpublishedActions" class="hidden">
@@ -1880,8 +1905,13 @@
       <div class="actions">
         <button class="primary" id="quizPublishBtn" data-i18n="btn_publish_quiz">📢 نشر الاختبار</button>
         <button class="ghost" id="quizEditBtn" data-i18n="btn_edit_quiz">✏️ تعديل</button>
-        <button class="ghost" id="quizDeleteBtn" data-i18n="btn_delete">🗑️ حذف</button>
       </div>
+    </div>
+
+    <!-- زر الحذف يظهر دايمًا (قبل النشر وبعده - المعلم يقدر يحذف اختبار
+         منشور برضو، الباك إند ما يقيّده) -->
+    <div class="actions" style="margin-top:10px;">
+      <button class="ghost" id="quizDeleteBtn" data-i18n="btn_delete_quiz">🗑️ حذف الاختبار</button>
     </div>
 
     <!-- بعد النشر -->
@@ -2763,6 +2793,16 @@ const I18N = {
     assignment_grade_shown: '🏆 الدرجة: {grade}',
     assignment_not_graded_yet: '⏳ لسا ما تصحح',
     err_assignment_need_class: 'لازم تختار الفصل',
+    label_open_at: 'يبدأ (اختياري)', label_close_at: 'يقفل (اختياري)',
+    err_schedule_order: 'وقت البداية لازم يكون قبل وقت النهاية',
+    schedule_range_both: '🗓️ من {open} إلى {close}',
+    schedule_range_open_only: '🗓️ يبدأ {open}',
+    schedule_range_close_only: '🗓️ يقفل {close}',
+    btn_delete_assignment: '🗑️ حذف الواجب',
+    confirm_delete_assignment: 'تحذف هذا الواجب نهائيًا؟ كل تسليمات الطلاب بتنحذف معه.',
+    btn_delete_quiz: '🗑️ حذف الاختبار',
+    assignment_not_open_yet: '⏳ الواجب لسا ما بدأ - ارجع بعد وقت البداية.',
+    assignment_closed: '🔒 انتهى وقت تسليم هذا الواجب.',
     nav_quizzes: 'الاختبارات',
     quizzes_step_label: '📝 الاختبارات',
     quizzes_heading: 'دفتر الاختبارات',
@@ -3053,11 +3093,10 @@ const I18N = {
     friends_list_subheading: '👥 أصدقاؤك',
     school_library_step_label: '🏫 مكتبة المدرسة',
     school_library_heading: 'كتب المدرسة',
-    school_library_desc: 'كتب تضيفها لفصل معيّن أو لكل فصول المدرسة، تظهر تلقائيًا بمكتبة أي طالب مستهدف بدون ما يسوي شي.',
+    school_library_desc: 'كتب تضيفها لفصل معيّن أو لكل فصول المدرسة، تظهر تلقائيًا بمكتبة أي طالب ومعلم مستهدف بدون ما يسوي شي - كتاب لفصل معيّن يظهر لطلابه ومعلمه، وكتاب لكل الفصول يظهر لكل طالب ولأي معلم ماسك فصل بالمدرسة.',
     school_library_empty: 'ما فيه كتب مضافة للمدرسة بعد.',
     school_library_add_heading: '➕ ضيف كتاب للمدرسة',
     school_library_all_classes: 'كل فصول المدرسة',
-    school_library_all_teachers: 'كل معلمي المدرسة',
     btn_add_to_school_library: 'أضفه للمدرسة',
     library_step_label: '📚 مكتبتي',
     ai_help_panel_title: '🤖 مساعد ذكيّ',
@@ -3353,6 +3392,16 @@ const I18N = {
     assignment_grade_shown: '🏆 Grade: {grade}',
     assignment_not_graded_yet: '⏳ Not graded yet',
     err_assignment_need_class: 'You need to pick a class',
+    label_open_at: 'Opens (optional)', label_close_at: 'Closes (optional)',
+    err_schedule_order: 'The start time must be before the end time',
+    schedule_range_both: '🗓️ From {open} to {close}',
+    schedule_range_open_only: '🗓️ Opens {open}',
+    schedule_range_close_only: '🗓️ Closes {close}',
+    btn_delete_assignment: '🗑️ Delete assignment',
+    confirm_delete_assignment: "Delete this assignment permanently? All students' submissions will be deleted with it.",
+    btn_delete_quiz: '🗑️ Delete quiz',
+    assignment_not_open_yet: "⏳ The assignment hasn't opened yet - come back after the start time.",
+    assignment_closed: '🔒 The submission window for this assignment has closed.',
     nav_quizzes: 'Quizzes',
     quizzes_step_label: '📝 Quizzes',
     quizzes_heading: 'Quizzes',
@@ -3643,11 +3692,10 @@ const I18N = {
     friends_list_subheading: '👥 Your Friends',
     school_library_step_label: '🏫 School Library',
     school_library_heading: 'School Books',
-    school_library_desc: 'Books you add for a specific class or the whole school - they appear automatically in the library of any targeted student, no action needed on their part.',
+    school_library_desc: "Books you add for a specific class or the whole school appear automatically in the library of any targeted student and teacher, no action needed on their part - a class book reaches that class's students and teacher, and a whole-school book reaches every student and any teacher holding a class.",
     school_library_empty: 'No school books added yet.',
     school_library_add_heading: '➕ Add a book for the school',
     school_library_all_classes: 'All classes in the school',
-    school_library_all_teachers: 'All teachers in the school',
     btn_add_to_school_library: 'Add to school',
     library_step_label: '📚 My Library',
     ai_help_panel_title: '🤖 Site Assistant',
@@ -5190,16 +5238,10 @@ document.getElementById('sidebarLibraryBtn').addEventListener('click', () => {
 async function loadSchoolLibrarySection() {
   clearError('schoolLibraryError');
   try {
-    const [classesRes, teachersRes] = await Promise.all([
-      apiCall('GET', '/api/school/classes'),
-      apiCall('GET', '/api/school/teachers'),
-    ]);
+    const classesRes = await apiCall('GET', '/api/school/classes');
     const classSelect = document.getElementById('schoolLibraryClassSelect');
     classSelect.innerHTML = `<option value="">${t('school_library_all_classes')}</option>` +
       classesRes.classes.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
-    const teacherSelect = document.getElementById('schoolLibraryTeacherSelect');
-    teacherSelect.innerHTML = `<option value="">${t('school_library_all_teachers')}</option>` +
-      teachersRes.teachers.map(tch => `<option value="${tch.user_id}">${escapeHtml(tch.username)}</option>`).join('');
 
     const { books } = await apiCall('GET', '/api/school/library');
     renderSchoolLibraryList(books);
@@ -5214,7 +5256,7 @@ function renderSchoolLibraryList(books) {
   empty.classList.toggle('hidden', books.length > 0);
   container.innerHTML = books.map(b => `
     <div class="leaderboard-row">
-      <span class="name">${escapeHtml(b.title)} <span class="desc" style="display:inline;">— ${b.class_name ? escapeHtml(b.class_name) : t('school_library_all_classes')} · ${b.teacher_name ? escapeHtml(b.teacher_name) : t('school_library_all_teachers')}</span></span>
+      <span class="name">${escapeHtml(b.title)} <span class="desc" style="display:inline;">— ${b.class_name ? escapeHtml(b.class_name) : t('school_library_all_classes')}</span></span>
       <button class="ghost rename-school-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">✏️ ${t('btn_rename')}</button>
       <button class="ghost delete-school-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">🗑️ ${t('btn_delete')}</button>
     </div>
@@ -5311,7 +5353,6 @@ schoolLibraryAddBtn.addEventListener('click', async () => {
       title: schoolLibraryTitleInput.value.trim(),
       extracted_text: extractData.text,
       class_id: document.getElementById('schoolLibraryClassSelect').value || null,
-      teacher_id: document.getElementById('schoolLibraryTeacherSelect').value || null,
     });
 
     schoolLibrarySelectedFile = null;
@@ -7279,6 +7320,39 @@ function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+// ---------- جدولة وقت بداية/نهاية اختيارية (الواجبات والاختبارات) - تحويل
+// بين قيمة عنصر <input type="datetime-local"> (نص محلي بدون منطقة زمنية)
+// وISO UTC كامل يفهمه الباك إند، زائد عرض جاهز لحالة الجدولة ----------
+function localDatetimeToIso(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? null : d.toISOString();
+}
+function isoToLocalDatetimeValue(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+// 'not_open' قبل وقت البداية، 'closed' بعد وقت النهاية، وإلا 'open' - كل
+// طرف اختياري (فاضي = بدون قيد بهالاتجاه)
+function scheduleWindowStatus(openAt, closeAt) {
+  const now = Date.now();
+  if (openAt && now < new Date(openAt).getTime()) return 'not_open';
+  if (closeAt && now > new Date(closeAt).getTime()) return 'closed';
+  return 'open';
+}
+// نص جاهز للعرض بميتا البطاقة/التفاصيل - فاضي لو ما فيه أي جدولة إطلاقًا
+// (نفس المظهر القديم تمامًا بدون هذا التحديث)
+function formatScheduleRangeText(openAt, closeAt) {
+  if (!openAt && !closeAt) return '';
+  const fmt = iso => new Date(iso).toLocaleString(currentLang === 'ar' ? 'ar' : 'en', { dateStyle: 'short', timeStyle: 'short' });
+  if (openAt && closeAt) return t('schedule_range_both', { open: fmt(openAt), close: fmt(closeAt) });
+  if (openAt) return t('schedule_range_open_only', { open: fmt(openAt) });
+  return t('schedule_range_close_only', { close: fmt(closeAt) });
+}
+
 async function apiCall(method, path, body) {
   const opts = { method, headers: { 'Authorization': `Bearer ${currentAccessToken}` } };
   if (body !== undefined) {
@@ -8741,7 +8815,7 @@ function renderAssignmentsList(items, isTeacher) {
           <span class="assignment-title">${escapeHtml(a.title)}</span>
           ${statusHtml}
         </div>
-        <div class="assignment-meta">${escapeHtml(a.subject)}${a.class_name ? ' · ' + escapeHtml(a.class_name) : ''}</div>
+        <div class="assignment-meta">${escapeHtml(a.subject)}${a.class_name ? ' · ' + escapeHtml(a.class_name) : ''}${formatScheduleRangeText(a.open_at, a.close_at) ? ' · ' + escapeHtml(formatScheduleRangeText(a.open_at, a.close_at)) : ''}</div>
       </div>
     `;
   }).join('');
@@ -8760,13 +8834,18 @@ document.getElementById('assignmentCreateBtn').addEventListener('click', async (
   const subject = document.getElementById('assignmentSubjectInput').value.trim();
   const title = document.getElementById('assignmentTitleInput').value.trim();
   const content = document.getElementById('assignmentContentTextarea').value.trim();
+  const openAt = localDatetimeToIso(document.getElementById('assignmentOpenAtInput').value);
+  const closeAt = localDatetimeToIso(document.getElementById('assignmentCloseAtInput').value);
   if (!classId) { showError('assignmentCreateError', t('err_assignment_need_class')); return; }
   if (!subject || !title) { showError('assignmentCreateError', t('err_name_required')); return; }
+  if (openAt && closeAt && openAt >= closeAt) { showError('assignmentCreateError', t('err_schedule_order')); return; }
   try {
-    await apiCall('POST', '/api/teacher/assignments', { class_id: classId, subject, title, content });
+    await apiCall('POST', '/api/teacher/assignments', { class_id: classId, subject, title, content, open_at: openAt, close_at: closeAt });
     document.getElementById('assignmentSubjectInput').value = '';
     document.getElementById('assignmentTitleInput').value = '';
     document.getElementById('assignmentContentTextarea').value = '';
+    document.getElementById('assignmentOpenAtInput').value = '';
+    document.getElementById('assignmentCloseAtInput').value = '';
     await loadAssignmentsScreen();
   } catch (e) {
     showError('assignmentCreateError', e.message);
@@ -8780,6 +8859,7 @@ async function openAssignmentDetail(id) {
   const isTeacher = currentUserRole === 'teacher';
   document.getElementById('studentSubmissionView').classList.toggle('hidden', isTeacher);
   document.getElementById('teacherStudentsView').classList.toggle('hidden', !isTeacher);
+  document.getElementById('assignmentDeleteWrap').classList.toggle('hidden', !isTeacher);
   assignmentSelectedFile = null;
   updateAssignmentFileChip();
   document.getElementById('assignmentNoteTextarea').value = '';
@@ -8792,7 +8872,7 @@ async function openAssignmentDetail(id) {
     } else {
       const a = await apiCall('GET', `/api/student/assignments/${id}`);
       renderAssignmentDetailHeader(a);
-      renderStudentSubmissionState(a.submission);
+      renderStudentSubmissionState(a.submission, a.open_at, a.close_at);
     }
   } catch (e) {
     document.getElementById('assignmentDetailContent').textContent = e.message;
@@ -8803,7 +8883,21 @@ function renderAssignmentDetailHeader(a) {
   document.getElementById('assignmentDetailSubjectLabel').textContent = `📚 ${a.subject}`;
   document.getElementById('assignmentDetailTitle').textContent = a.title;
   document.getElementById('assignmentDetailContent').textContent = a.content || '';
+  const scheduleBox = document.getElementById('assignmentDetailSchedule');
+  const scheduleText = formatScheduleRangeText(a.open_at, a.close_at);
+  scheduleBox.textContent = scheduleText;
+  scheduleBox.classList.toggle('hidden', !scheduleText);
 }
+
+document.getElementById('assignmentDeleteBtn').addEventListener('click', async () => {
+  if (!currentAssignmentId || !confirm(t('confirm_delete_assignment'))) return;
+  try {
+    await apiCall('DELETE', `/api/teacher/assignments/${currentAssignmentId}`);
+    document.getElementById('globalBackBtn').click();
+  } catch (e) {
+    alert(e.message);
+  }
+});
 
 function renderTeacherStudentsList(students) {
   const wrap = document.getElementById('assignmentStudentsList');
@@ -8844,7 +8938,7 @@ function renderTeacherStudentsList(students) {
   });
 }
 
-function renderStudentSubmissionState(submission) {
+function renderStudentSubmissionState(submission, openAt, closeAt) {
   const infoBox = document.getElementById('studentSubmissionInfo');
   const submitForm = document.getElementById('studentSubmitForm');
   if (submission) {
@@ -8856,10 +8950,19 @@ function renderStudentSubmissionState(submission) {
       submission.note ? t('assignment_already_submitted_note', { note: submission.note }) : '',
       gradeLine,
     ].filter(Boolean).map(escapeHtml).join('<br>');
-  } else {
-    submitForm.classList.remove('hidden');
-    infoBox.classList.add('hidden');
+    return;
   }
+  // خارج نافذة الجدولة (لسا ما بدأ / خلص وقته) - نمنع التسليم من الواجهة
+  // كتحسين تجربة بس (الباك إند هو الحارس الفعلي، شوف submit_assignment)
+  const status = scheduleWindowStatus(openAt, closeAt);
+  if (status !== 'open') {
+    submitForm.classList.add('hidden');
+    infoBox.classList.remove('hidden');
+    infoBox.innerHTML = escapeHtml(status === 'not_open' ? t('assignment_not_open_yet') : t('assignment_closed'));
+    return;
+  }
+  submitForm.classList.remove('hidden');
+  infoBox.classList.add('hidden');
 }
 
 // ---------- رفع ملف الحل ----------
@@ -9277,7 +9380,7 @@ function renderQuizzesList(items, isTeacher) {
           <span class="assignment-title">${escapeHtml(q.title)}</span>
           ${statusHtml}
         </div>
-        <div class="assignment-meta">${escapeHtml(q.subject)}${q.class_name ? ' · ' + escapeHtml(q.class_name) : ''} · ⏱ ${q.time_limit_minutes} ${t('quiz_minutes_label')}</div>
+        <div class="assignment-meta">${escapeHtml(q.subject)}${q.class_name ? ' · ' + escapeHtml(q.class_name) : ''} · ⏱ ${q.time_limit_minutes} ${t('quiz_minutes_label')}${formatScheduleRangeText(q.open_at, q.close_at) ? ' · ' + escapeHtml(formatScheduleRangeText(q.open_at, q.close_at)) : ''}</div>
       </div>
     `;
   }).join('');
@@ -9317,6 +9420,8 @@ async function openQuizCreateScreen(existingQuiz) {
     document.getElementById('quizSubjectInput').value = existingQuiz.subject;
     document.getElementById('quizTitleInput').value = existingQuiz.title;
     document.getElementById('quizTimeInput').value = existingQuiz.time_limit_minutes;
+    document.getElementById('quizOpenAtInput').value = isoToLocalDatetimeValue(existingQuiz.open_at);
+    document.getElementById('quizCloseAtInput').value = isoToLocalDatetimeValue(existingQuiz.close_at);
     quizQuestionsDraft = (existingQuiz.questions || []).map(q => ({
       question_type: q.question_type, question_text: q.question_text,
       choices: q.choices ? [...q.choices] : [], correct_answer: q.correct_answer || '',
@@ -9325,6 +9430,8 @@ async function openQuizCreateScreen(existingQuiz) {
     document.getElementById('quizSubjectInput').value = '';
     document.getElementById('quizTitleInput').value = '';
     document.getElementById('quizTimeInput').value = '';
+    document.getElementById('quizOpenAtInput').value = '';
+    document.getElementById('quizCloseAtInput').value = '';
     quizQuestionsDraft = [];
   }
   renderQuizQuestionsEditor();
@@ -9463,6 +9570,9 @@ document.getElementById('quizSaveBtn').addEventListener('click', async () => {
   if (!classId) { showError('quizCreateError', t('err_assignment_need_class')); return; }
   if (!subject || !title) { showError('quizCreateError', t('err_name_required')); return; }
   if (!timeLimitMinutes || timeLimitMinutes <= 0) { showError('quizCreateError', t('err_quiz_need_time')); return; }
+  const openAt = localDatetimeToIso(document.getElementById('quizOpenAtInput').value);
+  const closeAt = localDatetimeToIso(document.getElementById('quizCloseAtInput').value);
+  if (openAt && closeAt && openAt >= closeAt) { showError('quizCreateError', t('err_schedule_order')); return; }
   if (!quizQuestionsDraft.length) { showError('quizCreateError', t('err_quiz_need_question')); return; }
   for (const q of quizQuestionsDraft) {
     if (!q.question_text.trim()) { showError('quizCreateError', t('err_quiz_question_text_required')); return; }
@@ -9473,6 +9583,7 @@ document.getElementById('quizSaveBtn').addEventListener('click', async () => {
 
   const payload = {
     class_id: classId, subject, title, time_limit_minutes: timeLimitMinutes,
+    open_at: openAt, close_at: closeAt,
     questions: quizQuestionsDraft.map(q => ({
       question_type: q.question_type, question_text: q.question_text.trim(),
       choices: q.question_type === 'mcq' ? q.choices.filter(c => c.trim()) : undefined,
@@ -9517,6 +9628,10 @@ function renderQuizDetailHeader(quiz) {
   document.getElementById('quizDetailTitle').textContent = quiz.title;
   document.getElementById('quizDetailMeta').textContent =
     `⏱ ${quiz.time_limit_minutes} ${t('quiz_minutes_label')} · ${(quiz.questions || []).length} ${t('quiz_questions_count_label')}`;
+  const scheduleBox = document.getElementById('quizDetailSchedule');
+  const scheduleText = formatScheduleRangeText(quiz.open_at, quiz.close_at);
+  scheduleBox.textContent = scheduleText;
+  scheduleBox.classList.toggle('hidden', !scheduleText);
 }
 
 document.getElementById('quizPublishBtn').addEventListener('click', async () => {

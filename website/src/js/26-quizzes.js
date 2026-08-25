@@ -49,7 +49,7 @@ function renderQuizzesList(items, isTeacher) {
           <span class="assignment-title">${escapeHtml(q.title)}</span>
           ${statusHtml}
         </div>
-        <div class="assignment-meta">${escapeHtml(q.subject)}${q.class_name ? ' · ' + escapeHtml(q.class_name) : ''} · ⏱ ${q.time_limit_minutes} ${t('quiz_minutes_label')}</div>
+        <div class="assignment-meta">${escapeHtml(q.subject)}${q.class_name ? ' · ' + escapeHtml(q.class_name) : ''} · ⏱ ${q.time_limit_minutes} ${t('quiz_minutes_label')}${formatScheduleRangeText(q.open_at, q.close_at) ? ' · ' + escapeHtml(formatScheduleRangeText(q.open_at, q.close_at)) : ''}</div>
       </div>
     `;
   }).join('');
@@ -89,6 +89,8 @@ async function openQuizCreateScreen(existingQuiz) {
     document.getElementById('quizSubjectInput').value = existingQuiz.subject;
     document.getElementById('quizTitleInput').value = existingQuiz.title;
     document.getElementById('quizTimeInput').value = existingQuiz.time_limit_minutes;
+    document.getElementById('quizOpenAtInput').value = isoToLocalDatetimeValue(existingQuiz.open_at);
+    document.getElementById('quizCloseAtInput').value = isoToLocalDatetimeValue(existingQuiz.close_at);
     quizQuestionsDraft = (existingQuiz.questions || []).map(q => ({
       question_type: q.question_type, question_text: q.question_text,
       choices: q.choices ? [...q.choices] : [], correct_answer: q.correct_answer || '',
@@ -97,6 +99,8 @@ async function openQuizCreateScreen(existingQuiz) {
     document.getElementById('quizSubjectInput').value = '';
     document.getElementById('quizTitleInput').value = '';
     document.getElementById('quizTimeInput').value = '';
+    document.getElementById('quizOpenAtInput').value = '';
+    document.getElementById('quizCloseAtInput').value = '';
     quizQuestionsDraft = [];
   }
   renderQuizQuestionsEditor();
@@ -235,6 +239,9 @@ document.getElementById('quizSaveBtn').addEventListener('click', async () => {
   if (!classId) { showError('quizCreateError', t('err_assignment_need_class')); return; }
   if (!subject || !title) { showError('quizCreateError', t('err_name_required')); return; }
   if (!timeLimitMinutes || timeLimitMinutes <= 0) { showError('quizCreateError', t('err_quiz_need_time')); return; }
+  const openAt = localDatetimeToIso(document.getElementById('quizOpenAtInput').value);
+  const closeAt = localDatetimeToIso(document.getElementById('quizCloseAtInput').value);
+  if (openAt && closeAt && openAt >= closeAt) { showError('quizCreateError', t('err_schedule_order')); return; }
   if (!quizQuestionsDraft.length) { showError('quizCreateError', t('err_quiz_need_question')); return; }
   for (const q of quizQuestionsDraft) {
     if (!q.question_text.trim()) { showError('quizCreateError', t('err_quiz_question_text_required')); return; }
@@ -245,6 +252,7 @@ document.getElementById('quizSaveBtn').addEventListener('click', async () => {
 
   const payload = {
     class_id: classId, subject, title, time_limit_minutes: timeLimitMinutes,
+    open_at: openAt, close_at: closeAt,
     questions: quizQuestionsDraft.map(q => ({
       question_type: q.question_type, question_text: q.question_text.trim(),
       choices: q.question_type === 'mcq' ? q.choices.filter(c => c.trim()) : undefined,
@@ -289,6 +297,10 @@ function renderQuizDetailHeader(quiz) {
   document.getElementById('quizDetailTitle').textContent = quiz.title;
   document.getElementById('quizDetailMeta').textContent =
     `⏱ ${quiz.time_limit_minutes} ${t('quiz_minutes_label')} · ${(quiz.questions || []).length} ${t('quiz_questions_count_label')}`;
+  const scheduleBox = document.getElementById('quizDetailSchedule');
+  const scheduleText = formatScheduleRangeText(quiz.open_at, quiz.close_at);
+  scheduleBox.textContent = scheduleText;
+  scheduleBox.classList.toggle('hidden', !scheduleText);
 }
 
 document.getElementById('quizPublishBtn').addEventListener('click', async () => {

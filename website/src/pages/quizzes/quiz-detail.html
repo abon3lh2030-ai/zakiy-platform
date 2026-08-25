@@ -3,6 +3,7 @@
     <span class="step-label" id="quizDetailSubjectLabel"></span>
     <h2 id="quizDetailTitle"></h2>
     <p class="desc" id="quizDetailMeta"></p>
+    <p class="desc hidden" id="quizDetailSchedule"></p>
 
     <!-- قبل النشر -->
     <div id="quizUnpublishedActions" class="hidden">
@@ -10,8 +11,13 @@
       <div class="actions">
         <button class="primary" id="quizPublishBtn" data-i18n="btn_publish_quiz">📢 نشر الاختبار</button>
         <button class="ghost" id="quizEditBtn" data-i18n="btn_edit_quiz">✏️ تعديل</button>
-        <button class="ghost" id="quizDeleteBtn" data-i18n="btn_delete">🗑️ حذف</button>
       </div>
+    </div>
+
+    <!-- زر الحذف يظهر دايمًا (قبل النشر وبعده - المعلم يقدر يحذف اختبار
+         منشور برضو، الباك إند ما يقيّده) -->
+    <div class="actions" style="margin-top:10px;">
+      <button class="ghost" id="quizDeleteBtn" data-i18n="btn_delete_quiz">🗑️ حذف الاختبار</button>
     </div>
 
     <!-- بعد النشر -->

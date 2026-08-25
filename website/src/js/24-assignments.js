@@ -41,7 +41,7 @@ function renderAssignmentsList(items, isTeacher) {
           <span class="assignment-title">${escapeHtml(a.title)}</span>
           ${statusHtml}
         </div>
-        <div class="assignment-meta">${escapeHtml(a.subject)}${a.class_name ? ' · ' + escapeHtml(a.class_name) : ''}</div>
+        <div class="assignment-meta">${escapeHtml(a.subject)}${a.class_name ? ' · ' + escapeHtml(a.class_name) : ''}${formatScheduleRangeText(a.open_at, a.close_at) ? ' · ' + escapeHtml(formatScheduleRangeText(a.open_at, a.close_at)) : ''}</div>
       </div>
     `;
   }).join('');
@@ -60,13 +60,18 @@ document.getElementById('assignmentCreateBtn').addEventListener('click', async (
   const subject = document.getElementById('assignmentSubjectInput').value.trim();
   const title = document.getElementById('assignmentTitleInput').value.trim();
   const content = document.getElementById('assignmentContentTextarea').value.trim();
+  const openAt = localDatetimeToIso(document.getElementById('assignmentOpenAtInput').value);
+  const closeAt = localDatetimeToIso(document.getElementById('assignmentCloseAtInput').value);
   if (!classId) { showError('assignmentCreateError', t('err_assignment_need_class')); return; }
   if (!subject || !title) { showError('assignmentCreateError', t('err_name_required')); return; }
+  if (openAt && closeAt && openAt >= closeAt) { showError('assignmentCreateError', t('err_schedule_order')); return; }
   try {
-    await apiCall('POST', '/api/teacher/assignments', { class_id: classId, subject, title, content });
+    await apiCall('POST', '/api/teacher/assignments', { class_id: classId, subject, title, content, open_at: openAt, close_at: closeAt });
     document.getElementById('assignmentSubjectInput').value = '';
     document.getElementById('assignmentTitleInput').value = '';
     document.getElementById('assignmentContentTextarea').value = '';
+    document.getElementById('assignmentOpenAtInput').value = '';
+    document.getElementById('assignmentCloseAtInput').value = '';
     await loadAssignmentsScreen();
   } catch (e) {
     showError('assignmentCreateError', e.message);
@@ -80,6 +85,7 @@ async function openAssignmentDetail(id) {
   const isTeacher = currentUserRole === 'teacher';
   document.getElementById('studentSubmissionView').classList.toggle('hidden', isTeacher);
   document.getElementById('teacherStudentsView').classList.toggle('hidden', !isTeacher);
+  document.getElementById('assignmentDeleteWrap').classList.toggle('hidden', !isTeacher);
   assignmentSelectedFile = null;
   updateAssignmentFileChip();
   document.getElementById('assignmentNoteTextarea').value = '';
@@ -92,7 +98,7 @@ async function openAssignmentDetail(id) {
     } else {
       const a = await apiCall('GET', `/api/student/assignments/${id}`);
       renderAssignmentDetailHeader(a);
-      renderStudentSubmissionState(a.submission);
+      renderStudentSubmissionState(a.submission, a.open_at, a.close_at);
     }
   } catch (e) {
     document.getElementById('assignmentDetailContent').textContent = e.message;
@@ -103,7 +109,21 @@ function renderAssignmentDetailHeader(a) {
   document.getElementById('assignmentDetailSubjectLabel').textContent = `📚 ${a.subject}`;
   document.getElementById('assignmentDetailTitle').textContent = a.title;
   document.getElementById('assignmentDetailContent').textContent = a.content || '';
+  const scheduleBox = document.getElementById('assignmentDetailSchedule');
+  const scheduleText = formatScheduleRangeText(a.open_at, a.close_at);
+  scheduleBox.textContent = scheduleText;
+  scheduleBox.classList.toggle('hidden', !scheduleText);
 }
+
+document.getElementById('assignmentDeleteBtn').addEventListener('click', async () => {
+  if (!currentAssignmentId || !confirm(t('confirm_delete_assignment'))) return;
+  try {
+    await apiCall('DELETE', `/api/teacher/assignments/${currentAssignmentId}`);
+    document.getElementById('globalBackBtn').click();
+  } catch (e) {
+    alert(e.message);
+  }
+});
 
 function renderTeacherStudentsList(students) {
   const wrap = document.getElementById('assignmentStudentsList');
@@ -144,7 +164,7 @@ function renderTeacherStudentsList(students) {
   });
 }
 
-function renderStudentSubmissionState(submission) {
+function renderStudentSubmissionState(submission, openAt, closeAt) {
   const infoBox = document.getElementById('studentSubmissionInfo');
   const submitForm = document.getElementById('studentSubmitForm');
   if (submission) {
@@ -156,10 +176,19 @@ function renderStudentSubmissionState(submission) {
       submission.note ? t('assignment_already_submitted_note', { note: submission.note }) : '',
       gradeLine,
     ].filter(Boolean).map(escapeHtml).join('<br>');
-  } else {
-    submitForm.classList.remove('hidden');
-    infoBox.classList.add('hidden');
+    return;
   }
+  // خارج نافذة الجدولة (لسا ما بدأ / خلص وقته) - نمنع التسليم من الواجهة
+  // كتحسين تجربة بس (الباك إند هو الحارس الفعلي، شوف submit_assignment)
+  const status = scheduleWindowStatus(openAt, closeAt);
+  if (status !== 'open') {
+    submitForm.classList.add('hidden');
+    infoBox.classList.remove('hidden');
+    infoBox.innerHTML = escapeHtml(status === 'not_open' ? t('assignment_not_open_yet') : t('assignment_closed'));
+    return;
+  }
+  submitForm.classList.remove('hidden');
+  infoBox.classList.add('hidden');
 }
 
 // ---------- رفع ملف الحل ----------

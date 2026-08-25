@@ -670,9 +670,9 @@ def list_library_books():
         )
         books = [{**b, "source": "personal"} for b in res.data]
 
-        # طالب مؤسسي: نضيف كتب المدرسة المستهدفة له (فصله بالذات + كتب عامة
-        # لكل المدرسة) - قراءة حيّة من school_library_books، مو نسخ فعلي،
-        # فتنضم للطالب تلقائيًا حتى لو صارت إضافتها قبل ما ينضم للفصل. هذا
+        # حساب مؤسسي (طالب أو معلم): نضيف كتب المدرسة المستهدفة له - قراءة
+        # حيّة من school_library_books، مو نسخ فعلي، فتنضم تلقائيًا حتى لو
+        # صارت إضافتها قبل ما ينضم الطالب للفصل أو يُسند الفصل للمعلم. هذا
         # الـ endpoint تحت require_auth بس (مو require_role) فما فيه
         # request.profile جاهزة - نجيبها يدوي هنا
         profile_rows = (
@@ -680,30 +680,34 @@ def list_library_books():
             .eq("user_id", request.user_id).limit(1).execute()
         ).data
         profile = profile_rows[0] if profile_rows else {}
+        visible = []
         if profile.get("role") == "student" and profile.get("school_id"):
             school_books = (
                 supabase_admin.table("school_library_books")
-                .select("id, title, created_at, class_id, teacher_id")
+                .select("id, title, created_at, class_id")
                 .eq("school_id", profile["school_id"])
                 .execute()
             ).data
             class_id = profile.get("class_id")
-            # معلم فصل الطالب الحالي - لازم لمطابقة كتب مستهدفة بمعلم معيّن
-            # (زيادة على الفصل)، شوف create_school_library_book
-            student_teacher_id = None
-            if class_id:
-                class_row = (
-                    supabase_admin.table("classes").select("teacher_id").eq("id", class_id).limit(1).execute()
+            visible = [b for b in school_books if b["class_id"] is None or b["class_id"] == class_id]
+        elif profile.get("role") == "teacher" and profile.get("school_id"):
+            # كتاب لفصل معيّن يظهر لمعلم ذاك الفصل بس، وكتاب "لكل الفصول"
+            # يظهر لأي معلم ماسك فصل ولو واحد بالمدرسة (مو لمعلم بدون فصول)
+            my_class_ids = {
+                c["id"] for c in supabase_admin.table("classes").select("id").eq("school_id", profile["school_id"])
+                .eq("teacher_id", request.user_id).execute().data
+            }
+            if my_class_ids:
+                school_books = (
+                    supabase_admin.table("school_library_books")
+                    .select("id, title, created_at, class_id")
+                    .eq("school_id", profile["school_id"])
+                    .execute()
                 ).data
-                if class_row:
-                    student_teacher_id = class_row[0].get("teacher_id")
-            visible = [
-                b for b in school_books
-                if (b["class_id"] is None or b["class_id"] == class_id)
-                and (b["teacher_id"] is None or b["teacher_id"] == student_teacher_id)
-            ]
-            books += [{"id": b["id"], "title": b["title"], "created_at": b["created_at"], "source": "school"} for b in visible]
-            books.sort(key=lambda b: b["created_at"], reverse=True)
+                visible = [b for b in school_books if b["class_id"] is None or b["class_id"] in my_class_ids]
+
+        books += [{"id": b["id"], "title": b["title"], "created_at": b["created_at"], "source": "school"} for b in visible]
+        books.sort(key=lambda b: b["created_at"], reverse=True)
 
         return jsonify({"books": books}), 200
     except Exception as e:
@@ -725,17 +729,17 @@ def get_library_book(book_id):
         if res.data:
             return jsonify(res.data[0]), 200
 
-        # مو بمكتبته الشخصية - جرّب كتب المدرسة (طالب بس، وبشرط يكون الكتاب
-        # مستهدف فصله أو عام لكل المدرسة)
+        # مو بمكتبته الشخصية - جرّب كتب المدرسة (طالب أو معلم بس، وبشرط يكون
+        # الكتاب مستهدف فصله/فصوله أو عام لكل المدرسة)
         profile_rows = (
             supabase_admin.table("profiles").select("role, school_id, class_id")
             .eq("user_id", request.user_id).limit(1).execute()
         ).data
         profile = profile_rows[0] if profile_rows else {}
-        if profile.get("role") == "student" and profile.get("school_id"):
+        if profile.get("role") in ("student", "teacher") and profile.get("school_id"):
             school_res = (
                 supabase_admin.table("school_library_books")
-                .select("title, extracted_text, class_id, teacher_id, school_id")
+                .select("title, extracted_text, class_id, school_id")
                 .eq("id", book_id)
                 .limit(1)
                 .execute()
@@ -743,17 +747,15 @@ def get_library_book(book_id):
             if school_res.data:
                 b = school_res.data[0]
                 same_school = b["school_id"] == profile["school_id"]
-                class_targeted = b["class_id"] is None or b["class_id"] == profile.get("class_id")
-                student_teacher_id = None
-                if profile.get("class_id"):
-                    class_row = (
-                        supabase_admin.table("classes").select("teacher_id").eq("id", profile["class_id"])
-                        .limit(1).execute()
-                    ).data
-                    if class_row:
-                        student_teacher_id = class_row[0].get("teacher_id")
-                teacher_targeted = b["teacher_id"] is None or b["teacher_id"] == student_teacher_id
-                if same_school and class_targeted and teacher_targeted:
+                if profile["role"] == "student":
+                    targeted = b["class_id"] is None or b["class_id"] == profile.get("class_id")
+                else:
+                    my_class_ids = {
+                        c["id"] for c in supabase_admin.table("classes").select("id")
+                        .eq("school_id", profile["school_id"]).eq("teacher_id", request.user_id).execute().data
+                    }
+                    targeted = bool(my_class_ids) and (b["class_id"] is None or b["class_id"] in my_class_ids)
+                if same_school and targeted:
                     return jsonify({"title": b["title"], "extracted_text": b["extracted_text"]}), 200
 
         return jsonify({"error": "الكتاب مو موجود"}), 404
@@ -762,7 +764,7 @@ def get_library_book(book_id):
 
 
 # ---------- مكتبة المدرسة (مدير/إدارة المدرسة يضيفون كتب لفصل أو لكل
-# المدرسة - تظهر تلقائيًا بمكتبة أي طالب مستهدف عبر list_library_books فوق) ----------
+# المدرسة - تظهر تلقائيًا بمكتبة أي طالب/معلم مستهدف عبر list_library_books فوق) ----------
 @app.route("/api/school/library", methods=["POST"])
 @require_role("school_admin", "school_administration")
 def create_school_library_book():
@@ -770,7 +772,6 @@ def create_school_library_book():
     title = (data.get("title") or "").strip()
     extracted_text = data.get("extracted_text") or ""
     class_id = data.get("class_id") or None
-    teacher_id = data.get("teacher_id") or None
     if not title or not extracted_text:
         return jsonify({"error": "لازم عنوان ونص مستخرج"}), 400
     if class_id:
@@ -780,18 +781,11 @@ def create_school_library_book():
         ).data
         if not owns:
             return jsonify({"error": "الفصل مو تابع لمدرستك"}), 403
-    if teacher_id:
-        owns_teacher = (
-            supabase_admin.table("profiles").select("user_id").eq("user_id", teacher_id)
-            .eq("school_id", request.profile["school_id"]).eq("role", "teacher").limit(1).execute()
-        ).data
-        if not owns_teacher:
-            return jsonify({"error": "المعلم مو تابع لمدرستك"}), 403
     row = (
         supabase_admin.table("school_library_books")
         .insert(
             {
-                "school_id": request.profile["school_id"], "class_id": class_id, "teacher_id": teacher_id,
+                "school_id": request.profile["school_id"], "class_id": class_id,
                 "added_by": request.user_id, "title": title, "extracted_text": extracted_text,
             }
         )
@@ -805,30 +799,21 @@ def create_school_library_book():
 @require_role("school_admin", "school_administration")
 def list_school_library_books():
     class_id = request.args.get("class_id")
-    teacher_id = request.args.get("teacher_id")
     q = (
         supabase_admin.table("school_library_books")
-        .select("id, title, class_id, teacher_id, created_at")
+        .select("id, title, class_id, created_at")
         .eq("school_id", request.profile["school_id"])
     )
     if class_id:
         q = q.eq("class_id", class_id)
-    if teacher_id:
-        q = q.eq("teacher_id", teacher_id)
     books = q.order("created_at", desc=True).execute().data
 
     class_names = {
         c["id"]: c["name"]
         for c in supabase_admin.table("classes").select("id, name").eq("school_id", request.profile["school_id"]).execute().data
     }
-    teacher_names = {
-        p["user_id"]: (p.get("full_name") or p["username"])
-        for p in supabase_admin.table("profiles").select("user_id, username, full_name")
-        .eq("school_id", request.profile["school_id"]).eq("role", "teacher").execute().data
-    }
     for b in books:
         b["class_name"] = class_names.get(b["class_id"]) if b["class_id"] else None
-        b["teacher_name"] = teacher_names.get(b["teacher_id"]) if b["teacher_id"] else None
     return jsonify({"books": books}), 200
 
 
@@ -3705,6 +3690,34 @@ def save_manual_attendance():
     return jsonify({"ok": True, "saved": len(rows)}), 200
 
 
+def _parse_dt(value):
+    """يفسّر نص تاريخ/وقت ISO (من الواجهة، UTC بلاحقة Z عادة) لكائن datetime
+    واعي بالمنطقة الزمنية - يرجع None لو القيمة فاضية أو غير صالحة. تُستخدم
+    لجدولة وقت بداية/نهاية الواجبات والاختبارات (open_at/close_at)."""
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _validate_schedule_window(data):
+    """يفسّر ويتحقق من open_at/close_at بجسم طلب - يرجع (open_at, close_at,
+    error_response_or_None). كلاهما اختياري، وفاضي = بدون قيد زمني."""
+    open_at = data.get("open_at") or None
+    close_at = data.get("close_at") or None
+    open_dt = _parse_dt(open_at)
+    close_dt = _parse_dt(close_at)
+    if open_at and not open_dt:
+        return None, None, (jsonify({"error": "تاريخ البداية غير صالح"}), 400)
+    if close_at and not close_dt:
+        return None, None, (jsonify({"error": "تاريخ النهاية غير صالح"}), 400)
+    if open_dt and close_dt and open_dt >= close_dt:
+        return None, None, (jsonify({"error": "وقت البداية لازم يكون قبل وقت النهاية"}), 400)
+    return open_at, close_at, None
+
+
 # ============================================================================
 # ---------- دفتر الواجبات (معلم/طالب بس - محجوب عن الحسابات الفردية) ----------
 # ============================================================================
@@ -3726,6 +3739,9 @@ def create_assignment():
     content = data.get("content") or ""
     if not class_id or not subject or not title:
         return jsonify({"error": "لازم الفصل والمادة وعنوان الواجب"}), 400
+    open_at, close_at, err = _validate_schedule_window(data)
+    if err:
+        return err
 
     owns = (
         supabase_admin.table("classes").select("id, name").eq("id", class_id).eq("teacher_id", request.user_id)
@@ -3747,6 +3763,8 @@ def create_assignment():
                 "subject": subject,
                 "title": title,
                 "content": content,
+                "open_at": open_at,
+                "close_at": close_at,
             }
         )
         .execute()
@@ -3944,6 +3962,13 @@ def submit_assignment(assignment_id):
     rows = supabase_admin.table("assignments").select("*").eq("id", assignment_id).limit(1).execute().data
     if not rows or not _student_can_see_assignment(rows[0], request.profile, request.user_id):
         return jsonify({"error": "الواجب مو موجود"}), 404
+    now = datetime.now(timezone.utc)
+    open_dt = _parse_dt(rows[0].get("open_at"))
+    close_dt = _parse_dt(rows[0].get("close_at"))
+    if open_dt and now < open_dt:
+        return jsonify({"error": "الواجب ما بدأ بعد"}), 400
+    if close_dt and now > close_dt:
+        return jsonify({"error": "انتهى وقت تسليم الواجب"}), 400
     if "file" not in request.files:
         return jsonify({"error": "لازم ترفع ملف الواجب"}), 400
     file = request.files["file"]
@@ -4035,6 +4060,9 @@ def create_quiz():
         return jsonify({"error": "لازم وقت صحيح للاختبار"}), 400
     if not questions:
         return jsonify({"error": "لازم سؤال واحد على الأقل"}), 400
+    open_at, close_at, err = _validate_schedule_window(data)
+    if err:
+        return err
 
     owns = (
         supabase_admin.table("classes").select("id").eq("id", class_id).eq("teacher_id", request.user_id)
@@ -4055,6 +4083,7 @@ def create_quiz():
             {
                 "teacher_id": request.user_id, "class_id": class_id, "subject": subject,
                 "title": title, "time_limit_minutes": time_limit_minutes,
+                "open_at": open_at, "close_at": close_at,
             }
         )
         .execute()
@@ -4162,6 +4191,16 @@ def update_quiz(quiz_id):
         patch["title"] = (data.get("title") or "").strip()
     if "time_limit_minutes" in data:
         patch["time_limit_minutes"] = data.get("time_limit_minutes")
+    if "open_at" in data or "close_at" in data:
+        # نتحقق من الاثنين مع بعض حتى لو وحد بس تغيّر - نقارن بالقيمة الجديدة
+        # لو موجودة بالطلب، وإلا بالقيمة الحالية المخزّنة بالصف
+        merged = {"open_at": rows[0].get("open_at"), "close_at": rows[0].get("close_at")}
+        merged.update({k: v for k, v in data.items() if k in ("open_at", "close_at")})
+        open_at, close_at, err = _validate_schedule_window(merged)
+        if err:
+            return err
+        patch["open_at"] = open_at
+        patch["close_at"] = close_at
     patch["updated_at"] = datetime.now(timezone.utc).isoformat()
     quiz = supabase_admin.table("quizzes").update(patch).eq("id", quiz_id).execute().data[0]
 
@@ -4298,6 +4337,13 @@ def start_quiz_attempt(quiz_id):
     rows = supabase_admin.table("quizzes").select("*").eq("id", quiz_id).limit(1).execute().data
     if not rows or not _student_can_see_quiz(rows[0], request.profile):
         return jsonify({"error": "الاختبار مو موجود"}), 404
+    now = datetime.now(timezone.utc)
+    open_dt = _parse_dt(rows[0].get("open_at"))
+    close_dt = _parse_dt(rows[0].get("close_at"))
+    if open_dt and now < open_dt:
+        return jsonify({"error": "الاختبار ما بدأ بعد"}), 400
+    if close_dt and now > close_dt:
+        return jsonify({"error": "انتهى وقت الاختبار"}), 400
 
     existing = (
         supabase_admin.table("quiz_attempts").select("*").eq("quiz_id", quiz_id).eq("student_id", request.user_id)

@@ -3445,7 +3445,7 @@ def teacher_gradesheet():
     attempts_by_student = {}
     if quiz_ids:
         for att in (
-            supabase_admin.table("quiz_attempts").select("student_id, grade, is_graded")
+            supabase_admin.table("school_quiz_attempts").select("student_id, grade, is_graded")
             .in_("quiz_id", quiz_ids).execute().data
         ):
             if att.get("is_graded"):
@@ -4228,7 +4228,7 @@ def list_teacher_quizzes():
     class_names = {c["id"]: c["name"] for c in _teacher_classes_basic(request.user_id)}
     submitted_counts = Counter(
         r["quiz_id"]
-        for r in supabase_admin.table("quiz_attempts").select("quiz_id").not_.is_("submitted_at", "null").execute().data
+        for r in supabase_admin.table("school_quiz_attempts").select("quiz_id").not_.is_("submitted_at", "null").execute().data
     )
     for q in quizzes:
         q["class_name"] = class_names.get(q["class_id"])
@@ -4260,7 +4260,7 @@ def teacher_quiz_detail(quiz_id):
     ).data
     attempts_by_student = {
         a["student_id"]: a
-        for a in supabase_admin.table("quiz_attempts").select("*").eq("quiz_id", quiz_id).execute().data
+        for a in supabase_admin.table("school_quiz_attempts").select("*").eq("quiz_id", quiz_id).execute().data
     }
     result_students = []
     for s in students:
@@ -4369,7 +4369,7 @@ def grade_quiz_attempt(quiz_id, student_id):
         return jsonify({"error": "الاختبار مو تابع لك"}), 403
     grade = (request.get_json(silent=True) or {}).get("grade")
     res = (
-        supabase_admin.table("quiz_attempts")
+        supabase_admin.table("school_quiz_attempts")
         .update({"grade": grade, "is_graded": True, "graded_at": datetime.now(timezone.utc).isoformat()})
         .eq("quiz_id", quiz_id).eq("student_id", student_id)
         .execute()
@@ -4406,7 +4406,7 @@ def list_student_quizzes():
     ).data
     my_attempts = {
         a["quiz_id"]: a
-        for a in supabase_admin.table("quiz_attempts").select("*").eq("student_id", request.user_id).execute().data
+        for a in supabase_admin.table("school_quiz_attempts").select("*").eq("student_id", request.user_id).execute().data
     }
     for q in quizzes:
         a = my_attempts.get(q["id"])
@@ -4435,7 +4435,7 @@ def student_quiz_detail(quiz_id):
     quiz["questions"] = _quiz_questions_public(questions)
 
     attempt = (
-        supabase_admin.table("quiz_attempts").select("*").eq("quiz_id", quiz_id).eq("student_id", request.user_id)
+        supabase_admin.table("school_quiz_attempts").select("*").eq("quiz_id", quiz_id).eq("student_id", request.user_id)
         .limit(1).execute()
     ).data
     quiz["attempt"] = attempt[0] if attempt else None
@@ -4457,13 +4457,13 @@ def start_quiz_attempt(quiz_id):
         return jsonify({"error": "انتهى وقت الاختبار"}), 400
 
     existing = (
-        supabase_admin.table("quiz_attempts").select("*").eq("quiz_id", quiz_id).eq("student_id", request.user_id)
+        supabase_admin.table("school_quiz_attempts").select("*").eq("quiz_id", quiz_id).eq("student_id", request.user_id)
         .limit(1).execute()
     ).data
     if existing:
         return jsonify(existing[0]), 200
     attempt = (
-        supabase_admin.table("quiz_attempts")
+        supabase_admin.table("school_quiz_attempts")
         .insert({"quiz_id": quiz_id, "student_id": request.user_id, "started_at": datetime.now(timezone.utc).isoformat()})
         .execute()
         .data[0]
@@ -4500,7 +4500,7 @@ def submit_quiz_attempt(quiz_id):
         is_graded = True
 
     attempt = (
-        supabase_admin.table("quiz_attempts")
+        supabase_admin.table("school_quiz_attempts")
         .upsert(
             {
                 "quiz_id": quiz_id, "student_id": request.user_id,

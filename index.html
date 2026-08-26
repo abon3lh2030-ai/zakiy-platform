@@ -7961,13 +7961,24 @@ async function loadSchoolClasses() {
     studentsData.students.forEach(s => { if (s.class_id) counts[s.class_id] = (counts[s.class_id] || 0) + 1; });
     tbody.innerHTML = schoolClassesCache.map(c => `
       <tr>
-        <td>${escapeHtml(c.name)}</td>
+        <td>
+          ${escapeHtml(c.name)}
+          <button class="ghost rename-class-btn" data-class-id="${c.id}" data-current="${escapeHtml(c.name)}" style="padding:2px 8px; font-size:12px; margin-inline-start:6px;">✏️ ${t('btn_rename')}</button>
+        </td>
         <td>${renderClassTeachersCellHtml(c)}</td>
         <td>${counts[c.id] || 0}</td>
         <td><button class="ghost" data-delete-class="${c.id}" style="padding:4px 10px;">${t('btn_delete')}</button></td>
       </tr>
     `).join('');
     wireClassTeachersCellEvents(tbody);
+    tbody.querySelectorAll('.rename-class-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const newName = prompt(t('rename_prompt'), btn.dataset.current);
+        if (!newName || !newName.trim() || newName.trim() === btn.dataset.current) return;
+        try { await apiCall('PATCH', `/api/school/classes/${btn.dataset.classId}`, { name: newName.trim() }); loadSchoolClasses(); }
+        catch (e) { alert(e.message); }
+      });
+    });
     tbody.querySelectorAll('[data-delete-class]').forEach(btn => {
       btn.addEventListener('click', async () => {
         if (!confirm(t('confirm_delete_class'))) return;

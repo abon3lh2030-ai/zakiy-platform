@@ -441,6 +441,267 @@ def delete_lesson_prep(prep_id):
     return jsonify({"ok": True}), 200
 
 
+# ---------- مولّد نشاط إثرائي مستقل (معلم) - بدون حفظ، توليد لحظي بس ----------
+@app.route("/api/enrichment/generate", methods=["POST"])
+@require_auth
+def generate_enrichment():
+    data = request.get_json(silent=True) or {}
+    subject = (data.get("subject") or "").strip()
+    grade_level = (data.get("grade_level") or "").strip()
+    topic = (data.get("topic") or "").strip()
+    lang = data.get("lang", "ar")
+    if not subject or not grade_level or not topic:
+        return jsonify({"error": "لازم المادة والصف والموضوع"}), 400
+
+    prompt = f"""أنت مساعد معلمين. سوّي نشاط إثرائي واحد للطلاب المتفوقين بناءً على:
+المادة: {subject}
+الصف: {grade_level}
+الموضوع: {topic}
+
+رجّع النتيجة بصيغة JSON فقط بدون أي نص إضافي، بهذا الشكل بالضبط:
+{{
+  "title": "عنوان النشاط",
+  "description": "وصف النشاط وأهدافه",
+  "instructions": ["خطوة تنفيذ 1", "خطوة تنفيذ 2"],
+  "materials_needed": "الأدوات/المواد المطلوبة (لو فيه)"
+}}
+{lang_directive(lang)}"""
+    try:
+        interaction = create_interaction(
+            model=GEMINI_MODEL, input=prompt,
+            generation_config={"max_output_tokens": 1500, "thinking_level": "minimal"},
+        )
+        return jsonify({"content_raw": interaction.output_text}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------- محلّل نتائج الطلاب (معلم) - يلصق درجات/ملاحظات نصية خام (من
+# مدرستي أو أي مصدر) ويطلع تحليل - بدون حفظ، توليد لحظي بس ----------
+@app.route("/api/results-analysis/generate", methods=["POST"])
+@require_auth
+def generate_results_analysis():
+    data = request.get_json(silent=True) or {}
+    raw_results = (data.get("raw_results") or "").strip()
+    lang = data.get("lang", "ar")
+    if not raw_results:
+        return jsonify({"error": "لازم تلصق نتائج الطلاب"}), 400
+
+    prompt = f"""أنت مساعد تحليل نتائج تعليمية. تحت بيانات نتائج/درجات طلاب لصقها
+معلم (أسماء ودرجات، بأي صيغة نصية حرة). حلّلها وطلّع فوائد عملية للمعلم.
+
+رجّع النتيجة بصيغة JSON فقط بدون أي نص إضافي، بهذا الشكل بالضبط:
+{{
+  "overall_summary": "ملخص عام لأداء الفصل (فقرة قصيرة)",
+  "strengths": ["نقطة قوة 1", "نقطة قوة 2"],
+  "weaknesses": ["نقطة ضعف 1", "نقطة ضعف 2"],
+  "at_risk_students": ["اسم طالب محتاج متابعة ولماذا"],
+  "recommendations": ["توصية عملية 1", "توصية عملية 2"]
+}}
+{lang_directive(lang)}
+
+بيانات النتائج:
+{raw_results}"""
+    try:
+        interaction = create_interaction(
+            model=GEMINI_MODEL, input=prompt,
+            generation_config={"max_output_tokens": 2000, "thinking_level": "minimal"},
+        )
+        return jsonify({"content_raw": interaction.output_text}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ============================================================================
+# ---------- مساعد الواجب الذكي (طالب - نظير التحضير الذكي) ----------
+# ============================================================================
+@app.route("/api/homework-help/generate", methods=["POST"])
+@require_auth
+def generate_homework_help():
+    data = request.get_json(silent=True) or {}
+    subject = (data.get("subject") or "").strip()
+    grade_level = (data.get("grade_level") or "").strip()
+    topic = (data.get("topic") or "").strip()
+    lang = data.get("lang", "ar")
+    if not subject or not grade_level or not topic:
+        return jsonify({"error": "لازم المادة والصف والموضوع أو السؤال"}), 400
+
+    prompt = f"""أنت مساعد دراسي لطلاب مدارس السعودية. ساعد الطالب يفهم:
+المادة: {subject}
+الصف: {grade_level}
+الموضوع أو سؤال الواجب: {topic}
+
+رجّع النتيجة بصيغة JSON فقط بدون أي نص إضافي، بهذا الشكل بالضبط:
+{{
+  "explanation": "شرح مبسط وواضح للموضوع بلغة يفهمها طالب بهذا الصف",
+  "worked_example": "مثال محلول خطوة بخطوة",
+  "practice_questions": [
+    {{"question": "سؤال تدريبي 1", "answer": "الإجابة الصحيحة مع شرح قصير"}},
+    {{"question": "سؤال تدريبي 2", "answer": "الإجابة الصحيحة مع شرح قصير"}}
+  ],
+  "tips": "نصيحة قصيرة تساعد الطالب يتذكر أو يفهم أفضل"
+}}
+{lang_directive(lang)}"""
+    try:
+        interaction = create_interaction(
+            model=GEMINI_MODEL, input=prompt,
+            generation_config={"max_output_tokens": 2500, "thinking_level": "minimal"},
+        )
+        return jsonify({"content_raw": interaction.output_text}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/homework-help", methods=["POST"])
+@require_auth
+def save_homework_help():
+    data = request.get_json(silent=True) or {}
+    subject = (data.get("subject") or "").strip()
+    grade_level = (data.get("grade_level") or "").strip()
+    topic = (data.get("topic") or "").strip()
+    content = data.get("content")
+    if not subject or not grade_level or not topic or not isinstance(content, dict):
+        return jsonify({"error": "بيانات الجلسة ناقصة"}), 400
+    row = (
+        supabase_admin.table("homework_helper_sessions")
+        .insert({"user_id": request.user_id, "subject": subject, "grade_level": grade_level, "topic": topic, "content": content})
+        .execute()
+        .data[0]
+    )
+    return jsonify(row), 200
+
+
+@app.route("/api/homework-help", methods=["GET"])
+@require_auth
+def list_homework_help():
+    rows = (
+        supabase_admin.table("homework_helper_sessions")
+        .select("id, subject, grade_level, topic, created_at")
+        .eq("user_id", request.user_id).order("created_at", desc=True).execute()
+    ).data
+    return jsonify({"sessions": rows}), 200
+
+
+@app.route("/api/homework-help/<session_id>", methods=["GET"])
+@require_auth
+def get_homework_help(session_id):
+    rows = (
+        supabase_admin.table("homework_helper_sessions").select("*")
+        .eq("id", session_id).eq("user_id", request.user_id).limit(1).execute()
+    ).data
+    if not rows:
+        return jsonify({"error": "الجلسة مو موجودة"}), 404
+    return jsonify(rows[0]), 200
+
+
+@app.route("/api/homework-help/<session_id>", methods=["DELETE"])
+@require_auth
+def delete_homework_help(session_id):
+    res = (
+        supabase_admin.table("homework_helper_sessions").delete()
+        .eq("id", session_id).eq("user_id", request.user_id).execute()
+    )
+    if not res.data:
+        return jsonify({"error": "الجلسة مو موجودة"}), 404
+    return jsonify({"ok": True}), 200
+
+
+# ============================================================================
+# ---------- خطة مذاكرة ذكية (طالب) ----------
+# ============================================================================
+@app.route("/api/study-plan/generate", methods=["POST"])
+@require_auth
+def generate_study_plan():
+    data = request.get_json(silent=True) or {}
+    subjects = (data.get("subjects") or "").strip()
+    exam_date = (data.get("exam_date") or "").strip()
+    hours_per_day = data.get("hours_per_day")
+    lang = data.get("lang", "ar")
+    if not subjects:
+        return jsonify({"error": "لازم تكتب المواد اللي تبي تذاكرها"}), 400
+
+    exam_line = f"تاريخ الاختبار: {exam_date}\n" if exam_date else ""
+    hours_line = f"الوقت المتاح للمذاكرة يوميًا: {hours_per_day} ساعة\n" if hours_per_day else ""
+    prompt = f"""أنت مساعد تنظيم مذاكرة لطالب. سوّي خطة مذاكرة يوم بيوم بناءً على:
+المواد: {subjects}
+{exam_line}{hours_line}
+رجّع النتيجة بصيغة JSON فقط بدون أي نص إضافي، بهذا الشكل بالضبط:
+{{
+  "days": [
+    {{"date_label": "اليوم الأول", "tasks": ["مهمة مذاكرة 1", "مهمة مذاكرة 2"]}}
+  ],
+  "general_tips": "نصائح عامة للمذاكرة الفعّالة"
+}}
+{lang_directive(lang)}"""
+    try:
+        interaction = create_interaction(
+            model=GEMINI_MODEL, input=prompt,
+            generation_config={"max_output_tokens": 2500, "thinking_level": "minimal"},
+        )
+        return jsonify({"content_raw": interaction.output_text}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/study-plan", methods=["POST"])
+@require_auth
+def save_study_plan():
+    data = request.get_json(silent=True) or {}
+    subjects = (data.get("subjects") or "").strip()
+    exam_date = data.get("exam_date") or None
+    hours_per_day = data.get("hours_per_day")
+    content = data.get("content")
+    if not subjects or not isinstance(content, dict):
+        return jsonify({"error": "بيانات الخطة ناقصة"}), 400
+    row = (
+        supabase_admin.table("study_plans")
+        .insert(
+            {
+                "user_id": request.user_id, "subjects": subjects, "exam_date": exam_date,
+                "hours_per_day": hours_per_day, "content": content,
+            }
+        )
+        .execute()
+        .data[0]
+    )
+    return jsonify(row), 200
+
+
+@app.route("/api/study-plan", methods=["GET"])
+@require_auth
+def list_study_plans():
+    rows = (
+        supabase_admin.table("study_plans")
+        .select("id, subjects, exam_date, hours_per_day, created_at")
+        .eq("user_id", request.user_id).order("created_at", desc=True).execute()
+    ).data
+    return jsonify({"plans": rows}), 200
+
+
+@app.route("/api/study-plan/<plan_id>", methods=["GET"])
+@require_auth
+def get_study_plan(plan_id):
+    rows = (
+        supabase_admin.table("study_plans").select("*")
+        .eq("id", plan_id).eq("user_id", request.user_id).limit(1).execute()
+    ).data
+    if not rows:
+        return jsonify({"error": "الخطة مو موجودة"}), 404
+    return jsonify(rows[0]), 200
+
+
+@app.route("/api/study-plan/<plan_id>", methods=["DELETE"])
+@require_auth
+def delete_study_plan(plan_id):
+    res = (
+        supabase_admin.table("study_plans").delete()
+        .eq("id", plan_id).eq("user_id", request.user_id).execute()
+    )
+    if not res.data:
+        return jsonify({"error": "الخطة مو موجودة"}), 404
+    return jsonify({"ok": True}), 200
+
+
 # ---------- شات مع الذكاء الاصطناعي حول الملف (وضع فردي) ----------
 @app.route("/api/chat", methods=["POST"])
 def chat():

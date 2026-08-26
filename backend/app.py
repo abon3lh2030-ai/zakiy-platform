@@ -363,43 +363,52 @@ def save_lesson_prep():
     content = data.get("content")
     if not subject or not grade_level or not lesson_title or not isinstance(content, dict):
         return jsonify({"error": "بيانات التحضير ناقصة"}), 400
-    row = (
-        supabase_admin.table("lesson_preparations")
-        .insert(
-            {
-                "user_id": request.user_id, "subject": subject, "grade_level": grade_level,
-                "unit": unit, "lesson_title": lesson_title, "content": content,
-            }
+    try:
+        row = (
+            supabase_admin.table("lesson_preparations")
+            .insert(
+                {
+                    "user_id": request.user_id, "subject": subject, "grade_level": grade_level,
+                    "unit": unit, "lesson_title": lesson_title, "content": content,
+                }
+            )
+            .execute()
+            .data[0]
         )
-        .execute()
-        .data[0]
-    )
-    return jsonify(row), 200
+        return jsonify(row), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/lesson-prep", methods=["GET"])
 @require_auth
 def list_lesson_prep():
-    rows = (
-        supabase_admin.table("lesson_preparations")
-        .select("id, subject, grade_level, unit, lesson_title, created_at")
-        .eq("user_id", request.user_id)
-        .order("created_at", desc=True)
-        .execute()
-    ).data
-    return jsonify({"preparations": rows}), 200
+    try:
+        rows = (
+            supabase_admin.table("lesson_preparations")
+            .select("id, subject, grade_level, unit, lesson_title, created_at")
+            .eq("user_id", request.user_id)
+            .order("created_at", desc=True)
+            .execute()
+        ).data
+        return jsonify({"preparations": rows}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/lesson-prep/<prep_id>", methods=["GET"])
 @require_auth
 def get_lesson_prep(prep_id):
-    rows = (
-        supabase_admin.table("lesson_preparations").select("*")
-        .eq("id", prep_id).eq("user_id", request.user_id).limit(1).execute()
-    ).data
-    if not rows:
-        return jsonify({"error": "التحضير مو موجود"}), 404
-    return jsonify(rows[0]), 200
+    try:
+        rows = (
+            supabase_admin.table("lesson_preparations").select("*")
+            .eq("id", prep_id).eq("user_id", request.user_id).limit(1).execute()
+        ).data
+        if not rows:
+            return jsonify({"error": "التحضير مو موجود"}), 404
+        return jsonify(rows[0]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/lesson-prep/<prep_id>", methods=["PATCH"])
@@ -417,28 +426,34 @@ def update_lesson_prep(prep_id):
         patch["lesson_title"] = (data.get("lesson_title") or "").strip()
     if "content" in data and isinstance(data["content"], dict):
         patch["content"] = data["content"]
-    if patch:
-        patch["updated_at"] = datetime.now(timezone.utc).isoformat()
-        res = (
-            supabase_admin.table("lesson_preparations").update(patch)
-            .eq("id", prep_id).eq("user_id", request.user_id).execute()
-        )
-        if not res.data:
-            return jsonify({"error": "التحضير مو موجود"}), 404
-        return jsonify(res.data[0]), 200
-    return jsonify({"ok": True}), 200
+    try:
+        if patch:
+            patch["updated_at"] = datetime.now(timezone.utc).isoformat()
+            res = (
+                supabase_admin.table("lesson_preparations").update(patch)
+                .eq("id", prep_id).eq("user_id", request.user_id).execute()
+            )
+            if not res.data:
+                return jsonify({"error": "التحضير مو موجود"}), 404
+            return jsonify(res.data[0]), 200
+        return jsonify({"ok": True}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/lesson-prep/<prep_id>", methods=["DELETE"])
 @require_auth
 def delete_lesson_prep(prep_id):
-    res = (
-        supabase_admin.table("lesson_preparations").delete()
-        .eq("id", prep_id).eq("user_id", request.user_id).execute()
-    )
-    if not res.data:
-        return jsonify({"error": "التحضير مو موجود"}), 404
-    return jsonify({"ok": True}), 200
+    try:
+        res = (
+            supabase_admin.table("lesson_preparations").delete()
+            .eq("id", prep_id).eq("user_id", request.user_id).execute()
+        )
+        if not res.data:
+            return jsonify({"error": "التحضير مو موجود"}), 404
+        return jsonify({"ok": True}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # ---------- مولّد نشاط إثرائي مستقل (معلم) - بدون حفظ، توليد لحظي بس ----------
@@ -562,48 +577,60 @@ def save_homework_help():
     content = data.get("content")
     if not subject or not grade_level or not topic or not isinstance(content, dict):
         return jsonify({"error": "بيانات الجلسة ناقصة"}), 400
-    row = (
-        supabase_admin.table("homework_helper_sessions")
-        .insert({"user_id": request.user_id, "subject": subject, "grade_level": grade_level, "topic": topic, "content": content})
-        .execute()
-        .data[0]
-    )
-    return jsonify(row), 200
+    try:
+        row = (
+            supabase_admin.table("homework_helper_sessions")
+            .insert({"user_id": request.user_id, "subject": subject, "grade_level": grade_level, "topic": topic, "content": content})
+            .execute()
+            .data[0]
+        )
+        return jsonify(row), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/homework-help", methods=["GET"])
 @require_auth
 def list_homework_help():
-    rows = (
-        supabase_admin.table("homework_helper_sessions")
-        .select("id, subject, grade_level, topic, created_at")
-        .eq("user_id", request.user_id).order("created_at", desc=True).execute()
-    ).data
-    return jsonify({"sessions": rows}), 200
+    try:
+        rows = (
+            supabase_admin.table("homework_helper_sessions")
+            .select("id, subject, grade_level, topic, created_at")
+            .eq("user_id", request.user_id).order("created_at", desc=True).execute()
+        ).data
+        return jsonify({"sessions": rows}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/homework-help/<session_id>", methods=["GET"])
 @require_auth
 def get_homework_help(session_id):
-    rows = (
-        supabase_admin.table("homework_helper_sessions").select("*")
-        .eq("id", session_id).eq("user_id", request.user_id).limit(1).execute()
-    ).data
-    if not rows:
-        return jsonify({"error": "الجلسة مو موجودة"}), 404
-    return jsonify(rows[0]), 200
+    try:
+        rows = (
+            supabase_admin.table("homework_helper_sessions").select("*")
+            .eq("id", session_id).eq("user_id", request.user_id).limit(1).execute()
+        ).data
+        if not rows:
+            return jsonify({"error": "الجلسة مو موجودة"}), 404
+        return jsonify(rows[0]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/homework-help/<session_id>", methods=["DELETE"])
 @require_auth
 def delete_homework_help(session_id):
-    res = (
-        supabase_admin.table("homework_helper_sessions").delete()
-        .eq("id", session_id).eq("user_id", request.user_id).execute()
-    )
-    if not res.data:
-        return jsonify({"error": "الجلسة مو موجودة"}), 404
-    return jsonify({"ok": True}), 200
+    try:
+        res = (
+            supabase_admin.table("homework_helper_sessions").delete()
+            .eq("id", session_id).eq("user_id", request.user_id).execute()
+        )
+        if not res.data:
+            return jsonify({"error": "الجلسة مو موجودة"}), 404
+        return jsonify({"ok": True}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # ============================================================================
@@ -653,53 +680,65 @@ def save_study_plan():
     content = data.get("content")
     if not subjects or not isinstance(content, dict):
         return jsonify({"error": "بيانات الخطة ناقصة"}), 400
-    row = (
-        supabase_admin.table("study_plans")
-        .insert(
-            {
-                "user_id": request.user_id, "subjects": subjects, "exam_date": exam_date,
-                "hours_per_day": hours_per_day, "content": content,
-            }
+    try:
+        row = (
+            supabase_admin.table("study_plans")
+            .insert(
+                {
+                    "user_id": request.user_id, "subjects": subjects, "exam_date": exam_date,
+                    "hours_per_day": hours_per_day, "content": content,
+                }
+            )
+            .execute()
+            .data[0]
         )
-        .execute()
-        .data[0]
-    )
-    return jsonify(row), 200
+        return jsonify(row), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/study-plan", methods=["GET"])
 @require_auth
 def list_study_plans():
-    rows = (
-        supabase_admin.table("study_plans")
-        .select("id, subjects, exam_date, hours_per_day, created_at")
-        .eq("user_id", request.user_id).order("created_at", desc=True).execute()
-    ).data
-    return jsonify({"plans": rows}), 200
+    try:
+        rows = (
+            supabase_admin.table("study_plans")
+            .select("id, subjects, exam_date, hours_per_day, created_at")
+            .eq("user_id", request.user_id).order("created_at", desc=True).execute()
+        ).data
+        return jsonify({"plans": rows}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/study-plan/<plan_id>", methods=["GET"])
 @require_auth
 def get_study_plan(plan_id):
-    rows = (
-        supabase_admin.table("study_plans").select("*")
-        .eq("id", plan_id).eq("user_id", request.user_id).limit(1).execute()
-    ).data
-    if not rows:
-        return jsonify({"error": "الخطة مو موجودة"}), 404
-    return jsonify(rows[0]), 200
+    try:
+        rows = (
+            supabase_admin.table("study_plans").select("*")
+            .eq("id", plan_id).eq("user_id", request.user_id).limit(1).execute()
+        ).data
+        if not rows:
+            return jsonify({"error": "الخطة مو موجودة"}), 404
+        return jsonify(rows[0]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/study-plan/<plan_id>", methods=["DELETE"])
 @require_auth
 def delete_study_plan(plan_id):
-    res = (
-        supabase_admin.table("study_plans").delete()
-        .eq("id", plan_id).eq("user_id", request.user_id).execute()
-    )
-    if not res.data:
-        return jsonify({"error": "الخطة مو موجودة"}), 404
-    return jsonify({"ok": True}), 200
+    try:
+        res = (
+            supabase_admin.table("study_plans").delete()
+            .eq("id", plan_id).eq("user_id", request.user_id).execute()
+        )
+        if not res.data:
+            return jsonify({"error": "الخطة مو موجودة"}), 404
+        return jsonify({"ok": True}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # ---------- شات مع الذكاء الاصطناعي حول الملف (وضع فردي) ----------

@@ -386,7 +386,7 @@ const I18N = {
     // ---- مدرستي + التحضير الذكي ----
     nav_madrasati: 'مدرستي',
     madrasati_step_label: '🎓 مدرستي',
-    madrasati_heading: 'مدرستي وأدوات ذكيّ للمعلم',
+    madrasati_heading: 'مدرستي وأدوات ذكيّ',
     madrasati_desc: 'اختصار سريع لموقع مدرستي الرسمي، بالإضافة لأدوات ذكيّ الذكية للمعلمين - مستقلة تمامًا عن مدرستي وما تشارك أي بيانات وياها.',
     madrasati_link_desc: 'يفتح موقع مدرستي الرسمي بتبويب جديد - تسجّل دخولك مباشرة عندهم، وذكيّ ما يشوف ولا يلمس بيانات حسابك هناك إطلاقًا.',
     btn_open_madrasati: '🔗 افتح مدرستي الرسمي',
@@ -1092,7 +1092,7 @@ const I18N = {
     // ---- Madrasati + AI lesson prep ----
     nav_madrasati: 'Madrasati',
     madrasati_step_label: '🎓 Madrasati',
-    madrasati_heading: 'Madrasati & Zakiy teacher tools',
+    madrasati_heading: 'Madrasati & Zakiy tools',
     madrasati_desc: "A quick shortcut to the official Madrasati site, plus Zakiy's own AI tools for teachers - fully independent of Madrasati, sharing no data with it whatsoever.",
     madrasati_link_desc: "Opens the official Madrasati site in a new tab - you sign in there directly, and Zakiy never sees or touches your account data there.",
     btn_open_madrasati: '🔗 Open official Madrasati',

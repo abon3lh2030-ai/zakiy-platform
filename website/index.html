@@ -2118,7 +2118,15 @@
   <!-- مدرستي: قسمين (واجهة طالب/واجهة معلم)، كل قسم فيه روابط مدرستي
        الرسمية (تفتح بتبويب جديد - بدون أي تكامل بيانات، ما فيه API عام
        لمدرستي) + ميزات ذكيّ الموجودة أصلًا مبنية بنفس التصميم - القسم
-       الظاهر افتراضيًا يتحدد حسب دور الحساب (03-auth.js) -->
+       الظاهر افتراضيًا يتحدد حسب دور الحساب (03-auth.js)
+
+       ⚠️ روابط بطاقات "مدرستي" الثمانية (target="_blank") كلها مؤقتًا تفتح
+       الصفحة الرئيسية العامة (schools.madrasati.sa) - لازم تُستبدل لاحقًا
+       بالرابط المباشر الصحيح لكل صفحة فرعية (تسليم الواجبات/الدرجات/
+       الجدول/الحضور...) بمجرد ما تتوفر. مهم: ما تحطها href="#" أبدًا - لأن
+       "#" مع target="_blank" يفتح رابط الصفحة الحالية نفسها (ذكيّ) بتبويب
+       جديد بدل مدرستي، مو رابط "فاضي" آمن زي ما يبدو -->
+
   <section class="card hidden" id="step-madrasati">
     <span class="step-label" data-i18n="madrasati_step_label">🎓 مدرستي</span>
     <h2 data-i18n="madrasati_heading">مدرستي وأدوات ذكيّ</h2>
@@ -2128,19 +2136,19 @@
     <div id="madrasatiStudentSection">
       <h3 class="sub-heading" data-i18n="student_interface_heading">🎒 واجهة الطالب</h3>
       <div class="madrasati-links-grid">
-        <a class="madrasati-link-card external" href="#" target="_blank" rel="noopener">
+        <a class="madrasati-link-card external" href="https://schools.madrasati.sa" target="_blank" rel="noopener">
           <span class="mlc-icon">📤</span><span class="mlc-label" data-i18n="md_submit_assignments">تسليم الواجبات</span>
           <span class="mlc-badge" data-i18n="md_badge_madrasati">مدرستي</span>
         </a>
-        <a class="madrasati-link-card external" href="#" target="_blank" rel="noopener">
+        <a class="madrasati-link-card external" href="https://schools.madrasati.sa" target="_blank" rel="noopener">
           <span class="mlc-icon">📊</span><span class="mlc-label" data-i18n="md_view_grades">عرض الدرجات</span>
           <span class="mlc-badge" data-i18n="md_badge_madrasati">مدرستي</span>
         </a>
-        <a class="madrasati-link-card external" href="#" target="_blank" rel="noopener">
+        <a class="madrasati-link-card external" href="https://schools.madrasati.sa" target="_blank" rel="noopener">
           <span class="mlc-icon">🗓️</span><span class="mlc-label" data-i18n="md_study_schedule">الجدول الدراسي</span>
           <span class="mlc-badge" data-i18n="md_badge_madrasati">مدرستي</span>
         </a>
-        <a class="madrasati-link-card external" href="#" target="_blank" rel="noopener">
+        <a class="madrasati-link-card external" href="https://schools.madrasati.sa" target="_blank" rel="noopener">
           <span class="mlc-icon">✅</span><span class="mlc-label" data-i18n="md_attendance">الحضور والغياب</span>
           <span class="mlc-badge" data-i18n="md_badge_madrasati">مدرستي</span>
         </a>
@@ -2191,19 +2199,19 @@
     <div id="madrasatiTeacherSection">
       <h3 class="sub-heading" data-i18n="teacher_interface_heading">👨‍🏫 واجهة المعلم</h3>
       <div class="madrasati-links-grid">
-        <a class="madrasati-link-card external" href="#" target="_blank" rel="noopener">
+        <a class="madrasati-link-card external" href="https://schools.madrasati.sa" target="_blank" rel="noopener">
           <span class="mlc-icon">📤</span><span class="mlc-label" data-i18n="md_manage_assignments">إدارة الواجبات</span>
           <span class="mlc-badge" data-i18n="md_badge_madrasati">مدرستي</span>
         </a>
-        <a class="madrasati-link-card external" href="#" target="_blank" rel="noopener">
+        <a class="madrasati-link-card external" href="https://schools.madrasati.sa" target="_blank" rel="noopener">
           <span class="mlc-icon">✏️</span><span class="mlc-label" data-i18n="md_record_grades">رصد الدرجات</span>
           <span class="mlc-badge" data-i18n="md_badge_madrasati">مدرستي</span>
         </a>
-        <a class="madrasati-link-card external" href="#" target="_blank" rel="noopener">
+        <a class="madrasati-link-card external" href="https://schools.madrasati.sa" target="_blank" rel="noopener">
           <span class="mlc-icon">🗓️</span><span class="mlc-label" data-i18n="md_class_schedule">جدول الحصص</span>
           <span class="mlc-badge" data-i18n="md_badge_madrasati">مدرستي</span>
         </a>
-        <a class="madrasati-link-card external" href="#" target="_blank" rel="noopener">
+        <a class="madrasati-link-card external" href="https://schools.madrasati.sa" target="_blank" rel="noopener">
           <span class="mlc-icon">✅</span><span class="mlc-label" data-i18n="md_record_attendance">تسجيل الحضور</span>
           <span class="mlc-badge" data-i18n="md_badge_madrasati">مدرستي</span>
         </a>
@@ -3316,7 +3324,7 @@ const I18N = {
     // ---- مدرستي + التحضير الذكي ----
     nav_madrasati: 'مدرستي',
     madrasati_step_label: '🎓 مدرستي',
-    madrasati_heading: 'مدرستي وأدوات ذكيّ للمعلم',
+    madrasati_heading: 'مدرستي وأدوات ذكيّ',
     madrasati_desc: 'اختصار سريع لموقع مدرستي الرسمي، بالإضافة لأدوات ذكيّ الذكية للمعلمين - مستقلة تمامًا عن مدرستي وما تشارك أي بيانات وياها.',
     madrasati_link_desc: 'يفتح موقع مدرستي الرسمي بتبويب جديد - تسجّل دخولك مباشرة عندهم، وذكيّ ما يشوف ولا يلمس بيانات حسابك هناك إطلاقًا.',
     btn_open_madrasati: '🔗 افتح مدرستي الرسمي',
@@ -4022,7 +4030,7 @@ const I18N = {
     // ---- Madrasati + AI lesson prep ----
     nav_madrasati: 'Madrasati',
     madrasati_step_label: '🎓 Madrasati',
-    madrasati_heading: 'Madrasati & Zakiy teacher tools',
+    madrasati_heading: 'Madrasati & Zakiy tools',
     madrasati_desc: "A quick shortcut to the official Madrasati site, plus Zakiy's own AI tools for teachers - fully independent of Madrasati, sharing no data with it whatsoever.",
     madrasati_link_desc: "Opens the official Madrasati site in a new tab - you sign in there directly, and Zakiy never sees or touches your account data there.",
     btn_open_madrasati: '🔗 Open official Madrasati',

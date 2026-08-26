@@ -1,11 +1,12 @@
   <!-- مدرستي: قسمين (واجهة طالب/واجهة معلم)، كل قسم فيه روابط مدرستي
        الرسمية (تفتح بتبويب جديد - بدون أي تكامل بيانات، ما فيه API عام
-       لمدرستي) + ميزات ذكيّ الموجودة أصلًا مبنية بنفس التصميم - القسم
-       الظاهر افتراضيًا يتحدد حسب دور الحساب (03-auth.js)
+       لمدرستي) + ميزات ذكيّ الموجودة أصلًا، كلها بشكل بطاقة موحّد بدون أي
+       شارة تفرّق مصدرها - القسم الظاهر افتراضيًا يتحدد حسب دور الحساب
+       (03-auth.js)
 
        ⚠️ روابط بطاقات "مدرستي" الثمانية (target="_blank") كلها مؤقتًا تفتح
        رابط تسجيل الدخول الرسمي (schools.madrasati.sa/Auth/SignIn، يحوّل
-       مباشرة لـ Microsoft Entra ID/SSO الحقيقي) - تأكدت فعليًا إن الموقع
+       مباشرة لـ Microsoft Entra ID/SSO الحقيقي) - تأكدنا فعليًا إن الموقع
        العام schools.madrasati.sa مجرد بوابة تعريفية/تسجيل دخول، والصفحات
        الفعلية (تسليم الواجبات، الدرجات، الجدول، الحضور) تعيش داخل Microsoft
        Teams بعد الدخول، خاصة بكل مدرسة، وما فيها رابط عام واحد يشتغل للكل.
@@ -25,48 +26,37 @@
       <div class="madrasati-links-grid">
         <a class="madrasati-link-card external" href="https://schools.madrasati.sa/Auth/SignIn" target="_blank" rel="noopener">
           <span class="mlc-icon">📤</span><span class="mlc-label" data-i18n="md_submit_assignments">تسليم الواجبات</span>
-          <span class="mlc-badge" data-i18n="md_badge_madrasati">مدرستي</span>
         </a>
         <a class="madrasati-link-card external" href="https://schools.madrasati.sa/Auth/SignIn" target="_blank" rel="noopener">
           <span class="mlc-icon">📊</span><span class="mlc-label" data-i18n="md_view_grades">عرض الدرجات</span>
-          <span class="mlc-badge" data-i18n="md_badge_madrasati">مدرستي</span>
         </a>
         <a class="madrasati-link-card external" href="https://schools.madrasati.sa/Auth/SignIn" target="_blank" rel="noopener">
           <span class="mlc-icon">🗓️</span><span class="mlc-label" data-i18n="md_study_schedule">الجدول الدراسي</span>
-          <span class="mlc-badge" data-i18n="md_badge_madrasati">مدرستي</span>
         </a>
         <a class="madrasati-link-card external" href="https://schools.madrasati.sa/Auth/SignIn" target="_blank" rel="noopener">
           <span class="mlc-icon">✅</span><span class="mlc-label" data-i18n="md_attendance">الحضور والغياب</span>
-          <span class="mlc-badge" data-i18n="md_badge_madrasati">مدرستي</span>
         </a>
 
         <button class="madrasati-link-card zakiy hidden" id="mdStudentAssignmentsBtn">
           <span class="mlc-icon">📚</span><span class="mlc-label" data-i18n="nav_assignments">الواجبات</span>
-          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
         </button>
         <button class="madrasati-link-card zakiy hidden" id="mdStudentQuizzesBtn">
           <span class="mlc-icon">📝</span><span class="mlc-label" data-i18n="nav_quizzes">الاختبارات</span>
-          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
         </button>
         <button class="madrasati-link-card zakiy hidden" id="mdStudentScheduleBtn">
           <span class="mlc-icon">🗓️</span><span class="mlc-label" data-i18n="nav_my_schedule">جدولي</span>
-          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
         </button>
         <button class="madrasati-link-card zakiy" id="mdStudentLibraryBtn">
           <span class="mlc-icon">📚</span><span class="mlc-label" data-i18n="nav_library">مكتبتي</span>
-          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
         </button>
         <button class="madrasati-link-card zakiy" id="mdStudentAiBtn">
           <span class="mlc-icon">🤖</span><span class="mlc-label" data-i18n="nav_ai_help">مساعد ذكيّ</span>
-          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
         </button>
         <button class="madrasati-link-card zakiy" id="newHomeworkHelpBtn">
           <span class="mlc-icon">📚</span><span class="mlc-label" data-i18n="md_homework_help_label">مساعد الواجب</span>
-          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
         </button>
         <button class="madrasati-link-card zakiy" id="newStudyPlanBtn">
           <span class="mlc-icon">🗓️</span><span class="mlc-label" data-i18n="md_study_plan_label">خطة مذاكرة</span>
-          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
         </button>
       </div>
 
@@ -88,44 +78,34 @@
       <div class="madrasati-links-grid">
         <a class="madrasati-link-card external" href="https://schools.madrasati.sa/Auth/SignIn" target="_blank" rel="noopener">
           <span class="mlc-icon">📤</span><span class="mlc-label" data-i18n="md_manage_assignments">إدارة الواجبات</span>
-          <span class="mlc-badge" data-i18n="md_badge_madrasati">مدرستي</span>
         </a>
         <a class="madrasati-link-card external" href="https://schools.madrasati.sa/Auth/SignIn" target="_blank" rel="noopener">
           <span class="mlc-icon">✏️</span><span class="mlc-label" data-i18n="md_record_grades">رصد الدرجات</span>
-          <span class="mlc-badge" data-i18n="md_badge_madrasati">مدرستي</span>
         </a>
         <a class="madrasati-link-card external" href="https://schools.madrasati.sa/Auth/SignIn" target="_blank" rel="noopener">
           <span class="mlc-icon">🗓️</span><span class="mlc-label" data-i18n="md_class_schedule">جدول الحصص</span>
-          <span class="mlc-badge" data-i18n="md_badge_madrasati">مدرستي</span>
         </a>
         <a class="madrasati-link-card external" href="https://schools.madrasati.sa/Auth/SignIn" target="_blank" rel="noopener">
           <span class="mlc-icon">✅</span><span class="mlc-label" data-i18n="md_record_attendance">تسجيل الحضور</span>
-          <span class="mlc-badge" data-i18n="md_badge_madrasati">مدرستي</span>
         </a>
 
         <button class="madrasati-link-card zakiy hidden" id="mdTeacherAssignmentsBtn">
           <span class="mlc-icon">📚</span><span class="mlc-label" data-i18n="nav_assignments">الواجبات</span>
-          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
         </button>
         <button class="madrasati-link-card zakiy hidden" id="mdTeacherQuizzesBtn">
           <span class="mlc-icon">📝</span><span class="mlc-label" data-i18n="nav_quizzes">الاختبارات</span>
-          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
         </button>
         <button class="madrasati-link-card zakiy hidden" id="mdTeacherGradesheetBtn">
           <span class="mlc-icon">📋</span><span class="mlc-label" data-i18n="nav_gradesheet">كشف الدرجات</span>
-          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
         </button>
         <button class="madrasati-link-card zakiy" id="newLessonPrepBtn">
           <span class="mlc-icon">🧠</span><span class="mlc-label" data-i18n="md_lesson_prep_label">التحضير الذكي</span>
-          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
         </button>
         <button class="madrasati-link-card zakiy" id="openEnrichmentBtn">
           <span class="mlc-icon">🌟</span><span class="mlc-label" data-i18n="md_enrichment_label">نشاط إثرائي</span>
-          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
         </button>
         <button class="madrasati-link-card zakiy" id="openResultsAnalysisBtn">
           <span class="mlc-icon">📊</span><span class="mlc-label" data-i18n="md_results_analysis_label">تحليل نتائج الطلاب</span>
-          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
         </button>
       </div>
 
@@ -135,10 +115,7 @@
       <div id="lessonPrepListError"></div>
     </div>
 
-    <div class="highlight-box" style="margin-top:26px;">
-      <p class="desc" data-i18n="madrasati_link_desc">يفتح موقع مدرستي الرسمي بتبويب جديد - تسجّل دخولك مباشرة عندهم، وذكيّ ما يشوف ولا يلمس بيانات حسابك هناك إطلاقًا.</p>
-      <div class="actions" style="margin-top:10px;">
-        <a class="ghost" id="madrasatiOfficialLinkBtn" href="https://schools.madrasati.sa/Auth/SignIn" target="_blank" rel="noopener" data-i18n="btn_open_madrasati">🔗 افتح مدرستي الرسمي</a>
-      </div>
+    <div class="madrasati-official-link-wrap">
+      <a class="madrasati-official-link" id="madrasatiOfficialLinkBtn" href="https://schools.madrasati.sa/Auth/SignIn" target="_blank" rel="noopener" data-i18n="btn_open_madrasati">🔗 افتح مدرستي الرسمي</a>
     </div>
   </section>

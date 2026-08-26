@@ -28,7 +28,9 @@ function renderQuizzesList(items, isTeacher) {
   empty.classList.toggle('hidden', items.length > 0);
   list.innerHTML = items.map(q => {
     let statusHtml;
-    if (isTeacher) {
+    if (q.platform === 'madrasati') {
+      statusHtml = `<span class="assignment-status">${t('platform_madrasati_quiz')}</span>`;
+    } else if (isTeacher) {
       const cls = q.is_published ? 'done' : 'pending';
       const text = q.is_published
         ? t('quiz_submitted_count', { done: q.submitted_count, total: q.total_count })
@@ -49,7 +51,7 @@ function renderQuizzesList(items, isTeacher) {
           <span class="assignment-title">${escapeHtml(q.title)}</span>
           ${statusHtml}
         </div>
-        <div class="assignment-meta">${escapeHtml(q.subject)}${q.class_name ? ' · ' + escapeHtml(q.class_name) : ''} · ⏱ ${q.time_limit_minutes} ${t('quiz_minutes_label')}${formatScheduleRangeText(q.open_at, q.close_at) ? ' · ' + escapeHtml(formatScheduleRangeText(q.open_at, q.close_at)) : ''}</div>
+        <div class="assignment-meta">${escapeHtml(q.subject)}${q.class_name ? ' · ' + escapeHtml(q.class_name) : ''}${q.time_limit_minutes ? ' · ⏱ ' + q.time_limit_minutes + ' ' + t('quiz_minutes_label') : ''}${formatScheduleRangeText(q.open_at, q.close_at) ? ' · ' + escapeHtml(formatScheduleRangeText(q.open_at, q.close_at)) : ''}</div>
       </div>
     `;
   }).join('');
@@ -84,11 +86,18 @@ async function openQuizCreateScreen(existingQuiz) {
     showError('quizCreateError', e.message);
   }
 
+  const isMadrasati = existingQuiz && existingQuiz.platform === 'madrasati';
+  document.getElementById('quizPlatformZakiy').checked = !isMadrasati;
+  document.getElementById('quizPlatformMadrasati').checked = isMadrasati;
+  document.getElementById('quizZakiyOptionsWrap').classList.toggle('hidden', isMadrasati);
+  document.getElementById('quizMadrasatiOptionsWrap').classList.toggle('hidden', !isMadrasati);
+  document.getElementById('quizExternalLinkInput').value = (existingQuiz && existingQuiz.external_link) || '';
+
   if (existingQuiz) {
     document.getElementById('quizClassSelect').value = existingQuiz.class_id;
     document.getElementById('quizSubjectInput').value = existingQuiz.subject;
     document.getElementById('quizTitleInput').value = existingQuiz.title;
-    document.getElementById('quizTimeInput').value = existingQuiz.time_limit_minutes;
+    document.getElementById('quizTimeInput').value = existingQuiz.time_limit_minutes || '';
     document.getElementById('quizOpenAtInput').value = isoToLocalDatetimeValue(existingQuiz.open_at);
     document.getElementById('quizCloseAtInput').value = isoToLocalDatetimeValue(existingQuiz.close_at);
     quizQuestionsDraft = (existingQuiz.questions || []).map(q => ({
@@ -105,6 +114,13 @@ async function openQuizCreateScreen(existingQuiz) {
   }
   renderQuizQuestionsEditor();
 }
+document.querySelectorAll('input[name="quizPlatform"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    const isMadrasati = document.getElementById('quizPlatformMadrasati').checked;
+    document.getElementById('quizZakiyOptionsWrap').classList.toggle('hidden', isMadrasati);
+    document.getElementById('quizMadrasatiOptionsWrap').classList.toggle('hidden', !isMadrasati);
+  });
+});
 
 function populateQuizClassSelect() {
   document.getElementById('quizClassSelect').innerHTML =
@@ -235,30 +251,37 @@ document.getElementById('quizSaveBtn').addEventListener('click', async () => {
   const classId = document.getElementById('quizClassSelect').value;
   const subject = document.getElementById('quizSubjectInput').value.trim();
   const title = document.getElementById('quizTitleInput').value.trim();
+  const platform = document.getElementById('quizPlatformMadrasati').checked ? 'madrasati' : 'zakiy';
+  const externalLink = document.getElementById('quizExternalLinkInput').value.trim();
   const timeLimitMinutes = parseInt(document.getElementById('quizTimeInput').value, 10);
   if (!classId) { showError('quizCreateError', t('err_assignment_need_class')); return; }
   if (!subject || !title) { showError('quizCreateError', t('err_name_required')); return; }
-  if (!timeLimitMinutes || timeLimitMinutes <= 0) { showError('quizCreateError', t('err_quiz_need_time')); return; }
   const openAt = localDatetimeToIso(document.getElementById('quizOpenAtInput').value);
   const closeAt = localDatetimeToIso(document.getElementById('quizCloseAtInput').value);
   if (openAt && closeAt && openAt >= closeAt) { showError('quizCreateError', t('err_schedule_order')); return; }
-  if (!quizQuestionsDraft.length) { showError('quizCreateError', t('err_quiz_need_question')); return; }
-  for (const q of quizQuestionsDraft) {
-    if (!q.question_text.trim()) { showError('quizCreateError', t('err_quiz_question_text_required')); return; }
-    if (q.question_type === 'mcq' && q.choices.filter(c => c.trim()).length < 2) {
-      showError('quizCreateError', t('err_quiz_choices_required')); return;
+  if (platform === 'zakiy') {
+    if (!timeLimitMinutes || timeLimitMinutes <= 0) { showError('quizCreateError', t('err_quiz_need_time')); return; }
+    if (!quizQuestionsDraft.length) { showError('quizCreateError', t('err_quiz_need_question')); return; }
+    for (const q of quizQuestionsDraft) {
+      if (!q.question_text.trim()) { showError('quizCreateError', t('err_quiz_question_text_required')); return; }
+      if (q.question_type === 'mcq' && q.choices.filter(c => c.trim()).length < 2) {
+        showError('quizCreateError', t('err_quiz_choices_required')); return;
+      }
     }
   }
 
   const payload = {
-    class_id: classId, subject, title, time_limit_minutes: timeLimitMinutes,
+    class_id: classId, subject, title, platform, external_link: externalLink,
     open_at: openAt, close_at: closeAt,
-    questions: quizQuestionsDraft.map(q => ({
+  };
+  if (platform === 'zakiy') {
+    payload.time_limit_minutes = timeLimitMinutes;
+    payload.questions = quizQuestionsDraft.map(q => ({
       question_type: q.question_type, question_text: q.question_text.trim(),
       choices: q.question_type === 'mcq' ? q.choices.filter(c => c.trim()) : undefined,
       correct_answer: q.question_type !== 'essay' ? ((q.correct_answer || '').trim() || null) : null,
-    })),
-  };
+    }));
+  }
   const btn = document.getElementById('quizSaveBtn');
   setLoading(btn, true, t('btn_save_quiz'));
   try {
@@ -284,13 +307,33 @@ async function openQuizDetail(id) {
     const quiz = await apiCall('GET', `/api/teacher/quizzes/${id}`);
     currentQuizDetailData = quiz;
     renderQuizDetailHeader(quiz);
+    const isMadrasati = quiz.platform === 'madrasati';
+    document.getElementById('quizMadrasatiLinkWrap').classList.toggle('hidden', !isMadrasati);
+    if (isMadrasati) document.getElementById('quizMadrasatiLinkInput').value = quiz.external_link || '';
     document.getElementById('quizUnpublishedActions').classList.toggle('hidden', quiz.is_published);
-    document.getElementById('quizPublishedView').classList.toggle('hidden', !quiz.is_published);
-    if (quiz.is_published) renderQuizStudentsList(quiz.students, quiz.questions);
+    document.getElementById('quizPublishedView').classList.toggle('hidden', !quiz.is_published || isMadrasati);
+    if (quiz.is_published && !isMadrasati) renderQuizStudentsList(quiz.students, quiz.questions);
   } catch (e) {
     document.getElementById('quizDetailMeta').textContent = e.message;
   }
 }
+
+document.getElementById('quizMadrasatiSaveLinkBtn').addEventListener('click', async () => {
+  if (!currentQuizId) return;
+  clearError('quizMadrasatiLinkError');
+  const link = document.getElementById('quizMadrasatiLinkInput').value.trim();
+  const btn = document.getElementById('quizMadrasatiSaveLinkBtn');
+  btn.disabled = true;
+  try {
+    await apiCall('PATCH', `/api/teacher/quizzes/${currentQuizId}`, { external_link: link });
+    btn.textContent = t('btn_save') + ' ✅';
+    setTimeout(() => { btn.textContent = t('btn_save'); }, 1500);
+  } catch (e) {
+    showError('quizMadrasatiLinkError', e.message);
+  } finally {
+    btn.disabled = false;
+  }
+});
 
 function renderQuizDetailHeader(quiz) {
   document.getElementById('quizDetailSubjectLabel').textContent = `📝 ${quiz.subject}`;
@@ -396,11 +439,19 @@ async function openQuizTake(id) {
   stopQuizTimer();
   document.getElementById('quizTakeActive').classList.add('hidden');
   document.getElementById('quizTakeResult').classList.add('hidden');
+  document.getElementById('quizTakeMadrasatiView').classList.add('hidden');
 
   try {
     const quiz = await apiCall('GET', `/api/student/quizzes/${id}`);
     document.getElementById('quizTakeSubjectLabel').textContent = `📝 ${quiz.subject}`;
     document.getElementById('quizTakeTitle').textContent = quiz.title;
+
+    if (quiz.platform === 'madrasati') {
+      document.getElementById('quizTakeMadrasatiView').classList.remove('hidden');
+      document.getElementById('quizTakeMadrasatiOpenBtn').href = quiz.external_link || MADRASATI_SIGNIN_URL;
+      document.getElementById('quizTakeMadrasatiNote').textContent = quiz.external_link ? '' : t('assignment_madrasati_no_link_note');
+      return;
+    }
 
     if (quiz.attempt && quiz.attempt.submitted_at) {
       showQuizResult(quiz.attempt);

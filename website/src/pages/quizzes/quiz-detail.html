@@ -5,6 +5,17 @@
     <p class="desc" id="quizDetailMeta"></p>
     <p class="desc hidden" id="quizDetailSchedule"></p>
 
+    <!-- اختبار منصة مدرستي - رابط الاختبار يقدر المعلم يضيفه/يعدّله بأي وقت -->
+    <div id="quizMadrasatiLinkWrap" class="hidden">
+      <h3 class="sub-heading" data-i18n="label_external_link">رابط الاختبار بمنصة مدرستي (اختياري)</h3>
+      <input type="url" id="quizMadrasatiLinkInput" class="text-input" placeholder="https://..." data-i18n-ph="ph_external_link">
+      <div class="actions" style="margin-top:10px;">
+        <button class="ghost" id="quizMadrasatiSaveLinkBtn" data-i18n="btn_save">حفظ</button>
+        <a class="ghost" href="https://schools.madrasati.sa/Auth/SignIn" target="_blank" rel="noopener" data-i18n="link_create_on_madrasati">🔗 ما سويته بعد؟ افتح مدرستي وسوّيه من هناك</a>
+      </div>
+      <div id="quizMadrasatiLinkError"></div>
+    </div>
+
     <!-- قبل النشر -->
     <div id="quizUnpublishedActions" class="hidden">
       <p class="desc" data-i18n="quiz_unpublished_hint">الاختبار لسا ما نُشر - الطلاب ما يشوفونه إلا بعد النشر.</p>

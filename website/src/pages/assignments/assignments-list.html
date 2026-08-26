@@ -11,17 +11,52 @@
       <input type="text" id="assignmentTitleInput" class="text-input" placeholder="عنوان الواجب" data-i18n-ph="ph_assignment_title" style="margin-top:10px;">
       <textarea id="assignmentContentTextarea" class="text-input" placeholder="محتوى الواجب" data-i18n-ph="ph_assignment_content" style="margin-top:10px; min-height:110px;"></textarea>
 
-      <!-- نوع تسليم الواجب: ملف يرفعه الطالب، أو أسئلة يجاوب عليها مباشرة
-           (اختيارات/صح وخطأ/مقالي - نفس منطق الاختبارات بالضبط) -->
+      <!-- منصة الواجب: ذكي (الوضع الحالي) أو مدرستي (رابط خارجي بس) -->
       <div class="actions" style="margin-top:14px;">
         <label class="desc" style="display:flex; align-items:center; gap:6px;">
-          <input type="radio" name="assignmentSubmissionType" value="file" id="assignmentTypeFile" checked>
-          <span data-i18n="assignment_type_file">📎 ملف يرفعه الطالب</span>
+          <input type="radio" name="assignmentPlatform" value="zakiy" id="assignmentPlatformZakiy" checked>
+          <span data-i18n="platform_zakiy">💡 واجب منصة ذكي</span>
         </label>
         <label class="desc" style="display:flex; align-items:center; gap:6px;">
-          <input type="radio" name="assignmentSubmissionType" value="questions" id="assignmentTypeQuestions">
-          <span data-i18n="assignment_type_questions">✏️ أسئلة يجاوب عليها الطالب</span>
+          <input type="radio" name="assignmentPlatform" value="madrasati" id="assignmentPlatformMadrasati">
+          <span data-i18n="platform_madrasati">🎓 واجب منصة مدرستي</span>
         </label>
+      </div>
+
+      <div id="assignmentZakiyOptionsWrap">
+        <!-- نوع تسليم الواجب: ملف يرفعه الطالب، أو أسئلة يجاوب عليها مباشرة
+             (اختيارات/صح وخطأ/مقالي - نفس منطق الاختبارات بالضبط) -->
+        <div class="actions" style="margin-top:14px;">
+          <label class="desc" style="display:flex; align-items:center; gap:6px;">
+            <input type="radio" name="assignmentSubmissionType" value="file" id="assignmentTypeFile" checked>
+            <span data-i18n="assignment_type_file">📎 ملف يرفعه الطالب</span>
+          </label>
+          <label class="desc" style="display:flex; align-items:center; gap:6px;">
+            <input type="radio" name="assignmentSubmissionType" value="questions" id="assignmentTypeQuestions">
+            <span data-i18n="assignment_type_questions">✏️ أسئلة يجاوب عليها الطالب</span>
+          </label>
+        </div>
+
+        <!-- محرر الأسئلة - يظهر بس لو اختار "أسئلة" فوق -->
+        <div id="assignmentQuestionsEditorWrap" class="hidden">
+          <h3 class="sub-heading" style="margin-top:20px;" data-i18n="quiz_questions_heading">📋 الأسئلة</h3>
+          <div id="assignmentQuestionsList"></div>
+          <div class="actions" style="margin-top:8px;">
+            <button class="ghost" id="assignmentAddQuestionBtn" data-i18n="btn_add_question">➕ إضافة سؤال</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- خيارات واجب منصة مدرستي - رابط الواجب اللي سواه هناك (اختياري) +
+           رابط سريع لمدرستي لو لسا ما سواه -->
+      <div id="assignmentMadrasatiOptionsWrap" class="hidden">
+        <label class="desc" style="display:flex; flex-direction:column; gap:4px; margin-top:14px;">
+          <span data-i18n="label_external_link">رابط الواجب بمنصة مدرستي (اختياري)</span>
+          <input type="url" id="assignmentExternalLinkInput" class="text-input" placeholder="https://..." data-i18n-ph="ph_external_link">
+        </label>
+        <p class="desc" style="margin-top:6px;">
+          <a id="assignmentMadrasatiCreateLink" href="https://schools.madrasati.sa/Auth/SignIn" target="_blank" rel="noopener" data-i18n="link_create_on_madrasati">🔗 ما سويته بعد؟ افتح مدرستي وسوّيه من هناك</a>
+        </p>
       </div>
 
       <div class="actions" style="flex-wrap:wrap; margin-top:10px;">
@@ -33,15 +68,6 @@
           <span data-i18n="label_close_at">يقفل (اختياري)</span>
           <input type="datetime-local" id="assignmentCloseAtInput" class="text-input">
         </label>
-      </div>
-
-      <!-- محرر الأسئلة - يظهر بس لو اختار "أسئلة" فوق -->
-      <div id="assignmentQuestionsEditorWrap" class="hidden">
-        <h3 class="sub-heading" style="margin-top:20px;" data-i18n="quiz_questions_heading">📋 الأسئلة</h3>
-        <div id="assignmentQuestionsList"></div>
-        <div class="actions" style="margin-top:8px;">
-          <button class="ghost" id="assignmentAddQuestionBtn" data-i18n="btn_add_question">➕ إضافة سؤال</button>
-        </div>
       </div>
 
       <div class="actions" style="margin-top:10px;">

@@ -43,11 +43,30 @@
         </div>
         <div id="assignmentAnswersSubmitError"></div>
       </div>
+
+      <!-- واجب منصة مدرستي - يُحل هناك مباشرة، ما فيه تسليم داخل ذكي -->
+      <div id="assignmentMadrasatiStudentView" class="hidden">
+        <p class="desc" id="assignmentMadrasatiStudentNote"></p>
+        <div class="actions">
+          <a class="primary" id="assignmentMadrasatiOpenBtn" href="#" target="_blank" rel="noopener" data-i18n="madrasati_open_link_btn">🔗 فتح الواجب بمنصة مدرستي</a>
+        </div>
+      </div>
     </div>
 
     <!-- عرض المعلم -->
     <div id="teacherStudentsView" class="hidden">
       <h3 class="sub-heading" data-i18n="assignment_students_heading">👥 حالة التسليم</h3>
       <div id="assignmentStudentsList"></div>
+    </div>
+
+    <!-- عرض المعلم لواجب منصة مدرستي - رابط الواجب يقدر يضيفه/يعدّله بأي وقت -->
+    <div id="assignmentMadrasatiTeacherView" class="hidden">
+      <h3 class="sub-heading" data-i18n="label_external_link">رابط الواجب بمنصة مدرستي (اختياري)</h3>
+      <input type="url" id="assignmentMadrasatiLinkInput" class="text-input" placeholder="https://..." data-i18n-ph="ph_external_link">
+      <div class="actions" style="margin-top:10px;">
+        <button class="ghost" id="assignmentMadrasatiSaveLinkBtn" data-i18n="btn_save">حفظ</button>
+        <a class="ghost" href="https://schools.madrasati.sa/Auth/SignIn" target="_blank" rel="noopener" data-i18n="link_create_on_madrasati">🔗 ما سويته بعد؟ افتح مدرستي وسوّيه من هناك</a>
+      </div>
+      <div id="assignmentMadrasatiLinkError"></div>
     </div>
   </section>

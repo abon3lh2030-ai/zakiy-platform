@@ -10,6 +10,8 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 from functools import wraps
 from collections import Counter
 from datetime import datetime, timedelta, timezone
+import csv
+import io
 import os
 import random
 import re
@@ -3838,16 +3840,129 @@ def _avg(values):
     return round(sum(nums) / len(nums), 2)
 
 
-@app.route("/api/teacher/gradesheet", methods=["GET"])
+# ---------- تصدير كشف الدرجات (PDF/CSV) - معلم بمدرسة بس. الملف يُرفع لباكت
+# خاص بـ Supabase Storage ويرجع رابط مؤقت (ساعة) نعرضه مع QR يفتحه من أي
+# جوال - نفس فكرة الـ QR الموجودة أصلًا بالمنصة (js/15-qr.js) ----------
+GRADESHEET_EXPORTS_BUCKET = "gradesheet-exports"
+_FONTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fonts")
+_ARABIC_FONT_REGULAR = os.path.join(_FONTS_DIR, "NotoNaskhArabic-Regular.ttf")
+_ARABIC_FONT_BOLD = os.path.join(_FONTS_DIR, "NotoNaskhArabic-Bold.ttf")
+
+GRADESHEET_CSV_HEADERS = ["الاسم", "المشاركة", "المهام الأدائية", "متوسط الواجبات", "متوسط الاختبارات", "المجموع"]
+
+
+def _gradesheet_csv_bytes(class_name, rows):
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow([f"كشف درجات - {class_name}"])
+    writer.writerow(GRADESHEET_CSV_HEADERS)
+    for r in rows:
+        writer.writerow(
+            [
+                r.get("full_name") or r.get("username"),
+                r["participation"], r["performance_tasks"],
+                r["assignments_avg"] if r["assignments_avg"] is not None else "—",
+                r["quizzes_avg"] if r["quizzes_avg"] is not None else "—",
+                r["total"],
+            ]
+        )
+    # BOM عشان إكسل يفتح الحروف العربية صح مباشرة بدون ما يطلب ترميز يدوي
+    return ("﻿" + buf.getvalue()).encode("utf-8")
+
+
+def _gradesheet_pdf_bytes(class_name, rows):
+    archive = fitz.Archive()
+    archive.add((open(_ARABIC_FONT_REGULAR, "rb").read(), "NotoNaskhArabic"))
+    archive.add((open(_ARABIC_FONT_BOLD, "rb").read(), "NotoNaskhArabic-Bold"))
+
+    css = """
+        @font-face { font-family: "ZakiyFont"; src: url("NotoNaskhArabic"); }
+        @font-face { font-family: "ZakiyFont"; src: url("NotoNaskhArabic-Bold"); font-weight: bold; }
+        * { font-family: "ZakiyFont"; }
+        body { direction: rtl; }
+        h1 { font-size: 18px; text-align: center; margin-bottom: 4px; }
+        p.meta { font-size: 11px; text-align: center; color: #555; margin-top: 0; margin-bottom: 16px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { border: 1px solid #999; padding: 6px 8px; text-align: center; }
+        td:first-child, th:first-child { text-align: right; }
+        th { background: #eef1f4; font-weight: bold; }
+    """
+    rows_html = "".join(
+        f"""<tr>
+            <td>{_esc(r.get('full_name') or r.get('username'))}</td>
+            <td>{r['participation']}</td>
+            <td>{r['performance_tasks']}</td>
+            <td>{r['assignments_avg'] if r['assignments_avg'] is not None else '—'}</td>
+            <td>{r['quizzes_avg'] if r['quizzes_avg'] is not None else '—'}</td>
+            <td><b>{r['total']}</b></td>
+        </tr>"""
+        for r in rows
+    )
+    generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    html = f"""
+        <h1>كشف درجات - {_esc(class_name)}</h1>
+        <p class="meta">صادر من منصة ذكيّ - {generated_at}</p>
+        <table>
+            <tr><th>الاسم</th><th>المشاركة</th><th>المهام الأدائية</th><th>متوسط الواجبات</th><th>متوسط الاختبارات</th><th>المجموع</th></tr>
+            {rows_html}
+        </table>
+    """
+    story = fitz.Story(html=html, user_css=css, archive=archive)
+    buf = io.BytesIO()
+    writer = fitz.DocumentWriter(buf)
+    mediabox = fitz.paper_rect("a4")
+    where = mediabox + (36, 36, -36, -36)
+    more = True
+    while more:
+        device = writer.begin_page(mediabox)
+        more, _ = story.place(where)
+        story.draw(device)
+        writer.end_page()
+    writer.close()
+    return buf.getvalue()
+
+
+def _esc(text):
+    return (
+        str(text if text is not None else "")
+        .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    )
+
+
+@app.route("/api/teacher/gradesheet/export", methods=["GET"])
 @require_role("teacher")
-def teacher_gradesheet():
+def export_gradesheet():
     class_id = request.args.get("class_id")
+    fmt = request.args.get("format")
+    if fmt not in ("pdf", "csv"):
+        return jsonify({"error": "صيغة التصدير غير مدعومة"}), 400
     if not class_id:
         return jsonify({"error": "لازم تختار فصل"}), 400
-    owns = _teacher_owns_class(request.user_id, class_id)
-    if not owns:
+    if not _teacher_owns_class(request.user_id, class_id):
         return jsonify({"error": "الفصل مو تابع لك"}), 403
 
+    class_rows = supabase_admin.table("classes").select("name").eq("id", class_id).limit(1).execute().data
+    class_name = class_rows[0]["name"] if class_rows else ""
+    rows = _build_gradesheet_rows(request.user_id, class_id)
+
+    try:
+        if fmt == "csv":
+            file_bytes = _gradesheet_csv_bytes(class_name, rows)
+            content_type = "text/csv; charset=utf-8"
+        else:
+            file_bytes = _gradesheet_pdf_bytes(class_name, rows)
+            content_type = "application/pdf"
+        path = f"{request.user_id}/{class_id}-{secrets.token_hex(6)}.{fmt}"
+        supabase_admin.storage.from_(GRADESHEET_EXPORTS_BUCKET).upload(
+            path, file_bytes, file_options={"content-type": content_type, "x-upsert": "true"}
+        )
+        signed = supabase_admin.storage.from_(GRADESHEET_EXPORTS_BUCKET).create_signed_url(path, 3600)
+        return jsonify({"url": signed["signedURL"]}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+def _build_gradesheet_rows(teacher_id, class_id):
     students = (
         supabase_admin.table("profiles").select("user_id, username, full_name")
         .eq("role", "student").eq("class_id", class_id).execute()
@@ -3862,7 +3977,7 @@ def teacher_gradesheet():
     assignment_ids = [
         a["id"]
         for a in supabase_admin.table("assignments").select("id").eq("class_id", class_id)
-        .eq("teacher_id", request.user_id).execute().data
+        .eq("teacher_id", teacher_id).execute().data
     ]
     submissions_by_student = {}
     if assignment_ids:
@@ -3876,7 +3991,7 @@ def teacher_gradesheet():
     quiz_ids = [
         q["id"]
         for q in supabase_admin.table("quizzes").select("id").eq("class_id", class_id)
-        .eq("teacher_id", request.user_id).execute().data
+        .eq("teacher_id", teacher_id).execute().data
     ]
     attempts_by_student = {}
     if quiz_ids:
@@ -3905,7 +4020,19 @@ def teacher_gradesheet():
                 "total": round(total, 2),
             }
         )
-    return jsonify({"students": result}), 200
+    return result
+
+
+@app.route("/api/teacher/gradesheet", methods=["GET"])
+@require_role("teacher")
+def teacher_gradesheet():
+    class_id = request.args.get("class_id")
+    if not class_id:
+        return jsonify({"error": "لازم تختار فصل"}), 400
+    owns = _teacher_owns_class(request.user_id, class_id)
+    if not owns:
+        return jsonify({"error": "الفصل مو تابع لك"}), 403
+    return jsonify({"students": _build_gradesheet_rows(request.user_id, class_id)}), 200
 
 
 @app.route("/api/teacher/gradesheet/<student_id>", methods=["PATCH"])
@@ -4294,6 +4421,10 @@ def create_assignment():
     subject = (data.get("subject") or "").strip()
     title = (data.get("title") or "").strip()
     content = data.get("content") or ""
+    platform = data.get("platform") or "zakiy"
+    if platform not in ("zakiy", "madrasati"):
+        return jsonify({"error": "منصة الواجب غير صحيحة"}), 400
+    external_link = (data.get("external_link") or "").strip() or None
     submission_type = data.get("submission_type") or "file"
     if submission_type not in ("file", "questions"):
         return jsonify({"error": "نوع الواجب غير صحيح"}), 400
@@ -4303,8 +4434,10 @@ def create_assignment():
     if err:
         return err
 
+    # واجب منصة مدرستي يُحل بره ذكي بالكامل - نوع التسليم/الأسئلة ما لها
+    # معنى هنا، بس نخليها بالقيمة الافتراضية عشان قيد الجدول
     questions = data.get("questions") or []
-    if submission_type == "questions":
+    if platform == "zakiy" and submission_type == "questions":
         if not questions:
             return jsonify({"error": "لازم سؤال واحد على الأقل"}), 400
         for q in questions:
@@ -4312,6 +4445,9 @@ def create_assignment():
                 return jsonify({"error": "فيه سؤال ناقص بياناته"}), 400
             if q["question_type"] == "mcq" and len(q.get("choices") or []) < 2:
                 return jsonify({"error": "سؤال الاختيارات لازم فيه اختيارين على الأقل"}), 400
+    elif platform == "madrasati":
+        submission_type = "file"
+        questions = []
 
     if not _teacher_owns_class(request.user_id, class_id):
         return jsonify({"error": "الفصل مو تابع لك"}), 403
@@ -4332,13 +4468,15 @@ def create_assignment():
                 "open_at": open_at,
                 "close_at": close_at,
                 "submission_type": submission_type,
+                "platform": platform,
+                "external_link": external_link,
             }
         )
         .execute()
         .data[0]
     )
 
-    if submission_type == "questions":
+    if platform == "zakiy" and submission_type == "questions":
         rows = [
             {
                 "assignment_id": assignment["id"], "order_index": i,
@@ -4490,6 +4628,28 @@ def teacher_download_submission(assignment_id, student_id):
     return jsonify({"url": signed["signedURL"]}), 200
 
 
+@app.route("/api/teacher/assignments/<assignment_id>", methods=["PATCH"])
+@require_role("teacher")
+def update_assignment_link(assignment_id):
+    """تعديل رابط واجب منصة مدرستي بعد الإنشاء - لو المعلم ما كان سواه بمدرستي
+    وقت إنشاء الواجب بذكي، يقدر يرجع يحطه بعدين"""
+    owns = (
+        supabase_admin.table("assignments").select("id").eq("id", assignment_id)
+        .eq("teacher_id", request.user_id).limit(1).execute()
+    ).data
+    if not owns:
+        return jsonify({"error": "الواجب مو تابع لك"}), 403
+    data = request.get_json(silent=True) or {}
+    if "external_link" not in data:
+        return jsonify({"error": "ما فيه شي للتعديل"}), 400
+    external_link = (data.get("external_link") or "").strip() or None
+    assignment = (
+        supabase_admin.table("assignments").update({"external_link": external_link})
+        .eq("id", assignment_id).execute().data[0]
+    )
+    return jsonify(assignment), 200
+
+
 @app.route("/api/teacher/assignments/<assignment_id>", methods=["DELETE"])
 @require_role("teacher")
 def delete_assignment(assignment_id):
@@ -4557,6 +4717,8 @@ def submit_assignment(assignment_id):
     rows = supabase_admin.table("assignments").select("*").eq("id", assignment_id).limit(1).execute().data
     if not rows or not _student_can_see_assignment(rows[0], request.profile, request.user_id):
         return jsonify({"error": "الواجب مو موجود"}), 404
+    if rows[0].get("platform") == "madrasati":
+        return jsonify({"error": "هذا الواجب بمنصة مدرستي - حلّه من هناك"}), 400
     now = datetime.now(timezone.utc)
     open_dt = _parse_dt(rows[0].get("open_at"))
     close_dt = _parse_dt(rows[0].get("close_at"))
@@ -4685,27 +4847,37 @@ def create_quiz():
     class_id = data.get("class_id")
     subject = (data.get("subject") or "").strip()
     title = (data.get("title") or "").strip()
+    platform = data.get("platform") or "zakiy"
+    if platform not in ("zakiy", "madrasati"):
+        return jsonify({"error": "منصة الاختبار غير صحيحة"}), 400
+    external_link = (data.get("external_link") or "").strip() or None
     time_limit_minutes = data.get("time_limit_minutes")
     questions = data.get("questions") or []
     if not class_id or not subject or not title:
         return jsonify({"error": "لازم الفصل والمادة وعنوان الاختبار"}), 400
-    if not isinstance(time_limit_minutes, int) or time_limit_minutes <= 0:
-        return jsonify({"error": "لازم وقت صحيح للاختبار"}), 400
-    if not questions:
-        return jsonify({"error": "لازم سؤال واحد على الأقل"}), 400
     open_at, close_at, err = _validate_schedule_window(data)
     if err:
         return err
 
+    # اختبار منصة مدرستي يُحل بره ذكي بالكامل - وقت الاختبار وأسئلته ما لها
+    # معنى هنا
+    if platform == "zakiy":
+        if not isinstance(time_limit_minutes, int) or time_limit_minutes <= 0:
+            return jsonify({"error": "لازم وقت صحيح للاختبار"}), 400
+        if not questions:
+            return jsonify({"error": "لازم سؤال واحد على الأقل"}), 400
+        for q in questions:
+            if q.get("question_type") not in QUESTION_TYPES or not (q.get("question_text") or "").strip():
+                return jsonify({"error": "فيه سؤال ناقص بياناته"}), 400
+            if q["question_type"] == "mcq" and len(q.get("choices") or []) < 2:
+                return jsonify({"error": "سؤال الاختيارات لازم فيه اختيارين على الأقل"}), 400
+    else:
+        time_limit_minutes = None
+        questions = []
+
     owns = _teacher_owns_class(request.user_id, class_id)
     if not owns:
         return jsonify({"error": "الفصل مو تابع لك"}), 403
-
-    for q in questions:
-        if q.get("question_type") not in QUESTION_TYPES or not (q.get("question_text") or "").strip():
-            return jsonify({"error": "فيه سؤال ناقص بياناته"}), 400
-        if q["question_type"] == "mcq" and len(q.get("choices") or []) < 2:
-            return jsonify({"error": "سؤال الاختيارات لازم فيه اختيارين على الأقل"}), 400
 
     quiz = (
         supabase_admin.table("quizzes")
@@ -4714,21 +4886,23 @@ def create_quiz():
                 "teacher_id": request.user_id, "class_id": class_id, "subject": subject,
                 "title": title, "time_limit_minutes": time_limit_minutes,
                 "open_at": open_at, "close_at": close_at,
+                "platform": platform, "external_link": external_link,
             }
         )
         .execute()
         .data[0]
     )
-    rows = [
-        {
-            "quiz_id": quiz["id"], "order_index": i,
-            "question_type": q["question_type"], "question_text": q["question_text"].strip(),
-            "choices": q.get("choices") if q["question_type"] == "mcq" else None,
-            "correct_answer": (q.get("correct_answer") or "").strip() or None if q["question_type"] != "essay" else None,
-        }
-        for i, q in enumerate(questions)
-    ]
-    supabase_admin.table("quiz_questions").insert(rows).execute()
+    if questions:
+        rows = [
+            {
+                "quiz_id": quiz["id"], "order_index": i,
+                "question_type": q["question_type"], "question_text": q["question_text"].strip(),
+                "choices": q.get("choices") if q["question_type"] == "mcq" else None,
+                "correct_answer": (q.get("correct_answer") or "").strip() or None if q["question_type"] != "essay" else None,
+            }
+            for i, q in enumerate(questions)
+        ]
+        supabase_admin.table("quiz_questions").insert(rows).execute()
     return jsonify(quiz), 200
 
 
@@ -4807,10 +4981,18 @@ def update_quiz(quiz_id):
     ).data
     if not rows:
         return jsonify({"error": "الاختبار مو موجود"}), 404
-    if rows[0]["is_published"]:
-        return jsonify({"error": "الاختبار منشور، ما تقدر تعدّله"}), 400
-
     data = request.get_json(silent=True) or {}
+    # رابط اختبار مدرستي يقدر المعلم يضيفه/يعدّله حتى بعد النشر (مثلًا لو
+    # وقت الإنشاء ما كان سوّى الاختبار بمدرستي بعد) - باقي الحقول ممنوعة
+    # التعديل بعد النشر زي ما هو معمول أصلًا
+    if rows[0]["is_published"] and set(data.keys()) - {"external_link"}:
+        return jsonify({"error": "الاختبار منشور، ما تقدر تعدّله"}), 400
+    if "external_link" in data:
+        external_link = (data.get("external_link") or "").strip() or None
+        quiz = supabase_admin.table("quizzes").update({"external_link": external_link}).eq("id", quiz_id).execute().data[0]
+        if set(data.keys()) == {"external_link"}:
+            return jsonify(quiz), 200
+
     patch = {}
     if "subject" in data:
         patch["subject"] = (data.get("subject") or "").strip()
@@ -4964,6 +5146,8 @@ def start_quiz_attempt(quiz_id):
     rows = supabase_admin.table("quizzes").select("*").eq("id", quiz_id).limit(1).execute().data
     if not rows or not _student_can_see_quiz(rows[0], request.profile):
         return jsonify({"error": "الاختبار مو موجود"}), 404
+    if rows[0].get("platform") == "madrasati":
+        return jsonify({"error": "هذا الاختبار بمنصة مدرستي - حلّه من هناك"}), 400
     now = datetime.now(timezone.utc)
     open_dt = _parse_dt(rows[0].get("open_at"))
     close_dt = _parse_dt(rows[0].get("close_at"))
@@ -4993,6 +5177,8 @@ def submit_quiz_attempt(quiz_id):
     rows = supabase_admin.table("quizzes").select("*").eq("id", quiz_id).limit(1).execute().data
     if not rows or not _student_can_see_quiz(rows[0], request.profile):
         return jsonify({"error": "الاختبار مو موجود"}), 404
+    if rows[0].get("platform") == "madrasati":
+        return jsonify({"error": "هذا الاختبار بمنصة مدرستي - حلّه من هناك"}), 400
     quiz = rows[0]
 
     data = request.get_json(silent=True) or {}

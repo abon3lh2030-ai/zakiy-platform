@@ -1862,17 +1862,52 @@
       <input type="text" id="assignmentTitleInput" class="text-input" placeholder="عنوان الواجب" data-i18n-ph="ph_assignment_title" style="margin-top:10px;">
       <textarea id="assignmentContentTextarea" class="text-input" placeholder="محتوى الواجب" data-i18n-ph="ph_assignment_content" style="margin-top:10px; min-height:110px;"></textarea>
 
-      <!-- نوع تسليم الواجب: ملف يرفعه الطالب، أو أسئلة يجاوب عليها مباشرة
-           (اختيارات/صح وخطأ/مقالي - نفس منطق الاختبارات بالضبط) -->
+      <!-- منصة الواجب: ذكي (الوضع الحالي) أو مدرستي (رابط خارجي بس) -->
       <div class="actions" style="margin-top:14px;">
         <label class="desc" style="display:flex; align-items:center; gap:6px;">
-          <input type="radio" name="assignmentSubmissionType" value="file" id="assignmentTypeFile" checked>
-          <span data-i18n="assignment_type_file">📎 ملف يرفعه الطالب</span>
+          <input type="radio" name="assignmentPlatform" value="zakiy" id="assignmentPlatformZakiy" checked>
+          <span data-i18n="platform_zakiy">💡 واجب منصة ذكي</span>
         </label>
         <label class="desc" style="display:flex; align-items:center; gap:6px;">
-          <input type="radio" name="assignmentSubmissionType" value="questions" id="assignmentTypeQuestions">
-          <span data-i18n="assignment_type_questions">✏️ أسئلة يجاوب عليها الطالب</span>
+          <input type="radio" name="assignmentPlatform" value="madrasati" id="assignmentPlatformMadrasati">
+          <span data-i18n="platform_madrasati">🎓 واجب منصة مدرستي</span>
         </label>
+      </div>
+
+      <div id="assignmentZakiyOptionsWrap">
+        <!-- نوع تسليم الواجب: ملف يرفعه الطالب، أو أسئلة يجاوب عليها مباشرة
+             (اختيارات/صح وخطأ/مقالي - نفس منطق الاختبارات بالضبط) -->
+        <div class="actions" style="margin-top:14px;">
+          <label class="desc" style="display:flex; align-items:center; gap:6px;">
+            <input type="radio" name="assignmentSubmissionType" value="file" id="assignmentTypeFile" checked>
+            <span data-i18n="assignment_type_file">📎 ملف يرفعه الطالب</span>
+          </label>
+          <label class="desc" style="display:flex; align-items:center; gap:6px;">
+            <input type="radio" name="assignmentSubmissionType" value="questions" id="assignmentTypeQuestions">
+            <span data-i18n="assignment_type_questions">✏️ أسئلة يجاوب عليها الطالب</span>
+          </label>
+        </div>
+
+        <!-- محرر الأسئلة - يظهر بس لو اختار "أسئلة" فوق -->
+        <div id="assignmentQuestionsEditorWrap" class="hidden">
+          <h3 class="sub-heading" style="margin-top:20px;" data-i18n="quiz_questions_heading">📋 الأسئلة</h3>
+          <div id="assignmentQuestionsList"></div>
+          <div class="actions" style="margin-top:8px;">
+            <button class="ghost" id="assignmentAddQuestionBtn" data-i18n="btn_add_question">➕ إضافة سؤال</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- خيارات واجب منصة مدرستي - رابط الواجب اللي سواه هناك (اختياري) +
+           رابط سريع لمدرستي لو لسا ما سواه -->
+      <div id="assignmentMadrasatiOptionsWrap" class="hidden">
+        <label class="desc" style="display:flex; flex-direction:column; gap:4px; margin-top:14px;">
+          <span data-i18n="label_external_link">رابط الواجب بمنصة مدرستي (اختياري)</span>
+          <input type="url" id="assignmentExternalLinkInput" class="text-input" placeholder="https://..." data-i18n-ph="ph_external_link">
+        </label>
+        <p class="desc" style="margin-top:6px;">
+          <a id="assignmentMadrasatiCreateLink" href="https://schools.madrasati.sa/Auth/SignIn" target="_blank" rel="noopener" data-i18n="link_create_on_madrasati">🔗 ما سويته بعد؟ افتح مدرستي وسوّيه من هناك</a>
+        </p>
       </div>
 
       <div class="actions" style="flex-wrap:wrap; margin-top:10px;">
@@ -1884,15 +1919,6 @@
           <span data-i18n="label_close_at">يقفل (اختياري)</span>
           <input type="datetime-local" id="assignmentCloseAtInput" class="text-input">
         </label>
-      </div>
-
-      <!-- محرر الأسئلة - يظهر بس لو اختار "أسئلة" فوق -->
-      <div id="assignmentQuestionsEditorWrap" class="hidden">
-        <h3 class="sub-heading" style="margin-top:20px;" data-i18n="quiz_questions_heading">📋 الأسئلة</h3>
-        <div id="assignmentQuestionsList"></div>
-        <div class="actions" style="margin-top:8px;">
-          <button class="ghost" id="assignmentAddQuestionBtn" data-i18n="btn_add_question">➕ إضافة سؤال</button>
-        </div>
       </div>
 
       <div class="actions" style="margin-top:10px;">
@@ -1951,12 +1977,31 @@
         </div>
         <div id="assignmentAnswersSubmitError"></div>
       </div>
+
+      <!-- واجب منصة مدرستي - يُحل هناك مباشرة، ما فيه تسليم داخل ذكي -->
+      <div id="assignmentMadrasatiStudentView" class="hidden">
+        <p class="desc" id="assignmentMadrasatiStudentNote"></p>
+        <div class="actions">
+          <a class="primary" id="assignmentMadrasatiOpenBtn" href="#" target="_blank" rel="noopener" data-i18n="madrasati_open_link_btn">🔗 فتح الواجب بمنصة مدرستي</a>
+        </div>
+      </div>
     </div>
 
     <!-- عرض المعلم -->
     <div id="teacherStudentsView" class="hidden">
       <h3 class="sub-heading" data-i18n="assignment_students_heading">👥 حالة التسليم</h3>
       <div id="assignmentStudentsList"></div>
+    </div>
+
+    <!-- عرض المعلم لواجب منصة مدرستي - رابط الواجب يقدر يضيفه/يعدّله بأي وقت -->
+    <div id="assignmentMadrasatiTeacherView" class="hidden">
+      <h3 class="sub-heading" data-i18n="label_external_link">رابط الواجب بمنصة مدرستي (اختياري)</h3>
+      <input type="url" id="assignmentMadrasatiLinkInput" class="text-input" placeholder="https://..." data-i18n-ph="ph_external_link">
+      <div class="actions" style="margin-top:10px;">
+        <button class="ghost" id="assignmentMadrasatiSaveLinkBtn" data-i18n="btn_save">حفظ</button>
+        <a class="ghost" href="https://schools.madrasati.sa/Auth/SignIn" target="_blank" rel="noopener" data-i18n="link_create_on_madrasati">🔗 ما سويته بعد؟ افتح مدرستي وسوّيه من هناك</a>
+      </div>
+      <div id="assignmentMadrasatiLinkError"></div>
     </div>
   </section>
 
@@ -1982,7 +2027,40 @@
     <select id="quizClassSelect" class="text-input"></select>
     <input type="text" id="quizSubjectInput" class="text-input" placeholder="اسم المادة" data-i18n-ph="ph_quiz_subject" style="margin-top:10px;">
     <input type="text" id="quizTitleInput" class="text-input" placeholder="عنوان الاختبار" data-i18n-ph="ph_quiz_title" style="margin-top:10px;">
-    <input type="number" id="quizTimeInput" class="text-input" placeholder="الوقت بالدقايق" data-i18n-ph="ph_quiz_time" min="1" style="margin-top:10px;">
+
+    <!-- منصة الاختبار: ذكي (الوضع الحالي) أو مدرستي (رابط خارجي بس) -->
+    <div class="actions" style="margin-top:14px;">
+      <label class="desc" style="display:flex; align-items:center; gap:6px;">
+        <input type="radio" name="quizPlatform" value="zakiy" id="quizPlatformZakiy" checked>
+        <span data-i18n="platform_zakiy_quiz">💡 اختبار منصة ذكي</span>
+      </label>
+      <label class="desc" style="display:flex; align-items:center; gap:6px;">
+        <input type="radio" name="quizPlatform" value="madrasati" id="quizPlatformMadrasati">
+        <span data-i18n="platform_madrasati_quiz">🎓 اختبار منصة مدرستي</span>
+      </label>
+    </div>
+
+    <div id="quizZakiyOptionsWrap">
+      <input type="number" id="quizTimeInput" class="text-input" placeholder="الوقت بالدقايق" data-i18n-ph="ph_quiz_time" min="1" style="margin-top:10px;">
+
+      <h3 class="sub-heading" style="margin-top:24px;" data-i18n="quiz_questions_heading">📋 الأسئلة</h3>
+      <div id="quizQuestionsList"></div>
+      <div class="actions" style="margin-top:8px;">
+        <button class="ghost" id="quizAddQuestionBtn" data-i18n="btn_add_question">➕ إضافة سؤال</button>
+      </div>
+    </div>
+
+    <!-- خيارات اختبار منصة مدرستي - رابط الاختبار اللي سواه هناك (اختياري) +
+         رابط سريع لمدرستي لو لسا ما سواه -->
+    <div id="quizMadrasatiOptionsWrap" class="hidden">
+      <label class="desc" style="display:flex; flex-direction:column; gap:4px; margin-top:14px;">
+        <span data-i18n="label_external_link">رابط الاختبار بمنصة مدرستي (اختياري)</span>
+        <input type="url" id="quizExternalLinkInput" class="text-input" placeholder="https://..." data-i18n-ph="ph_external_link">
+      </label>
+      <p class="desc" style="margin-top:6px;">
+        <a id="quizMadrasatiCreateLink" href="https://schools.madrasati.sa/Auth/SignIn" target="_blank" rel="noopener" data-i18n="link_create_on_madrasati">🔗 ما سويته بعد؟ افتح مدرستي وسوّيه من هناك</a>
+      </p>
+    </div>
 
     <div class="actions" style="flex-wrap:wrap; margin-top:10px;">
       <label class="desc" style="display:flex; flex-direction:column; gap:4px;">
@@ -1993,12 +2071,6 @@
         <span data-i18n="label_close_at">يقفل (اختياري)</span>
         <input type="datetime-local" id="quizCloseAtInput" class="text-input">
       </label>
-    </div>
-
-    <h3 class="sub-heading" style="margin-top:24px;" data-i18n="quiz_questions_heading">📋 الأسئلة</h3>
-    <div id="quizQuestionsList"></div>
-    <div class="actions" style="margin-top:8px;">
-      <button class="ghost" id="quizAddQuestionBtn" data-i18n="btn_add_question">➕ إضافة سؤال</button>
     </div>
 
     <div class="actions" style="margin-top:22px;">
@@ -2013,6 +2085,17 @@
     <h2 id="quizDetailTitle"></h2>
     <p class="desc" id="quizDetailMeta"></p>
     <p class="desc hidden" id="quizDetailSchedule"></p>
+
+    <!-- اختبار منصة مدرستي - رابط الاختبار يقدر المعلم يضيفه/يعدّله بأي وقت -->
+    <div id="quizMadrasatiLinkWrap" class="hidden">
+      <h3 class="sub-heading" data-i18n="label_external_link">رابط الاختبار بمنصة مدرستي (اختياري)</h3>
+      <input type="url" id="quizMadrasatiLinkInput" class="text-input" placeholder="https://..." data-i18n-ph="ph_external_link">
+      <div class="actions" style="margin-top:10px;">
+        <button class="ghost" id="quizMadrasatiSaveLinkBtn" data-i18n="btn_save">حفظ</button>
+        <a class="ghost" href="https://schools.madrasati.sa/Auth/SignIn" target="_blank" rel="noopener" data-i18n="link_create_on_madrasati">🔗 ما سويته بعد؟ افتح مدرستي وسوّيه من هناك</a>
+      </div>
+      <div id="quizMadrasatiLinkError"></div>
+    </div>
 
     <!-- قبل النشر -->
     <div id="quizUnpublishedActions" class="hidden">
@@ -2054,6 +2137,14 @@
     <div id="quizTakeResult" class="hidden">
       <div class="quiz-result-box" id="quizResultBox"></div>
     </div>
+
+    <!-- اختبار منصة مدرستي - يُحل هناك مباشرة، ما فيه عدّاد/تسليم داخل ذكي -->
+    <div id="quizTakeMadrasatiView" class="hidden">
+      <p class="desc" id="quizTakeMadrasatiNote"></p>
+      <div class="actions">
+        <a class="primary" id="quizTakeMadrasatiOpenBtn" href="#" target="_blank" rel="noopener" data-i18n="madrasati_open_link_btn">🔗 فتح الاختبار بمنصة مدرستي</a>
+      </div>
+    </div>
   </section>
 
   <!-- كشف الدرجات (معلم بس) - مشاركة ومهام أدائية يدوية، واجبات واختبارات
@@ -2081,6 +2172,13 @@
       </table>
     </div>
     <div id="gradesheetError"></div>
+
+    <!-- تصدير الدرجات (PDF/CSV) + QR يفتح الملف من أي جوال - معلم بمدرسة بس -->
+    <div class="actions" style="margin-top:22px; padding-top:16px; border-top:1px solid var(--border-color, #2a2f3a);">
+      <button class="ghost" id="gradesheetExportPdfBtn" data-i18n="btn_export_gradesheet_pdf">📄 تصدير PDF</button>
+      <button class="ghost" id="gradesheetExportCsvBtn" data-i18n="btn_export_gradesheet_csv">📊 تصدير CSV</button>
+    </div>
+    <div id="gradesheetExportError"></div>
   </section>
 
   <!-- المساعد الذكي - قائمة المحادثات (تفتح من زر السايد بار) -->
@@ -2897,7 +2995,7 @@
 <div class="qr-modal hidden" id="qrModal">
   <div class="qr-modal-box">
     <button class="ai-help-close" id="qrModalCloseBtn">✕</button>
-    <h3 data-i18n="qr_modal_title">امسح الكود عشان تنضم</h3>
+    <h3 id="qrModalTitle" data-i18n="qr_modal_title">امسح الكود عشان تنضم</h3>
     <div id="qrCanvasContainer"></div>
     <p class="desc" id="qrRoomCodeText"></p>
   </div>
@@ -3226,6 +3324,15 @@ const I18N = {
     assignment_correct_hint: 'حدد الإجابة الصحيحة (اختياري - لو حددتها كل الأسئلة يتصحح الواجب تلقائيًا)',
     assignment_awaiting_correction: '⏳ بانتظار تصحيح المعلم',
     assignment_answers_submitted_label: '✏️ تم تسليم إجاباتك',
+    platform_zakiy: '💡 واجب منصة ذكي',
+    platform_madrasati: '🎓 واجب منصة مدرستي',
+    platform_zakiy_quiz: '💡 اختبار منصة ذكي',
+    platform_madrasati_quiz: '🎓 اختبار منصة مدرستي',
+    label_external_link: 'رابط الواجب/الاختبار بمنصة مدرستي (اختياري)',
+    ph_external_link: 'https://...',
+    link_create_on_madrasati: '🔗 ما سويته بعد؟ افتح مدرستي وسوّيه من هناك',
+    madrasati_open_link_btn: '🔗 فتح الواجب/الاختبار بمنصة مدرستي',
+    assignment_madrasati_no_link_note: 'المعلم ما حط رابط الواجب بعد - بيوديك لصفحة الدخول الرسمية لمدرستي.',
     nav_quizzes: 'الاختبارات',
     quizzes_step_label: '📝 الاختبارات',
     quizzes_heading: 'دفتر الاختبارات',
@@ -3357,6 +3464,10 @@ const I18N = {
     th_participation: 'المشاركة', th_performance_tasks: 'المهام الأدائية',
     th_assignments_avg: 'الواجبات', th_quizzes_avg: 'الاختبارات', th_total: 'المجموع',
     gradesheet_empty: 'ما فيه طلاب بهذا الفصل',
+    btn_export_gradesheet_pdf: '📄 تصدير PDF',
+    btn_export_gradesheet_csv: '📊 تصدير CSV',
+    qr_gradesheet_title: 'امسح الكود لفتح كشف الدرجات',
+    qr_gradesheet_caption: 'كشف درجات {class} - الرابط صالح لمدة ساعة',
     // ---- مدرستي + التحضير الذكي ----
     nav_madrasati: 'مدرستي',
     madrasati_step_label: '🎓 مدرستي',
@@ -3937,6 +4048,15 @@ const I18N = {
     assignment_correct_hint: 'Set the correct answer (optional - if set for every question, the assignment auto-grades)',
     assignment_awaiting_correction: '⏳ Awaiting teacher grading',
     assignment_answers_submitted_label: '✏️ Your answers have been submitted',
+    platform_zakiy: '💡 Zakiy platform assignment',
+    platform_madrasati: '🎓 Madrasati platform assignment',
+    platform_zakiy_quiz: '💡 Zakiy platform quiz',
+    platform_madrasati_quiz: '🎓 Madrasati platform quiz',
+    label_external_link: 'Assignment/quiz link on Madrasati (optional)',
+    ph_external_link: 'https://...',
+    link_create_on_madrasati: "🔗 Haven't made it yet? Open Madrasati and create it there",
+    madrasati_open_link_btn: '🔗 Open the assignment/quiz on Madrasati',
+    assignment_madrasati_no_link_note: "The teacher hasn't added a link yet - this will take you to Madrasati's sign-in page.",
     nav_quizzes: 'Quizzes',
     quizzes_step_label: '📝 Quizzes',
     quizzes_heading: 'Quizzes',
@@ -4068,6 +4188,10 @@ const I18N = {
     th_participation: 'Participation', th_performance_tasks: 'Performance tasks',
     th_assignments_avg: 'Assignments', th_quizzes_avg: 'Quizzes', th_total: 'Total',
     gradesheet_empty: 'No students in this class',
+    btn_export_gradesheet_pdf: '📄 Export PDF',
+    btn_export_gradesheet_csv: '📊 Export CSV',
+    qr_gradesheet_title: 'Scan the code to open the gradesheet',
+    qr_gradesheet_caption: '{class} gradesheet - link valid for 1 hour',
     // ---- Madrasati + AI lesson prep ----
     nav_madrasati: 'Madrasati',
     madrasati_step_label: '🎓 Madrasati',
@@ -7968,10 +8092,11 @@ function qrDataUrl(text) {
   return buildQrCanvas(text).toDataURL('image/png');
 }
 
-function openQrModalWithText(payloadText, captionText) {
+function openQrModalWithText(payloadText, captionText, titleText) {
   try {
     renderQrToCanvas(payloadText, document.getElementById('qrCanvasContainer'));
     document.getElementById('qrRoomCodeText').textContent = captionText;
+    document.getElementById('qrModalTitle').textContent = titleText || t('qr_modal_title');
     show('qrModal');
   } catch (err) {
     alert(t('err_qr_generation'));
@@ -8003,6 +8128,11 @@ document.getElementById('showFriendQrBtn').addEventListener('click', () => openP
 function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
+
+// رابط تسجيل الدخول الرسمي لمنصة مدرستي - يُستخدم كاحتياط لما المعلم لسا ما
+// حط رابط الواجب/الاختبار المحدد (ما فيه رابط عام موحّد لكل واجب/اختبار
+// بمدرستي - يُفتح من داخل Microsoft Teams الخاص بكل مدرسة بعد الدخول)
+const MADRASATI_SIGNIN_URL = 'https://schools.madrasati.sa/Auth/SignIn';
 
 // ---------- جدولة وقت بداية/نهاية اختيارية (الواجبات والاختبارات) - تحويل
 // بين قيمة عنصر <input type="datetime-local"> (نص محلي بدون منطقة زمنية)
@@ -9548,9 +9678,14 @@ function renderAssignmentsList(items, isTeacher) {
   const empty = document.getElementById('assignmentsEmptyState');
   empty.classList.toggle('hidden', items.length > 0);
   list.innerHTML = items.map(a => {
-    const statusHtml = isTeacher
-      ? `<span class="assignment-status ${a.submitted_count >= a.total_count && a.total_count > 0 ? 'done' : 'pending'}">${t('assignment_submitted_count', { done: a.submitted_count, total: a.total_count })}</span>`
-      : `<span class="assignment-status ${a.submitted ? 'done' : 'pending'}">${a.submitted ? t('assignment_status_done') : t('assignment_status_pending')}</span>`;
+    let statusHtml;
+    if (a.platform === 'madrasati') {
+      statusHtml = `<span class="assignment-status">${t('platform_madrasati')}</span>`;
+    } else if (isTeacher) {
+      statusHtml = `<span class="assignment-status ${a.submitted_count >= a.total_count && a.total_count > 0 ? 'done' : 'pending'}">${t('assignment_submitted_count', { done: a.submitted_count, total: a.total_count })}</span>`;
+    } else {
+      statusHtml = `<span class="assignment-status ${a.submitted ? 'done' : 'pending'}">${a.submitted ? t('assignment_status_done') : t('assignment_status_pending')}</span>`;
+    }
     return `
       <div class="assignment-card" data-assignment-id="${a.id}">
         <div class="assignment-top">
@@ -9574,6 +9709,10 @@ function renderAssignmentsList(items, isTeacher) {
 function resetAssignmentCreateForm() {
   document.getElementById('assignmentTypeFile').checked = true;
   document.getElementById('assignmentQuestionsEditorWrap').classList.add('hidden');
+  document.getElementById('assignmentPlatformZakiy').checked = true;
+  document.getElementById('assignmentZakiyOptionsWrap').classList.remove('hidden');
+  document.getElementById('assignmentMadrasatiOptionsWrap').classList.add('hidden');
+  document.getElementById('assignmentExternalLinkInput').value = '';
   assignmentQuestionsDraft = [];
   renderAssignmentQuestionsEditor();
 }
@@ -9581,6 +9720,13 @@ document.querySelectorAll('input[name="assignmentSubmissionType"]').forEach(radi
   radio.addEventListener('change', () => {
     const isQuestions = document.getElementById('assignmentTypeQuestions').checked;
     document.getElementById('assignmentQuestionsEditorWrap').classList.toggle('hidden', !isQuestions);
+  });
+});
+document.querySelectorAll('input[name="assignmentPlatform"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    const isMadrasati = document.getElementById('assignmentPlatformMadrasati').checked;
+    document.getElementById('assignmentZakiyOptionsWrap').classList.toggle('hidden', isMadrasati);
+    document.getElementById('assignmentMadrasatiOptionsWrap').classList.toggle('hidden', !isMadrasati);
   });
 });
 
@@ -9704,13 +9850,15 @@ document.getElementById('assignmentCreateBtn').addEventListener('click', async (
   const subject = document.getElementById('assignmentSubjectInput').value.trim();
   const title = document.getElementById('assignmentTitleInput').value.trim();
   const content = document.getElementById('assignmentContentTextarea').value.trim();
+  const platform = document.getElementById('assignmentPlatformMadrasati').checked ? 'madrasati' : 'zakiy';
   const submissionType = document.getElementById('assignmentTypeQuestions').checked ? 'questions' : 'file';
+  const externalLink = document.getElementById('assignmentExternalLinkInput').value.trim();
   const openAt = localDatetimeToIso(document.getElementById('assignmentOpenAtInput').value);
   const closeAt = localDatetimeToIso(document.getElementById('assignmentCloseAtInput').value);
   if (!classId) { showError('assignmentCreateError', t('err_assignment_need_class')); return; }
   if (!subject || !title) { showError('assignmentCreateError', t('err_name_required')); return; }
   if (openAt && closeAt && openAt >= closeAt) { showError('assignmentCreateError', t('err_schedule_order')); return; }
-  if (submissionType === 'questions') {
+  if (platform === 'zakiy' && submissionType === 'questions') {
     if (!assignmentQuestionsDraft.length) { showError('assignmentCreateError', t('err_quiz_need_question')); return; }
     for (const q of assignmentQuestionsDraft) {
       if (!q.question_text.trim()) { showError('assignmentCreateError', t('err_quiz_question_text_required')); return; }
@@ -9721,10 +9869,11 @@ document.getElementById('assignmentCreateBtn').addEventListener('click', async (
   }
 
   const payload = {
-    class_id: classId, subject, title, content, submission_type: submissionType,
+    class_id: classId, subject, title, content, platform,
+    submission_type: submissionType, external_link: externalLink,
     open_at: openAt, close_at: closeAt,
   };
-  if (submissionType === 'questions') {
+  if (platform === 'zakiy' && submissionType === 'questions') {
     payload.questions = assignmentQuestionsDraft.map(q => ({
       question_type: q.question_type, question_text: q.question_text.trim(),
       choices: q.question_type === 'mcq' ? q.choices.filter(c => c.trim()) : undefined,
@@ -9751,18 +9900,25 @@ async function openAssignmentDetail(id) {
   currentAssignmentId = id;
   const isTeacher = currentUserRole === 'teacher';
   document.getElementById('studentSubmissionView').classList.toggle('hidden', isTeacher);
-  document.getElementById('teacherStudentsView').classList.toggle('hidden', !isTeacher);
   document.getElementById('assignmentDeleteWrap').classList.toggle('hidden', !isTeacher);
   assignmentSelectedFile = null;
   updateAssignmentFileChip();
   document.getElementById('assignmentNoteTextarea').value = '';
   clearError('assignmentAnswersSubmitError');
+  clearError('assignmentMadrasatiLinkError');
 
   try {
     if (isTeacher) {
       const a = await apiCall('GET', `/api/teacher/assignments/${id}`);
       renderAssignmentDetailHeader(a);
-      renderTeacherStudentsList(a.students, a.submission_type, a.questions);
+      const isMadrasati = a.platform === 'madrasati';
+      document.getElementById('teacherStudentsView').classList.toggle('hidden', isMadrasati);
+      document.getElementById('assignmentMadrasatiTeacherView').classList.toggle('hidden', !isMadrasati);
+      if (isMadrasati) {
+        document.getElementById('assignmentMadrasatiLinkInput').value = a.external_link || '';
+      } else {
+        renderTeacherStudentsList(a.students, a.submission_type, a.questions);
+      }
     } else {
       const a = await apiCall('GET', `/api/student/assignments/${id}`);
       renderAssignmentDetailHeader(a);
@@ -9772,6 +9928,23 @@ async function openAssignmentDetail(id) {
     document.getElementById('assignmentDetailContent').textContent = e.message;
   }
 }
+
+document.getElementById('assignmentMadrasatiSaveLinkBtn').addEventListener('click', async () => {
+  if (!currentAssignmentId) return;
+  clearError('assignmentMadrasatiLinkError');
+  const link = document.getElementById('assignmentMadrasatiLinkInput').value.trim();
+  const btn = document.getElementById('assignmentMadrasatiSaveLinkBtn');
+  btn.disabled = true;
+  try {
+    await apiCall('PATCH', `/api/teacher/assignments/${currentAssignmentId}`, { external_link: link });
+    btn.textContent = t('btn_save') + ' ✅';
+    setTimeout(() => { btn.textContent = t('btn_save'); }, 1500);
+  } catch (e) {
+    showError('assignmentMadrasatiLinkError', e.message);
+  } finally {
+    btn.disabled = false;
+  }
+});
 
 function renderAssignmentDetailHeader(a) {
   document.getElementById('assignmentDetailSubjectLabel').textContent = `📚 ${a.subject}`;
@@ -9859,10 +10032,23 @@ function renderAssignmentAnswersHtml(student, questions) {
 }
 
 function renderStudentSubmissionState(a) {
-  const { submission, open_at: openAt, close_at: closeAt, submission_type: submissionType } = a;
+  const { submission, open_at: openAt, close_at: closeAt, submission_type: submissionType, platform, external_link: externalLink } = a;
   const infoBox = document.getElementById('studentSubmissionInfo');
   const fileForm = document.getElementById('assignmentFileSubmitForm');
   const questionsForm = document.getElementById('assignmentQuestionsSubmitForm');
+  const madrasatiView = document.getElementById('assignmentMadrasatiStudentView');
+
+  if (platform === 'madrasati') {
+    infoBox.classList.add('hidden');
+    fileForm.classList.add('hidden');
+    questionsForm.classList.add('hidden');
+    madrasatiView.classList.remove('hidden');
+    document.getElementById('assignmentMadrasatiOpenBtn').href = externalLink || MADRASATI_SIGNIN_URL;
+    document.getElementById('assignmentMadrasatiStudentNote').textContent = externalLink ? '' : t('assignment_madrasati_no_link_note');
+    return;
+  }
+  madrasatiView.classList.add('hidden');
+
   if (submission) {
     fileForm.classList.add('hidden');
     questionsForm.classList.add('hidden');
@@ -10347,7 +10533,9 @@ function renderQuizzesList(items, isTeacher) {
   empty.classList.toggle('hidden', items.length > 0);
   list.innerHTML = items.map(q => {
     let statusHtml;
-    if (isTeacher) {
+    if (q.platform === 'madrasati') {
+      statusHtml = `<span class="assignment-status">${t('platform_madrasati_quiz')}</span>`;
+    } else if (isTeacher) {
       const cls = q.is_published ? 'done' : 'pending';
       const text = q.is_published
         ? t('quiz_submitted_count', { done: q.submitted_count, total: q.total_count })
@@ -10368,7 +10556,7 @@ function renderQuizzesList(items, isTeacher) {
           <span class="assignment-title">${escapeHtml(q.title)}</span>
           ${statusHtml}
         </div>
-        <div class="assignment-meta">${escapeHtml(q.subject)}${q.class_name ? ' · ' + escapeHtml(q.class_name) : ''} · ⏱ ${q.time_limit_minutes} ${t('quiz_minutes_label')}${formatScheduleRangeText(q.open_at, q.close_at) ? ' · ' + escapeHtml(formatScheduleRangeText(q.open_at, q.close_at)) : ''}</div>
+        <div class="assignment-meta">${escapeHtml(q.subject)}${q.class_name ? ' · ' + escapeHtml(q.class_name) : ''}${q.time_limit_minutes ? ' · ⏱ ' + q.time_limit_minutes + ' ' + t('quiz_minutes_label') : ''}${formatScheduleRangeText(q.open_at, q.close_at) ? ' · ' + escapeHtml(formatScheduleRangeText(q.open_at, q.close_at)) : ''}</div>
       </div>
     `;
   }).join('');
@@ -10403,11 +10591,18 @@ async function openQuizCreateScreen(existingQuiz) {
     showError('quizCreateError', e.message);
   }
 
+  const isMadrasati = existingQuiz && existingQuiz.platform === 'madrasati';
+  document.getElementById('quizPlatformZakiy').checked = !isMadrasati;
+  document.getElementById('quizPlatformMadrasati').checked = isMadrasati;
+  document.getElementById('quizZakiyOptionsWrap').classList.toggle('hidden', isMadrasati);
+  document.getElementById('quizMadrasatiOptionsWrap').classList.toggle('hidden', !isMadrasati);
+  document.getElementById('quizExternalLinkInput').value = (existingQuiz && existingQuiz.external_link) || '';
+
   if (existingQuiz) {
     document.getElementById('quizClassSelect').value = existingQuiz.class_id;
     document.getElementById('quizSubjectInput').value = existingQuiz.subject;
     document.getElementById('quizTitleInput').value = existingQuiz.title;
-    document.getElementById('quizTimeInput').value = existingQuiz.time_limit_minutes;
+    document.getElementById('quizTimeInput').value = existingQuiz.time_limit_minutes || '';
     document.getElementById('quizOpenAtInput').value = isoToLocalDatetimeValue(existingQuiz.open_at);
     document.getElementById('quizCloseAtInput').value = isoToLocalDatetimeValue(existingQuiz.close_at);
     quizQuestionsDraft = (existingQuiz.questions || []).map(q => ({
@@ -10424,6 +10619,13 @@ async function openQuizCreateScreen(existingQuiz) {
   }
   renderQuizQuestionsEditor();
 }
+document.querySelectorAll('input[name="quizPlatform"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    const isMadrasati = document.getElementById('quizPlatformMadrasati').checked;
+    document.getElementById('quizZakiyOptionsWrap').classList.toggle('hidden', isMadrasati);
+    document.getElementById('quizMadrasatiOptionsWrap').classList.toggle('hidden', !isMadrasati);
+  });
+});
 
 function populateQuizClassSelect() {
   document.getElementById('quizClassSelect').innerHTML =
@@ -10554,30 +10756,37 @@ document.getElementById('quizSaveBtn').addEventListener('click', async () => {
   const classId = document.getElementById('quizClassSelect').value;
   const subject = document.getElementById('quizSubjectInput').value.trim();
   const title = document.getElementById('quizTitleInput').value.trim();
+  const platform = document.getElementById('quizPlatformMadrasati').checked ? 'madrasati' : 'zakiy';
+  const externalLink = document.getElementById('quizExternalLinkInput').value.trim();
   const timeLimitMinutes = parseInt(document.getElementById('quizTimeInput').value, 10);
   if (!classId) { showError('quizCreateError', t('err_assignment_need_class')); return; }
   if (!subject || !title) { showError('quizCreateError', t('err_name_required')); return; }
-  if (!timeLimitMinutes || timeLimitMinutes <= 0) { showError('quizCreateError', t('err_quiz_need_time')); return; }
   const openAt = localDatetimeToIso(document.getElementById('quizOpenAtInput').value);
   const closeAt = localDatetimeToIso(document.getElementById('quizCloseAtInput').value);
   if (openAt && closeAt && openAt >= closeAt) { showError('quizCreateError', t('err_schedule_order')); return; }
-  if (!quizQuestionsDraft.length) { showError('quizCreateError', t('err_quiz_need_question')); return; }
-  for (const q of quizQuestionsDraft) {
-    if (!q.question_text.trim()) { showError('quizCreateError', t('err_quiz_question_text_required')); return; }
-    if (q.question_type === 'mcq' && q.choices.filter(c => c.trim()).length < 2) {
-      showError('quizCreateError', t('err_quiz_choices_required')); return;
+  if (platform === 'zakiy') {
+    if (!timeLimitMinutes || timeLimitMinutes <= 0) { showError('quizCreateError', t('err_quiz_need_time')); return; }
+    if (!quizQuestionsDraft.length) { showError('quizCreateError', t('err_quiz_need_question')); return; }
+    for (const q of quizQuestionsDraft) {
+      if (!q.question_text.trim()) { showError('quizCreateError', t('err_quiz_question_text_required')); return; }
+      if (q.question_type === 'mcq' && q.choices.filter(c => c.trim()).length < 2) {
+        showError('quizCreateError', t('err_quiz_choices_required')); return;
+      }
     }
   }
 
   const payload = {
-    class_id: classId, subject, title, time_limit_minutes: timeLimitMinutes,
+    class_id: classId, subject, title, platform, external_link: externalLink,
     open_at: openAt, close_at: closeAt,
-    questions: quizQuestionsDraft.map(q => ({
+  };
+  if (platform === 'zakiy') {
+    payload.time_limit_minutes = timeLimitMinutes;
+    payload.questions = quizQuestionsDraft.map(q => ({
       question_type: q.question_type, question_text: q.question_text.trim(),
       choices: q.question_type === 'mcq' ? q.choices.filter(c => c.trim()) : undefined,
       correct_answer: q.question_type !== 'essay' ? ((q.correct_answer || '').trim() || null) : null,
-    })),
-  };
+    }));
+  }
   const btn = document.getElementById('quizSaveBtn');
   setLoading(btn, true, t('btn_save_quiz'));
   try {
@@ -10603,13 +10812,33 @@ async function openQuizDetail(id) {
     const quiz = await apiCall('GET', `/api/teacher/quizzes/${id}`);
     currentQuizDetailData = quiz;
     renderQuizDetailHeader(quiz);
+    const isMadrasati = quiz.platform === 'madrasati';
+    document.getElementById('quizMadrasatiLinkWrap').classList.toggle('hidden', !isMadrasati);
+    if (isMadrasati) document.getElementById('quizMadrasatiLinkInput').value = quiz.external_link || '';
     document.getElementById('quizUnpublishedActions').classList.toggle('hidden', quiz.is_published);
-    document.getElementById('quizPublishedView').classList.toggle('hidden', !quiz.is_published);
-    if (quiz.is_published) renderQuizStudentsList(quiz.students, quiz.questions);
+    document.getElementById('quizPublishedView').classList.toggle('hidden', !quiz.is_published || isMadrasati);
+    if (quiz.is_published && !isMadrasati) renderQuizStudentsList(quiz.students, quiz.questions);
   } catch (e) {
     document.getElementById('quizDetailMeta').textContent = e.message;
   }
 }
+
+document.getElementById('quizMadrasatiSaveLinkBtn').addEventListener('click', async () => {
+  if (!currentQuizId) return;
+  clearError('quizMadrasatiLinkError');
+  const link = document.getElementById('quizMadrasatiLinkInput').value.trim();
+  const btn = document.getElementById('quizMadrasatiSaveLinkBtn');
+  btn.disabled = true;
+  try {
+    await apiCall('PATCH', `/api/teacher/quizzes/${currentQuizId}`, { external_link: link });
+    btn.textContent = t('btn_save') + ' ✅';
+    setTimeout(() => { btn.textContent = t('btn_save'); }, 1500);
+  } catch (e) {
+    showError('quizMadrasatiLinkError', e.message);
+  } finally {
+    btn.disabled = false;
+  }
+});
 
 function renderQuizDetailHeader(quiz) {
   document.getElementById('quizDetailSubjectLabel').textContent = `📝 ${quiz.subject}`;
@@ -10715,11 +10944,19 @@ async function openQuizTake(id) {
   stopQuizTimer();
   document.getElementById('quizTakeActive').classList.add('hidden');
   document.getElementById('quizTakeResult').classList.add('hidden');
+  document.getElementById('quizTakeMadrasatiView').classList.add('hidden');
 
   try {
     const quiz = await apiCall('GET', `/api/student/quizzes/${id}`);
     document.getElementById('quizTakeSubjectLabel').textContent = `📝 ${quiz.subject}`;
     document.getElementById('quizTakeTitle').textContent = quiz.title;
+
+    if (quiz.platform === 'madrasati') {
+      document.getElementById('quizTakeMadrasatiView').classList.remove('hidden');
+      document.getElementById('quizTakeMadrasatiOpenBtn').href = quiz.external_link || MADRASATI_SIGNIN_URL;
+      document.getElementById('quizTakeMadrasatiNote').textContent = quiz.external_link ? '' : t('assignment_madrasati_no_link_note');
+      return;
+    }
 
     if (quiz.attempt && quiz.attempt.submitted_at) {
       showQuizResult(quiz.attempt);
@@ -10911,6 +11148,27 @@ function wireGradesheetRowEvents(classId) {
 document.getElementById('gradesheetClassSelect').addEventListener('change', () => {
   loadGradesheetTable();
 });
+
+// ---------- تصدير الدرجات (PDF/CSV) + QR يفتح الملف من أي جوال ----------
+async function exportGradesheet(format, btn) {
+  const classId = document.getElementById('gradesheetClassSelect').value;
+  const errBox = document.getElementById('gradesheetExportError');
+  errBox.innerHTML = '';
+  if (!classId) { errBox.innerHTML = `<p class="desc">${escapeHtml(t('err_assignment_need_class'))}</p>`; return; }
+  const label = t(format === 'pdf' ? 'btn_export_gradesheet_pdf' : 'btn_export_gradesheet_csv');
+  setLoading(btn, true, label);
+  try {
+    const { url } = await apiCall('GET', `/api/teacher/gradesheet/export?class_id=${classId}&format=${format}`);
+    const className = document.getElementById('gradesheetClassSelect').selectedOptions[0]?.textContent || '';
+    openQrModalWithText(url, t('qr_gradesheet_caption', { class: className }), t('qr_gradesheet_title'));
+  } catch (e) {
+    errBox.innerHTML = `<p class="desc">${escapeHtml(e.message)}</p>`;
+  } finally {
+    setLoading(btn, false, label);
+  }
+}
+document.getElementById('gradesheetExportPdfBtn').addEventListener('click', (e) => exportGradesheet('pdf', e.currentTarget));
+document.getElementById('gradesheetExportCsvBtn').addEventListener('click', (e) => exportGradesheet('csv', e.currentTarget));
 // ================= مدرستي + التحضير الذكي (أداة معلم مستقلة - أي حساب
 // مسجّل) - اختصار لموقع مدرستي الرسمي (بدون أي تكامل بيانات) + توليد
 // تحضير درس بالذكاء الاصطناعي وحفظه/إعادة استخدامه لاحقًا =================

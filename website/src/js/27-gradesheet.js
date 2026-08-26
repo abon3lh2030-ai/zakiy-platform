@@ -76,3 +76,24 @@ function wireGradesheetRowEvents(classId) {
 document.getElementById('gradesheetClassSelect').addEventListener('change', () => {
   loadGradesheetTable();
 });
+
+// ---------- تصدير الدرجات (PDF/CSV) + QR يفتح الملف من أي جوال ----------
+async function exportGradesheet(format, btn) {
+  const classId = document.getElementById('gradesheetClassSelect').value;
+  const errBox = document.getElementById('gradesheetExportError');
+  errBox.innerHTML = '';
+  if (!classId) { errBox.innerHTML = `<p class="desc">${escapeHtml(t('err_assignment_need_class'))}</p>`; return; }
+  const label = t(format === 'pdf' ? 'btn_export_gradesheet_pdf' : 'btn_export_gradesheet_csv');
+  setLoading(btn, true, label);
+  try {
+    const { url } = await apiCall('GET', `/api/teacher/gradesheet/export?class_id=${classId}&format=${format}`);
+    const className = document.getElementById('gradesheetClassSelect').selectedOptions[0]?.textContent || '';
+    openQrModalWithText(url, t('qr_gradesheet_caption', { class: className }), t('qr_gradesheet_title'));
+  } catch (e) {
+    errBox.innerHTML = `<p class="desc">${escapeHtml(e.message)}</p>`;
+  } finally {
+    setLoading(btn, false, label);
+  }
+}
+document.getElementById('gradesheetExportPdfBtn').addEventListener('click', (e) => exportGradesheet('pdf', e.currentTarget));
+document.getElementById('gradesheetExportCsvBtn').addEventListener('click', (e) => exportGradesheet('csv', e.currentTarget));

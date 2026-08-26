@@ -37,9 +37,14 @@ function renderAssignmentsList(items, isTeacher) {
   const empty = document.getElementById('assignmentsEmptyState');
   empty.classList.toggle('hidden', items.length > 0);
   list.innerHTML = items.map(a => {
-    const statusHtml = isTeacher
-      ? `<span class="assignment-status ${a.submitted_count >= a.total_count && a.total_count > 0 ? 'done' : 'pending'}">${t('assignment_submitted_count', { done: a.submitted_count, total: a.total_count })}</span>`
-      : `<span class="assignment-status ${a.submitted ? 'done' : 'pending'}">${a.submitted ? t('assignment_status_done') : t('assignment_status_pending')}</span>`;
+    let statusHtml;
+    if (a.platform === 'madrasati') {
+      statusHtml = `<span class="assignment-status">${t('platform_madrasati')}</span>`;
+    } else if (isTeacher) {
+      statusHtml = `<span class="assignment-status ${a.submitted_count >= a.total_count && a.total_count > 0 ? 'done' : 'pending'}">${t('assignment_submitted_count', { done: a.submitted_count, total: a.total_count })}</span>`;
+    } else {
+      statusHtml = `<span class="assignment-status ${a.submitted ? 'done' : 'pending'}">${a.submitted ? t('assignment_status_done') : t('assignment_status_pending')}</span>`;
+    }
     return `
       <div class="assignment-card" data-assignment-id="${a.id}">
         <div class="assignment-top">
@@ -63,6 +68,10 @@ function renderAssignmentsList(items, isTeacher) {
 function resetAssignmentCreateForm() {
   document.getElementById('assignmentTypeFile').checked = true;
   document.getElementById('assignmentQuestionsEditorWrap').classList.add('hidden');
+  document.getElementById('assignmentPlatformZakiy').checked = true;
+  document.getElementById('assignmentZakiyOptionsWrap').classList.remove('hidden');
+  document.getElementById('assignmentMadrasatiOptionsWrap').classList.add('hidden');
+  document.getElementById('assignmentExternalLinkInput').value = '';
   assignmentQuestionsDraft = [];
   renderAssignmentQuestionsEditor();
 }
@@ -70,6 +79,13 @@ document.querySelectorAll('input[name="assignmentSubmissionType"]').forEach(radi
   radio.addEventListener('change', () => {
     const isQuestions = document.getElementById('assignmentTypeQuestions').checked;
     document.getElementById('assignmentQuestionsEditorWrap').classList.toggle('hidden', !isQuestions);
+  });
+});
+document.querySelectorAll('input[name="assignmentPlatform"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    const isMadrasati = document.getElementById('assignmentPlatformMadrasati').checked;
+    document.getElementById('assignmentZakiyOptionsWrap').classList.toggle('hidden', isMadrasati);
+    document.getElementById('assignmentMadrasatiOptionsWrap').classList.toggle('hidden', !isMadrasati);
   });
 });
 
@@ -193,13 +209,15 @@ document.getElementById('assignmentCreateBtn').addEventListener('click', async (
   const subject = document.getElementById('assignmentSubjectInput').value.trim();
   const title = document.getElementById('assignmentTitleInput').value.trim();
   const content = document.getElementById('assignmentContentTextarea').value.trim();
+  const platform = document.getElementById('assignmentPlatformMadrasati').checked ? 'madrasati' : 'zakiy';
   const submissionType = document.getElementById('assignmentTypeQuestions').checked ? 'questions' : 'file';
+  const externalLink = document.getElementById('assignmentExternalLinkInput').value.trim();
   const openAt = localDatetimeToIso(document.getElementById('assignmentOpenAtInput').value);
   const closeAt = localDatetimeToIso(document.getElementById('assignmentCloseAtInput').value);
   if (!classId) { showError('assignmentCreateError', t('err_assignment_need_class')); return; }
   if (!subject || !title) { showError('assignmentCreateError', t('err_name_required')); return; }
   if (openAt && closeAt && openAt >= closeAt) { showError('assignmentCreateError', t('err_schedule_order')); return; }
-  if (submissionType === 'questions') {
+  if (platform === 'zakiy' && submissionType === 'questions') {
     if (!assignmentQuestionsDraft.length) { showError('assignmentCreateError', t('err_quiz_need_question')); return; }
     for (const q of assignmentQuestionsDraft) {
       if (!q.question_text.trim()) { showError('assignmentCreateError', t('err_quiz_question_text_required')); return; }
@@ -210,10 +228,11 @@ document.getElementById('assignmentCreateBtn').addEventListener('click', async (
   }
 
   const payload = {
-    class_id: classId, subject, title, content, submission_type: submissionType,
+    class_id: classId, subject, title, content, platform,
+    submission_type: submissionType, external_link: externalLink,
     open_at: openAt, close_at: closeAt,
   };
-  if (submissionType === 'questions') {
+  if (platform === 'zakiy' && submissionType === 'questions') {
     payload.questions = assignmentQuestionsDraft.map(q => ({
       question_type: q.question_type, question_text: q.question_text.trim(),
       choices: q.question_type === 'mcq' ? q.choices.filter(c => c.trim()) : undefined,
@@ -240,18 +259,25 @@ async function openAssignmentDetail(id) {
   currentAssignmentId = id;
   const isTeacher = currentUserRole === 'teacher';
   document.getElementById('studentSubmissionView').classList.toggle('hidden', isTeacher);
-  document.getElementById('teacherStudentsView').classList.toggle('hidden', !isTeacher);
   document.getElementById('assignmentDeleteWrap').classList.toggle('hidden', !isTeacher);
   assignmentSelectedFile = null;
   updateAssignmentFileChip();
   document.getElementById('assignmentNoteTextarea').value = '';
   clearError('assignmentAnswersSubmitError');
+  clearError('assignmentMadrasatiLinkError');
 
   try {
     if (isTeacher) {
       const a = await apiCall('GET', `/api/teacher/assignments/${id}`);
       renderAssignmentDetailHeader(a);
-      renderTeacherStudentsList(a.students, a.submission_type, a.questions);
+      const isMadrasati = a.platform === 'madrasati';
+      document.getElementById('teacherStudentsView').classList.toggle('hidden', isMadrasati);
+      document.getElementById('assignmentMadrasatiTeacherView').classList.toggle('hidden', !isMadrasati);
+      if (isMadrasati) {
+        document.getElementById('assignmentMadrasatiLinkInput').value = a.external_link || '';
+      } else {
+        renderTeacherStudentsList(a.students, a.submission_type, a.questions);
+      }
     } else {
       const a = await apiCall('GET', `/api/student/assignments/${id}`);
       renderAssignmentDetailHeader(a);
@@ -261,6 +287,23 @@ async function openAssignmentDetail(id) {
     document.getElementById('assignmentDetailContent').textContent = e.message;
   }
 }
+
+document.getElementById('assignmentMadrasatiSaveLinkBtn').addEventListener('click', async () => {
+  if (!currentAssignmentId) return;
+  clearError('assignmentMadrasatiLinkError');
+  const link = document.getElementById('assignmentMadrasatiLinkInput').value.trim();
+  const btn = document.getElementById('assignmentMadrasatiSaveLinkBtn');
+  btn.disabled = true;
+  try {
+    await apiCall('PATCH', `/api/teacher/assignments/${currentAssignmentId}`, { external_link: link });
+    btn.textContent = t('btn_save') + ' ✅';
+    setTimeout(() => { btn.textContent = t('btn_save'); }, 1500);
+  } catch (e) {
+    showError('assignmentMadrasatiLinkError', e.message);
+  } finally {
+    btn.disabled = false;
+  }
+});
 
 function renderAssignmentDetailHeader(a) {
   document.getElementById('assignmentDetailSubjectLabel').textContent = `📚 ${a.subject}`;
@@ -348,10 +391,23 @@ function renderAssignmentAnswersHtml(student, questions) {
 }
 
 function renderStudentSubmissionState(a) {
-  const { submission, open_at: openAt, close_at: closeAt, submission_type: submissionType } = a;
+  const { submission, open_at: openAt, close_at: closeAt, submission_type: submissionType, platform, external_link: externalLink } = a;
   const infoBox = document.getElementById('studentSubmissionInfo');
   const fileForm = document.getElementById('assignmentFileSubmitForm');
   const questionsForm = document.getElementById('assignmentQuestionsSubmitForm');
+  const madrasatiView = document.getElementById('assignmentMadrasatiStudentView');
+
+  if (platform === 'madrasati') {
+    infoBox.classList.add('hidden');
+    fileForm.classList.add('hidden');
+    questionsForm.classList.add('hidden');
+    madrasatiView.classList.remove('hidden');
+    document.getElementById('assignmentMadrasatiOpenBtn').href = externalLink || MADRASATI_SIGNIN_URL;
+    document.getElementById('assignmentMadrasatiStudentNote').textContent = externalLink ? '' : t('assignment_madrasati_no_link_note');
+    return;
+  }
+  madrasatiView.classList.add('hidden');
+
   if (submission) {
     fileForm.classList.add('hidden');
     questionsForm.classList.add('hidden');

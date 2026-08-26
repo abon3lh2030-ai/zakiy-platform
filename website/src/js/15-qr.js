@@ -257,10 +257,11 @@ function qrDataUrl(text) {
   return buildQrCanvas(text).toDataURL('image/png');
 }
 
-function openQrModalWithText(payloadText, captionText) {
+function openQrModalWithText(payloadText, captionText, titleText) {
   try {
     renderQrToCanvas(payloadText, document.getElementById('qrCanvasContainer'));
     document.getElementById('qrRoomCodeText').textContent = captionText;
+    document.getElementById('qrModalTitle').textContent = titleText || t('qr_modal_title');
     show('qrModal');
   } catch (err) {
     alert(t('err_qr_generation'));

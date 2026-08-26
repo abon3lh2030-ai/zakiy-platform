@@ -125,6 +125,14 @@
   },
   {
     "type": "file",
+    "path": "pages/madrasati/madrasati-hub.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/madrasati/lesson-prep.html"
+  },
+  {
+    "type": "file",
     "path": "pages/settings/settings.html"
   },
   {

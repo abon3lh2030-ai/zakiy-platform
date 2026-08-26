@@ -1170,6 +1170,7 @@
     <button class="sidebar-btn" id="sidebarLibraryBtn"><span class="sidebar-icon">📚</span><span class="label" data-i18n="nav_library">مكتبتي</span></button>
     <button class="sidebar-btn hidden" id="notesBtn"><span class="sidebar-icon">📝</span><span class="label" data-i18n="nav_notes">ملاحظاتي</span></button>
     <button class="sidebar-btn" id="sidebarAiHelpBtn"><span class="sidebar-icon">🤖</span><span class="label" data-i18n="nav_ai_help">مساعد ذكيّ</span></button>
+    <button class="sidebar-btn" id="madrasatiBtn"><span class="sidebar-icon">🎓</span><span class="label" data-i18n="nav_madrasati">مدرستي</span></button>
     <button class="sidebar-btn hidden" id="studentScheduleNavBtn"><span class="sidebar-icon">🗓️</span><span class="label" data-i18n="nav_my_schedule">جدولي</span></button>
     <button class="sidebar-btn hidden" id="assignmentsBtn"><span class="sidebar-icon">📚</span><span class="label" data-i18n="nav_assignments">الواجبات</span></button>
     <button class="sidebar-btn hidden" id="quizzesBtn"><span class="sidebar-icon">📝</span><span class="label" data-i18n="nav_quizzes">الاختبارات</span></button>
@@ -2047,6 +2048,81 @@
       <button class="primary" id="aiBookScopeSummarizeBtn" data-i18n="ai_summarize_btn">لخّص</button>
     </div>
     <div id="aiBookScopeError"></div>
+  </section>
+
+  <!-- مدرستي: اختصار لموقع مدرستي الرسمي (بدون أي تكامل بيانات - ما فيه
+       API عام لمدرستي) + أدوات ذكيّ للمعلم (التحضير الذكي بالذكاء الاصطناعي) -->
+  <section class="card hidden" id="step-madrasati">
+    <span class="step-label" data-i18n="madrasati_step_label">🎓 مدرستي</span>
+    <h2 data-i18n="madrasati_heading">مدرستي وأدوات ذكيّ للمعلم</h2>
+    <p class="desc" data-i18n="madrasati_desc">اختصار سريع لموقع مدرستي الرسمي، بالإضافة لأدوات ذكيّ الذكية للمعلمين - مستقلة تمامًا عن مدرستي وما تشارك أي بيانات وياها.</p>
+
+    <div class="highlight-box">
+      <p class="desc" data-i18n="madrasati_link_desc">يفتح موقع مدرستي الرسمي بتبويب جديد - تسجّل دخولك مباشرة عندهم، وذكيّ ما يشوف ولا يلمس بيانات حسابك هناك إطلاقًا.</p>
+      <div class="actions" style="margin-top:10px;">
+        <a class="primary" id="madrasatiOfficialLinkBtn" href="https://schools.madrasati.sa" target="_blank" rel="noopener" data-i18n="btn_open_madrasati">🔗 افتح مدرستي الرسمي</a>
+      </div>
+    </div>
+
+    <h3 class="sub-heading" style="margin-top:24px;" data-i18n="lesson_prep_tools_heading">🧠 أدوات ذكيّ للمعلم</h3>
+    <div class="actions">
+      <button class="primary" id="newLessonPrepBtn" data-i18n="btn_new_lesson_prep">➕ تحضير جديد بالذكاء الاصطناعي</button>
+    </div>
+
+    <h3 class="sub-heading" style="margin-top:22px;" data-i18n="saved_lesson_preps_heading">📁 تحضيراتي المحفوظة</h3>
+    <div id="lessonPrepList"></div>
+    <p class="desc hidden" id="lessonPrepEmptyState" data-i18n="lesson_prep_empty">ما فيه تحضيرات محفوظة بعد.</p>
+    <div id="lessonPrepListError"></div>
+  </section>
+
+  <!-- تحضير درس بالذكاء الاصطناعي (إنشاء/عرض/تعديل) -->
+  <section class="card hidden" id="step-lesson-prep">
+    <span class="step-label" data-i18n="lesson_prep_step_label">🧠 التحضير الذكي</span>
+    <h2 id="lessonPrepHeading" data-i18n="lesson_prep_create_heading">تحضير درس جديد</h2>
+
+    <div id="lessonPrepForm">
+      <input type="text" id="lessonPrepSubjectInput" class="text-input" placeholder="اسم المادة" data-i18n-ph="ph_lesson_prep_subject">
+      <input type="text" id="lessonPrepGradeInput" class="text-input" placeholder="الصف" data-i18n-ph="ph_lesson_prep_grade" style="margin-top:10px;">
+      <input type="text" id="lessonPrepUnitInput" class="text-input" placeholder="الوحدة (اختياري)" data-i18n-ph="ph_lesson_prep_unit" style="margin-top:10px;">
+      <input type="text" id="lessonPrepTitleInput" class="text-input" placeholder="عنوان الدرس" data-i18n-ph="ph_lesson_prep_title" style="margin-top:10px;">
+      <div class="actions" style="margin-top:12px;">
+        <button class="primary" id="lessonPrepGenerateBtn" data-i18n="btn_generate_lesson_prep">✨ ولّد التحضير</button>
+      </div>
+      <div id="lessonPrepGenerateError"></div>
+    </div>
+
+    <div id="lessonPrepResult" class="hidden" style="margin-top:20px;">
+      <div class="highlight-box">
+        <h3 class="sub-heading" style="margin-top:0;" data-i18n="lp_objectives_label">🎯 الأهداف التعلّمية</h3>
+        <ul id="lpObjectivesList" style="padding-inline-start:20px; margin:0;"></ul>
+
+        <h3 class="sub-heading" data-i18n="lp_intro_label">🚪 التمهيد</h3>
+        <p class="desc" id="lpIntroText" style="white-space:pre-wrap;"></p>
+
+        <h3 class="sub-heading" data-i18n="lp_steps_label">📋 خطوات التنفيذ</h3>
+        <ul id="lpStepsList" style="padding-inline-start:20px; margin:0;"></ul>
+
+        <h3 class="sub-heading" data-i18n="lp_activities_label">🎲 الأنشطة الصفية</h3>
+        <ul id="lpActivitiesList" style="padding-inline-start:20px; margin:0;"></ul>
+
+        <h3 class="sub-heading" data-i18n="lp_assessment_label">📊 التقويم</h3>
+        <p class="desc" id="lpAssessmentText" style="white-space:pre-wrap;"></p>
+
+        <h3 class="sub-heading" data-i18n="lp_homework_label">📝 الواجب</h3>
+        <p class="desc" id="lpHomeworkText" style="white-space:pre-wrap;"></p>
+
+        <h3 class="sub-heading" data-i18n="lp_enrichment_label">🌟 الإثراء</h3>
+        <p class="desc" id="lpEnrichmentText" style="white-space:pre-wrap;"></p>
+      </div>
+
+      <div class="actions" style="margin-top:14px; flex-wrap:wrap;">
+        <button class="ghost" id="lessonPrepCopyBtn" data-i18n="btn_copy_lesson_prep">📋 نسخ التحضير</button>
+        <button class="ghost" id="lessonPrepRegenerateBtn" data-i18n="btn_regenerate_lesson_prep">🔄 توليد من جديد</button>
+        <button class="primary" id="lessonPrepSaveBtn" data-i18n="btn_save_lesson_prep">💾 حفظ التحضير</button>
+        <button class="ghost hidden" id="lessonPrepDeleteBtn" data-i18n="btn_delete_lesson_prep">🗑️ حذف</button>
+      </div>
+      <div id="lessonPrepSaveError"></div>
+    </div>
   </section>
 
   <!-- الإعدادات - شاشة مستقلة (زر ⚙️ بالسايد بار). اللغة متاحة للجميع، بقية
@@ -2935,6 +3011,39 @@ const I18N = {
     th_participation: 'المشاركة', th_performance_tasks: 'المهام الأدائية',
     th_assignments_avg: 'الواجبات', th_quizzes_avg: 'الاختبارات', th_total: 'المجموع',
     gradesheet_empty: 'ما فيه طلاب بهذا الفصل',
+    // ---- مدرستي + التحضير الذكي ----
+    nav_madrasati: 'مدرستي',
+    madrasati_step_label: '🎓 مدرستي',
+    madrasati_heading: 'مدرستي وأدوات ذكيّ للمعلم',
+    madrasati_desc: 'اختصار سريع لموقع مدرستي الرسمي، بالإضافة لأدوات ذكيّ الذكية للمعلمين - مستقلة تمامًا عن مدرستي وما تشارك أي بيانات وياها.',
+    madrasati_link_desc: 'يفتح موقع مدرستي الرسمي بتبويب جديد - تسجّل دخولك مباشرة عندهم، وذكيّ ما يشوف ولا يلمس بيانات حسابك هناك إطلاقًا.',
+    btn_open_madrasati: '🔗 افتح مدرستي الرسمي',
+    lesson_prep_tools_heading: '🧠 أدوات ذكيّ للمعلم',
+    btn_new_lesson_prep: '➕ تحضير جديد بالذكاء الاصطناعي',
+    saved_lesson_preps_heading: '📁 تحضيراتي المحفوظة',
+    lesson_prep_empty: 'ما فيه تحضيرات محفوظة بعد.',
+    lesson_prep_step_label: '🧠 التحضير الذكي',
+    lesson_prep_create_heading: 'تحضير درس جديد',
+    lesson_prep_view_heading: 'تحضير الدرس',
+    ph_lesson_prep_subject: 'اسم المادة', ph_lesson_prep_grade: 'الصف',
+    ph_lesson_prep_unit: 'الوحدة (اختياري)', ph_lesson_prep_title: 'عنوان الدرس',
+    btn_generate_lesson_prep: '✨ ولّد التحضير',
+    err_lesson_prep_fields_required: 'لازم المادة والصف وعنوان الدرس',
+    err_lesson_prep_gen_failed: 'تعذّر توليد التحضير، حاول مرة ثانية',
+    lp_objectives_label: '🎯 الأهداف التعلّمية',
+    lp_intro_label: '🚪 التمهيد',
+    lp_steps_label: '📋 خطوات التنفيذ',
+    lp_activities_label: '🎲 الأنشطة الصفية',
+    lp_assessment_label: '📊 التقويم',
+    lp_homework_label: '📝 الواجب',
+    lp_enrichment_label: '🌟 الإثراء',
+    btn_copy_lesson_prep: '📋 نسخ التحضير',
+    btn_regenerate_lesson_prep: '🔄 توليد من جديد',
+    btn_save_lesson_prep: '💾 حفظ التحضير',
+    btn_delete_lesson_prep: '🗑️ حذف',
+    copied_label: '✅ تم النسخ', saved_label: '✅ تم الحفظ',
+    err_copy_failed: 'تعذّر النسخ',
+    confirm_delete_lesson_prep: 'تحذف هذا التحضير نهائيًا؟',
     // ---- لوحة الأدمن العام ----
     admin_dash_label: '🛠️ لوحة الإدارة العامة',
     admin_dash_heading: 'المدارس المشتركة',
@@ -3541,6 +3650,39 @@ const I18N = {
     th_participation: 'Participation', th_performance_tasks: 'Performance tasks',
     th_assignments_avg: 'Assignments', th_quizzes_avg: 'Quizzes', th_total: 'Total',
     gradesheet_empty: 'No students in this class',
+    // ---- Madrasati + AI lesson prep ----
+    nav_madrasati: 'Madrasati',
+    madrasati_step_label: '🎓 Madrasati',
+    madrasati_heading: 'Madrasati & Zakiy teacher tools',
+    madrasati_desc: "A quick shortcut to the official Madrasati site, plus Zakiy's own AI tools for teachers - fully independent of Madrasati, sharing no data with it whatsoever.",
+    madrasati_link_desc: "Opens the official Madrasati site in a new tab - you sign in there directly, and Zakiy never sees or touches your account data there.",
+    btn_open_madrasati: '🔗 Open official Madrasati',
+    lesson_prep_tools_heading: '🧠 Zakiy tools for teachers',
+    btn_new_lesson_prep: '➕ New AI lesson preparation',
+    saved_lesson_preps_heading: '📁 My saved preparations',
+    lesson_prep_empty: 'No saved preparations yet.',
+    lesson_prep_step_label: '🧠 Smart lesson prep',
+    lesson_prep_create_heading: 'New lesson preparation',
+    lesson_prep_view_heading: 'Lesson preparation',
+    ph_lesson_prep_subject: 'Subject', ph_lesson_prep_grade: 'Grade level',
+    ph_lesson_prep_unit: 'Unit (optional)', ph_lesson_prep_title: 'Lesson title',
+    btn_generate_lesson_prep: '✨ Generate preparation',
+    err_lesson_prep_fields_required: 'You need the subject, grade level, and lesson title',
+    err_lesson_prep_gen_failed: 'Could not generate the preparation, try again',
+    lp_objectives_label: '🎯 Learning objectives',
+    lp_intro_label: '🚪 Introduction',
+    lp_steps_label: '📋 Lesson steps',
+    lp_activities_label: '🎲 Classroom activities',
+    lp_assessment_label: '📊 Assessment',
+    lp_homework_label: '📝 Homework',
+    lp_enrichment_label: '🌟 Enrichment',
+    btn_copy_lesson_prep: '📋 Copy preparation',
+    btn_regenerate_lesson_prep: '🔄 Regenerate',
+    btn_save_lesson_prep: '💾 Save preparation',
+    btn_delete_lesson_prep: '🗑️ Delete',
+    copied_label: '✅ Copied', saved_label: '✅ Saved',
+    err_copy_failed: 'Could not copy',
+    confirm_delete_lesson_prep: 'Delete this preparation permanently?',
     // ---- Platform admin dashboard ----
     admin_dash_label: '🛠️ Platform Admin',
     admin_dash_heading: 'Subscribed Schools',
@@ -3830,6 +3972,7 @@ const TOP_LEVEL_SCREENS = [
   'step-profile', 'step-notes', 'step-note-editor', 'step-assignments', 'step-assignment-detail',
   'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker', 'step-ai-book-scope',
   'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take', 'step-gradesheet',
+  'step-madrasati', 'step-lesson-prep',
   // لوحات نظام إدارة حسابات المدارس - step-force-password-change مو من ضمنها
   // عمدًا (بوابة صلبة، ما تدخل نظام الرجوع/التنقل العادي)
   'step-admin-dashboard', 'step-school-dashboard', 'step-teacher-dashboard', 'step-student-schedule',
@@ -3869,6 +4012,8 @@ const RESTORABLE_SCREENS = {
   'step-quizzes': () => showQuizzesScreen(),
   'step-quiz-detail': () => showQuizzesScreen(),
   'step-gradesheet': () => showGradesheetScreen(),
+  'step-madrasati': () => showMadrasatiScreen(),
+  'step-lesson-prep': () => showMadrasatiScreen(),
   'step-ai-list': () => showAiListScreen(),
   'step-ai-conversation': () => showAiListScreen(),
   'step-ai-book-picker': () => showAiListScreen(),
@@ -4324,7 +4469,7 @@ document.getElementById('guestLoginPromptBtn').addEventListener('click', () => {
 
 // ---------- شاشات الحساب (أدائي / الأرشيف / الأصدقاء / مكتبتي) - كل وحدة
 // مستقلة بزر سايد بار خاص فيها، بدل ما تكون تبويبات جوا شاشة وحدة ----------
-const ACCOUNT_SCREENS = ['step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings', 'step-profile', 'step-notes', 'step-note-editor', 'step-assignments', 'step-assignment-detail', 'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker', 'step-ai-book-scope', 'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take', 'step-gradesheet'];
+const ACCOUNT_SCREENS = ['step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings', 'step-profile', 'step-notes', 'step-note-editor', 'step-assignments', 'step-assignment-detail', 'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker', 'step-ai-book-scope', 'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take', 'step-gradesheet', 'step-madrasati', 'step-lesson-prep'];
 function showAccountScreen(id) {
   ['login-form', 'signup-form', 'step-force-password-change', 'mode-select', 'room-mode-select', 'room-create-form',
    'room-join-form', 'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary', 'step-quiz',
@@ -4344,6 +4489,7 @@ function showAssignmentsScreen() { showAccountScreen('step-assignments'); loadAs
 function showAiListScreen() { showAccountScreen('step-ai-list'); loadAiConversationsList(); }
 function showQuizzesScreen() { showAccountScreen('step-quizzes'); loadQuizzesScreen(); }
 function showGradesheetScreen() { showAccountScreen('step-gradesheet'); loadGradesheetScreen(); }
+function showMadrasatiScreen() { showAccountScreen('step-madrasati'); loadMadrasatiScreen(); }
 
 // ---------- صفحة البروفايل (بروفايلك أو بروفايل شخص ثاني) ----------
 async function showProfileScreen(userId) {
@@ -4544,6 +4690,12 @@ document.getElementById('gradesheetBtn').addEventListener('click', () => {
   if (!requireAuthOrPrompt()) return;
   pushNavSnapshot();
   showGradesheetScreen();
+  updateGlobalBackButton();
+});
+document.getElementById('madrasatiBtn').addEventListener('click', () => {
+  if (!requireAuthOrPrompt()) return;
+  pushNavSnapshot();
+  showMadrasatiScreen();
   updateGlobalBackButton();
 });
 
@@ -9979,6 +10131,180 @@ function wireGradesheetRowEvents(classId) {
 
 document.getElementById('gradesheetClassSelect').addEventListener('change', () => {
   loadGradesheetTable();
+});
+// ================= مدرستي + التحضير الذكي (أداة معلم مستقلة - أي حساب
+// مسجّل) - اختصار لموقع مدرستي الرسمي (بدون أي تكامل بيانات) + توليد
+// تحضير درس بالذكاء الاصطناعي وحفظه/إعادة استخدامه لاحقًا =================
+let currentLessonPrepId = null;
+let currentLessonPrepContent = null;
+
+async function loadMadrasatiScreen() {
+  const list = document.getElementById('lessonPrepList');
+  const empty = document.getElementById('lessonPrepEmptyState');
+  clearError('lessonPrepListError');
+  try {
+    const { preparations } = await apiCall('GET', '/api/lesson-prep');
+    empty.classList.toggle('hidden', preparations.length > 0);
+    list.innerHTML = preparations.map(p => `
+      <div class="assignment-card" data-prep-id="${p.id}">
+        <div class="assignment-top">
+          <span class="assignment-title">${escapeHtml(p.lesson_title)}</span>
+        </div>
+        <div class="assignment-meta">${escapeHtml(p.subject)} · ${escapeHtml(p.grade_level)}${p.unit ? ' · ' + escapeHtml(p.unit) : ''}</div>
+      </div>
+    `).join('');
+    list.querySelectorAll('.assignment-card').forEach(card => {
+      card.addEventListener('click', async () => {
+        pushNavSnapshot();
+        try {
+          const prep = await apiCall('GET', `/api/lesson-prep/${card.dataset.prepId}`);
+          openLessonPrepScreen(prep);
+        } catch (e) {
+          showError('lessonPrepListError', e.message);
+        }
+        updateGlobalBackButton();
+      });
+    });
+  } catch (e) {
+    showError('lessonPrepListError', e.message);
+  }
+}
+
+document.getElementById('newLessonPrepBtn').addEventListener('click', () => {
+  pushNavSnapshot();
+  openLessonPrepScreen(null);
+  updateGlobalBackButton();
+});
+
+function openLessonPrepScreen(existingPrep) {
+  showAccountScreen('step-lesson-prep');
+  clearError('lessonPrepGenerateError');
+  clearError('lessonPrepSaveError');
+  currentLessonPrepId = existingPrep ? existingPrep.id : null;
+  currentLessonPrepContent = existingPrep ? existingPrep.content : null;
+  document.getElementById('lessonPrepHeading').textContent = t(existingPrep ? 'lesson_prep_view_heading' : 'lesson_prep_create_heading');
+  document.getElementById('lessonPrepDeleteBtn').classList.toggle('hidden', !existingPrep);
+
+  document.getElementById('lessonPrepSubjectInput').value = existingPrep ? existingPrep.subject : '';
+  document.getElementById('lessonPrepGradeInput').value = existingPrep ? existingPrep.grade_level : '';
+  document.getElementById('lessonPrepUnitInput').value = existingPrep ? (existingPrep.unit || '') : '';
+  document.getElementById('lessonPrepTitleInput').value = existingPrep ? existingPrep.lesson_title : '';
+
+  if (existingPrep) {
+    renderLessonPrepResult(existingPrep.content);
+    document.getElementById('lessonPrepResult').classList.remove('hidden');
+  } else {
+    document.getElementById('lessonPrepResult').classList.add('hidden');
+  }
+}
+
+function renderLessonPrepResult(content) {
+  currentLessonPrepContent = content;
+  const listHtml = arr => (arr || []).map(item => `<li>${escapeHtml(item)}</li>`).join('');
+  document.getElementById('lpObjectivesList').innerHTML = listHtml(content.objectives);
+  document.getElementById('lpIntroText').textContent = content.intro || '';
+  document.getElementById('lpStepsList').innerHTML = listHtml(content.steps);
+  document.getElementById('lpActivitiesList').innerHTML = listHtml(content.activities);
+  document.getElementById('lpAssessmentText').textContent = content.assessment || '';
+  document.getElementById('lpHomeworkText').textContent = content.homework || '';
+  document.getElementById('lpEnrichmentText').textContent = content.enrichment || '';
+  document.getElementById('lessonPrepResult').classList.remove('hidden');
+}
+
+function readLessonPrepFormFields() {
+  return {
+    subject: document.getElementById('lessonPrepSubjectInput').value.trim(),
+    grade_level: document.getElementById('lessonPrepGradeInput').value.trim(),
+    unit: document.getElementById('lessonPrepUnitInput').value.trim(),
+    lesson_title: document.getElementById('lessonPrepTitleInput').value.trim(),
+  };
+}
+
+async function generateLessonPrep() {
+  clearError('lessonPrepGenerateError');
+  const fields = readLessonPrepFormFields();
+  if (!fields.subject || !fields.grade_level || !fields.lesson_title) {
+    showError('lessonPrepGenerateError', t('err_lesson_prep_fields_required'));
+    return;
+  }
+  const btn = document.getElementById('lessonPrepGenerateBtn');
+  setLoading(btn, true, t('btn_generate_lesson_prep'));
+  try {
+    const { content_raw } = await apiCall('POST', '/api/lesson-prep/generate', { ...fields, lang: currentLang });
+    let raw = content_raw.trim();
+    raw = raw.replace(/^```json/, '').replace(/^```/, '').replace(/```$/, '').trim();
+    const content = JSON.parse(raw);
+    currentLessonPrepId = null; // توليد جديد = مسودة جديدة، حتى لو كنا نعرض تحضير محفوظ قبل
+    document.getElementById('lessonPrepDeleteBtn').classList.add('hidden');
+    renderLessonPrepResult(content);
+  } catch (e) {
+    showError('lessonPrepGenerateError', e.message || t('err_lesson_prep_gen_failed'));
+  } finally {
+    setLoading(btn, false, t('btn_generate_lesson_prep'));
+  }
+}
+document.getElementById('lessonPrepGenerateBtn').addEventListener('click', generateLessonPrep);
+document.getElementById('lessonPrepRegenerateBtn').addEventListener('click', generateLessonPrep);
+
+document.getElementById('lessonPrepCopyBtn').addEventListener('click', async () => {
+  if (!currentLessonPrepContent) return;
+  const c = currentLessonPrepContent;
+  const lines = [
+    `${t('lp_objectives_label')}:`, ...(c.objectives || []).map(x => `- ${x}`), '',
+    `${t('lp_intro_label')}:`, c.intro || '', '',
+    `${t('lp_steps_label')}:`, ...(c.steps || []).map(x => `- ${x}`), '',
+    `${t('lp_activities_label')}:`, ...(c.activities || []).map(x => `- ${x}`), '',
+    `${t('lp_assessment_label')}:`, c.assessment || '', '',
+    `${t('lp_homework_label')}:`, c.homework || '', '',
+    `${t('lp_enrichment_label')}:`, c.enrichment || '',
+  ];
+  try {
+    await navigator.clipboard.writeText(lines.join('\n'));
+    const btn = document.getElementById('lessonPrepCopyBtn');
+    const original = btn.textContent;
+    btn.textContent = t('copied_label');
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  } catch {
+    alert(t('err_copy_failed'));
+  }
+});
+
+document.getElementById('lessonPrepSaveBtn').addEventListener('click', async () => {
+  clearError('lessonPrepSaveError');
+  if (!currentLessonPrepContent) return;
+  const fields = readLessonPrepFormFields();
+  if (!fields.subject || !fields.grade_level || !fields.lesson_title) {
+    showError('lessonPrepSaveError', t('err_lesson_prep_fields_required'));
+    return;
+  }
+  const btn = document.getElementById('lessonPrepSaveBtn');
+  setLoading(btn, true, t('btn_save_lesson_prep'));
+  try {
+    const payload = { ...fields, content: currentLessonPrepContent };
+    if (currentLessonPrepId) {
+      await apiCall('PATCH', `/api/lesson-prep/${currentLessonPrepId}`, payload);
+    } else {
+      const saved = await apiCall('POST', '/api/lesson-prep', payload);
+      currentLessonPrepId = saved.id;
+      document.getElementById('lessonPrepDeleteBtn').classList.remove('hidden');
+    }
+    btn.textContent = t('saved_label');
+    setTimeout(() => { btn.textContent = t('btn_save_lesson_prep'); }, 1500);
+  } catch (e) {
+    showError('lessonPrepSaveError', e.message);
+  } finally {
+    setLoading(btn, false, t('btn_save_lesson_prep'));
+  }
+});
+
+document.getElementById('lessonPrepDeleteBtn').addEventListener('click', async () => {
+  if (!currentLessonPrepId || !confirm(t('confirm_delete_lesson_prep'))) return;
+  try {
+    await apiCall('DELETE', `/api/lesson-prep/${currentLessonPrepId}`);
+    document.getElementById('globalBackBtn').click();
+  } catch (e) {
+    showError('lessonPrepSaveError', e.message);
+  }
 });
 </script>
 </body>

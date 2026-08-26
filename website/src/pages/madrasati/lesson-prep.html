@@ -1,0 +1,49 @@
+  <!-- تحضير درس بالذكاء الاصطناعي (إنشاء/عرض/تعديل) -->
+  <section class="card hidden" id="step-lesson-prep">
+    <span class="step-label" data-i18n="lesson_prep_step_label">🧠 التحضير الذكي</span>
+    <h2 id="lessonPrepHeading" data-i18n="lesson_prep_create_heading">تحضير درس جديد</h2>
+
+    <div id="lessonPrepForm">
+      <input type="text" id="lessonPrepSubjectInput" class="text-input" placeholder="اسم المادة" data-i18n-ph="ph_lesson_prep_subject">
+      <input type="text" id="lessonPrepGradeInput" class="text-input" placeholder="الصف" data-i18n-ph="ph_lesson_prep_grade" style="margin-top:10px;">
+      <input type="text" id="lessonPrepUnitInput" class="text-input" placeholder="الوحدة (اختياري)" data-i18n-ph="ph_lesson_prep_unit" style="margin-top:10px;">
+      <input type="text" id="lessonPrepTitleInput" class="text-input" placeholder="عنوان الدرس" data-i18n-ph="ph_lesson_prep_title" style="margin-top:10px;">
+      <div class="actions" style="margin-top:12px;">
+        <button class="primary" id="lessonPrepGenerateBtn" data-i18n="btn_generate_lesson_prep">✨ ولّد التحضير</button>
+      </div>
+      <div id="lessonPrepGenerateError"></div>
+    </div>
+
+    <div id="lessonPrepResult" class="hidden" style="margin-top:20px;">
+      <div class="highlight-box">
+        <h3 class="sub-heading" style="margin-top:0;" data-i18n="lp_objectives_label">🎯 الأهداف التعلّمية</h3>
+        <ul id="lpObjectivesList" style="padding-inline-start:20px; margin:0;"></ul>
+
+        <h3 class="sub-heading" data-i18n="lp_intro_label">🚪 التمهيد</h3>
+        <p class="desc" id="lpIntroText" style="white-space:pre-wrap;"></p>
+
+        <h3 class="sub-heading" data-i18n="lp_steps_label">📋 خطوات التنفيذ</h3>
+        <ul id="lpStepsList" style="padding-inline-start:20px; margin:0;"></ul>
+
+        <h3 class="sub-heading" data-i18n="lp_activities_label">🎲 الأنشطة الصفية</h3>
+        <ul id="lpActivitiesList" style="padding-inline-start:20px; margin:0;"></ul>
+
+        <h3 class="sub-heading" data-i18n="lp_assessment_label">📊 التقويم</h3>
+        <p class="desc" id="lpAssessmentText" style="white-space:pre-wrap;"></p>
+
+        <h3 class="sub-heading" data-i18n="lp_homework_label">📝 الواجب</h3>
+        <p class="desc" id="lpHomeworkText" style="white-space:pre-wrap;"></p>
+
+        <h3 class="sub-heading" data-i18n="lp_enrichment_label">🌟 الإثراء</h3>
+        <p class="desc" id="lpEnrichmentText" style="white-space:pre-wrap;"></p>
+      </div>
+
+      <div class="actions" style="margin-top:14px; flex-wrap:wrap;">
+        <button class="ghost" id="lessonPrepCopyBtn" data-i18n="btn_copy_lesson_prep">📋 نسخ التحضير</button>
+        <button class="ghost" id="lessonPrepRegenerateBtn" data-i18n="btn_regenerate_lesson_prep">🔄 توليد من جديد</button>
+        <button class="primary" id="lessonPrepSaveBtn" data-i18n="btn_save_lesson_prep">💾 حفظ التحضير</button>
+        <button class="ghost hidden" id="lessonPrepDeleteBtn" data-i18n="btn_delete_lesson_prep">🗑️ حذف</button>
+      </div>
+      <div id="lessonPrepSaveError"></div>
+    </div>
+  </section>

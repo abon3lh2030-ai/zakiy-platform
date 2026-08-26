@@ -1,6 +1,6 @@
 // ---------- شاشات الحساب (أدائي / الأرشيف / الأصدقاء / مكتبتي) - كل وحدة
 // مستقلة بزر سايد بار خاص فيها، بدل ما تكون تبويبات جوا شاشة وحدة ----------
-const ACCOUNT_SCREENS = ['step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings', 'step-profile', 'step-notes', 'step-note-editor', 'step-assignments', 'step-assignment-detail', 'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker', 'step-ai-book-scope', 'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take', 'step-gradesheet'];
+const ACCOUNT_SCREENS = ['step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings', 'step-profile', 'step-notes', 'step-note-editor', 'step-assignments', 'step-assignment-detail', 'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker', 'step-ai-book-scope', 'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take', 'step-gradesheet', 'step-madrasati', 'step-lesson-prep'];
 function showAccountScreen(id) {
   ['login-form', 'signup-form', 'step-force-password-change', 'mode-select', 'room-mode-select', 'room-create-form',
    'room-join-form', 'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary', 'step-quiz',
@@ -20,6 +20,7 @@ function showAssignmentsScreen() { showAccountScreen('step-assignments'); loadAs
 function showAiListScreen() { showAccountScreen('step-ai-list'); loadAiConversationsList(); }
 function showQuizzesScreen() { showAccountScreen('step-quizzes'); loadQuizzesScreen(); }
 function showGradesheetScreen() { showAccountScreen('step-gradesheet'); loadGradesheetScreen(); }
+function showMadrasatiScreen() { showAccountScreen('step-madrasati'); loadMadrasatiScreen(); }
 
 // ---------- صفحة البروفايل (بروفايلك أو بروفايل شخص ثاني) ----------
 async function showProfileScreen(userId) {
@@ -220,6 +221,12 @@ document.getElementById('gradesheetBtn').addEventListener('click', () => {
   if (!requireAuthOrPrompt()) return;
   pushNavSnapshot();
   showGradesheetScreen();
+  updateGlobalBackButton();
+});
+document.getElementById('madrasatiBtn').addEventListener('click', () => {
+  if (!requireAuthOrPrompt()) return;
+  pushNavSnapshot();
+  showMadrasatiScreen();
   updateGlobalBackButton();
 });
 

@@ -305,6 +305,142 @@ def generate_quiz():
         return jsonify({"error": str(e)}), 500
 
 
+# ============================================================================
+# ---------- التحضير الذكي (أداة معلم مستقلة - أي حساب مسجّل) ----------
+# لا علاقة لها بمنصة "مدرستي" الرسمية ولا أي تكامل بيانات خارجي - توليد
+# تحضير درس بالذكاء الاصطناعي + حفظ/تعديل/إعادة استخدام لاحقًا، بس.
+# ============================================================================
+@app.route("/api/lesson-prep/generate", methods=["POST"])
+@require_auth
+def generate_lesson_prep():
+    data = request.get_json(silent=True) or {}
+    subject = (data.get("subject") or "").strip()
+    grade_level = (data.get("grade_level") or "").strip()
+    unit = (data.get("unit") or "").strip()
+    lesson_title = (data.get("lesson_title") or "").strip()
+    lang = data.get("lang", "ar")
+    if not subject or not grade_level or not lesson_title:
+        return jsonify({"error": "لازم المادة والصف وعنوان الدرس"}), 400
+
+    unit_line = f"الوحدة: {unit}\n" if unit else ""
+    prompt = f"""أنت مساعد تحضير دروس لمعلمين بمدارس السعودية. سوّي تحضير درس كامل
+ومنظم بناءً على:
+المادة: {subject}
+الصف: {grade_level}
+{unit_line}الدرس: {lesson_title}
+
+رجّع النتيجة بصيغة JSON فقط بدون أي نص إضافي، بهذا الشكل بالضبط:
+{{
+  "objectives": ["هدف تعلّمي 1", "هدف تعلّمي 2"],
+  "intro": "نص التمهيد للدرس (فقرة قصيرة)",
+  "steps": ["خطوة تنفيذ 1", "خطوة تنفيذ 2"],
+  "activities": ["نشاط صفي 1", "نشاط صفي 2"],
+  "assessment": "نص أسلوب التقويم/القياس",
+  "homework": "نص الواجب المنزلي",
+  "enrichment": "نص نشاط إثرائي للطلاب المتفوقين"
+}}
+{lang_directive(lang)}"""
+
+    try:
+        interaction = create_interaction(
+            model=GEMINI_MODEL,
+            input=prompt,
+            generation_config={"max_output_tokens": 3000, "thinking_level": "minimal"},
+        )
+        return jsonify({"content_raw": interaction.output_text}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/lesson-prep", methods=["POST"])
+@require_auth
+def save_lesson_prep():
+    data = request.get_json(silent=True) or {}
+    subject = (data.get("subject") or "").strip()
+    grade_level = (data.get("grade_level") or "").strip()
+    unit = (data.get("unit") or "").strip() or None
+    lesson_title = (data.get("lesson_title") or "").strip()
+    content = data.get("content")
+    if not subject or not grade_level or not lesson_title or not isinstance(content, dict):
+        return jsonify({"error": "بيانات التحضير ناقصة"}), 400
+    row = (
+        supabase_admin.table("lesson_preparations")
+        .insert(
+            {
+                "user_id": request.user_id, "subject": subject, "grade_level": grade_level,
+                "unit": unit, "lesson_title": lesson_title, "content": content,
+            }
+        )
+        .execute()
+        .data[0]
+    )
+    return jsonify(row), 200
+
+
+@app.route("/api/lesson-prep", methods=["GET"])
+@require_auth
+def list_lesson_prep():
+    rows = (
+        supabase_admin.table("lesson_preparations")
+        .select("id, subject, grade_level, unit, lesson_title, created_at")
+        .eq("user_id", request.user_id)
+        .order("created_at", desc=True)
+        .execute()
+    ).data
+    return jsonify({"preparations": rows}), 200
+
+
+@app.route("/api/lesson-prep/<prep_id>", methods=["GET"])
+@require_auth
+def get_lesson_prep(prep_id):
+    rows = (
+        supabase_admin.table("lesson_preparations").select("*")
+        .eq("id", prep_id).eq("user_id", request.user_id).limit(1).execute()
+    ).data
+    if not rows:
+        return jsonify({"error": "التحضير مو موجود"}), 404
+    return jsonify(rows[0]), 200
+
+
+@app.route("/api/lesson-prep/<prep_id>", methods=["PATCH"])
+@require_auth
+def update_lesson_prep(prep_id):
+    data = request.get_json(silent=True) or {}
+    patch = {}
+    if "subject" in data:
+        patch["subject"] = (data.get("subject") or "").strip()
+    if "grade_level" in data:
+        patch["grade_level"] = (data.get("grade_level") or "").strip()
+    if "unit" in data:
+        patch["unit"] = (data.get("unit") or "").strip() or None
+    if "lesson_title" in data:
+        patch["lesson_title"] = (data.get("lesson_title") or "").strip()
+    if "content" in data and isinstance(data["content"], dict):
+        patch["content"] = data["content"]
+    if patch:
+        patch["updated_at"] = datetime.now(timezone.utc).isoformat()
+        res = (
+            supabase_admin.table("lesson_preparations").update(patch)
+            .eq("id", prep_id).eq("user_id", request.user_id).execute()
+        )
+        if not res.data:
+            return jsonify({"error": "التحضير مو موجود"}), 404
+        return jsonify(res.data[0]), 200
+    return jsonify({"ok": True}), 200
+
+
+@app.route("/api/lesson-prep/<prep_id>", methods=["DELETE"])
+@require_auth
+def delete_lesson_prep(prep_id):
+    res = (
+        supabase_admin.table("lesson_preparations").delete()
+        .eq("id", prep_id).eq("user_id", request.user_id).execute()
+    )
+    if not res.data:
+        return jsonify({"error": "التحضير مو موجود"}), 404
+    return jsonify({"ok": True}), 200
+
+
 # ---------- شات مع الذكاء الاصطناعي حول الملف (وضع فردي) ----------
 @app.route("/api/chat", methods=["POST"])
 def chat():

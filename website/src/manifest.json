@@ -133,6 +133,22 @@
   },
   {
     "type": "file",
+    "path": "pages/madrasati/enrichment.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/madrasati/results-analysis.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/madrasati/homework-help.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/madrasati/study-plan.html"
+  },
+  {
+    "type": "file",
     "path": "pages/settings/settings.html"
   },
   {

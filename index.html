@@ -2051,11 +2051,11 @@
   </section>
 
   <!-- مدرستي: اختصار لموقع مدرستي الرسمي (بدون أي تكامل بيانات - ما فيه
-       API عام لمدرستي) + أدوات ذكيّ للمعلم (التحضير الذكي بالذكاء الاصطناعي) -->
+       API عام لمدرستي) + أدوات ذكيّ بالذكاء الاصطناعي للمعلم والطالب -->
   <section class="card hidden" id="step-madrasati">
     <span class="step-label" data-i18n="madrasati_step_label">🎓 مدرستي</span>
-    <h2 data-i18n="madrasati_heading">مدرستي وأدوات ذكيّ للمعلم</h2>
-    <p class="desc" data-i18n="madrasati_desc">اختصار سريع لموقع مدرستي الرسمي، بالإضافة لأدوات ذكيّ الذكية للمعلمين - مستقلة تمامًا عن مدرستي وما تشارك أي بيانات وياها.</p>
+    <h2 data-i18n="madrasati_heading">مدرستي وأدوات ذكيّ</h2>
+    <p class="desc" data-i18n="madrasati_desc">اختصار سريع لموقع مدرستي الرسمي، بالإضافة لأدوات ذكيّ الذكية للمعلمين والطلاب - مستقلة تمامًا عن مدرستي وما تشارك أي بيانات وياها.</p>
 
     <div class="highlight-box">
       <p class="desc" data-i18n="madrasati_link_desc">يفتح موقع مدرستي الرسمي بتبويب جديد - تسجّل دخولك مباشرة عندهم، وذكيّ ما يشوف ولا يلمس بيانات حسابك هناك إطلاقًا.</p>
@@ -2064,15 +2064,36 @@
       </div>
     </div>
 
-    <h3 class="sub-heading" style="margin-top:24px;" data-i18n="lesson_prep_tools_heading">🧠 أدوات ذكيّ للمعلم</h3>
-    <div class="actions">
+    <!-- ---------- أدوات المعلم ---------- -->
+    <h3 class="sub-heading" style="margin-top:24px;" data-i18n="teacher_tools_heading">👨‍🏫 أدوات ذكيّ للمعلم</h3>
+    <div class="actions" style="flex-wrap:wrap;">
       <button class="primary" id="newLessonPrepBtn" data-i18n="btn_new_lesson_prep">➕ تحضير جديد بالذكاء الاصطناعي</button>
+      <button class="ghost" id="openEnrichmentBtn" data-i18n="btn_open_enrichment">🌟 نشاط إثرائي</button>
+      <button class="ghost" id="openResultsAnalysisBtn" data-i18n="btn_open_results_analysis">📊 تحليل نتائج الطلاب</button>
     </div>
 
-    <h3 class="sub-heading" style="margin-top:22px;" data-i18n="saved_lesson_preps_heading">📁 تحضيراتي المحفوظة</h3>
+    <h3 class="sub-heading" style="margin-top:18px;" data-i18n="saved_lesson_preps_heading">📁 تحضيراتي المحفوظة</h3>
     <div id="lessonPrepList"></div>
     <p class="desc hidden" id="lessonPrepEmptyState" data-i18n="lesson_prep_empty">ما فيه تحضيرات محفوظة بعد.</p>
     <div id="lessonPrepListError"></div>
+
+    <hr style="margin:26px 0; border:none; border-top:1px solid var(--line);">
+
+    <!-- ---------- أدوات الطالب ---------- -->
+    <h3 class="sub-heading" data-i18n="student_tools_heading">🎒 أدوات ذكيّ للطالب</h3>
+    <div class="actions" style="flex-wrap:wrap;">
+      <button class="primary" id="newHomeworkHelpBtn" data-i18n="btn_new_homework_help">➕ مساعد واجب جديد</button>
+      <button class="ghost" id="newStudyPlanBtn" data-i18n="btn_new_study_plan">🗓️ خطة مذاكرة جديدة</button>
+    </div>
+
+    <h3 class="sub-heading" style="margin-top:18px;" data-i18n="saved_homework_help_heading">📁 جلسات مساعد الواجب المحفوظة</h3>
+    <div id="homeworkHelpList"></div>
+    <p class="desc hidden" id="homeworkHelpEmptyState" data-i18n="homework_help_empty">ما فيه جلسات محفوظة بعد.</p>
+
+    <h3 class="sub-heading" style="margin-top:18px;" data-i18n="saved_study_plans_heading">📁 خطط المذاكرة المحفوظة</h3>
+    <div id="studyPlanList"></div>
+    <p class="desc hidden" id="studyPlanEmptyState" data-i18n="study_plan_empty">ما فيه خطط محفوظة بعد.</p>
+    <div id="studentToolsListError"></div>
   </section>
 
   <!-- تحضير درس بالذكاء الاصطناعي (إنشاء/عرض/تعديل) -->
@@ -2122,6 +2143,129 @@
         <button class="ghost hidden" id="lessonPrepDeleteBtn" data-i18n="btn_delete_lesson_prep">🗑️ حذف</button>
       </div>
       <div id="lessonPrepSaveError"></div>
+    </div>
+  </section>
+
+  <!-- نشاط إثرائي مستقل (معلم) - توليد لحظي بدون حفظ -->
+  <section class="card hidden" id="step-enrichment">
+    <span class="step-label" data-i18n="enrichment_step_label">🌟 نشاط إثرائي</span>
+    <h2 data-i18n="enrichment_heading">مولّد نشاط إثرائي</h2>
+    <p class="desc" data-i18n="enrichment_desc">اكتب المادة والصف والموضوع، وذكيّ يقترح نشاط إثرائي جاهز للطلاب المتفوقين.</p>
+
+    <input type="text" id="enrichmentSubjectInput" class="text-input" placeholder="اسم المادة" data-i18n-ph="ph_lesson_prep_subject">
+    <input type="text" id="enrichmentGradeInput" class="text-input" placeholder="الصف" data-i18n-ph="ph_lesson_prep_grade" style="margin-top:10px;">
+    <input type="text" id="enrichmentTopicInput" class="text-input" placeholder="الموضوع" data-i18n-ph="ph_topic" style="margin-top:10px;">
+    <div class="actions" style="margin-top:12px;">
+      <button class="primary" id="enrichmentGenerateBtn" data-i18n="btn_generate_enrichment">✨ ولّد النشاط</button>
+    </div>
+    <div id="enrichmentError"></div>
+
+    <div id="enrichmentResult" class="hidden" style="margin-top:20px;">
+      <div class="highlight-box">
+        <h3 class="sub-heading" style="margin-top:0;" id="enrichmentTitleText"></h3>
+        <p class="desc" id="enrichmentDescriptionText" style="white-space:pre-wrap;"></p>
+        <h3 class="sub-heading" data-i18n="lp_steps_label">📋 خطوات التنفيذ</h3>
+        <ul id="enrichmentInstructionsList" style="padding-inline-start:20px; margin:0;"></ul>
+        <p class="desc hidden" id="enrichmentMaterialsText" style="margin-top:10px;"></p>
+      </div>
+      <div class="actions" style="margin-top:14px;">
+        <button class="ghost" id="enrichmentCopyBtn" data-i18n="btn_copy_lesson_prep">📋 نسخ</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- محلّل نتائج الطلاب (معلم) - يلصق نتائج نصية خام ويطلع تحليل - بدون حفظ -->
+  <section class="card hidden" id="step-results-analysis">
+    <span class="step-label" data-i18n="results_analysis_step_label">📊 تحليل النتائج</span>
+    <h2 data-i18n="results_analysis_heading">محلّل نتائج الطلاب</h2>
+    <p class="desc" data-i18n="results_analysis_desc">الصق درجات/نتائج طلابك بأي صيغة (أسماء ودرجات)، وذكيّ يحلّلها ويطلّع لك نقاط القوة والضعف والطلاب المحتاجين متابعة.</p>
+
+    <textarea id="resultsAnalysisInput" class="text-input" rows="8" placeholder="مثال:&#10;أحمد: 18/20&#10;سارة: 12/20&#10;..." data-i18n-ph="ph_raw_results" style="width:100%; resize:vertical; font-family:inherit;"></textarea>
+    <div class="actions" style="margin-top:12px;">
+      <button class="primary" id="resultsAnalysisGenerateBtn" data-i18n="btn_generate_results_analysis">✨ حلّل النتائج</button>
+    </div>
+    <div id="resultsAnalysisError"></div>
+
+    <div id="resultsAnalysisResult" class="hidden" style="margin-top:20px;">
+      <div class="highlight-box">
+        <h3 class="sub-heading" style="margin-top:0;" data-i18n="ra_summary_label">📝 ملخص عام</h3>
+        <p class="desc" id="raSummaryText" style="white-space:pre-wrap;"></p>
+        <h3 class="sub-heading" data-i18n="ra_strengths_label">💪 نقاط القوة</h3>
+        <ul id="raStrengthsList" style="padding-inline-start:20px; margin:0;"></ul>
+        <h3 class="sub-heading" data-i18n="ra_weaknesses_label">⚠️ نقاط الضعف</h3>
+        <ul id="raWeaknessesList" style="padding-inline-start:20px; margin:0;"></ul>
+        <h3 class="sub-heading" data-i18n="ra_at_risk_label">🚨 يحتاجون متابعة</h3>
+        <ul id="raAtRiskList" style="padding-inline-start:20px; margin:0;"></ul>
+        <h3 class="sub-heading" data-i18n="ra_recommendations_label">✅ توصيات</h3>
+        <ul id="raRecommendationsList" style="padding-inline-start:20px; margin:0;"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- مساعد الواجب الذكي (طالب) - إنشاء/عرض -->
+  <section class="card hidden" id="step-homework-help">
+    <span class="step-label" data-i18n="homework_help_step_label">📚 مساعد الواجب</span>
+    <h2 id="homeworkHelpHeading" data-i18n="homework_help_create_heading">مساعد واجب جديد</h2>
+
+    <div id="homeworkHelpForm">
+      <input type="text" id="homeworkHelpSubjectInput" class="text-input" placeholder="اسم المادة" data-i18n-ph="ph_lesson_prep_subject">
+      <input type="text" id="homeworkHelpGradeInput" class="text-input" placeholder="الصف" data-i18n-ph="ph_lesson_prep_grade" style="margin-top:10px;">
+      <textarea id="homeworkHelpTopicInput" class="text-input" rows="3" placeholder="الموضوع أو سؤال الواجب" data-i18n-ph="ph_homework_topic" style="margin-top:10px; width:100%; resize:vertical; font-family:inherit;"></textarea>
+      <div class="actions" style="margin-top:12px;">
+        <button class="primary" id="homeworkHelpGenerateBtn" data-i18n="btn_generate_homework_help">✨ ساعدني</button>
+      </div>
+      <div id="homeworkHelpGenerateError"></div>
+    </div>
+
+    <div id="homeworkHelpResult" class="hidden" style="margin-top:20px;">
+      <div class="highlight-box">
+        <h3 class="sub-heading" style="margin-top:0;" data-i18n="hh_explanation_label">💡 الشرح</h3>
+        <p class="desc" id="hhExplanationText" style="white-space:pre-wrap;"></p>
+        <h3 class="sub-heading" data-i18n="hh_example_label">📐 مثال محلول</h3>
+        <p class="desc" id="hhExampleText" style="white-space:pre-wrap;"></p>
+        <h3 class="sub-heading" data-i18n="hh_practice_label">✏️ أسئلة تدريبية</h3>
+        <div id="hhPracticeList"></div>
+        <h3 class="sub-heading" data-i18n="hh_tips_label">💡 نصيحة</h3>
+        <p class="desc" id="hhTipsText" style="white-space:pre-wrap;"></p>
+      </div>
+      <div class="actions" style="margin-top:14px; flex-wrap:wrap;">
+        <button class="ghost" id="homeworkHelpCopyBtn" data-i18n="btn_copy_lesson_prep">📋 نسخ</button>
+        <button class="ghost" id="homeworkHelpRegenerateBtn" data-i18n="btn_regenerate_lesson_prep">🔄 توليد من جديد</button>
+        <button class="primary" id="homeworkHelpSaveBtn" data-i18n="btn_save_homework_help">💾 حفظ</button>
+        <button class="ghost hidden" id="homeworkHelpDeleteBtn" data-i18n="btn_delete_lesson_prep">🗑️ حذف</button>
+      </div>
+      <div id="homeworkHelpSaveError"></div>
+    </div>
+  </section>
+
+  <!-- خطة مذاكرة ذكية (طالب) - إنشاء/عرض -->
+  <section class="card hidden" id="step-study-plan">
+    <span class="step-label" data-i18n="study_plan_step_label">🗓️ خطة مذاكرة</span>
+    <h2 id="studyPlanHeading" data-i18n="study_plan_create_heading">خطة مذاكرة جديدة</h2>
+
+    <div id="studyPlanForm">
+      <input type="text" id="studyPlanSubjectsInput" class="text-input" placeholder="المواد (افصل بينها بفاصلة)" data-i18n-ph="ph_study_plan_subjects">
+      <input type="date" id="studyPlanExamDateInput" class="text-input" style="margin-top:10px;">
+      <input type="number" id="studyPlanHoursInput" class="text-input" placeholder="ساعات المذاكرة يوميًا (اختياري)" data-i18n-ph="ph_study_plan_hours" min="0.5" step="0.5" style="margin-top:10px;">
+      <div class="actions" style="margin-top:12px;">
+        <button class="primary" id="studyPlanGenerateBtn" data-i18n="btn_generate_study_plan">✨ ولّد الخطة</button>
+      </div>
+      <div id="studyPlanGenerateError"></div>
+    </div>
+
+    <div id="studyPlanResult" class="hidden" style="margin-top:20px;">
+      <div class="highlight-box" id="studyPlanDaysWrap"></div>
+      <div class="highlight-box" style="margin-top:12px;">
+        <h3 class="sub-heading" style="margin-top:0;" data-i18n="sp_tips_label">💡 نصائح عامة</h3>
+        <p class="desc" id="spTipsText" style="white-space:pre-wrap;"></p>
+      </div>
+      <div class="actions" style="margin-top:14px; flex-wrap:wrap;">
+        <button class="ghost" id="studyPlanCopyBtn" data-i18n="btn_copy_lesson_prep">📋 نسخ</button>
+        <button class="ghost" id="studyPlanRegenerateBtn" data-i18n="btn_regenerate_lesson_prep">🔄 توليد من جديد</button>
+        <button class="primary" id="studyPlanSaveBtn" data-i18n="btn_save_study_plan">💾 حفظ</button>
+        <button class="ghost hidden" id="studyPlanDeleteBtn" data-i18n="btn_delete_lesson_prep">🗑️ حذف</button>
+      </div>
+      <div id="studyPlanSaveError"></div>
     </div>
   </section>
 
@@ -3044,6 +3188,55 @@ const I18N = {
     copied_label: '✅ تم النسخ', saved_label: '✅ تم الحفظ',
     err_copy_failed: 'تعذّر النسخ',
     confirm_delete_lesson_prep: 'تحذف هذا التحضير نهائيًا؟',
+    ph_topic: 'الموضوع',
+    // ---- أدوات معلم إضافية (إثراء وتحليل نتائج) ----
+    teacher_tools_heading: '👨‍🏫 أدوات ذكيّ للمعلم',
+    btn_open_enrichment: '🌟 نشاط إثرائي',
+    btn_open_results_analysis: '📊 تحليل نتائج الطلاب',
+    enrichment_step_label: '🌟 نشاط إثرائي',
+    enrichment_heading: 'مولّد نشاط إثرائي',
+    enrichment_desc: 'اكتب المادة والصف والموضوع، وذكيّ يقترح نشاط إثرائي جاهز للطلاب المتفوقين.',
+    btn_generate_enrichment: '✨ ولّد النشاط',
+    results_analysis_step_label: '📊 تحليل النتائج',
+    results_analysis_heading: 'محلّل نتائج الطلاب',
+    results_analysis_desc: 'الصق درجات/نتائج طلابك بأي صيغة (أسماء ودرجات)، وذكيّ يحلّلها ويطلّع لك نقاط القوة والضعف والطلاب المحتاجين متابعة.',
+    ph_raw_results: 'مثال:\nأحمد: 18/20\nسارة: 12/20',
+    btn_generate_results_analysis: '✨ حلّل النتائج',
+    err_raw_results_required: 'لازم تلصق نتائج الطلاب',
+    ra_summary_label: '📝 ملخص عام',
+    ra_strengths_label: '💪 نقاط القوة',
+    ra_weaknesses_label: '⚠️ نقاط الضعف',
+    ra_at_risk_label: '🚨 يحتاجون متابعة',
+    ra_recommendations_label: '✅ توصيات',
+    // ---- أدوات طالب (مساعد الواجب وخطة المذاكرة) ----
+    student_tools_heading: '🎒 أدوات ذكيّ للطالب',
+    btn_new_homework_help: '➕ مساعد واجب جديد',
+    btn_new_study_plan: '🗓️ خطة مذاكرة جديدة',
+    saved_homework_help_heading: '📁 جلسات مساعد الواجب المحفوظة',
+    homework_help_empty: 'ما فيه جلسات محفوظة بعد.',
+    saved_study_plans_heading: '📁 خطط المذاكرة المحفوظة',
+    study_plan_empty: 'ما فيه خطط محفوظة بعد.',
+    homework_help_step_label: '📚 مساعد الواجب',
+    homework_help_create_heading: 'مساعد واجب جديد',
+    homework_help_view_heading: 'مساعد الواجب',
+    ph_homework_topic: 'الموضوع أو سؤال الواجب',
+    btn_generate_homework_help: '✨ ساعدني',
+    btn_save_homework_help: '💾 حفظ',
+    confirm_delete_homework_help: 'تحذف جلسة مساعد الواجب هذي نهائيًا؟',
+    hh_explanation_label: '💡 الشرح',
+    hh_example_label: '📐 مثال محلول',
+    hh_practice_label: '✏️ أسئلة تدريبية',
+    hh_tips_label: '💡 نصيحة',
+    study_plan_step_label: '🗓️ خطة مذاكرة',
+    study_plan_create_heading: 'خطة مذاكرة جديدة',
+    study_plan_view_heading: 'خطة المذاكرة',
+    ph_study_plan_subjects: 'المواد (افصل بينها بفاصلة)',
+    ph_study_plan_hours: 'ساعات المذاكرة يوميًا (اختياري)',
+    btn_generate_study_plan: '✨ ولّد الخطة',
+    btn_save_study_plan: '💾 حفظ',
+    err_study_plan_subjects_required: 'لازم تكتب المواد اللي تبي تذاكرها',
+    confirm_delete_study_plan: 'تحذف خطة المذاكرة هذي نهائيًا؟',
+    sp_tips_label: '💡 نصائح عامة',
     // ---- لوحة الأدمن العام ----
     admin_dash_label: '🛠️ لوحة الإدارة العامة',
     admin_dash_heading: 'المدارس المشتركة',
@@ -3683,6 +3876,55 @@ const I18N = {
     copied_label: '✅ Copied', saved_label: '✅ Saved',
     err_copy_failed: 'Could not copy',
     confirm_delete_lesson_prep: 'Delete this preparation permanently?',
+    ph_topic: 'Topic',
+    // ---- More teacher tools (enrichment, results analysis) ----
+    teacher_tools_heading: "👨‍🏫 Zakiy tools for teachers",
+    btn_open_enrichment: '🌟 Enrichment activity',
+    btn_open_results_analysis: '📊 Analyze student results',
+    enrichment_step_label: '🌟 Enrichment activity',
+    enrichment_heading: 'Enrichment activity generator',
+    enrichment_desc: "Enter the subject, grade, and topic - Zakiy suggests a ready enrichment activity for advanced students.",
+    btn_generate_enrichment: '✨ Generate activity',
+    results_analysis_step_label: '📊 Results analysis',
+    results_analysis_heading: "Student results analyzer",
+    results_analysis_desc: "Paste your students' scores/results in any format (names and grades), and Zakiy analyzes them to surface strengths, weaknesses, and students who need follow-up.",
+    ph_raw_results: 'Example:\nAhmed: 18/20\nSara: 12/20',
+    btn_generate_results_analysis: '✨ Analyze results',
+    err_raw_results_required: 'You need to paste the student results',
+    ra_summary_label: '📝 Overall summary',
+    ra_strengths_label: '💪 Strengths',
+    ra_weaknesses_label: '⚠️ Weaknesses',
+    ra_at_risk_label: '🚨 Need follow-up',
+    ra_recommendations_label: '✅ Recommendations',
+    // ---- Student tools (homework helper, study plan) ----
+    student_tools_heading: '🎒 Zakiy tools for students',
+    btn_new_homework_help: '➕ New homework helper',
+    btn_new_study_plan: '🗓️ New study plan',
+    saved_homework_help_heading: '📁 Saved homework helper sessions',
+    homework_help_empty: 'No saved sessions yet.',
+    saved_study_plans_heading: '📁 Saved study plans',
+    study_plan_empty: 'No saved plans yet.',
+    homework_help_step_label: '📚 Homework helper',
+    homework_help_create_heading: 'New homework helper',
+    homework_help_view_heading: 'Homework helper',
+    ph_homework_topic: 'Topic or homework question',
+    btn_generate_homework_help: '✨ Help me',
+    btn_save_homework_help: '💾 Save',
+    confirm_delete_homework_help: 'Delete this homework helper session permanently?',
+    hh_explanation_label: '💡 Explanation',
+    hh_example_label: '📐 Worked example',
+    hh_practice_label: '✏️ Practice questions',
+    hh_tips_label: '💡 Tip',
+    study_plan_step_label: '🗓️ Study plan',
+    study_plan_create_heading: 'New study plan',
+    study_plan_view_heading: 'Study plan',
+    ph_study_plan_subjects: 'Subjects (comma-separated)',
+    ph_study_plan_hours: 'Study hours per day (optional)',
+    btn_generate_study_plan: '✨ Generate plan',
+    btn_save_study_plan: '💾 Save',
+    err_study_plan_subjects_required: 'You need to enter the subjects you want to study',
+    confirm_delete_study_plan: 'Delete this study plan permanently?',
+    sp_tips_label: '💡 General tips',
     // ---- Platform admin dashboard ----
     admin_dash_label: '🛠️ Platform Admin',
     admin_dash_heading: 'Subscribed Schools',
@@ -3972,7 +4214,8 @@ const TOP_LEVEL_SCREENS = [
   'step-profile', 'step-notes', 'step-note-editor', 'step-assignments', 'step-assignment-detail',
   'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker', 'step-ai-book-scope',
   'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take', 'step-gradesheet',
-  'step-madrasati', 'step-lesson-prep',
+  'step-madrasati', 'step-lesson-prep', 'step-enrichment', 'step-results-analysis',
+  'step-homework-help', 'step-study-plan',
   // لوحات نظام إدارة حسابات المدارس - step-force-password-change مو من ضمنها
   // عمدًا (بوابة صلبة، ما تدخل نظام الرجوع/التنقل العادي)
   'step-admin-dashboard', 'step-school-dashboard', 'step-teacher-dashboard', 'step-student-schedule',
@@ -4014,6 +4257,10 @@ const RESTORABLE_SCREENS = {
   'step-gradesheet': () => showGradesheetScreen(),
   'step-madrasati': () => showMadrasatiScreen(),
   'step-lesson-prep': () => showMadrasatiScreen(),
+  'step-enrichment': () => showMadrasatiScreen(),
+  'step-results-analysis': () => showMadrasatiScreen(),
+  'step-homework-help': () => showMadrasatiScreen(),
+  'step-study-plan': () => showMadrasatiScreen(),
   'step-ai-list': () => showAiListScreen(),
   'step-ai-conversation': () => showAiListScreen(),
   'step-ai-book-picker': () => showAiListScreen(),
@@ -4469,7 +4716,7 @@ document.getElementById('guestLoginPromptBtn').addEventListener('click', () => {
 
 // ---------- شاشات الحساب (أدائي / الأرشيف / الأصدقاء / مكتبتي) - كل وحدة
 // مستقلة بزر سايد بار خاص فيها، بدل ما تكون تبويبات جوا شاشة وحدة ----------
-const ACCOUNT_SCREENS = ['step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings', 'step-profile', 'step-notes', 'step-note-editor', 'step-assignments', 'step-assignment-detail', 'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker', 'step-ai-book-scope', 'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take', 'step-gradesheet', 'step-madrasati', 'step-lesson-prep'];
+const ACCOUNT_SCREENS = ['step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings', 'step-profile', 'step-notes', 'step-note-editor', 'step-assignments', 'step-assignment-detail', 'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker', 'step-ai-book-scope', 'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take', 'step-gradesheet', 'step-madrasati', 'step-lesson-prep', 'step-enrichment', 'step-results-analysis', 'step-homework-help', 'step-study-plan'];
 function showAccountScreen(id) {
   ['login-form', 'signup-form', 'step-force-password-change', 'mode-select', 'room-mode-select', 'room-create-form',
    'room-join-form', 'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary', 'step-quiz',
@@ -10150,6 +10397,12 @@ let currentLessonPrepId = null;
 let currentLessonPrepContent = null;
 
 async function loadMadrasatiScreen() {
+  loadLessonPrepList();
+  loadHomeworkHelpList();
+  loadStudyPlanList();
+}
+
+async function loadLessonPrepList() {
   const list = document.getElementById('lessonPrepList');
   const empty = document.getElementById('lessonPrepEmptyState');
   clearError('lessonPrepListError');
@@ -10315,6 +10568,412 @@ document.getElementById('lessonPrepDeleteBtn').addEventListener('click', async (
     document.getElementById('globalBackBtn').click();
   } catch (e) {
     showError('lessonPrepSaveError', e.message);
+  }
+});
+
+// يحوّل نص خام (محتمل ملفوف بـ ```json fences) لكائن JSON - نفس نمط
+// معالجة رد الذكاء الاصطناعي بكل أدوات مدرستي/التوليد بالمنصة
+function parseAiJson(raw) {
+  let clean = raw.trim();
+  clean = clean.replace(/^```json/, '').replace(/^```/, '').replace(/```$/, '').trim();
+  return JSON.parse(clean);
+}
+
+// ================= نشاط إثرائي مستقل (معلم) - بدون حفظ ================= //
+document.getElementById('openEnrichmentBtn').addEventListener('click', () => {
+  pushNavSnapshot();
+  showAccountScreen('step-enrichment');
+  clearError('enrichmentError');
+  document.getElementById('enrichmentResult').classList.add('hidden');
+  updateGlobalBackButton();
+});
+
+document.getElementById('enrichmentGenerateBtn').addEventListener('click', async () => {
+  clearError('enrichmentError');
+  const subject = document.getElementById('enrichmentSubjectInput').value.trim();
+  const grade_level = document.getElementById('enrichmentGradeInput').value.trim();
+  const topic = document.getElementById('enrichmentTopicInput').value.trim();
+  if (!subject || !grade_level || !topic) {
+    showError('enrichmentError', t('err_lesson_prep_fields_required'));
+    return;
+  }
+  const btn = document.getElementById('enrichmentGenerateBtn');
+  setLoading(btn, true, t('btn_generate_enrichment'));
+  try {
+    const { content_raw } = await apiCall('POST', '/api/enrichment/generate', { subject, grade_level, topic, lang: currentLang });
+    const content = parseAiJson(content_raw);
+    document.getElementById('enrichmentTitleText').textContent = content.title || '';
+    document.getElementById('enrichmentDescriptionText').textContent = content.description || '';
+    document.getElementById('enrichmentInstructionsList').innerHTML =
+      (content.instructions || []).map(x => `<li>${escapeHtml(x)}</li>`).join('');
+    const materialsBox = document.getElementById('enrichmentMaterialsText');
+    if (content.materials_needed) {
+      materialsBox.textContent = `${t('lp_enrichment_label')}: ${content.materials_needed}`;
+      materialsBox.classList.remove('hidden');
+    } else {
+      materialsBox.classList.add('hidden');
+    }
+    document.getElementById('enrichmentResult').classList.remove('hidden');
+  } catch (e) {
+    showError('enrichmentError', e.message || t('err_lesson_prep_gen_failed'));
+  } finally {
+    setLoading(btn, false, t('btn_generate_enrichment'));
+  }
+});
+
+document.getElementById('enrichmentCopyBtn').addEventListener('click', async () => {
+  const text = [
+    document.getElementById('enrichmentTitleText').textContent,
+    document.getElementById('enrichmentDescriptionText').textContent,
+    ...Array.from(document.getElementById('enrichmentInstructionsList').children).map(li => `- ${li.textContent}`),
+  ].join('\n');
+  try {
+    await navigator.clipboard.writeText(text);
+    const btn = document.getElementById('enrichmentCopyBtn');
+    const original = btn.textContent;
+    btn.textContent = t('copied_label');
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  } catch { alert(t('err_copy_failed')); }
+});
+
+// ================= محلّل نتائج الطلاب (معلم) - بدون حفظ ================= //
+document.getElementById('openResultsAnalysisBtn').addEventListener('click', () => {
+  pushNavSnapshot();
+  showAccountScreen('step-results-analysis');
+  clearError('resultsAnalysisError');
+  document.getElementById('resultsAnalysisResult').classList.add('hidden');
+  updateGlobalBackButton();
+});
+
+document.getElementById('resultsAnalysisGenerateBtn').addEventListener('click', async () => {
+  clearError('resultsAnalysisError');
+  const raw_results = document.getElementById('resultsAnalysisInput').value.trim();
+  if (!raw_results) {
+    showError('resultsAnalysisError', t('err_raw_results_required'));
+    return;
+  }
+  const btn = document.getElementById('resultsAnalysisGenerateBtn');
+  setLoading(btn, true, t('btn_generate_results_analysis'));
+  try {
+    const { content_raw } = await apiCall('POST', '/api/results-analysis/generate', { raw_results, lang: currentLang });
+    const content = parseAiJson(content_raw);
+    document.getElementById('raSummaryText').textContent = content.overall_summary || '';
+    const listHtml = arr => (arr || []).map(x => `<li>${escapeHtml(x)}</li>`).join('');
+    document.getElementById('raStrengthsList').innerHTML = listHtml(content.strengths);
+    document.getElementById('raWeaknessesList').innerHTML = listHtml(content.weaknesses);
+    document.getElementById('raAtRiskList').innerHTML = listHtml(content.at_risk_students);
+    document.getElementById('raRecommendationsList').innerHTML = listHtml(content.recommendations);
+    document.getElementById('resultsAnalysisResult').classList.remove('hidden');
+  } catch (e) {
+    showError('resultsAnalysisError', e.message || t('err_lesson_prep_gen_failed'));
+  } finally {
+    setLoading(btn, false, t('btn_generate_results_analysis'));
+  }
+});
+
+// ================= مساعد الواجب الذكي (طالب) - بحفظ/عرض/حذف ================= //
+let currentHomeworkHelpId = null;
+let currentHomeworkHelpContent = null;
+
+async function loadHomeworkHelpList() {
+  const list = document.getElementById('homeworkHelpList');
+  const empty = document.getElementById('homeworkHelpEmptyState');
+  try {
+    const { sessions } = await apiCall('GET', '/api/homework-help');
+    empty.classList.toggle('hidden', sessions.length > 0);
+    list.innerHTML = sessions.map(s => `
+      <div class="assignment-card" data-session-id="${s.id}">
+        <div class="assignment-top"><span class="assignment-title">${escapeHtml(s.topic)}</span></div>
+        <div class="assignment-meta">${escapeHtml(s.subject)} · ${escapeHtml(s.grade_level)}</div>
+      </div>
+    `).join('');
+    list.querySelectorAll('.assignment-card').forEach(card => {
+      card.addEventListener('click', async () => {
+        pushNavSnapshot();
+        try {
+          const session = await apiCall('GET', `/api/homework-help/${card.dataset.sessionId}`);
+          openHomeworkHelpScreen(session);
+        } catch (e) {
+          showError('studentToolsListError', e.message);
+        }
+        updateGlobalBackButton();
+      });
+    });
+  } catch (e) {
+    showError('studentToolsListError', e.message);
+  }
+}
+
+document.getElementById('newHomeworkHelpBtn').addEventListener('click', () => {
+  pushNavSnapshot();
+  openHomeworkHelpScreen(null);
+  updateGlobalBackButton();
+});
+
+function openHomeworkHelpScreen(existingSession) {
+  showAccountScreen('step-homework-help');
+  clearError('homeworkHelpGenerateError');
+  clearError('homeworkHelpSaveError');
+  currentHomeworkHelpId = existingSession ? existingSession.id : null;
+  currentHomeworkHelpContent = existingSession ? existingSession.content : null;
+  document.getElementById('homeworkHelpHeading').textContent = t(existingSession ? 'homework_help_view_heading' : 'homework_help_create_heading');
+  document.getElementById('homeworkHelpDeleteBtn').classList.toggle('hidden', !existingSession);
+  document.getElementById('homeworkHelpSubjectInput').value = existingSession ? existingSession.subject : '';
+  document.getElementById('homeworkHelpGradeInput').value = existingSession ? existingSession.grade_level : '';
+  document.getElementById('homeworkHelpTopicInput').value = existingSession ? existingSession.topic : '';
+  if (existingSession) {
+    renderHomeworkHelpResult(existingSession.content);
+  } else {
+    document.getElementById('homeworkHelpResult').classList.add('hidden');
+  }
+}
+
+function renderHomeworkHelpResult(content) {
+  currentHomeworkHelpContent = content;
+  document.getElementById('hhExplanationText').textContent = content.explanation || '';
+  document.getElementById('hhExampleText').textContent = content.worked_example || '';
+  document.getElementById('hhPracticeList').innerHTML = (content.practice_questions || []).map((q, i) => `
+    <div class="highlight-box" style="margin-top:8px;">
+      <p class="desc" style="font-weight:700; margin:0 0 6px;">${i + 1}. ${escapeHtml(q.question)}</p>
+      <p class="desc" style="margin:0;">${escapeHtml(q.answer)}</p>
+    </div>
+  `).join('');
+  document.getElementById('hhTipsText').textContent = content.tips || '';
+  document.getElementById('homeworkHelpResult').classList.remove('hidden');
+}
+
+async function generateHomeworkHelp() {
+  clearError('homeworkHelpGenerateError');
+  const subject = document.getElementById('homeworkHelpSubjectInput').value.trim();
+  const grade_level = document.getElementById('homeworkHelpGradeInput').value.trim();
+  const topic = document.getElementById('homeworkHelpTopicInput').value.trim();
+  if (!subject || !grade_level || !topic) {
+    showError('homeworkHelpGenerateError', t('err_lesson_prep_fields_required'));
+    return;
+  }
+  const btn = document.getElementById('homeworkHelpGenerateBtn');
+  setLoading(btn, true, t('btn_generate_homework_help'));
+  try {
+    const { content_raw } = await apiCall('POST', '/api/homework-help/generate', { subject, grade_level, topic, lang: currentLang });
+    const content = parseAiJson(content_raw);
+    currentHomeworkHelpId = null;
+    document.getElementById('homeworkHelpDeleteBtn').classList.add('hidden');
+    renderHomeworkHelpResult(content);
+  } catch (e) {
+    showError('homeworkHelpGenerateError', e.message || t('err_lesson_prep_gen_failed'));
+  } finally {
+    setLoading(btn, false, t('btn_generate_homework_help'));
+  }
+}
+document.getElementById('homeworkHelpGenerateBtn').addEventListener('click', generateHomeworkHelp);
+document.getElementById('homeworkHelpRegenerateBtn').addEventListener('click', generateHomeworkHelp);
+
+document.getElementById('homeworkHelpCopyBtn').addEventListener('click', async () => {
+  if (!currentHomeworkHelpContent) return;
+  const c = currentHomeworkHelpContent;
+  const lines = [
+    `${t('hh_explanation_label')}:`, c.explanation || '', '',
+    `${t('hh_example_label')}:`, c.worked_example || '', '',
+    `${t('hh_practice_label')}:`,
+    ...(c.practice_questions || []).map((q, i) => `${i + 1}. ${q.question}\n   ${q.answer}`), '',
+    `${t('hh_tips_label')}:`, c.tips || '',
+  ];
+  try {
+    await navigator.clipboard.writeText(lines.join('\n'));
+    const btn = document.getElementById('homeworkHelpCopyBtn');
+    const original = btn.textContent;
+    btn.textContent = t('copied_label');
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  } catch { alert(t('err_copy_failed')); }
+});
+
+document.getElementById('homeworkHelpSaveBtn').addEventListener('click', async () => {
+  clearError('homeworkHelpSaveError');
+  if (!currentHomeworkHelpContent) return;
+  const subject = document.getElementById('homeworkHelpSubjectInput').value.trim();
+  const grade_level = document.getElementById('homeworkHelpGradeInput').value.trim();
+  const topic = document.getElementById('homeworkHelpTopicInput').value.trim();
+  if (!subject || !grade_level || !topic) {
+    showError('homeworkHelpSaveError', t('err_lesson_prep_fields_required'));
+    return;
+  }
+  const btn = document.getElementById('homeworkHelpSaveBtn');
+  setLoading(btn, true, t('btn_save_homework_help'));
+  try {
+    if (currentHomeworkHelpId) {
+      await apiCall('PATCH', `/api/homework-help/${currentHomeworkHelpId}`, { subject, grade_level, topic, content: currentHomeworkHelpContent });
+    } else {
+      const saved = await apiCall('POST', '/api/homework-help', { subject, grade_level, topic, content: currentHomeworkHelpContent });
+      currentHomeworkHelpId = saved.id;
+      document.getElementById('homeworkHelpDeleteBtn').classList.remove('hidden');
+    }
+    btn.textContent = t('saved_label');
+    setTimeout(() => { btn.textContent = t('btn_save_homework_help'); }, 1500);
+  } catch (e) {
+    showError('homeworkHelpSaveError', e.message);
+  } finally {
+    setLoading(btn, false, t('btn_save_homework_help'));
+  }
+});
+
+document.getElementById('homeworkHelpDeleteBtn').addEventListener('click', async () => {
+  if (!currentHomeworkHelpId || !confirm(t('confirm_delete_homework_help'))) return;
+  try {
+    await apiCall('DELETE', `/api/homework-help/${currentHomeworkHelpId}`);
+    document.getElementById('globalBackBtn').click();
+  } catch (e) {
+    showError('homeworkHelpSaveError', e.message);
+  }
+});
+
+// ================= خطة مذاكرة ذكية (طالب) - بحفظ/عرض/حذف ================= //
+let currentStudyPlanId = null;
+let currentStudyPlanContent = null;
+
+async function loadStudyPlanList() {
+  const list = document.getElementById('studyPlanList');
+  const empty = document.getElementById('studyPlanEmptyState');
+  try {
+    const { plans } = await apiCall('GET', '/api/study-plan');
+    empty.classList.toggle('hidden', plans.length > 0);
+    list.innerHTML = plans.map(p => `
+      <div class="assignment-card" data-plan-id="${p.id}">
+        <div class="assignment-top"><span class="assignment-title">${escapeHtml(p.subjects)}</span></div>
+        <div class="assignment-meta">${p.exam_date ? escapeHtml(p.exam_date) : ''}</div>
+      </div>
+    `).join('');
+    list.querySelectorAll('.assignment-card').forEach(card => {
+      card.addEventListener('click', async () => {
+        pushNavSnapshot();
+        try {
+          const plan = await apiCall('GET', `/api/study-plan/${card.dataset.planId}`);
+          openStudyPlanScreen(plan);
+        } catch (e) {
+          showError('studentToolsListError', e.message);
+        }
+        updateGlobalBackButton();
+      });
+    });
+  } catch (e) {
+    showError('studentToolsListError', e.message);
+  }
+}
+
+document.getElementById('newStudyPlanBtn').addEventListener('click', () => {
+  pushNavSnapshot();
+  openStudyPlanScreen(null);
+  updateGlobalBackButton();
+});
+
+function openStudyPlanScreen(existingPlan) {
+  showAccountScreen('step-study-plan');
+  clearError('studyPlanGenerateError');
+  clearError('studyPlanSaveError');
+  currentStudyPlanId = existingPlan ? existingPlan.id : null;
+  currentStudyPlanContent = existingPlan ? existingPlan.content : null;
+  document.getElementById('studyPlanHeading').textContent = t(existingPlan ? 'study_plan_view_heading' : 'study_plan_create_heading');
+  document.getElementById('studyPlanDeleteBtn').classList.toggle('hidden', !existingPlan);
+  document.getElementById('studyPlanSubjectsInput').value = existingPlan ? existingPlan.subjects : '';
+  document.getElementById('studyPlanExamDateInput').value = existingPlan ? (existingPlan.exam_date || '') : '';
+  document.getElementById('studyPlanHoursInput').value = existingPlan ? (existingPlan.hours_per_day || '') : '';
+  if (existingPlan) {
+    renderStudyPlanResult(existingPlan.content);
+  } else {
+    document.getElementById('studyPlanResult').classList.add('hidden');
+  }
+}
+
+function renderStudyPlanResult(content) {
+  currentStudyPlanContent = content;
+  document.getElementById('studyPlanDaysWrap').innerHTML = (content.days || []).map(d => `
+    <h3 class="sub-heading" style="margin-top:0;">${escapeHtml(d.date_label)}</h3>
+    <ul style="padding-inline-start:20px; margin:0 0 10px;">${(d.tasks || []).map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul>
+  `).join('');
+  document.getElementById('spTipsText').textContent = content.general_tips || '';
+  document.getElementById('studyPlanResult').classList.remove('hidden');
+}
+
+async function generateStudyPlan() {
+  clearError('studyPlanGenerateError');
+  const subjects = document.getElementById('studyPlanSubjectsInput').value.trim();
+  const exam_date = document.getElementById('studyPlanExamDateInput').value || null;
+  const hoursRaw = document.getElementById('studyPlanHoursInput').value;
+  const hours_per_day = hoursRaw ? parseFloat(hoursRaw) : null;
+  if (!subjects) {
+    showError('studyPlanGenerateError', t('err_study_plan_subjects_required'));
+    return;
+  }
+  const btn = document.getElementById('studyPlanGenerateBtn');
+  setLoading(btn, true, t('btn_generate_study_plan'));
+  try {
+    const { content_raw } = await apiCall('POST', '/api/study-plan/generate', { subjects, exam_date, hours_per_day, lang: currentLang });
+    const content = parseAiJson(content_raw);
+    currentStudyPlanId = null;
+    document.getElementById('studyPlanDeleteBtn').classList.add('hidden');
+    renderStudyPlanResult(content);
+  } catch (e) {
+    showError('studyPlanGenerateError', e.message || t('err_lesson_prep_gen_failed'));
+  } finally {
+    setLoading(btn, false, t('btn_generate_study_plan'));
+  }
+}
+document.getElementById('studyPlanGenerateBtn').addEventListener('click', generateStudyPlan);
+document.getElementById('studyPlanRegenerateBtn').addEventListener('click', generateStudyPlan);
+
+document.getElementById('studyPlanCopyBtn').addEventListener('click', async () => {
+  if (!currentStudyPlanContent) return;
+  const c = currentStudyPlanContent;
+  const lines = [
+    ...(c.days || []).flatMap(d => [`${d.date_label}:`, ...(d.tasks || []).map(x => `- ${x}`), '']),
+    `${t('sp_tips_label')}:`, c.general_tips || '',
+  ];
+  try {
+    await navigator.clipboard.writeText(lines.join('\n'));
+    const btn = document.getElementById('studyPlanCopyBtn');
+    const original = btn.textContent;
+    btn.textContent = t('copied_label');
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  } catch { alert(t('err_copy_failed')); }
+});
+
+document.getElementById('studyPlanSaveBtn').addEventListener('click', async () => {
+  clearError('studyPlanSaveError');
+  if (!currentStudyPlanContent) return;
+  const subjects = document.getElementById('studyPlanSubjectsInput').value.trim();
+  const exam_date = document.getElementById('studyPlanExamDateInput').value || null;
+  const hoursRaw = document.getElementById('studyPlanHoursInput').value;
+  const hours_per_day = hoursRaw ? parseFloat(hoursRaw) : null;
+  if (!subjects) {
+    showError('studyPlanSaveError', t('err_study_plan_subjects_required'));
+    return;
+  }
+  const btn = document.getElementById('studyPlanSaveBtn');
+  setLoading(btn, true, t('btn_save_study_plan'));
+  try {
+    const payload = { subjects, exam_date, hours_per_day, content: currentStudyPlanContent };
+    if (currentStudyPlanId) {
+      await apiCall('PATCH', `/api/study-plan/${currentStudyPlanId}`, payload);
+    } else {
+      const saved = await apiCall('POST', '/api/study-plan', payload);
+      currentStudyPlanId = saved.id;
+      document.getElementById('studyPlanDeleteBtn').classList.remove('hidden');
+    }
+    btn.textContent = t('saved_label');
+    setTimeout(() => { btn.textContent = t('btn_save_study_plan'); }, 1500);
+  } catch (e) {
+    showError('studyPlanSaveError', e.message);
+  } finally {
+    setLoading(btn, false, t('btn_save_study_plan'));
+  }
+});
+
+document.getElementById('studyPlanDeleteBtn').addEventListener('click', async () => {
+  if (!currentStudyPlanId || !confirm(t('confirm_delete_study_plan'))) return;
+  try {
+    await apiCall('DELETE', `/api/study-plan/${currentStudyPlanId}`);
+    document.getElementById('globalBackBtn').click();
+  } catch (e) {
+    showError('studyPlanSaveError', e.message);
   }
 });
 </script>

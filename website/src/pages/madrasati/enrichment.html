@@ -1,0 +1,27 @@
+  <!-- نشاط إثرائي مستقل (معلم) - توليد لحظي بدون حفظ -->
+  <section class="card hidden" id="step-enrichment">
+    <span class="step-label" data-i18n="enrichment_step_label">🌟 نشاط إثرائي</span>
+    <h2 data-i18n="enrichment_heading">مولّد نشاط إثرائي</h2>
+    <p class="desc" data-i18n="enrichment_desc">اكتب المادة والصف والموضوع، وذكيّ يقترح نشاط إثرائي جاهز للطلاب المتفوقين.</p>
+
+    <input type="text" id="enrichmentSubjectInput" class="text-input" placeholder="اسم المادة" data-i18n-ph="ph_lesson_prep_subject">
+    <input type="text" id="enrichmentGradeInput" class="text-input" placeholder="الصف" data-i18n-ph="ph_lesson_prep_grade" style="margin-top:10px;">
+    <input type="text" id="enrichmentTopicInput" class="text-input" placeholder="الموضوع" data-i18n-ph="ph_topic" style="margin-top:10px;">
+    <div class="actions" style="margin-top:12px;">
+      <button class="primary" id="enrichmentGenerateBtn" data-i18n="btn_generate_enrichment">✨ ولّد النشاط</button>
+    </div>
+    <div id="enrichmentError"></div>
+
+    <div id="enrichmentResult" class="hidden" style="margin-top:20px;">
+      <div class="highlight-box">
+        <h3 class="sub-heading" style="margin-top:0;" id="enrichmentTitleText"></h3>
+        <p class="desc" id="enrichmentDescriptionText" style="white-space:pre-wrap;"></p>
+        <h3 class="sub-heading" data-i18n="lp_steps_label">📋 خطوات التنفيذ</h3>
+        <ul id="enrichmentInstructionsList" style="padding-inline-start:20px; margin:0;"></ul>
+        <p class="desc hidden" id="enrichmentMaterialsText" style="margin-top:10px;"></p>
+      </div>
+      <div class="actions" style="margin-top:14px;">
+        <button class="ghost" id="enrichmentCopyBtn" data-i18n="btn_copy_lesson_prep">📋 نسخ</button>
+      </div>
+    </div>
+  </section>

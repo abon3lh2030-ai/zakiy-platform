@@ -1,9 +1,9 @@
   <!-- مدرستي: اختصار لموقع مدرستي الرسمي (بدون أي تكامل بيانات - ما فيه
-       API عام لمدرستي) + أدوات ذكيّ للمعلم (التحضير الذكي بالذكاء الاصطناعي) -->
+       API عام لمدرستي) + أدوات ذكيّ بالذكاء الاصطناعي للمعلم والطالب -->
   <section class="card hidden" id="step-madrasati">
     <span class="step-label" data-i18n="madrasati_step_label">🎓 مدرستي</span>
-    <h2 data-i18n="madrasati_heading">مدرستي وأدوات ذكيّ للمعلم</h2>
-    <p class="desc" data-i18n="madrasati_desc">اختصار سريع لموقع مدرستي الرسمي، بالإضافة لأدوات ذكيّ الذكية للمعلمين - مستقلة تمامًا عن مدرستي وما تشارك أي بيانات وياها.</p>
+    <h2 data-i18n="madrasati_heading">مدرستي وأدوات ذكيّ</h2>
+    <p class="desc" data-i18n="madrasati_desc">اختصار سريع لموقع مدرستي الرسمي، بالإضافة لأدوات ذكيّ الذكية للمعلمين والطلاب - مستقلة تمامًا عن مدرستي وما تشارك أي بيانات وياها.</p>
 
     <div class="highlight-box">
       <p class="desc" data-i18n="madrasati_link_desc">يفتح موقع مدرستي الرسمي بتبويب جديد - تسجّل دخولك مباشرة عندهم، وذكيّ ما يشوف ولا يلمس بيانات حسابك هناك إطلاقًا.</p>
@@ -12,13 +12,34 @@
       </div>
     </div>
 
-    <h3 class="sub-heading" style="margin-top:24px;" data-i18n="lesson_prep_tools_heading">🧠 أدوات ذكيّ للمعلم</h3>
-    <div class="actions">
+    <!-- ---------- أدوات المعلم ---------- -->
+    <h3 class="sub-heading" style="margin-top:24px;" data-i18n="teacher_tools_heading">👨‍🏫 أدوات ذكيّ للمعلم</h3>
+    <div class="actions" style="flex-wrap:wrap;">
       <button class="primary" id="newLessonPrepBtn" data-i18n="btn_new_lesson_prep">➕ تحضير جديد بالذكاء الاصطناعي</button>
+      <button class="ghost" id="openEnrichmentBtn" data-i18n="btn_open_enrichment">🌟 نشاط إثرائي</button>
+      <button class="ghost" id="openResultsAnalysisBtn" data-i18n="btn_open_results_analysis">📊 تحليل نتائج الطلاب</button>
     </div>
 
-    <h3 class="sub-heading" style="margin-top:22px;" data-i18n="saved_lesson_preps_heading">📁 تحضيراتي المحفوظة</h3>
+    <h3 class="sub-heading" style="margin-top:18px;" data-i18n="saved_lesson_preps_heading">📁 تحضيراتي المحفوظة</h3>
     <div id="lessonPrepList"></div>
     <p class="desc hidden" id="lessonPrepEmptyState" data-i18n="lesson_prep_empty">ما فيه تحضيرات محفوظة بعد.</p>
     <div id="lessonPrepListError"></div>
+
+    <hr style="margin:26px 0; border:none; border-top:1px solid var(--line);">
+
+    <!-- ---------- أدوات الطالب ---------- -->
+    <h3 class="sub-heading" data-i18n="student_tools_heading">🎒 أدوات ذكيّ للطالب</h3>
+    <div class="actions" style="flex-wrap:wrap;">
+      <button class="primary" id="newHomeworkHelpBtn" data-i18n="btn_new_homework_help">➕ مساعد واجب جديد</button>
+      <button class="ghost" id="newStudyPlanBtn" data-i18n="btn_new_study_plan">🗓️ خطة مذاكرة جديدة</button>
+    </div>
+
+    <h3 class="sub-heading" style="margin-top:18px;" data-i18n="saved_homework_help_heading">📁 جلسات مساعد الواجب المحفوظة</h3>
+    <div id="homeworkHelpList"></div>
+    <p class="desc hidden" id="homeworkHelpEmptyState" data-i18n="homework_help_empty">ما فيه جلسات محفوظة بعد.</p>
+
+    <h3 class="sub-heading" style="margin-top:18px;" data-i18n="saved_study_plans_heading">📁 خطط المذاكرة المحفوظة</h3>
+    <div id="studyPlanList"></div>
+    <p class="desc hidden" id="studyPlanEmptyState" data-i18n="study_plan_empty">ما فيه خطط محفوظة بعد.</p>
+    <div id="studentToolsListError"></div>
   </section>

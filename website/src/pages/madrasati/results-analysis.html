@@ -1,0 +1,27 @@
+  <!-- محلّل نتائج الطلاب (معلم) - يلصق نتائج نصية خام ويطلع تحليل - بدون حفظ -->
+  <section class="card hidden" id="step-results-analysis">
+    <span class="step-label" data-i18n="results_analysis_step_label">📊 تحليل النتائج</span>
+    <h2 data-i18n="results_analysis_heading">محلّل نتائج الطلاب</h2>
+    <p class="desc" data-i18n="results_analysis_desc">الصق درجات/نتائج طلابك بأي صيغة (أسماء ودرجات)، وذكيّ يحلّلها ويطلّع لك نقاط القوة والضعف والطلاب المحتاجين متابعة.</p>
+
+    <textarea id="resultsAnalysisInput" class="text-input" rows="8" placeholder="مثال:&#10;أحمد: 18/20&#10;سارة: 12/20&#10;..." data-i18n-ph="ph_raw_results" style="width:100%; resize:vertical; font-family:inherit;"></textarea>
+    <div class="actions" style="margin-top:12px;">
+      <button class="primary" id="resultsAnalysisGenerateBtn" data-i18n="btn_generate_results_analysis">✨ حلّل النتائج</button>
+    </div>
+    <div id="resultsAnalysisError"></div>
+
+    <div id="resultsAnalysisResult" class="hidden" style="margin-top:20px;">
+      <div class="highlight-box">
+        <h3 class="sub-heading" style="margin-top:0;" data-i18n="ra_summary_label">📝 ملخص عام</h3>
+        <p class="desc" id="raSummaryText" style="white-space:pre-wrap;"></p>
+        <h3 class="sub-heading" data-i18n="ra_strengths_label">💪 نقاط القوة</h3>
+        <ul id="raStrengthsList" style="padding-inline-start:20px; margin:0;"></ul>
+        <h3 class="sub-heading" data-i18n="ra_weaknesses_label">⚠️ نقاط الضعف</h3>
+        <ul id="raWeaknessesList" style="padding-inline-start:20px; margin:0;"></ul>
+        <h3 class="sub-heading" data-i18n="ra_at_risk_label">🚨 يحتاجون متابعة</h3>
+        <ul id="raAtRiskList" style="padding-inline-start:20px; margin:0;"></ul>
+        <h3 class="sub-heading" data-i18n="ra_recommendations_label">✅ توصيات</h3>
+        <ul id="raRecommendationsList" style="padding-inline-start:20px; margin:0;"></ul>
+      </div>
+    </div>
+  </section>

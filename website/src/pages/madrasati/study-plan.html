@@ -1,0 +1,30 @@
+  <!-- خطة مذاكرة ذكية (طالب) - إنشاء/عرض -->
+  <section class="card hidden" id="step-study-plan">
+    <span class="step-label" data-i18n="study_plan_step_label">🗓️ خطة مذاكرة</span>
+    <h2 id="studyPlanHeading" data-i18n="study_plan_create_heading">خطة مذاكرة جديدة</h2>
+
+    <div id="studyPlanForm">
+      <input type="text" id="studyPlanSubjectsInput" class="text-input" placeholder="المواد (افصل بينها بفاصلة)" data-i18n-ph="ph_study_plan_subjects">
+      <input type="date" id="studyPlanExamDateInput" class="text-input" style="margin-top:10px;">
+      <input type="number" id="studyPlanHoursInput" class="text-input" placeholder="ساعات المذاكرة يوميًا (اختياري)" data-i18n-ph="ph_study_plan_hours" min="0.5" step="0.5" style="margin-top:10px;">
+      <div class="actions" style="margin-top:12px;">
+        <button class="primary" id="studyPlanGenerateBtn" data-i18n="btn_generate_study_plan">✨ ولّد الخطة</button>
+      </div>
+      <div id="studyPlanGenerateError"></div>
+    </div>
+
+    <div id="studyPlanResult" class="hidden" style="margin-top:20px;">
+      <div class="highlight-box" id="studyPlanDaysWrap"></div>
+      <div class="highlight-box" style="margin-top:12px;">
+        <h3 class="sub-heading" style="margin-top:0;" data-i18n="sp_tips_label">💡 نصائح عامة</h3>
+        <p class="desc" id="spTipsText" style="white-space:pre-wrap;"></p>
+      </div>
+      <div class="actions" style="margin-top:14px; flex-wrap:wrap;">
+        <button class="ghost" id="studyPlanCopyBtn" data-i18n="btn_copy_lesson_prep">📋 نسخ</button>
+        <button class="ghost" id="studyPlanRegenerateBtn" data-i18n="btn_regenerate_lesson_prep">🔄 توليد من جديد</button>
+        <button class="primary" id="studyPlanSaveBtn" data-i18n="btn_save_study_plan">💾 حفظ</button>
+        <button class="ghost hidden" id="studyPlanDeleteBtn" data-i18n="btn_delete_lesson_prep">🗑️ حذف</button>
+      </div>
+      <div id="studyPlanSaveError"></div>
+    </div>
+  </section>

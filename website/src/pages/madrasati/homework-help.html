@@ -1,0 +1,35 @@
+  <!-- مساعد الواجب الذكي (طالب) - إنشاء/عرض -->
+  <section class="card hidden" id="step-homework-help">
+    <span class="step-label" data-i18n="homework_help_step_label">📚 مساعد الواجب</span>
+    <h2 id="homeworkHelpHeading" data-i18n="homework_help_create_heading">مساعد واجب جديد</h2>
+
+    <div id="homeworkHelpForm">
+      <input type="text" id="homeworkHelpSubjectInput" class="text-input" placeholder="اسم المادة" data-i18n-ph="ph_lesson_prep_subject">
+      <input type="text" id="homeworkHelpGradeInput" class="text-input" placeholder="الصف" data-i18n-ph="ph_lesson_prep_grade" style="margin-top:10px;">
+      <textarea id="homeworkHelpTopicInput" class="text-input" rows="3" placeholder="الموضوع أو سؤال الواجب" data-i18n-ph="ph_homework_topic" style="margin-top:10px; width:100%; resize:vertical; font-family:inherit;"></textarea>
+      <div class="actions" style="margin-top:12px;">
+        <button class="primary" id="homeworkHelpGenerateBtn" data-i18n="btn_generate_homework_help">✨ ساعدني</button>
+      </div>
+      <div id="homeworkHelpGenerateError"></div>
+    </div>
+
+    <div id="homeworkHelpResult" class="hidden" style="margin-top:20px;">
+      <div class="highlight-box">
+        <h3 class="sub-heading" style="margin-top:0;" data-i18n="hh_explanation_label">💡 الشرح</h3>
+        <p class="desc" id="hhExplanationText" style="white-space:pre-wrap;"></p>
+        <h3 class="sub-heading" data-i18n="hh_example_label">📐 مثال محلول</h3>
+        <p class="desc" id="hhExampleText" style="white-space:pre-wrap;"></p>
+        <h3 class="sub-heading" data-i18n="hh_practice_label">✏️ أسئلة تدريبية</h3>
+        <div id="hhPracticeList"></div>
+        <h3 class="sub-heading" data-i18n="hh_tips_label">💡 نصيحة</h3>
+        <p class="desc" id="hhTipsText" style="white-space:pre-wrap;"></p>
+      </div>
+      <div class="actions" style="margin-top:14px; flex-wrap:wrap;">
+        <button class="ghost" id="homeworkHelpCopyBtn" data-i18n="btn_copy_lesson_prep">📋 نسخ</button>
+        <button class="ghost" id="homeworkHelpRegenerateBtn" data-i18n="btn_regenerate_lesson_prep">🔄 توليد من جديد</button>
+        <button class="primary" id="homeworkHelpSaveBtn" data-i18n="btn_save_homework_help">💾 حفظ</button>
+        <button class="ghost hidden" id="homeworkHelpDeleteBtn" data-i18n="btn_delete_lesson_prep">🗑️ حذف</button>
+      </div>
+      <div id="homeworkHelpSaveError"></div>
+    </div>
+  </section>

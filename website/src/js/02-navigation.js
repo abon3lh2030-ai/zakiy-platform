@@ -8,7 +8,8 @@ const TOP_LEVEL_SCREENS = [
   'step-profile', 'step-notes', 'step-note-editor', 'step-assignments', 'step-assignment-detail',
   'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker', 'step-ai-book-scope',
   'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take', 'step-gradesheet',
-  'step-madrasati', 'step-lesson-prep',
+  'step-madrasati', 'step-lesson-prep', 'step-enrichment', 'step-results-analysis',
+  'step-homework-help', 'step-study-plan',
   // لوحات نظام إدارة حسابات المدارس - step-force-password-change مو من ضمنها
   // عمدًا (بوابة صلبة، ما تدخل نظام الرجوع/التنقل العادي)
   'step-admin-dashboard', 'step-school-dashboard', 'step-teacher-dashboard', 'step-student-schedule',
@@ -50,6 +51,10 @@ const RESTORABLE_SCREENS = {
   'step-gradesheet': () => showGradesheetScreen(),
   'step-madrasati': () => showMadrasatiScreen(),
   'step-lesson-prep': () => showMadrasatiScreen(),
+  'step-enrichment': () => showMadrasatiScreen(),
+  'step-results-analysis': () => showMadrasatiScreen(),
+  'step-homework-help': () => showMadrasatiScreen(),
+  'step-study-plan': () => showMadrasatiScreen(),
   'step-ai-list': () => showAiListScreen(),
   'step-ai-conversation': () => showAiListScreen(),
   'step-ai-book-picker': () => showAiListScreen(),

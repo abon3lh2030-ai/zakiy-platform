@@ -4294,11 +4294,24 @@ def create_assignment():
     subject = (data.get("subject") or "").strip()
     title = (data.get("title") or "").strip()
     content = data.get("content") or ""
+    submission_type = data.get("submission_type") or "file"
+    if submission_type not in ("file", "questions"):
+        return jsonify({"error": "نوع الواجب غير صحيح"}), 400
     if not class_id or not subject or not title:
         return jsonify({"error": "لازم الفصل والمادة وعنوان الواجب"}), 400
     open_at, close_at, err = _validate_schedule_window(data)
     if err:
         return err
+
+    questions = data.get("questions") or []
+    if submission_type == "questions":
+        if not questions:
+            return jsonify({"error": "لازم سؤال واحد على الأقل"}), 400
+        for q in questions:
+            if q.get("question_type") not in QUESTION_TYPES or not (q.get("question_text") or "").strip():
+                return jsonify({"error": "فيه سؤال ناقص بياناته"}), 400
+            if q["question_type"] == "mcq" and len(q.get("choices") or []) < 2:
+                return jsonify({"error": "سؤال الاختيارات لازم فيه اختيارين على الأقل"}), 400
 
     if not _teacher_owns_class(request.user_id, class_id):
         return jsonify({"error": "الفصل مو تابع لك"}), 403
@@ -4318,11 +4331,24 @@ def create_assignment():
                 "content": content,
                 "open_at": open_at,
                 "close_at": close_at,
+                "submission_type": submission_type,
             }
         )
         .execute()
         .data[0]
     )
+
+    if submission_type == "questions":
+        rows = [
+            {
+                "assignment_id": assignment["id"], "order_index": i,
+                "question_type": q["question_type"], "question_text": q["question_text"].strip(),
+                "choices": q.get("choices") if q["question_type"] == "mcq" else None,
+                "correct_answer": (q.get("correct_answer") or "").strip() or None if q["question_type"] != "essay" else None,
+            }
+            for i, q in enumerate(questions)
+        ]
+        supabase_admin.table("assignment_questions").insert(rows).execute()
 
     notif_title = "📚 واجب جديد"
     notif_body = f"{subject} - {title}"
@@ -4389,6 +4415,12 @@ def teacher_assignment_detail(assignment_id):
     ).data
     submissions_by_student = {s["student_id"]: s for s in submissions}
 
+    if assignment["submission_type"] == "questions":
+        assignment["questions"] = (
+            supabase_admin.table("assignment_questions").select("*")
+            .eq("assignment_id", assignment_id).order("order_index").execute()
+        ).data
+
     students = []
     for t in targets:
         sub = submissions_by_student.get(t["user_id"])
@@ -4402,6 +4434,10 @@ def teacher_assignment_detail(assignment_id):
                 "file_name": sub.get("file_name") if sub else None,
                 "note": sub.get("note") if sub else None,
                 "grade": sub.get("grade") if sub else None,
+                "answers": sub.get("answers") if sub else None,
+                "is_auto_graded": sub.get("is_auto_graded") if sub else False,
+                "score": sub.get("score") if sub else None,
+                "total_questions": sub.get("total_questions") if sub else None,
             }
         )
     assignment["students"] = students
@@ -4501,6 +4537,12 @@ def student_assignment_detail(assignment_id):
     if not rows or not _student_can_see_assignment(rows[0], request.profile, request.user_id):
         return jsonify({"error": "الواجب مو موجود"}), 404
     assignment = rows[0]
+    if assignment["submission_type"] == "questions":
+        questions = (
+            supabase_admin.table("assignment_questions").select("*")
+            .eq("assignment_id", assignment_id).order("order_index").execute()
+        ).data
+        assignment["questions"] = _quiz_questions_public(questions)
     sub = (
         supabase_admin.table("assignment_submissions").select("*")
         .eq("assignment_id", assignment_id).eq("student_id", request.user_id).limit(1).execute()
@@ -4522,38 +4564,76 @@ def submit_assignment(assignment_id):
         return jsonify({"error": "الواجب ما بدأ بعد"}), 400
     if close_dt and now > close_dt:
         return jsonify({"error": "انتهى وقت تسليم الواجب"}), 400
-    if "file" not in request.files:
-        return jsonify({"error": "لازم ترفع ملف الواجب"}), 400
-    file = request.files["file"]
-    if file.filename == "":
-        return jsonify({"error": "اسم الملف فاضي"}), 400
-    note = request.form.get("note") or None
 
-    path = _assignment_submission_path(assignment_id, request.user_id, file.filename)
-    file_bytes = file.read()
-    supabase_admin.storage.from_(ASSIGNMENT_SUBMISSIONS_BUCKET).upload(
-        path, file_bytes, file_options={"content-type": file.mimetype or "application/octet-stream", "x-upsert": "true"}
-    )
-
-    submission = (
-        supabase_admin.table("assignment_submissions")
-        .upsert(
-            {
-                "assignment_id": assignment_id,
-                "student_id": request.user_id,
-                "file_path": path,
-                "file_name": secure_filename(file.filename) or file.filename,
-                "note": note,
-                "submitted_at": datetime.now(timezone.utc).isoformat(),
-                # يعيد تسليم الواجب يصفّر الدرجة السابقة - نسخة جديدة تحتاج تقييم جديد
-                "grade": None,
-                "graded_at": None,
-            },
-            on_conflict="assignment_id,student_id",
+    if rows[0]["submission_type"] == "questions":
+        data = request.get_json(silent=True) or {}
+        answers = data.get("answers") or {}
+        if not isinstance(answers, dict):
+            return jsonify({"error": "صيغة الإجابات غلط"}), 400
+        questions = (
+            supabase_admin.table("assignment_questions").select("*")
+            .eq("assignment_id", assignment_id).execute()
+        ).data
+        total = len(questions)
+        auto_gradable = total > 0 and all(q.get("correct_answer") for q in questions)
+        score = None
+        is_auto_graded = False
+        if auto_gradable:
+            score = sum(
+                1 for q in questions
+                if str(answers.get(str(q["id"]), "")).strip() == q["correct_answer"]
+            )
+            is_auto_graded = True
+        submission = (
+            supabase_admin.table("assignment_submissions")
+            .upsert(
+                {
+                    "assignment_id": assignment_id, "student_id": request.user_id,
+                    "submitted_at": datetime.now(timezone.utc).isoformat(),
+                    "answers": answers, "is_auto_graded": is_auto_graded,
+                    "score": score, "total_questions": total,
+                    "grade": f"{score}/{total}" if is_auto_graded else None,
+                    "graded_at": datetime.now(timezone.utc).isoformat() if is_auto_graded else None,
+                    "file_path": None, "file_name": None, "note": None,
+                },
+                on_conflict="assignment_id,student_id",
+            )
+            .execute()
+            .data[0]
         )
-        .execute()
-        .data[0]
-    )
+    else:
+        if "file" not in request.files:
+            return jsonify({"error": "لازم ترفع ملف الواجب"}), 400
+        file = request.files["file"]
+        if file.filename == "":
+            return jsonify({"error": "اسم الملف فاضي"}), 400
+        note = request.form.get("note") or None
+
+        path = _assignment_submission_path(assignment_id, request.user_id, file.filename)
+        file_bytes = file.read()
+        supabase_admin.storage.from_(ASSIGNMENT_SUBMISSIONS_BUCKET).upload(
+            path, file_bytes, file_options={"content-type": file.mimetype or "application/octet-stream", "x-upsert": "true"}
+        )
+
+        submission = (
+            supabase_admin.table("assignment_submissions")
+            .upsert(
+                {
+                    "assignment_id": assignment_id,
+                    "student_id": request.user_id,
+                    "file_path": path,
+                    "file_name": secure_filename(file.filename) or file.filename,
+                    "note": note,
+                    "submitted_at": datetime.now(timezone.utc).isoformat(),
+                    # يعيد تسليم الواجب يصفّر الدرجة السابقة - نسخة جديدة تحتاج تقييم جديد
+                    "grade": None,
+                    "graded_at": None,
+                },
+                on_conflict="assignment_id,student_id",
+            )
+            .execute()
+            .data[0]
+        )
     my_username_rows = supabase_admin.table("profiles").select("username").eq("user_id", request.user_id).limit(1).execute().data
     my_username = my_username_rows[0]["username"] if my_username_rows else ""
     _create_notification(

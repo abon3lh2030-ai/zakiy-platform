@@ -13,7 +13,9 @@
     <!-- عرض الطالب -->
     <div id="studentSubmissionView" class="hidden">
       <div class="highlight-box hidden" id="studentSubmissionInfo"></div>
-      <div id="studentSubmitForm">
+
+      <!-- واجب من نوع "ملف" -->
+      <div id="assignmentFileSubmitForm">
         <h3 class="sub-heading" data-i18n="assignment_submit_heading">📎 حل الواجب</h3>
         <div class="dropzone" id="assignmentFileDropzone">
           <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#5C6B7A" stroke-width="1.6"><path d="M12 16V4M12 4l-4 4M12 4l4 4M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>
@@ -30,6 +32,16 @@
           <button class="primary" id="assignmentSubmitBtn" disabled data-i18n="btn_submit_assignment">تسليم الواجب</button>
         </div>
         <div id="assignmentSubmitError"></div>
+      </div>
+
+      <!-- واجب من نوع "أسئلة" -->
+      <div id="assignmentQuestionsSubmitForm" class="hidden">
+        <h3 class="sub-heading" data-i18n="assignment_answer_questions_heading">✏️ جاوب على الأسئلة</h3>
+        <div id="assignmentTakeQuestionsList"></div>
+        <div class="actions" style="margin-top:14px;">
+          <button class="primary" id="assignmentSubmitAnswersBtn" data-i18n="btn_submit_assignment_answers">تسليم الإجابات</button>
+        </div>
+        <div id="assignmentAnswersSubmitError"></div>
       </div>
     </div>
 

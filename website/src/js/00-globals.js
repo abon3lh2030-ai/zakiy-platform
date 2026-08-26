@@ -15,6 +15,10 @@ let currentUserPhone = null;
 let currentUserRole = null;
 let currentUserSchoolId = null;
 let currentUserClassId = null;
+// حساب فردي (role فاضي) بس - "معلم" = صاحب الحساب معلم يستخدم مدرستي بحساب
+// شخصي، أي قيمة ثانية (طالب/متخرج/فاضي) تُعامل كحساب فردي عادي - يخدم شاشة
+// "مدرستي" بس (تحديد قسم المعلم أو الطالب المعروض افتراضيًا)
+let currentUserEducationLevel = null;
 
 let appMode = null; // 'solo' | 'room-host' | 'room-join'
 let uploadedFilename = null;

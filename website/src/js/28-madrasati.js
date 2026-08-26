@@ -10,6 +10,18 @@ async function loadMadrasatiScreen() {
   loadStudyPlanList();
 }
 
+// ---------- بطاقات اختصار لميزات ذكيّ الموجودة أصلًا داخل شاشة "مدرستي" -
+// بدل ما نكرر منطق التنقل، ننادي نفس زر السايدبار المطابق (يحمل بنفسه شرط
+// تسجيل الدخول وpushNavSnapshot وكل شي) ----------
+document.getElementById('mdStudentAssignmentsBtn').addEventListener('click', () => document.getElementById('assignmentsBtn').click());
+document.getElementById('mdStudentQuizzesBtn').addEventListener('click', () => document.getElementById('quizzesBtn').click());
+document.getElementById('mdStudentScheduleBtn').addEventListener('click', () => document.getElementById('studentScheduleNavBtn').click());
+document.getElementById('mdStudentLibraryBtn').addEventListener('click', () => document.getElementById('sidebarLibraryBtn').click());
+document.getElementById('mdStudentAiBtn').addEventListener('click', () => document.getElementById('sidebarAiHelpBtn').click());
+document.getElementById('mdTeacherAssignmentsBtn').addEventListener('click', () => document.getElementById('assignmentsBtn').click());
+document.getElementById('mdTeacherQuizzesBtn').addEventListener('click', () => document.getElementById('quizzesBtn').click());
+document.getElementById('mdTeacherGradesheetBtn').addEventListener('click', () => document.getElementById('gradesheetBtn').click());
+
 async function loadLessonPrepList() {
   const list = document.getElementById('lessonPrepList');
   const empty = document.getElementById('lessonPrepEmptyState');

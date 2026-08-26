@@ -1,0 +1,55 @@
+/* شبكة روابط "مدرستي" (خارجية) وميزات ذكيّ (داخلية) - نفس بطاقة واحدة
+   بصريًا، تتفرّق بس بشارة صغيرة (مدرستي/ذكيّ) بالزاوية */
+.madrasati-links-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.madrasati-link-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.madrasati-link-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,.08);
+  border-color: var(--teal);
+}
+.madrasati-link-card .mlc-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.madrasati-link-card .mlc-label {
+  flex: 1;
+  text-align: start;
+}
+.madrasati-link-card .mlc-badge {
+  position: absolute;
+  top: -8px;
+  inset-inline-end: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--paper-dim);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+}
+.madrasati-link-card .mlc-badge.zakiy {
+  background: var(--teal-dim);
+  color: var(--teal);
+  border-color: var(--teal);
+}

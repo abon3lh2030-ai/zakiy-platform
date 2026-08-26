@@ -66,6 +66,9 @@ function onAuthSuccess(session) {
   currentUserEmail = session.user.email;
   currentUserId = session.user.id;
   currentUserPhone = session.user.user_metadata?.phone || '';
+  // يخدم شاشة "مدرستي" بس - يفرّق حساب فردي معلم عن حساب فردي طالب/متخرج
+  // (المتخرج يُعامل زي أي حساب فردي عادي - قيمة "معلم" بس هي اللي لها معنى مختلف)
+  currentUserEducationLevel = session.user.user_metadata?.education_level || null;
 
   // السوكيت أصلًا متصل من قبل الدخول (كضيف) - حدث 'connect' ما يعيد الإطلاق
   // لمجرد ما صار عندنا توكن الحين، فلازم نسجّل الهوية هنا صراحة
@@ -124,6 +127,26 @@ function onAuthSuccess(session) {
       document.getElementById('gradesheetBtn').classList.toggle(
         'hidden', currentUserRole !== 'teacher'
       );
+
+      // نفس شروط أزرار السايدبار أعلاه، بس لبطاقات ميزات ذكيّ المكررة داخل
+      // شاشة "مدرستي" (اختصارات مؤسسية بس تحتاج فصل/مدرسة فعلية)
+      const isInstStudent = currentUserRole === 'student';
+      const isInstTeacher = currentUserRole === 'teacher';
+      document.getElementById('mdStudentAssignmentsBtn').classList.toggle('hidden', !isInstStudent);
+      document.getElementById('mdStudentQuizzesBtn').classList.toggle('hidden', !isInstStudent);
+      document.getElementById('mdStudentScheduleBtn').classList.toggle('hidden', !(isInstStudent && currentUserSchoolId));
+      document.getElementById('mdTeacherAssignmentsBtn').classList.toggle('hidden', !isInstTeacher);
+      document.getElementById('mdTeacherQuizzesBtn').classList.toggle('hidden', !isInstTeacher);
+      document.getElementById('mdTeacherGradesheetBtn').classList.toggle('hidden', !isInstTeacher);
+
+      // مدرستي: قسم "واجهة المعلم" أو "واجهة الطالب" - معلم مؤسسي أو حساب
+      // فردي اختار "معلم" وقت التسجيل يشوف قسم المعلم بس، إداري المدرسة يشوف
+      // الاثنين (يشرف على الطرفين)، وأي شي ثاني (طالب مؤسسي أو فردي عادي/
+      // متخرج - "المتخرج يُعامل كحساب فردي عادي") يشوف قسم الطالب بس
+      const isMadrasatiTeacher = currentUserRole === 'teacher' || (!currentUserRole && currentUserEducationLevel === 'معلم');
+      const isMadrasatiAdmin = currentUserRole === 'school_admin' || currentUserRole === 'school_administration';
+      document.getElementById('madrasatiTeacherSection').classList.toggle('hidden', !(isMadrasatiTeacher || isMadrasatiAdmin));
+      document.getElementById('madrasatiStudentSection').classList.toggle('hidden', !(!isMadrasatiTeacher || isMadrasatiAdmin));
 
       if (me.must_change_password) {
         TOP_LEVEL_SCREENS.forEach(hide);
@@ -254,12 +277,20 @@ document.getElementById('loginSubmitBtn').addEventListener('click', async () => 
   onAuthSuccess(data.session);
 });
 
+// خيار "معلم" بالمرحلة الدراسية يحتاج توضيح أي مرحلة يدرّس - يظهر حقل إضافي
+// بس وقتها. هذا الفرق (معلم/غيره) يحدد لاحقًا أي قسم يظهر افتراضيًا بشاشة
+// "مدرستي" (أدوات معلم أو أدوات طالب) لحساب فردي بدون role مؤسسي
+document.getElementById('signupEducationLevel').addEventListener('change', e => {
+  document.getElementById('signupTeachingStageWrap').classList.toggle('hidden', e.target.value !== 'معلم');
+});
+
 document.getElementById('signupSubmitBtn').addEventListener('click', async () => {
   clearError('signupError');
   const username = document.getElementById('signupUsername').value.trim();
   const email = document.getElementById('signupEmail').value.trim();
   const password = document.getElementById('signupPassword').value;
   const education_level = document.getElementById('signupEducationLevel').value;
+  const teaching_stage = education_level === 'معلم' ? document.getElementById('signupTeachingStage').value : null;
   const proficiency_level = document.getElementById('signupProficiencyLevel').value;
   if (!username) { showError('signupError', t('err_name_required')); return; }
   if (!email || !password) { showError('signupError', t('err_email_password_required')); return; }
@@ -267,7 +298,7 @@ document.getElementById('signupSubmitBtn').addEventListener('click', async () =>
 
   const { data, error } = await supabaseClient.auth.signUp({
     email, password,
-    options: { data: { username, education_level, proficiency_level } },
+    options: { data: { username, education_level, proficiency_level, teaching_stage } },
   });
   if (error) { showError('signupError', error.message || t('err_signup_failed')); return; }
 

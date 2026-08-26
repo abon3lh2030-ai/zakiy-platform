@@ -31,7 +31,7 @@ CSS_ORDER = [
     "21-guest-modal", "22-streak-badge", "23-session-rating", "24-live-class",
     "25-qr-modal", "26-friends-archive", "27-lang-buttons", "28-privacy-toggle",
     "29-profile", "30-subscription", "31-notes", "32-assignments",
-    "33-ai-assistant", "34-quizzes",
+    "33-ai-assistant", "34-quizzes", "35-madrasati",
 ]
 
 JS_ORDER = [

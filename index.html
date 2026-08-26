@@ -1137,6 +1137,61 @@
   .quiz-question-editor .qe-tf-row { display: flex; gap: 16px; margin-top: 8px; }
   .quiz-question-editor .qe-tf-row label { display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; }
   .quiz-answers-panel { margin: 4px 0 14px; }
+/* شبكة روابط "مدرستي" (خارجية) وميزات ذكيّ (داخلية) - نفس بطاقة واحدة
+   بصريًا، تتفرّق بس بشارة صغيرة (مدرستي/ذكيّ) بالزاوية */
+.madrasati-links-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.madrasati-link-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.madrasati-link-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,.08);
+  border-color: var(--teal);
+}
+.madrasati-link-card .mlc-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.madrasati-link-card .mlc-label {
+  flex: 1;
+  text-align: start;
+}
+.madrasati-link-card .mlc-badge {
+  position: absolute;
+  top: -8px;
+  inset-inline-end: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--paper-dim);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+}
+.madrasati-link-card .mlc-badge.zakiy {
+  background: var(--teal-dim);
+  color: var(--teal);
+  border-color: var(--teal);
+}
 </style>
 </head>
 <body class="with-sidebar">
@@ -1249,6 +1304,16 @@
           <option value="متوسط" data-i18n="edu_middle">متوسط</option>
           <option value="ثانوي" data-i18n="edu_high">ثانوي</option>
           <option value="جامعي" data-i18n="edu_university">جامعي</option>
+          <option value="معلم" data-i18n="edu_teacher">معلم</option>
+          <option value="متخرج" data-i18n="edu_graduate">متخرج</option>
+        </select>
+      </label>
+      <label id="signupTeachingStageWrap" class="hidden">
+        <span data-i18n="label_teaching_stage">أي مرحلة تدرّس؟</span>
+        <select id="signupTeachingStage" class="text-input">
+          <option value="ابتدائي" data-i18n="edu_elementary">ابتدائي</option>
+          <option value="متوسط" data-i18n="edu_middle">متوسط</option>
+          <option value="ثانوي" data-i18n="edu_high">ثانوي</option>
         </select>
       </label>
       <label>
@@ -2050,50 +2115,137 @@
     <div id="aiBookScopeError"></div>
   </section>
 
-  <!-- مدرستي: اختصار لموقع مدرستي الرسمي (بدون أي تكامل بيانات - ما فيه
-       API عام لمدرستي) + أدوات ذكيّ بالذكاء الاصطناعي للمعلم والطالب -->
+  <!-- مدرستي: قسمين (واجهة طالب/واجهة معلم)، كل قسم فيه روابط مدرستي
+       الرسمية (تفتح بتبويب جديد - بدون أي تكامل بيانات، ما فيه API عام
+       لمدرستي) + ميزات ذكيّ الموجودة أصلًا مبنية بنفس التصميم - القسم
+       الظاهر افتراضيًا يتحدد حسب دور الحساب (03-auth.js) -->
   <section class="card hidden" id="step-madrasati">
     <span class="step-label" data-i18n="madrasati_step_label">🎓 مدرستي</span>
     <h2 data-i18n="madrasati_heading">مدرستي وأدوات ذكيّ</h2>
-    <p class="desc" data-i18n="madrasati_desc">اختصار سريع لموقع مدرستي الرسمي، بالإضافة لأدوات ذكيّ الذكية للمعلمين والطلاب - مستقلة تمامًا عن مدرستي وما تشارك أي بيانات وياها.</p>
+    <p class="desc" data-i18n="madrasati_desc">اختصارات مدرستي الرسمية جنب أدوات ذكيّ، كل شي بمكان وحد - مدرستي بدون أي تكامل بيانات (تفتح بتبويب جديد بس).</p>
 
-    <div class="highlight-box">
+    <!-- ---------- واجهة الطالب ---------- -->
+    <div id="madrasatiStudentSection">
+      <h3 class="sub-heading" data-i18n="student_interface_heading">🎒 واجهة الطالب</h3>
+      <div class="madrasati-links-grid">
+        <a class="madrasati-link-card external" href="#" target="_blank" rel="noopener">
+          <span class="mlc-icon">📤</span><span class="mlc-label" data-i18n="md_submit_assignments">تسليم الواجبات</span>
+          <span class="mlc-badge" data-i18n="md_badge_madrasati">مدرستي</span>
+        </a>
+        <a class="madrasati-link-card external" href="#" target="_blank" rel="noopener">
+          <span class="mlc-icon">📊</span><span class="mlc-label" data-i18n="md_view_grades">عرض الدرجات</span>
+          <span class="mlc-badge" data-i18n="md_badge_madrasati">مدرستي</span>
+        </a>
+        <a class="madrasati-link-card external" href="#" target="_blank" rel="noopener">
+          <span class="mlc-icon">🗓️</span><span class="mlc-label" data-i18n="md_study_schedule">الجدول الدراسي</span>
+          <span class="mlc-badge" data-i18n="md_badge_madrasati">مدرستي</span>
+        </a>
+        <a class="madrasati-link-card external" href="#" target="_blank" rel="noopener">
+          <span class="mlc-icon">✅</span><span class="mlc-label" data-i18n="md_attendance">الحضور والغياب</span>
+          <span class="mlc-badge" data-i18n="md_badge_madrasati">مدرستي</span>
+        </a>
+
+        <button class="madrasati-link-card zakiy hidden" id="mdStudentAssignmentsBtn">
+          <span class="mlc-icon">📚</span><span class="mlc-label" data-i18n="nav_assignments">الواجبات</span>
+          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
+        </button>
+        <button class="madrasati-link-card zakiy hidden" id="mdStudentQuizzesBtn">
+          <span class="mlc-icon">📝</span><span class="mlc-label" data-i18n="nav_quizzes">الاختبارات</span>
+          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
+        </button>
+        <button class="madrasati-link-card zakiy hidden" id="mdStudentScheduleBtn">
+          <span class="mlc-icon">🗓️</span><span class="mlc-label" data-i18n="nav_my_schedule">جدولي</span>
+          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
+        </button>
+        <button class="madrasati-link-card zakiy" id="mdStudentLibraryBtn">
+          <span class="mlc-icon">📚</span><span class="mlc-label" data-i18n="nav_library">مكتبتي</span>
+          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
+        </button>
+        <button class="madrasati-link-card zakiy" id="mdStudentAiBtn">
+          <span class="mlc-icon">🤖</span><span class="mlc-label" data-i18n="nav_ai_help">مساعد ذكيّ</span>
+          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
+        </button>
+        <button class="madrasati-link-card zakiy" id="newHomeworkHelpBtn">
+          <span class="mlc-icon">📚</span><span class="mlc-label" data-i18n="md_homework_help_label">مساعد الواجب</span>
+          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
+        </button>
+        <button class="madrasati-link-card zakiy" id="newStudyPlanBtn">
+          <span class="mlc-icon">🗓️</span><span class="mlc-label" data-i18n="md_study_plan_label">خطة مذاكرة</span>
+          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
+        </button>
+      </div>
+
+      <h3 class="sub-heading" style="margin-top:18px;" data-i18n="saved_homework_help_heading">📁 جلسات مساعد الواجب المحفوظة</h3>
+      <div id="homeworkHelpList"></div>
+      <p class="desc hidden" id="homeworkHelpEmptyState" data-i18n="homework_help_empty">ما فيه جلسات محفوظة بعد.</p>
+
+      <h3 class="sub-heading" style="margin-top:18px;" data-i18n="saved_study_plans_heading">📁 خطط المذاكرة المحفوظة</h3>
+      <div id="studyPlanList"></div>
+      <p class="desc hidden" id="studyPlanEmptyState" data-i18n="study_plan_empty">ما فيه خطط محفوظة بعد.</p>
+      <div id="studentToolsListError"></div>
+    </div>
+
+    <hr style="margin:28px 0; border:none; border-top:1px solid var(--line);">
+
+    <!-- ---------- واجهة المعلم ---------- -->
+    <div id="madrasatiTeacherSection">
+      <h3 class="sub-heading" data-i18n="teacher_interface_heading">👨‍🏫 واجهة المعلم</h3>
+      <div class="madrasati-links-grid">
+        <a class="madrasati-link-card external" href="#" target="_blank" rel="noopener">
+          <span class="mlc-icon">📤</span><span class="mlc-label" data-i18n="md_manage_assignments">إدارة الواجبات</span>
+          <span class="mlc-badge" data-i18n="md_badge_madrasati">مدرستي</span>
+        </a>
+        <a class="madrasati-link-card external" href="#" target="_blank" rel="noopener">
+          <span class="mlc-icon">✏️</span><span class="mlc-label" data-i18n="md_record_grades">رصد الدرجات</span>
+          <span class="mlc-badge" data-i18n="md_badge_madrasati">مدرستي</span>
+        </a>
+        <a class="madrasati-link-card external" href="#" target="_blank" rel="noopener">
+          <span class="mlc-icon">🗓️</span><span class="mlc-label" data-i18n="md_class_schedule">جدول الحصص</span>
+          <span class="mlc-badge" data-i18n="md_badge_madrasati">مدرستي</span>
+        </a>
+        <a class="madrasati-link-card external" href="#" target="_blank" rel="noopener">
+          <span class="mlc-icon">✅</span><span class="mlc-label" data-i18n="md_record_attendance">تسجيل الحضور</span>
+          <span class="mlc-badge" data-i18n="md_badge_madrasati">مدرستي</span>
+        </a>
+
+        <button class="madrasati-link-card zakiy hidden" id="mdTeacherAssignmentsBtn">
+          <span class="mlc-icon">📚</span><span class="mlc-label" data-i18n="nav_assignments">الواجبات</span>
+          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
+        </button>
+        <button class="madrasati-link-card zakiy hidden" id="mdTeacherQuizzesBtn">
+          <span class="mlc-icon">📝</span><span class="mlc-label" data-i18n="nav_quizzes">الاختبارات</span>
+          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
+        </button>
+        <button class="madrasati-link-card zakiy hidden" id="mdTeacherGradesheetBtn">
+          <span class="mlc-icon">📋</span><span class="mlc-label" data-i18n="nav_gradesheet">كشف الدرجات</span>
+          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
+        </button>
+        <button class="madrasati-link-card zakiy" id="newLessonPrepBtn">
+          <span class="mlc-icon">🧠</span><span class="mlc-label" data-i18n="md_lesson_prep_label">التحضير الذكي</span>
+          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
+        </button>
+        <button class="madrasati-link-card zakiy" id="openEnrichmentBtn">
+          <span class="mlc-icon">🌟</span><span class="mlc-label" data-i18n="md_enrichment_label">نشاط إثرائي</span>
+          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
+        </button>
+        <button class="madrasati-link-card zakiy" id="openResultsAnalysisBtn">
+          <span class="mlc-icon">📊</span><span class="mlc-label" data-i18n="md_results_analysis_label">تحليل نتائج الطلاب</span>
+          <span class="mlc-badge zakiy" data-i18n="md_badge_zakiy">ذكيّ</span>
+        </button>
+      </div>
+
+      <h3 class="sub-heading" style="margin-top:18px;" data-i18n="saved_lesson_preps_heading">📁 تحضيراتي المحفوظة</h3>
+      <div id="lessonPrepList"></div>
+      <p class="desc hidden" id="lessonPrepEmptyState" data-i18n="lesson_prep_empty">ما فيه تحضيرات محفوظة بعد.</p>
+      <div id="lessonPrepListError"></div>
+    </div>
+
+    <div class="highlight-box" style="margin-top:26px;">
       <p class="desc" data-i18n="madrasati_link_desc">يفتح موقع مدرستي الرسمي بتبويب جديد - تسجّل دخولك مباشرة عندهم، وذكيّ ما يشوف ولا يلمس بيانات حسابك هناك إطلاقًا.</p>
       <div class="actions" style="margin-top:10px;">
-        <a class="primary" id="madrasatiOfficialLinkBtn" href="https://schools.madrasati.sa" target="_blank" rel="noopener" data-i18n="btn_open_madrasati">🔗 افتح مدرستي الرسمي</a>
+        <a class="ghost" id="madrasatiOfficialLinkBtn" href="https://schools.madrasati.sa" target="_blank" rel="noopener" data-i18n="btn_open_madrasati">🔗 افتح مدرستي الرسمي</a>
       </div>
     </div>
-
-    <!-- ---------- أدوات المعلم ---------- -->
-    <h3 class="sub-heading" style="margin-top:24px;" data-i18n="teacher_tools_heading">👨‍🏫 أدوات ذكيّ للمعلم</h3>
-    <div class="actions" style="flex-wrap:wrap;">
-      <button class="primary" id="newLessonPrepBtn" data-i18n="btn_new_lesson_prep">➕ تحضير جديد بالذكاء الاصطناعي</button>
-      <button class="ghost" id="openEnrichmentBtn" data-i18n="btn_open_enrichment">🌟 نشاط إثرائي</button>
-      <button class="ghost" id="openResultsAnalysisBtn" data-i18n="btn_open_results_analysis">📊 تحليل نتائج الطلاب</button>
-    </div>
-
-    <h3 class="sub-heading" style="margin-top:18px;" data-i18n="saved_lesson_preps_heading">📁 تحضيراتي المحفوظة</h3>
-    <div id="lessonPrepList"></div>
-    <p class="desc hidden" id="lessonPrepEmptyState" data-i18n="lesson_prep_empty">ما فيه تحضيرات محفوظة بعد.</p>
-    <div id="lessonPrepListError"></div>
-
-    <hr style="margin:26px 0; border:none; border-top:1px solid var(--line);">
-
-    <!-- ---------- أدوات الطالب ---------- -->
-    <h3 class="sub-heading" data-i18n="student_tools_heading">🎒 أدوات ذكيّ للطالب</h3>
-    <div class="actions" style="flex-wrap:wrap;">
-      <button class="primary" id="newHomeworkHelpBtn" data-i18n="btn_new_homework_help">➕ مساعد واجب جديد</button>
-      <button class="ghost" id="newStudyPlanBtn" data-i18n="btn_new_study_plan">🗓️ خطة مذاكرة جديدة</button>
-    </div>
-
-    <h3 class="sub-heading" style="margin-top:18px;" data-i18n="saved_homework_help_heading">📁 جلسات مساعد الواجب المحفوظة</h3>
-    <div id="homeworkHelpList"></div>
-    <p class="desc hidden" id="homeworkHelpEmptyState" data-i18n="homework_help_empty">ما فيه جلسات محفوظة بعد.</p>
-
-    <h3 class="sub-heading" style="margin-top:18px;" data-i18n="saved_study_plans_heading">📁 خطط المذاكرة المحفوظة</h3>
-    <div id="studyPlanList"></div>
-    <p class="desc hidden" id="studyPlanEmptyState" data-i18n="study_plan_empty">ما فيه خطط محفوظة بعد.</p>
-    <div id="studentToolsListError"></div>
   </section>
 
   <!-- تحضير درس بالذكاء الاصطناعي (إنشاء/عرض/تعديل) -->
@@ -2744,6 +2896,10 @@ let currentUserPhone = null;
 let currentUserRole = null;
 let currentUserSchoolId = null;
 let currentUserClassId = null;
+// حساب فردي (role فاضي) بس - "معلم" = صاحب الحساب معلم يستخدم مدرستي بحساب
+// شخصي، أي قيمة ثانية (طالب/متخرج/فاضي) تُعامل كحساب فردي عادي - يخدم شاشة
+// "مدرستي" بس (تحديد قسم المعلم أو الطالب المعروض افتراضيًا)
+let currentUserEducationLevel = null;
 
 let appMode = null; // 'solo' | 'room-host' | 'room-join'
 let uploadedFilename = null;
@@ -2811,6 +2967,8 @@ const I18N = {
     edu_middle: 'متوسط',
     edu_high: 'ثانوي',
     edu_university: 'جامعي',
+    edu_teacher: 'معلم', edu_graduate: 'متخرج',
+    label_teaching_stage: 'أي مرحلة تدرّس؟',
     label_proficiency_level: 'مستواك',
     prof_weak: 'ضعيف',
     prof_medium: 'متوسط',
@@ -3162,6 +3320,22 @@ const I18N = {
     madrasati_desc: 'اختصار سريع لموقع مدرستي الرسمي، بالإضافة لأدوات ذكيّ الذكية للمعلمين - مستقلة تمامًا عن مدرستي وما تشارك أي بيانات وياها.',
     madrasati_link_desc: 'يفتح موقع مدرستي الرسمي بتبويب جديد - تسجّل دخولك مباشرة عندهم، وذكيّ ما يشوف ولا يلمس بيانات حسابك هناك إطلاقًا.',
     btn_open_madrasati: '🔗 افتح مدرستي الرسمي',
+    student_interface_heading: '🎒 واجهة الطالب',
+    teacher_interface_heading: '👨‍🏫 واجهة المعلم',
+    md_badge_madrasati: 'مدرستي', md_badge_zakiy: 'ذكيّ',
+    md_submit_assignments: 'تسليم الواجبات',
+    md_view_grades: 'عرض الدرجات',
+    md_study_schedule: 'الجدول الدراسي',
+    md_attendance: 'الحضور والغياب',
+    md_manage_assignments: 'إدارة الواجبات',
+    md_record_grades: 'رصد الدرجات',
+    md_class_schedule: 'جدول الحصص',
+    md_record_attendance: 'تسجيل الحضور',
+    md_lesson_prep_label: 'التحضير الذكي',
+    md_enrichment_label: 'نشاط إثرائي',
+    md_results_analysis_label: 'تحليل نتائج الطلاب',
+    md_homework_help_label: 'مساعد الواجب',
+    md_study_plan_label: 'خطة مذاكرة',
     lesson_prep_tools_heading: '🧠 أدوات ذكيّ للمعلم',
     btn_new_lesson_prep: '➕ تحضير جديد بالذكاء الاصطناعي',
     saved_lesson_preps_heading: '📁 تحضيراتي المحفوظة',
@@ -3499,6 +3673,8 @@ const I18N = {
     edu_middle: 'Middle School',
     edu_high: 'High School',
     edu_university: 'University',
+    edu_teacher: 'Teacher', edu_graduate: 'Graduate',
+    label_teaching_stage: 'Which stage do you teach?',
     label_proficiency_level: 'Your Level',
     prof_weak: 'Weak',
     prof_medium: 'Medium',
@@ -3850,6 +4026,22 @@ const I18N = {
     madrasati_desc: "A quick shortcut to the official Madrasati site, plus Zakiy's own AI tools for teachers - fully independent of Madrasati, sharing no data with it whatsoever.",
     madrasati_link_desc: "Opens the official Madrasati site in a new tab - you sign in there directly, and Zakiy never sees or touches your account data there.",
     btn_open_madrasati: '🔗 Open official Madrasati',
+    student_interface_heading: '🎒 Student interface',
+    teacher_interface_heading: '👨‍🏫 Teacher interface',
+    md_badge_madrasati: 'Madrasati', md_badge_zakiy: 'Zakiy',
+    md_submit_assignments: 'Submit assignments',
+    md_view_grades: 'View grades',
+    md_study_schedule: 'Class schedule',
+    md_attendance: 'Attendance',
+    md_manage_assignments: 'Manage assignments',
+    md_record_grades: 'Record grades',
+    md_class_schedule: 'Class timetable',
+    md_record_attendance: 'Record attendance',
+    md_lesson_prep_label: 'Smart lesson prep',
+    md_enrichment_label: 'Enrichment activity',
+    md_results_analysis_label: 'Analyze student results',
+    md_homework_help_label: 'Homework helper',
+    md_study_plan_label: 'Study plan',
     lesson_prep_tools_heading: '🧠 Zakiy tools for teachers',
     btn_new_lesson_prep: '➕ New AI lesson preparation',
     saved_lesson_preps_heading: '📁 My saved preparations',
@@ -4458,6 +4650,9 @@ function onAuthSuccess(session) {
   currentUserEmail = session.user.email;
   currentUserId = session.user.id;
   currentUserPhone = session.user.user_metadata?.phone || '';
+  // يخدم شاشة "مدرستي" بس - يفرّق حساب فردي معلم عن حساب فردي طالب/متخرج
+  // (المتخرج يُعامل زي أي حساب فردي عادي - قيمة "معلم" بس هي اللي لها معنى مختلف)
+  currentUserEducationLevel = session.user.user_metadata?.education_level || null;
 
   // السوكيت أصلًا متصل من قبل الدخول (كضيف) - حدث 'connect' ما يعيد الإطلاق
   // لمجرد ما صار عندنا توكن الحين، فلازم نسجّل الهوية هنا صراحة
@@ -4516,6 +4711,26 @@ function onAuthSuccess(session) {
       document.getElementById('gradesheetBtn').classList.toggle(
         'hidden', currentUserRole !== 'teacher'
       );
+
+      // نفس شروط أزرار السايدبار أعلاه، بس لبطاقات ميزات ذكيّ المكررة داخل
+      // شاشة "مدرستي" (اختصارات مؤسسية بس تحتاج فصل/مدرسة فعلية)
+      const isInstStudent = currentUserRole === 'student';
+      const isInstTeacher = currentUserRole === 'teacher';
+      document.getElementById('mdStudentAssignmentsBtn').classList.toggle('hidden', !isInstStudent);
+      document.getElementById('mdStudentQuizzesBtn').classList.toggle('hidden', !isInstStudent);
+      document.getElementById('mdStudentScheduleBtn').classList.toggle('hidden', !(isInstStudent && currentUserSchoolId));
+      document.getElementById('mdTeacherAssignmentsBtn').classList.toggle('hidden', !isInstTeacher);
+      document.getElementById('mdTeacherQuizzesBtn').classList.toggle('hidden', !isInstTeacher);
+      document.getElementById('mdTeacherGradesheetBtn').classList.toggle('hidden', !isInstTeacher);
+
+      // مدرستي: قسم "واجهة المعلم" أو "واجهة الطالب" - معلم مؤسسي أو حساب
+      // فردي اختار "معلم" وقت التسجيل يشوف قسم المعلم بس، إداري المدرسة يشوف
+      // الاثنين (يشرف على الطرفين)، وأي شي ثاني (طالب مؤسسي أو فردي عادي/
+      // متخرج - "المتخرج يُعامل كحساب فردي عادي") يشوف قسم الطالب بس
+      const isMadrasatiTeacher = currentUserRole === 'teacher' || (!currentUserRole && currentUserEducationLevel === 'معلم');
+      const isMadrasatiAdmin = currentUserRole === 'school_admin' || currentUserRole === 'school_administration';
+      document.getElementById('madrasatiTeacherSection').classList.toggle('hidden', !(isMadrasatiTeacher || isMadrasatiAdmin));
+      document.getElementById('madrasatiStudentSection').classList.toggle('hidden', !(!isMadrasatiTeacher || isMadrasatiAdmin));
 
       if (me.must_change_password) {
         TOP_LEVEL_SCREENS.forEach(hide);
@@ -4646,12 +4861,20 @@ document.getElementById('loginSubmitBtn').addEventListener('click', async () => 
   onAuthSuccess(data.session);
 });
 
+// خيار "معلم" بالمرحلة الدراسية يحتاج توضيح أي مرحلة يدرّس - يظهر حقل إضافي
+// بس وقتها. هذا الفرق (معلم/غيره) يحدد لاحقًا أي قسم يظهر افتراضيًا بشاشة
+// "مدرستي" (أدوات معلم أو أدوات طالب) لحساب فردي بدون role مؤسسي
+document.getElementById('signupEducationLevel').addEventListener('change', e => {
+  document.getElementById('signupTeachingStageWrap').classList.toggle('hidden', e.target.value !== 'معلم');
+});
+
 document.getElementById('signupSubmitBtn').addEventListener('click', async () => {
   clearError('signupError');
   const username = document.getElementById('signupUsername').value.trim();
   const email = document.getElementById('signupEmail').value.trim();
   const password = document.getElementById('signupPassword').value;
   const education_level = document.getElementById('signupEducationLevel').value;
+  const teaching_stage = education_level === 'معلم' ? document.getElementById('signupTeachingStage').value : null;
   const proficiency_level = document.getElementById('signupProficiencyLevel').value;
   if (!username) { showError('signupError', t('err_name_required')); return; }
   if (!email || !password) { showError('signupError', t('err_email_password_required')); return; }
@@ -4659,7 +4882,7 @@ document.getElementById('signupSubmitBtn').addEventListener('click', async () =>
 
   const { data, error } = await supabaseClient.auth.signUp({
     email, password,
-    options: { data: { username, education_level, proficiency_level } },
+    options: { data: { username, education_level, proficiency_level, teaching_stage } },
   });
   if (error) { showError('signupError', error.message || t('err_signup_failed')); return; }
 
@@ -10401,6 +10624,18 @@ async function loadMadrasatiScreen() {
   loadHomeworkHelpList();
   loadStudyPlanList();
 }
+
+// ---------- بطاقات اختصار لميزات ذكيّ الموجودة أصلًا داخل شاشة "مدرستي" -
+// بدل ما نكرر منطق التنقل، ننادي نفس زر السايدبار المطابق (يحمل بنفسه شرط
+// تسجيل الدخول وpushNavSnapshot وكل شي) ----------
+document.getElementById('mdStudentAssignmentsBtn').addEventListener('click', () => document.getElementById('assignmentsBtn').click());
+document.getElementById('mdStudentQuizzesBtn').addEventListener('click', () => document.getElementById('quizzesBtn').click());
+document.getElementById('mdStudentScheduleBtn').addEventListener('click', () => document.getElementById('studentScheduleNavBtn').click());
+document.getElementById('mdStudentLibraryBtn').addEventListener('click', () => document.getElementById('sidebarLibraryBtn').click());
+document.getElementById('mdStudentAiBtn').addEventListener('click', () => document.getElementById('sidebarAiHelpBtn').click());
+document.getElementById('mdTeacherAssignmentsBtn').addEventListener('click', () => document.getElementById('assignmentsBtn').click());
+document.getElementById('mdTeacherQuizzesBtn').addEventListener('click', () => document.getElementById('quizzesBtn').click());
+document.getElementById('mdTeacherGradesheetBtn').addEventListener('click', () => document.getElementById('gradesheetBtn').click());
 
 async function loadLessonPrepList() {
   const list = document.getElementById('lessonPrepList');

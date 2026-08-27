@@ -4591,7 +4591,10 @@ const I18N = {
     sl_part_intestines_desc: 'أنبوب طويل يكمل هضم الطعام ويمتص العناصر الغذائية المفيدة للدم.',
     sl_body_hint: 'اضغط على أي عضو بالجسم مباشرة عشان تكبّر عليه وتعرف وظيفته.',
     sl_zoom_out: '🔍 تصغير',
-    sl_body_credit_animal: 'صورة تشريح مرجعية (كلب) - ويكيميديا كومنز، رخصة CC BY-SA 4.0',
+    sl_body_credit_dog: 'صورة تشريح مرجعية (كلب - أقرب مرجع متوفر لباقي الثدييات) - ويكيميديا كومنز، رخصة CC BY-SA 4.0',
+    sl_body_credit_cat: 'صورة تشريح قطة (أقرب قريب حقيقي متوفر - نفس فصيلة السنوريات) - ويكيميديا كومنز، رخصة CC BY-SA 3.0',
+    sl_body_credit_reptile: 'صورة تشريح أفعى (مرجع عام للزواحف) - ويكيميديا كومنز، رخصة CC BY-SA 3.0',
+    sl_body_credit_fish: 'صورة تشريح سمكة عظمية - ويكيميديا كومنز، رخصة CC BY-SA 3.0',
     sl_body_img_error: 'تعذّر تحميل صورة الجسم - تأكد من اتصالك بالإنترنت.',
     sl_animal_lion_name: 'أسد',
     sl_animal_lion_quick: 'الأسد الوحيد بين القطط اللي يعيش بمجموعات (زُمَر).',
@@ -5572,7 +5575,10 @@ const I18N = {
     sl_part_intestines_desc: 'A long tube that finishes digesting food and absorbs useful nutrients into the blood.',
     sl_body_hint: 'Click directly on any organ on the body to zoom in and learn its function.',
     sl_zoom_out: '🔍 Zoom out',
-    sl_body_credit_animal: 'Reference anatomy image (dog) - Wikimedia Commons, CC BY-SA 4.0',
+    sl_body_credit_dog: 'Reference anatomy image (dog - closest available reference for other mammals) - Wikimedia Commons, CC BY-SA 4.0',
+    sl_body_credit_cat: "Cat anatomy image (closest real relative available - same family as lions) - Wikimedia Commons, CC BY-SA 3.0",
+    sl_body_credit_reptile: 'Snake anatomy image (general reptile reference) - Wikimedia Commons, CC BY-SA 3.0',
+    sl_body_credit_fish: 'Bony fish anatomy image - Wikimedia Commons, CC BY-SA 3.0',
     sl_body_img_error: "Couldn't load the body image - check your internet connection.",
     sl_animal_lion_name: 'Lion',
     sl_animal_lion_quick: 'The only cat that lives in groups (prides).',
@@ -14880,11 +14886,14 @@ const SL_BODY_IMAGES = {
       { part: 'skin', x: 29.3, y: 48 },
     ],
   },
-  animal: {
-    // صورة تشريح حيوان حقيقية (كلب - تصلح كمرجع عام لأعضاء الثدييات) -
-    // رخصة CC BY-SA 4.0 من ويكيميديا كومنز، الإسناد تحت الصورة
+  // صور تشريح حسب أقرب تصنيف حيوان حقيقي متوفر - بدل صورة واحدة عامة
+  // لكل الحيوانات (كانت تطلع "كلب" حتى لو فاتح صفحة أسد) نستخدم أقرب قريب
+  // حقيقي متوفر له صورة تشريح موثوقة: قطط فعلية للأسد والقطة (نفس الفصيلة)،
+  // كلب كمرجع عام لباقي الثدييات، أفعى للزواحف، سمكة للأسماك
+  dog: {
+    // كلب - رخصة CC BY-SA 4.0 من ويكيميديا كومنز
     url: 'https://upload.wikimedia.org/wikipedia/commons/c/c5/Dog_Internal_Anatomy.svg',
-    credit: 'sl_body_credit_animal',
+    credit: 'sl_body_credit_dog',
     hotspots: [
       { part: 'brain', x: 16.7, y: 9.2 },
       { part: 'lungs', x: 17.8, y: 26.7 },
@@ -14896,6 +14905,60 @@ const SL_BODY_IMAGES = {
       { part: 'skin', x: 33.3, y: 46.7 },
     ],
   },
+  cat: {
+    // قطة - رخصة CC BY-SA 3.0 من ويكيميديا كومنز (لا يوجد تشريح مخصص
+    // للأسد فعليًا بأي مصدر حر، والقطة أقرب قريب حقيقي له - نفس الفصيلة)
+    url: 'https://upload.wikimedia.org/wikipedia/commons/5/5a/Scheme_cat_anatomy.svg',
+    credit: 'sl_body_credit_cat',
+    hotspots: [
+      { part: 'brain', x: 27.9, y: 25.5 },
+      { part: 'lungs', x: 43.3, y: 40.5 },
+      { part: 'heart', x: 53.9, y: 45.1 },
+      { part: 'liver', x: 59.1, y: 42.8 },
+      { part: 'stomach', x: 63.3, y: 40.5 },
+      { part: 'kidneys', x: 65.1, y: 34.7 },
+      { part: 'intestines', x: 67.3, y: 44 },
+      { part: 'skin', x: 45.2, y: 76.4 },
+    ],
+  },
+  reptile: {
+    // أفعى - رخصة CC BY-SA 3.0 من ويكيميديا كومنز (ما فيه دماغ ظاهر
+    // بهذا الرسم التشريحي، عادي - الزواحف تختلف كثير عن بعض)
+    url: 'https://upload.wikimedia.org/wikipedia/commons/4/4d/Snake-anatomy.svg',
+    credit: 'sl_body_credit_reptile',
+    hotspots: [
+      { part: 'heart', x: 50, y: 15 },
+      { part: 'lungs', x: 33.3, y: 26.7 },
+      { part: 'liver', x: 25, y: 50 },
+      { part: 'stomach', x: 54.2, y: 40 },
+      { part: 'intestines', x: 82.8, y: 33.7 },
+      { part: 'kidneys', x: 73.3, y: 76.7 },
+      { part: 'skin', x: 83.3, y: 10 },
+    ],
+  },
+  fish: {
+    // سمكة - رخصة CC BY-SA 3.0 من ويكيميديا كومنز (ما فيها رئتين ولا
+    // دماغ ظاهر بالرسم - الأسماك تتنفس بالخياشيم مو رئتين)
+    url: 'https://upload.wikimedia.org/wikipedia/commons/b/b0/Fish-anatomy.svg',
+    credit: 'sl_body_credit_fish',
+    hotspots: [
+      { part: 'heart', x: 45.8, y: 60.1 },
+      { part: 'liver', x: 57.8, y: 80.4 },
+      { part: 'stomach', x: 76.1, y: 91.5 },
+      { part: 'intestines', x: 63.1, y: 69.3 },
+      { part: 'kidneys', x: 92.5, y: 49.9 },
+      { part: 'skin', x: 28.9, y: 37 },
+    ],
+  },
+};
+// أي حيوان يستخدم أي صورة - أقرب تصنيف حقيقي متوفر له
+const SL_ANIMAL_BODY_KEY = {
+  lion: 'cat', cat: 'cat',
+  elephant: 'dog', whale: 'dog', bat: 'dog',
+  crocodile: 'reptile', turtle: 'reptile', snake: 'reptile', chameleon: 'reptile',
+  frog: 'dog', salamander: 'dog',
+  eagle: 'dog', penguin: 'dog', parrot: 'dog',
+  shark: 'fish', goldfish: 'fish',
 };
 function slShowOrganInfo(partId) {
   const info = SL_PARTS_INFO[partId];
@@ -14961,7 +15024,8 @@ function slOpenBioDetail(kind, animalId) {
       <ul class="sl-bio-fact-list">${a.factsKeys.map(k => `<li>${t(k)}</li>`).join('')}</ul>
       <div id="slAnimalPartsWrap"></div>
     `;
-    slRenderBodyScene(content.querySelector('#slAnimalPartsWrap'), 'animal', SL_BODY_PARTS.animal_generic);
+    const bodyKey = SL_ANIMAL_BODY_KEY[animalId] || 'dog';
+    slRenderBodyScene(content.querySelector('#slAnimalPartsWrap'), bodyKey, SL_BODY_PARTS.animal_generic);
   }
 }
 document.getElementById('slBioBackToCategoriesBtn').addEventListener('click', () => {

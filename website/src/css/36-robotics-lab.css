@@ -52,11 +52,19 @@
 
   /* ---------- الكانفس - يتمدد مع ارتفاع الشاشة عشان يكون فعليًا مساحة
      شغل كبيرة على أي شاشة، مو رقم ثابت صغير ---------- */
+  /* مهم جدًا: الموقع كامل dir="rtl" - لو الكانفس ورث هذا الاتجاه، المتصفح
+     يخلي وضع التمرير الابتدائي يعرض الطرف الأيمن من الكانفس (اللي فاضي عندنا)
+     بدل الطرف الأيسر (اللي فيه كل القطع، لأن إحداثياتها مبنية بمنطق LTR
+     عادي) - يعني كل شي كان يظهر "مو موجود" لأنه ببساطة خارج نطاق التمرير
+     الظاهر افتراضيًا! أدوات الإحداثيات/الرسم (زي Figma وأي محرر دوائر)
+     دايمًا تفرض LTR داخليًا بغض النظر عن لغة الصفحة، لأن نظام إحداثيات x/y
+     ما له "اتجاه قراءة" أصلًا */
   .rl-canvas-wrap {
     position: relative; background: var(--paper-dim); border: 1px solid var(--line);
     border-radius: var(--radius); height: calc(100vh - 210px); min-height: 640px; overflow: auto;
     background-image: radial-gradient(var(--line) 1.5px, transparent 1.5px);
     background-size: 24px 24px;
+    direction: ltr;
   }
   .rl-canvas { position: relative; min-width: 1100px; min-height: 900px; }
   .rl-wires-svg {

@@ -361,6 +361,11 @@ function loadRoboticsLabScreen() {
   document.getElementById('rlModeCodeBtn').classList.toggle('active', RL.mode === 'code');
   document.getElementById('rlBlocksEditor').classList.toggle('hidden', RL.mode !== 'blocks');
   document.getElementById('rlCodeEditorWrap').classList.toggle('hidden', RL.mode !== 'code');
+  // الصفحة كلها RTL - نتأكد صراحة إن الكانفس يبدأ من أقصى يسارها (وين
+  // موجودة القطع فعليًا) بدل ما يعتمد بس على direction:ltr بالـCSS
+  const canvasWrap = document.getElementById('rlCanvasWrap');
+  canvasWrap.scrollLeft = 0;
+  canvasWrap.scrollTop = 0;
 }
 
 // ---------- رسم الكانفس (قطع + أسلاك) ----------

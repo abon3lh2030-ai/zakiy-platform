@@ -1,0 +1,212 @@
+  /* ============================================================
+     معمل الروبوتات - محاكي دوائر أردوينو
+     ============================================================ */
+  .rl-toolbar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+    margin: 14px 0;
+  }
+  .rl-toolbar select#rlExampleSelect { max-width: 220px; margin: 0; }
+  .rl-mode-toggle {
+    display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+  }
+  .rl-mode-btn {
+    background: var(--surface); color: var(--ink-soft); border: none; padding: 10px 16px;
+    font-family: inherit; font-size: 14px; cursor: pointer; transition: background .15s, color .15s;
+  }
+  .rl-mode-btn.active { background: var(--emphasis-bg); color: var(--emphasis-text); font-weight: 600; }
+  .rl-stop-btn { color: var(--danger); border-color: var(--danger); }
+
+  .rl-workspace {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr) 340px;
+    gap: 16px;
+    align-items: start;
+  }
+  @media (max-width: 1100px) {
+    .rl-workspace { grid-template-columns: 1fr; }
+  }
+
+  /* ---------- صندوق القطع ---------- */
+  .rl-parts-bin {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 14px;
+  }
+  .rl-parts-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+  .rl-part-chip {
+    display: flex; align-items: center; gap: 8px; background: var(--paper-dim);
+    border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; cursor: grab;
+    font-family: inherit; font-size: 13px; color: var(--ink); text-align: right;
+    transition: border-color .15s, transform .1s;
+  }
+  .rl-part-chip:hover { border-color: var(--teal); transform: translateY(-1px); }
+  .rl-part-chip:active { cursor: grabbing; }
+  .rl-part-icon { font-size: 18px; }
+  .rl-parts-hint { font-size: 12px; margin-top: 10px; line-height: 1.7; }
+
+  /* ---------- الكانفس ---------- */
+  .rl-canvas-wrap {
+    position: relative; background: var(--paper-dim); border: 1px solid var(--line);
+    border-radius: var(--radius); min-height: 480px; overflow: auto;
+    background-image: radial-gradient(var(--line) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  .rl-canvas { position: relative; min-width: 700px; min-height: 480px; }
+  .rl-wires-svg {
+    position: absolute; inset: 0; width: 100%; height: 100%; min-width: 700px; min-height: 480px;
+    pointer-events: none; z-index: 1;
+  }
+  .rl-wire {
+    fill: none; stroke: var(--teal); stroke-width: 3; pointer-events: stroke; cursor: pointer;
+  }
+  .rl-wire:hover { stroke: var(--danger); }
+
+  .rl-component {
+    position: absolute; z-index: 2; user-select: none; cursor: move;
+  }
+  .rl-comp-remove {
+    position: absolute; top: -10px; left: -10px; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--danger); color: #fff; border: none; font-size: 11px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; z-index: 3;
+  }
+  .rl-pin {
+    position: absolute; width: 12px; height: 12px; margin-left: -6px; margin-top: -6px;
+    background: var(--surface); border: 2px solid var(--ink-soft); border-radius: 50%;
+    cursor: crosshair; z-index: 4; transition: background .15s, border-color .15s, transform .1s;
+  }
+  .rl-pin:hover { border-color: var(--teal); transform: scale(1.3); }
+  .rl-pin.connecting { background: var(--highlighter); border-color: var(--highlighter); animation: rl-pulse 1s infinite; }
+  @keyframes rl-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.4); } }
+
+  /* Arduino board */
+  .rl-type-arduino .rl-board {
+    width: 100%; height: 100%; background: linear-gradient(160deg, #0b5aa0, #063b6b);
+    border-radius: 10px; border: 2px solid #043055; position: relative;
+    box-shadow: 0 4px 14px rgba(0,0,0,.25);
+  }
+  .rl-board-label {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    color: rgba(255,255,255,.85); font-size: 13px; font-weight: 700; letter-spacing: 1px;
+  }
+  .rl-board-usb { position: absolute; left: -8px; top: 14px; width: 16px; height: 22px; background: #999; border-radius: 3px; }
+
+  /* LED */
+  .rl-type-led { width: 40px; }
+  .rl-led-bulb {
+    width: 34px; height: 34px; border-radius: 50% 50% 4px 4px; margin: 0 auto;
+    border: 2px solid rgba(0,0,0,.25); position: relative; transition: box-shadow .15s, filter .15s;
+    filter: brightness(.55) saturate(.7);
+  }
+  .rl-led-red { background: #ff4d4d; } .rl-led-green { background: #4dff88; }
+  .rl-led-blue { background: #4d9dff; } .rl-led-yellow { background: #ffe14d; }
+  .rl-led-bulb[data-lit="1"] { filter: none; }
+  .rl-led-glow { position: absolute; inset: -6px; border-radius: 50%; opacity: 0; transition: opacity .15s; }
+  .rl-led-legs { width: 4px; height: 20px; background: #ccc; margin: 0 auto; }
+
+  /* Resistor */
+  .rl-type-resistor { width: 60px; height: 24px; }
+  .rl-resistor-body {
+    width: 100%; height: 100%; background: #d9c48a; border-radius: 6px; border: 2px solid #a5854a;
+    display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #40331a;
+  }
+
+  /* Button */
+  .rl-type-button { width: 46px; height: 46px; }
+  .rl-button-cap {
+    width: 100%; height: 100%; background: #444; border-radius: 8px; border: 2px solid #222;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .rl-button-cap::after {
+    content: ''; width: 60%; height: 60%; background: #d33; border-radius: 6px; transition: transform .08s;
+  }
+  .rl-button-cap.pressed::after { transform: scale(.82); background: #a11; }
+
+  /* Potentiometer */
+  .rl-type-potentiometer { width: 60px; height: 60px; }
+  .rl-pot-body {
+    width: 56px; height: 56px; border-radius: 50%; background: #3a3f4b; border: 2px solid #20232b;
+    position: relative; cursor: grab;
+  }
+  .rl-pot-knob {
+    position: absolute; top: 6px; left: 50%; width: 4px; height: 22px; background: var(--highlighter);
+    transform-origin: 2px 22px; margin-left: -2px; border-radius: 2px;
+  }
+
+  /* Servo */
+  .rl-type-servo { width: 60px; height: 50px; }
+  .rl-servo-body {
+    width: 100%; height: 34px; background: #2b6cb0; border-radius: 6px; position: relative; margin-top: 8px;
+  }
+  .rl-servo-arm {
+    position: absolute; top: -6px; left: 50%; width: 26px; height: 6px; background: #fff;
+    transform-origin: 0 3px; margin-left: 0; border-radius: 3px;
+  }
+
+  /* Buzzer */
+  .rl-type-buzzer { width: 44px; height: 44px; }
+  .rl-buzzer-body {
+    width: 100%; height: 100%; border-radius: 50%; background: #555; border: 2px solid #222;
+    position: relative; display: flex; align-items: center; justify-content: center;
+  }
+  .rl-buzzer-body::after { content: ''; width: 50%; height: 50%; border-radius: 50%; background: #333; }
+  .rl-buzzer-wave { position: absolute; inset: -8px; border-radius: 50%; border: 2px solid var(--teal); opacity: 0; }
+  .rl-buzzer-body.on .rl-buzzer-wave { animation: rl-wave 0.6s infinite; }
+  @keyframes rl-wave { 0% { opacity: .8; transform: scale(.8); } 100% { opacity: 0; transform: scale(1.6); } }
+
+  /* ---------- اللوحة الجانبية (بلوكات/كود + سيريال) ---------- */
+  .rl-side-panel {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 14px; max-height: 640px; overflow-y: auto;
+  }
+  .rl-add-block-btn { margin-top: 8px; width: 100%; }
+
+  .rl-block-list { display: flex; flex-direction: column; gap: 6px; }
+  .rl-block {
+    background: var(--paper-dim); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
+    font-size: 12.5px;
+  }
+  .rl-block-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .rl-block-actions { display: flex; gap: 4px; margin-top: 6px; justify-content: flex-start; }
+  .rl-block-actions button {
+    background: none; border: none; cursor: pointer; font-size: 12px; padding: 2px 4px; opacity: .7;
+  }
+  .rl-block-actions button:hover { opacity: 1; }
+  .rl-b-field {
+    font-family: inherit; font-size: 12px; border: 1px solid var(--line); border-radius: 6px;
+    padding: 3px 6px; background: var(--surface); color: var(--ink);
+  }
+  .rl-b-num { width: 60px; } .rl-b-text { width: 100px; }
+  .rl-block-digitalWrite, .rl-block-analogWrite, .rl-block-delay, .rl-block-tone, .rl-block-noTone { border-inline-start: 4px solid var(--teal); }
+  .rl-block-ifElse, .rl-block-repeat { border-inline-start: 4px solid var(--highlighter); }
+  .rl-block-servoAttach, .rl-block-servoWriteMapped, .rl-block-pinMode, .rl-block-serialPrint { border-inline-start: 4px solid #9b7bd8; }
+  .rl-b-nested { margin: 6px 0; padding-inline-start: 12px; border-inline-start: 2px dashed var(--line); }
+  .rl-b-nested-label { font-size: 11px; color: var(--ink-soft); margin-top: 6px; }
+  .rl-b-add-inner { font-size: 11px !important; padding: 4px 8px !important; margin-top: 4px; }
+
+  .rl-block-picker-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 500;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .rl-block-picker {
+    background: var(--surface); border-radius: var(--radius); padding: 16px; width: min(420px, 90vw);
+    max-height: 80vh; overflow-y: auto;
+  }
+  .rl-picker-header { display: flex; justify-content: space-between; align-items: center; font-weight: 700; margin-bottom: 10px; }
+  .rl-picker-close { background: none; border: none; font-size: 16px; cursor: pointer; color: var(--ink-soft); }
+  .rl-picker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .rl-picker-item {
+    background: var(--paper-dim); border: 1px solid var(--line); border-radius: 8px; padding: 10px;
+    font-family: inherit; font-size: 12.5px; cursor: pointer; text-align: center;
+  }
+  .rl-picker-item:hover { border-color: var(--teal); }
+
+  .rl-code-textarea {
+    width: 100%; min-height: 260px; font-family: 'SFMono-Regular', Consolas, Menlo, monospace;
+    font-size: 13px; direction: ltr; text-align: left; border: 1px solid var(--line); border-radius: 8px;
+    padding: 10px; background: var(--paper-dim); color: var(--ink); resize: vertical;
+  }
+
+  .rl-serial-output {
+    margin-top: 8px; background: #0b0f14; color: #6bffb0; border-radius: 8px; padding: 10px;
+    font-family: 'SFMono-Regular', Consolas, Menlo, monospace; font-size: 12px; direction: ltr; text-align: left;
+    min-height: 70px; max-height: 140px; overflow-y: auto;
+  }

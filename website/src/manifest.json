@@ -149,6 +149,10 @@
   },
   {
     "type": "file",
+    "path": "pages/robotics/robotics-lab.html"
+  },
+  {
+    "type": "file",
     "path": "pages/settings/settings.html"
   },
   {

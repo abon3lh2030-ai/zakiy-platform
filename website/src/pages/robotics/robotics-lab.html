@@ -1,0 +1,61 @@
+  <!-- معمل الروبوتات - محاكي دوائر أردوينو (متاح للجميع: معلم/طالب/حساب فردي) -->
+  <section class="card hidden" id="step-robotics-lab">
+    <span class="step-label" data-i18n="rl_step_label">🤖 معمل الروبوتات</span>
+    <h2 data-i18n="rl_heading">معمل الروبوتات</h2>
+    <p class="desc" data-i18n="rl_desc">صمّم دائرة أردوينو، وصّل القطع، وابرمجها ببلوكات أو كود شبه-حقيقي - كل شي يشتغل مباشرة بمتصفحك.</p>
+
+    <div class="rl-toolbar">
+      <select id="rlExampleSelect" class="text-input">
+        <option value="" data-i18n="rl_examples_placeholder">📂 مشروع جاهز...</option>
+        <option value="blink" data-i18n="rl_example_blink">LED يومض</option>
+        <option value="button_led" data-i18n="rl_example_button_led">زر يشغّل LED</option>
+        <option value="pot_servo" data-i18n="rl_example_pot_servo">بوتنشيومتر يتحكم بسيرفو</option>
+      </select>
+      <button class="ghost" id="rlNewProjectBtn" data-i18n="rl_new_project">🆕 مشروع جديد</button>
+      <span class="rl-mode-toggle">
+        <button class="rl-mode-btn active" id="rlModeBlocksBtn" data-i18n="rl_mode_blocks">🧩 بلوكات</button>
+        <button class="rl-mode-btn" id="rlModeCodeBtn" data-i18n="rl_mode_code">📝 كود</button>
+      </span>
+      <button class="primary" id="rlRunBtn" data-i18n="rl_run">▶️ تشغيل</button>
+      <button class="ghost rl-stop-btn hidden" id="rlStopBtn" data-i18n="rl_stop">⏹ إيقاف</button>
+    </div>
+    <div id="rlError"></div>
+
+    <div class="rl-workspace">
+      <div class="rl-parts-bin">
+        <h3 class="sub-heading" data-i18n="rl_parts_heading">🧰 القطع</h3>
+        <div class="rl-parts-list" id="rlPartsList"></div>
+        <p class="desc rl-parts-hint" data-i18n="rl_parts_hint">اسحب قطعة للكانفس أو اضغط عليها لإضافتها. اضغط طرفين لتوصيل سلك بينهم.</p>
+      </div>
+
+      <div class="rl-canvas-wrap" id="rlCanvasWrap">
+        <svg class="rl-wires-svg" id="rlWiresSvg"></svg>
+        <div class="rl-canvas" id="rlCanvas"></div>
+      </div>
+
+      <div class="rl-side-panel">
+        <div class="rl-blocks-editor" id="rlBlocksEditor">
+          <h3 class="sub-heading" data-i18n="rl_setup_heading">🔧 عند البدء (setup)</h3>
+          <div id="rlBlocksSetupList"></div>
+          <button class="ghost rl-add-block-btn" id="rlAddSetupBlockBtn" data-i18n="rl_add_block">➕ إضافة بلوك</button>
+
+          <h3 class="sub-heading" style="margin-top:18px;" data-i18n="rl_loop_heading">🔁 بشكل متكرر (loop)</h3>
+          <div id="rlBlocksLoopList"></div>
+          <button class="ghost rl-add-block-btn" id="rlAddLoopBlockBtn" data-i18n="rl_add_block">➕ إضافة بلوك</button>
+        </div>
+
+        <div class="rl-code-editor-wrap hidden" id="rlCodeEditorWrap">
+          <h3 class="sub-heading" data-i18n="rl_code_heading">📝 الكود</h3>
+          <textarea id="rlCodeTextarea" class="rl-code-textarea" spellcheck="false"></textarea>
+        </div>
+
+        <h3 class="sub-heading" data-i18n="rl_serial_heading">🖥️ المراقب التسلسلي</h3>
+        <div class="rl-serial-output" id="rlSerialOutput"></div>
+      </div>
+    </div>
+
+    <!-- منتقي إضافة بلوك -->
+    <div class="rl-block-picker-overlay hidden" id="rlBlockPickerOverlay">
+      <div class="rl-block-picker" id="rlBlockPicker"></div>
+    </div>
+  </section>

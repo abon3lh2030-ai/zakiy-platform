@@ -25,20 +25,30 @@ const RL_PART_DEFS = {
       return pins;
     },
     render(c) {
-      const topPinsDots = RL_PIN_TOP.map((name, i) => `<span class="rl-board-pinmark" style="left:${20 + i * ((RL_BOARD_W - 40) / (RL_PIN_TOP.length - 1))}px;" title="${name}"></span>`).join('');
-      const bottomPinsDots = RL_PIN_BOTTOM.map((name, i) => `<span class="rl-board-pinmark" style="left:${20 + i * ((RL_BOARD_W - 40) / (RL_PIN_BOTTOM.length - 1))}px;" title="${name}"></span>`).join('');
+      const g = `arduinoGrad-${c.id}`;
+      const pinRect = (x, y) => `<rect x="${x - 2.5}" y="${y}" width="5" height="7" rx="1" fill="#1a1a1a"/>`;
+      const topPins = RL_PIN_TOP.map((name, i) => pinRect(20 + i * ((RL_BOARD_W - 40) / (RL_PIN_TOP.length - 1)), 8)).join('');
+      const bottomPins = RL_PIN_BOTTOM.map((name, i) => pinRect(20 + i * ((RL_BOARD_W - 40) / (RL_PIN_BOTTOM.length - 1)), RL_BOARD_H - 15)).join('');
       return `
-        <div class="rl-board">
-          <span class="rl-board-header-strip rl-board-header-top">${topPinsDots}</span>
-          <span class="rl-board-header-strip rl-board-header-bottom">${bottomPinsDots}</span>
-          <div class="rl-board-usb"></div>
-          <div class="rl-board-power-jack"></div>
-          <div class="rl-board-chip"><span>ATmega328P</span></div>
-          <div class="rl-board-crystal"></div>
-          <div class="rl-board-reset" title="Reset"></div>
-          <div class="rl-board-led rl-board-led-on"></div>
-          <div class="rl-board-label">ARDUINO<br><b>UNO</b></div>
-        </div>
+        <svg viewBox="0 0 ${RL_BOARD_W} ${RL_BOARD_H}" width="100%" height="100%">
+          <defs>
+            <linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#0fa8c9"/><stop offset="55%" stop-color="#0a7a94"/><stop offset="100%" stop-color="#054a5c"/>
+            </linearGradient>
+          </defs>
+          <rect x="1" y="1" width="${RL_BOARD_W - 2}" height="${RL_BOARD_H - 2}" rx="12" fill="url(#${g})" stroke="#033a4d" stroke-width="2"/>
+          ${topPins}${bottomPins}
+          <rect x="-9" y="22" width="18" height="28" rx="2" fill="#c7c7c7" stroke="#777"/>
+          <rect x="-7" y="${RL_BOARD_H - 44}" width="14" height="20" rx="2" fill="#1c1c1c"/>
+          <rect x="${RL_BOARD_W * 0.36 - 34}" y="${RL_BOARD_H / 2 - 23}" width="68" height="46" rx="3" fill="#14161a" stroke="#000"/>
+          <text x="${RL_BOARD_W * 0.36}" y="${RL_BOARD_H / 2 + 2}" text-anchor="middle" font-size="7" fill="#8fa0a8" font-family="monospace">ATmega328P</text>
+          <rect x="${RL_BOARD_W * 0.62 - 9}" y="${RL_BOARD_H / 2 - 5}" width="18" height="10" rx="2" fill="#e8e8e8" stroke="#888"/>
+          <circle cx="${RL_BOARD_W - 32}" cy="30" r="7" fill="url(#${g})" stroke="#7a1f10" stroke-width="1.5"/>
+          <circle cx="${RL_BOARD_W - 32}" cy="30" r="4" fill="#e05a4a"/>
+          <circle cx="${RL_BOARD_W - 20}" cy="${RL_BOARD_H - 28}" r="3.5" fill="#4dff88"><animate attributeName="opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite"/></circle>
+          <text x="26" y="${RL_BOARD_H - 22}" font-size="13" font-weight="700" fill="#ffffff" font-family="Arial, sans-serif" opacity=".95">ARDUINO</text>
+          <text x="26" y="${RL_BOARD_H - 9}" font-size="15" font-weight="800" fill="#ffffff" font-family="Arial, sans-serif">UNO</text>
+        </svg>
       `;
     },
   },
@@ -78,33 +88,74 @@ const RL_PART_DEFS = {
     pins() { return [{ name: 'A', dx: 12, dy: 60, role: 'anode' }, { name: 'C', dx: 28, dy: 60, role: 'cathode' }]; },
     render(c) {
       const brightness = c.state.lit || 0;
-      const glowOpacity = brightness / 255;
-      const filter = brightness > 0 ? `brightness(${0.55 + (brightness / 255) * 0.65})` : 'brightness(.55) saturate(.7)';
+      const on = brightness > 0;
+      const g = `ledGrad-${c.id}`;
+      const baseColors = { red: ['#ff8a80', '#c0392b'], green: ['#a5ffcb', '#1e9e56'], blue: ['#9dcfff', '#1f5aa0'], yellow: ['#fff2a0', '#d4a900'] };
       const glowColors = { red: '#ff4d4d', green: '#4dff88', blue: '#4d9dff', yellow: '#ffe14d' };
-      const glowColor = glowColors[c.props.color] || '#ffffff';
-      return `<div class="rl-led-bulb rl-led-${c.props.color}" data-lit="${brightness > 0 ? 1 : 0}" style="filter:${filter};">
-                <div class="rl-led-glow" style="opacity:${glowOpacity}; box-shadow: 0 0 18px 8px ${glowColor};"></div>
-              </div>
-              <div class="rl-led-legs"></div>`;
+      const [c1, c2] = baseColors[c.props.color] || baseColors.red;
+      const dim = on ? 1 : 0.35;
+      return `
+        <svg viewBox="0 0 40 60" width="100%" height="100%" data-lit="${on ? 1 : 0}">
+          <defs>
+            <radialGradient id="${g}" cx="35%" cy="30%">
+              <stop offset="0%" stop-color="${c1}" stop-opacity="${dim}"/><stop offset="100%" stop-color="${c2}" stop-opacity="${dim}"/>
+            </radialGradient>
+          </defs>
+          ${on ? `<circle cx="20" cy="17" r="19" fill="${glowColors[c.props.color] || '#fff'}" opacity="${brightness / 255 * 0.55}"/>` : ''}
+          <path d="M 4 20 A 16 16 0 0 1 36 20 L 36 30 Q 20 36 4 30 Z" fill="url(#${g})" stroke="rgba(0,0,0,.25)" stroke-width="1.5"/>
+          <ellipse cx="14" cy="12" rx="4" ry="6" fill="#fff" opacity=".55"/>
+          <rect x="15" y="34" width="2.5" height="20" fill="#ccc"/><rect x="22.5" y="34" width="2.5" height="20" fill="#ccc"/>
+        </svg>
+      `;
     },
   },
   resistor: {
     labelKey: 'rl_part_resistor', icon: '🟫', w: 60, h: 24, removable: true,
     defaultProps: { ohms: 220 },
     pins() { return [{ name: '1', dx: 0, dy: 12, role: 'passthrough' }, { name: '2', dx: 60, dy: 12, role: 'passthrough' }]; },
-    render(c) { return `<div class="rl-resistor-body"><span>${c.props.ohms}Ω</span></div>`; },
+    render(c) {
+      return `
+        <svg viewBox="0 0 60 24" width="100%" height="100%">
+          <line x1="0" y1="12" x2="10" y2="12" stroke="#8a8a8a" stroke-width="2"/><line x1="50" y1="12" x2="60" y2="12" stroke="#8a8a8a" stroke-width="2"/>
+          <rect x="10" y="4" width="40" height="16" rx="6" fill="#e6d19c" stroke="#a5854a" stroke-width="1.5"/>
+          <rect x="18" y="4" width="4" height="16" fill="#8a5a2b"/><rect x="26" y="4" width="4" height="16" fill="#c0392b"/>
+          <rect x="34" y="4" width="4" height="16" fill="#7a5a2b"/><rect x="42" y="4" width="4" height="16" fill="#d4a900"/>
+          <text x="30" y="-4" text-anchor="middle" font-size="8" fill="var(--ink-soft, #888)">${c.props.ohms}Ω</text>
+        </svg>
+      `;
+    },
   },
   button: {
     labelKey: 'rl_part_button', icon: '🔘', w: 46, h: 46, removable: true,
     pins() { return [{ name: '1', dx: 6, dy: 46, role: 'passthrough' }, { name: '2', dx: 40, dy: 46, role: 'passthrough' }]; },
-    render(c) { return `<div class="rl-button-cap ${c.state && c.state.pressed ? 'pressed' : ''}"></div>`; },
+    render(c) {
+      const pressed = c.state && c.state.pressed;
+      const g = `btnGrad-${c.id}`;
+      return `
+        <svg viewBox="0 0 46 46" width="100%" height="100%" class="rl-button-svg">
+          <defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#606672"/><stop offset="100%" stop-color="#2a2e36"/></linearGradient></defs>
+          <rect x="1" y="1" width="44" height="44" rx="8" fill="url(#${g})" stroke="#1a1c22" stroke-width="1.5"/>
+          <circle cx="10" cy="10" r="2" fill="#111"/><circle cx="36" cy="10" r="2" fill="#111"/><circle cx="10" cy="36" r="2" fill="#111"/><circle cx="36" cy="36" r="2" fill="#111"/>
+          <circle cx="23" cy="23" r="${pressed ? 11 : 13}" fill="${pressed ? '#7a160c' : '#e0473a'}" stroke="#000" stroke-opacity=".3"/>
+        </svg>
+      `;
+    },
   },
   potentiometer: {
     labelKey: 'rl_part_potentiometer', icon: '🎛️', w: 60, h: 60, removable: true,
     pins() { return [{ name: 'GND', dx: 0, dy: 60, role: 'gnd' }, { name: 'OUT', dx: 30, dy: 60, role: 'pot-out' }, { name: 'VCC', dx: 60, dy: 60, role: 'vcc' }]; },
     render(c) {
-      const angle = -135 + ((c.state.value || 0) / 1023) * 270;
-      return `<div class="rl-pot-body"><div class="rl-pot-knob" style="transform:rotate(${angle}deg)"></div></div>`;
+      const angle = -135 + ((c.state.value ?? 512) / 1023) * 270;
+      const g = `potGrad-${c.id}`;
+      return `
+        <svg viewBox="0 0 60 60" width="100%" height="100%" class="rl-pot-svg">
+          <defs><radialGradient id="${g}" cx="35%" cy="30%"><stop offset="0%" stop-color="#6b7280"/><stop offset="100%" stop-color="#262a31"/></radialGradient></defs>
+          <rect x="8" y="8" width="44" height="44" rx="6" fill="#cfcac0" stroke="#a39d90"/>
+          <circle cx="30" cy="30" r="20" fill="url(#${g})" stroke="#14161a" stroke-width="2"/>
+          <g transform="rotate(${angle} 30 30)"><rect x="28" y="12" width="4" height="16" rx="2" fill="var(--highlighter, #ffc93c)"/></g>
+          <circle cx="30" cy="30" r="4" fill="#111"/>
+        </svg>
+      `;
     },
   },
   servo: {
@@ -112,13 +163,37 @@ const RL_PART_DEFS = {
     pins() { return [{ name: 'GND', dx: 8, dy: 50, role: 'gnd' }, { name: 'SIG', dx: 30, dy: 50, role: 'servo-sig' }, { name: 'VCC', dx: 52, dy: 50, role: 'vcc' }]; },
     render(c) {
       const angle = (c.state.angle ?? 90) - 90;
-      return `<div class="rl-servo-body"><div class="rl-servo-arm" style="transform:rotate(${angle}deg)"></div></div>`;
+      const g = `servoGrad-${c.id}`;
+      return `
+        <svg viewBox="0 0 60 50" width="100%" height="100%">
+          <defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#4c8ed6"/><stop offset="100%" stop-color="#1a4a80"/></linearGradient></defs>
+          <rect x="1" y="16" width="58" height="30" rx="6" fill="url(#${g})" stroke="#123963" stroke-width="1.5"/>
+          <circle cx="30" cy="16" r="6" fill="#e8e8e8" stroke="#888"/>
+          <g transform="rotate(${angle} 30 16)"><rect x="30" y="13" width="24" height="6" rx="3" fill="#fff" stroke="#ccc" stroke-width=".5"/></g>
+          <circle cx="30" cy="16" r="2.5" fill="#333"/>
+        </svg>
+      `;
     },
   },
   buzzer: {
     labelKey: 'rl_part_buzzer', icon: '🔊', w: 44, h: 44, removable: true,
     pins() { return [{ name: '+', dx: 12, dy: 44, role: 'buzzer-sig' }, { name: '-', dx: 32, dy: 44, role: 'gnd' }]; },
-    render(c) { return `<div class="rl-buzzer-body ${c.state && c.state.on ? 'on' : ''}"><span class="rl-buzzer-wave"></span></div>`; },
+    render(c) {
+      const on = c.state && c.state.on;
+      const g = `buzzGrad-${c.id}`;
+      const holes = Array.from({ length: 8 }, (_, i) => {
+        const a = (i / 8) * Math.PI * 2;
+        return `<circle cx="${22 + Math.cos(a) * 9}" cy="${20 + Math.sin(a) * 9}" r="1.6" fill="#1a1a1a"/>`;
+      }).join('');
+      return `
+        <svg viewBox="0 0 44 44" width="100%" height="100%" class="${on ? 'rl-buzzer-on' : ''}">
+          <defs><radialGradient id="${g}" cx="35%" cy="30%"><stop offset="0%" stop-color="#7a7a7a"/><stop offset="100%" stop-color="#2c2c2c"/></radialGradient></defs>
+          <circle cx="22" cy="20" r="20" fill="url(#${g})" stroke="#111" stroke-width="1.5"/>
+          <circle cx="22" cy="20" r="3" fill="#111"/>${holes}
+          ${on ? `<circle class="rl-buzzer-ring" cx="22" cy="20" r="20" fill="none" stroke="var(--teal, #2E8B77)" stroke-width="2"/>` : ''}
+        </svg>
+      `;
+    },
   },
   ultrasonic: {
     labelKey: 'rl_part_ultrasonic', icon: '📡', w: 76, h: 56, removable: true,
@@ -168,11 +243,20 @@ const RL_PART_DEFS = {
     },
     render(c) {
       const [r, g, b] = c.state.rgb || [0, 0, 0];
-      const glow = Math.max(r, g, b) > 0;
-      return `<div class="rl-led-bulb" style="background: rgb(${r},${g},${b}); filter:${glow ? 'none' : 'brightness(.4) saturate(.4)'};">
-                <div class="rl-led-glow" style="opacity:${Math.max(r, g, b) / 255}; box-shadow: 0 0 18px 8px rgb(${r},${g},${b});"></div>
-              </div>
-              <div class="rl-led-legs"></div>`;
+      const brightness = Math.max(r, g, b);
+      const g2 = `rgbGrad-${c.id}`;
+      const fill = `rgb(${r},${g},${b})`;
+      const dim = brightness > 0 ? 1 : 0.35;
+      return `
+        <svg viewBox="0 0 40 60" width="100%" height="100%">
+          <defs><radialGradient id="${g2}" cx="35%" cy="30%"><stop offset="0%" stop-color="${fill}" stop-opacity="${dim}"/><stop offset="100%" stop-color="${fill}" stop-opacity="${dim * 0.6}"/></radialGradient></defs>
+          ${brightness > 0 ? `<circle cx="20" cy="17" r="19" fill="${fill}" opacity="${brightness / 255 * 0.5}"/>` : ''}
+          <path d="M 4 20 A 16 16 0 0 1 36 20 L 36 30 Q 20 36 4 30 Z" fill="url(#${g2})" stroke="rgba(0,0,0,.25)" stroke-width="1.5"/>
+          <ellipse cx="14" cy="12" rx="4" ry="6" fill="#fff" opacity=".55"/>
+          <rect x="12" y="34" width="2.2" height="20" fill="#ccc"/><rect x="17" y="34" width="2.2" height="20" fill="#ccc"/>
+          <rect x="22" y="34" width="2.2" height="20" fill="#ccc"/><rect x="27" y="34" width="2.2" height="20" fill="#ccc"/>
+        </svg>
+      `;
     },
   },
   dcmotor: {
@@ -389,7 +473,7 @@ function rlRenderPartsBin() {
   const previewBoxW = 76, previewBoxH = 64;
   wrap.innerHTML = Object.entries(RL_PART_DEFS).filter(([type]) => type !== 'arduino').map(([type, def]) => {
     const scale = Math.min(1, (previewBoxW - 10) / def.w, (previewBoxH - 10) / def.h);
-    const fakeComp = { props: { ...(def.defaultProps || {}) }, state: {} };
+    const fakeComp = { id: `preview-${type}`, props: { ...(def.defaultProps || {}) }, state: {} };
     return `
       <button class="rl-part-chip" draggable="true" data-type="${type}" title="${t(def.labelKey)}">
         <span class="rl-part-thumb" style="width:${previewBoxW}px; height:${previewBoxH}px;">
@@ -426,7 +510,13 @@ function rlRenderCanvas() {
     const def = RL_PART_DEFS[c.type];
     const pinsHtml = def.pins().map(p => {
       const isConnecting = RL.connecting && RL.connecting.compId === c.id && RL.connecting.pin === p.name;
-      return `<span class="rl-pin ${isConnecting ? 'connecting' : ''}" data-comp="${c.id}" data-pin="${p.name}" style="left:${p.dx}px; top:${p.dy}px;" title="${p.name}"></span>`;
+      // تسمية دايمة الظهور لكل منفذ (مو بس tooltip عند التمرير) - فوق
+      // المنفذ لو قريب من أعلى القطعة، وتحته لو قريب من أسفلها
+      const labelBelow = p.dy > def.h / 2;
+      return `
+        <span class="rl-pin ${isConnecting ? 'connecting' : ''}" data-comp="${c.id}" data-pin="${p.name}" style="left:${p.dx}px; top:${p.dy}px;" title="${p.name}"></span>
+        <span class="rl-pin-label ${labelBelow ? 'rl-pin-label-below' : 'rl-pin-label-above'}" style="left:${p.dx}px; top:${p.dy}px;">${p.name}</span>
+      `;
     }).join('');
     return `
       <div class="rl-component rl-type-${c.type}" data-id="${c.id}" style="left:${c.x}px; top:${c.y}px; width:${def.w}px; height:${def.h}px;">
@@ -445,11 +535,11 @@ function rlRenderCanvas() {
       RL.dragging = { id, offX: e.clientX - comp.x, offY: e.clientY - comp.y };
       e.preventDefault();
     });
-    if (el.querySelector('.rl-pot-body')) {
-      el.querySelector('.rl-pot-body').addEventListener('mousedown', (e) => { e.stopPropagation(); rlStartPotDrag(id, e); });
+    if (el.querySelector('.rl-pot-svg')) {
+      el.querySelector('.rl-pot-svg').addEventListener('mousedown', (e) => { e.stopPropagation(); rlStartPotDrag(id, e); });
     }
-    if (el.querySelector('.rl-button-cap')) {
-      const btn = el.querySelector('.rl-button-cap');
+    if (el.querySelector('.rl-button-svg')) {
+      const btn = el.querySelector('.rl-button-svg');
       const comp = RL.components.find(c => c.id === id);
       const press = (v) => { comp.state.pressed = v; rlRenderCanvas(); };
       btn.addEventListener('mousedown', (e) => { e.stopPropagation(); press(true); });
@@ -495,7 +585,7 @@ function rlRenderCanvas() {
 function rlStartPotDrag(id, e) {
   const move = (ev) => {
     const comp = RL.components.find(c => c.id === id);
-    const rect = document.querySelector(`.rl-component[data-id="${id}"] .rl-pot-body`).getBoundingClientRect();
+    const rect = document.querySelector(`.rl-component[data-id="${id}"] .rl-pot-svg`).getBoundingClientRect();
     const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
     let deg = Math.atan2(ev.clientY - cy, ev.clientX - cx) * 180 / Math.PI + 90;
     if (deg < 0) deg += 360;

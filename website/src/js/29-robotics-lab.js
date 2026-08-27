@@ -53,11 +53,26 @@ const RL_PART_DEFS = {
     },
   },
   breadboard: {
-    labelKey: 'rl_part_breadboard', icon: '🟦', w: 420, h: 150, removable: true,
-    pins() { return []; },
+    labelKey: 'rl_part_breadboard', icon: '🟦', w: 420, h: 160, removable: true,
+    // ثقوب فعلية قابلة للتوصيل (مو بس ديكور): ١٠ أعمدة بالصف العلوي (T1-T10)
+    // و١٠ بالسفلي (B1-B10) - كل عمود شبكة كهربائية منفصلة عن الباقي (زي
+    // البريدبورد الحقيقي)، بالإضافة لخطي طاقة (+ فوق و- تحت) كل وحد نقطة
+    // وحدة تمثّل الخط كامل. نظام الأسلاك عندنا أصلًا يدعم أكثر من سلك بنفس
+    // الطرف فما نحتاج منطق خاص إضافي - يشتغل تلقائيًا بمجرد ما نعرّف الأطراف
+    bbColX(i) { return 20 + i * ((420 - 40) / 9); },
+    pins() {
+      const pins = [];
+      for (let i = 0; i < 10; i++) {
+        pins.push({ name: `T${i + 1}`, dx: RL_PART_DEFS.breadboard.bbColX(i), dy: 52, role: 'io' });
+        pins.push({ name: `B${i + 1}`, dx: RL_PART_DEFS.breadboard.bbColX(i), dy: 110, role: 'io' });
+      }
+      pins.push({ name: 'RAIL+', dx: 395, dy: 15, role: 'io' });
+      pins.push({ name: 'RAIL-', dx: 395, dy: 145, role: 'io' });
+      return pins;
+    },
     render() {
-      // شبكة الثقوب بنمط خلفية CSS (radial-gradient متكرر) بدل عناصر منفصلة
-      // لكل ثقب - أدق بالمحاذاة وأخف وأنظف بكثير
+      // شبكة الثقوب الزخرفية بخلفية CSS (radial-gradient متكرر) - الثقوب
+      // الفعلية القابلة للتوصيل تُرسم فوقها كنقاط .rl-pin عادية (زي أي قطعة)
       return `
         <div class="rl-breadboard">
           <div class="rl-bb-rail rl-bb-rail-pos"><span>+</span></div>

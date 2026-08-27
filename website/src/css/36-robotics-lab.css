@@ -108,31 +108,33 @@
   .rl-pin-label-above { transform: translate(-50%, -20px); }
   .rl-pin-label-below { transform: translate(-50%, 6px); }
 
-  /* ---------- بريدبورد - نمط ثقوب بخلفية CSS متكررة (radial-gradient) بدل
-     مئات العناصر المنفصلة - محاذاة مضبوطة دايمًا ومظهر أنظف ---------- */
-  .rl-type-breadboard { width: 420px; height: 150px; }
+  /* ---------- بريدبورد - مواضع ثابتة (absolute) بالبكسل عشان تطابق تمامًا
+     إحداثيات الأطراف الفعلية المُعرَّفة بـpins() بالجافاسكربت (نفس القيم
+     بالضبط: dy=15/52/110/145) - بدون الاعتماد على حساب flexbox التلقائي
+     اللي ممكن ينزاح عن حساباتنا اليدوية ---------- */
+  .rl-type-breadboard { width: 420px; height: 160px; }
   .rl-breadboard {
     width: 100%; height: 100%; background: #f4efe0; border: 1px solid #d8d0b8; border-radius: 10px;
-    box-shadow: 0 4px 14px rgba(0,0,0,.18); padding: 10px 14px; box-sizing: border-box;
-    display: flex; flex-direction: column; justify-content: space-between; gap: 8px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.18); box-sizing: border-box; position: relative;
   }
   .rl-bb-rail {
-    height: 16px; border-radius: 999px; position: relative; display: flex; align-items: center;
-    background: linear-gradient(#00000008, #00000008);
+    position: absolute; right: 8px; left: 8px; height: 14px; border-radius: 999px;
   }
+  .rl-bb-rail-pos { top: 8px; background-image: radial-gradient(#c0392b 1.6px, transparent 1.6px); background-size: 12px 12px; background-position: 8px center; }
+  .rl-bb-rail-neg { top: 138px; background-image: radial-gradient(#2b6cb0 1.6px, transparent 1.6px); background-size: 12px 12px; background-position: 8px center; }
   .rl-bb-rail span {
-    position: absolute; right: 6px; font-size: 12px; font-weight: 800; line-height: 1;
+    position: absolute; right: 6px; top: -2px; font-size: 12px; font-weight: 800; line-height: 1;
   }
-  .rl-bb-rail-pos { background-image: radial-gradient(#c0392b 1.6px, transparent 1.6px); background-size: 12px 12px; background-position: 8px center; }
   .rl-bb-rail-pos span { color: #c0392b; }
-  .rl-bb-rail-neg { background-image: radial-gradient(#2b6cb0 1.6px, transparent 1.6px); background-size: 12px 12px; background-position: 8px center; }
   .rl-bb-rail-neg span { color: #2b6cb0; }
   .rl-bb-holes-block {
-    flex: 1; border-radius: 4px;
+    position: absolute; right: 8px; left: 8px; height: 48px; border-radius: 4px;
     background-image: radial-gradient(#a89f88 1.4px, transparent 1.4px);
     background-size: 11px 11px;
   }
-  .rl-bb-center-gap { height: 4px; background: #e2dabf; border-radius: 2px; }
+  .rl-bb-holes-block:first-of-type { top: 28px; }
+  .rl-bb-holes-block:last-of-type { top: 86px; }
+  .rl-bb-center-gap { position: absolute; right: 8px; left: 8px; top: 78px; height: 6px; background: #e2dabf; border-radius: 2px; }
 
   /* ---------- شاشة LCD (I2C 16×2) ---------- */
   .rl-type-lcd { width: 200px; height: 90px; }

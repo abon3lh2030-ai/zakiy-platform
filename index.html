@@ -4509,6 +4509,12 @@ const I18N = {
     sl_reaction_ice_hot: 'الثلج يذوب بسرعة كبيرة جدًا لما يلمس ماء حار - فرق الحرارة الكبير ينقل طاقة حرارية بسرعة.',
     sl_reaction_ice_cold: 'الثلج يذوب ببطء أكتر بالماء البارد - فرق الحرارة بينهم أقل.',
     sl_reaction_none_pair: 'جرّب مزيج ثاني! {a} مع {b} ما يسوي تفاعل ملحوظ.',
+    sl_reaction_generic_measure: 'استخدمت {tool} عشان تقيس {liquid} - أداة القياس أساسية بأي تجربة علمية دقيقة.',
+    sl_reaction_generic_tool_liquid: '{tool} لامس {liquid} - جرّب تشوف وش يصير لو غيّرت درجة حرارة السائل.',
+    sl_reaction_generic_heat_solid: 'سخّنت {solid} - الحرارة تغيّر خواص أغلب المواد الصلبة (تذيبها، تذوّبها، أو تغيّر شكلها).',
+    sl_reaction_generic_container: 'حطيت {content} بـ{container} - جاهز الحين تضيف مادة ثانية له وتشوف وش يصير.',
+    sl_reaction_generic_two_solids: '{a} و{b} مادتان صلبتان - جرّب تضيف لهم ماء عشان تشوف كيف يتفاعلان أو يذوبان.',
+    sl_reaction_generic_two_liquids: 'مزجت {a} مع {b} - سائلان مختلفان قد يمتزجان بسلاسة أو ينفصلان حسب كثافتهما.',
     sl_item_sugar_name: 'سكر',
     sl_item_sugar_desc: 'مادة بلورية بيضاء تذوب بالماء - سرعة ذوبانها تعتمد على الحرارة زي الملح تقريبًا.',
     sl_item_sugar_usage: 'استخدامه: قارن سرعة ذوبانه بماء بارد مقابل ماء حار.',
@@ -5490,6 +5496,12 @@ const I18N = {
     sl_reaction_ice_hot: 'Ice melts very quickly when it touches hot water - the large temperature difference transfers heat energy fast.',
     sl_reaction_ice_cold: 'Ice melts more slowly in cold water - the temperature difference between them is smaller.',
     sl_reaction_none_pair: "Try a different combo! {a} with {b} doesn't produce a noticeable reaction.",
+    sl_reaction_generic_measure: 'You used the {tool} to measure {liquid} - a measuring tool is essential in any precise scientific experiment.',
+    sl_reaction_generic_tool_liquid: 'The {tool} touched {liquid} - try seeing what happens if you change the liquid\'s temperature.',
+    sl_reaction_generic_heat_solid: 'You heated the {solid} - heat changes the properties of most solids (melting, dissolving, or changing their shape).',
+    sl_reaction_generic_container: 'You put {content} in the {container} - now you can add another substance to it and see what happens.',
+    sl_reaction_generic_two_solids: '{a} and {b} are both solids - try adding water to them to see how they react or dissolve.',
+    sl_reaction_generic_two_liquids: 'You mixed {a} with {b} - two different liquids might blend smoothly or separate depending on their density.',
     sl_item_sugar_name: 'Sugar',
     sl_item_sugar_desc: 'A white crystalline substance that dissolves in water - its dissolving speed depends on temperature, similar to salt.',
     sl_item_sugar_usage: 'Use it: compare its dissolving speed in cold vs. hot water.',
@@ -14410,6 +14422,36 @@ const SL_REACTIONS = {
   [slPairKey('ice', 'water_cold')]: 'sl_reaction_ice_cold',
 };
 
+// ---------- تصنيف عام لكل قطعة - يُستخدم لتوليد رد تعليمي معقول لأي مزيج
+// ما له تفاعل محدد بالضبط أعلاه، بدل "جرّب شي ثاني" لكل مزيج غير مغطّى -
+// كذا أغلب المحاولات تطلع لها فايدة تعليمية حتى لو ما كانت بقاعدة البيانات ----------
+const SL_ITEM_CATEGORY = {
+  beaker: 'container', flask: 'container',
+  vinegar: 'liquid', food_coloring: 'liquid', water_cold: 'liquid', water_warm: 'liquid', water_hot: 'liquid',
+  baking_soda: 'solid', salt: 'solid', sugar: 'solid', ice: 'solid',
+  bunsen_burner: 'heat', thermometer: 'tool', paper: 'tool',
+};
+function slGenericReactionText(a, b) {
+  const catA = SL_ITEM_CATEGORY[a], catB = SL_ITEM_CATEGORY[b];
+  const nameA = t(slItemNameKey(a)), nameB = t(slItemNameKey(b));
+  if ((catA === 'tool' && catB === 'liquid') || (catB === 'tool' && catA === 'liquid')) {
+    const tool = catA === 'tool' ? a : b, liquid = catA === 'liquid' ? nameA : nameB;
+    if (tool === 'thermometer') return t('sl_reaction_generic_measure', { liquid, tool: t(slItemNameKey(tool)) });
+    return t('sl_reaction_generic_tool_liquid', { tool: t(slItemNameKey(tool)), liquid });
+  }
+  if ((catA === 'heat' && catB === 'solid') || (catB === 'heat' && catA === 'solid')) {
+    const solid = catA === 'solid' ? nameA : nameB;
+    return t('sl_reaction_generic_heat_solid', { solid });
+  }
+  if ((catA === 'container' && (catB === 'liquid' || catB === 'solid')) || (catB === 'container' && (catA === 'liquid' || catA === 'solid'))) {
+    const content = catA === 'container' ? nameB : nameA, container = catA === 'container' ? nameA : nameB;
+    return t('sl_reaction_generic_container', { content, container });
+  }
+  if (catA === 'solid' && catB === 'solid') return t('sl_reaction_generic_two_solids', { a: nameA, b: nameB });
+  if (catA === 'liquid' && catB === 'liquid') return t('sl_reaction_generic_two_liquids', { a: nameA, b: nameB });
+  return t('sl_reaction_none_pair', { a: nameA, b: nameB });
+}
+
 // ---------- تهيئة المشهد ثلاثي الأبعاد ----------
 function slInitThreeScene() {
   const canvas = document.getElementById('slCanvas');
@@ -14613,7 +14655,7 @@ document.getElementById('slReactBtn').addEventListener('click', () => {
     for (let j = i + 1; j < SL.tray.length; j++) {
       const key = slPairKey(SL.tray[i], SL.tray[j]);
       const reactionKey = SL_REACTIONS[key];
-      const text = reactionKey ? t(reactionKey) : t('sl_reaction_none_pair', { a: t(slItemNameKey(SL.tray[i])), b: t(slItemNameKey(SL.tray[j])) });
+      const text = reactionKey ? t(reactionKey) : slGenericReactionText(SL.tray[i], SL.tray[j]);
       results.push({ a: SL.tray[i], b: SL.tray[j], text });
       SL.sessionLog.push(`${t('sl_log_reaction_prefix')}: ${t(slItemNameKey(SL.tray[i]))} + ${t(slItemNameKey(SL.tray[j]))} → ${text}`);
     }
@@ -14801,93 +14843,145 @@ function slRenderBodyPartsInto(containerEl, partIds) {
     });
   });
 }
-// ---------- رسم تشريحي حقيقي لجسم الإنسان (SVG) - أعضاء بمواضعها التقريبية
-// الصحيحة، تضغط على أي عضو "من جوا الجسم نفسه" فيكبّر (zoom) عليه ويطلع
-// شرحه - بدون أي اختيار من قوائم خارجية ---------- */
-// إيموجي حقيقي (تصميم احترافي جاهز) للأعضاء اللي فيها رمز واضح ومعروف -
-// أدق وأنضف بكثير من محاولة رسم شكل العضو يدويًا بـSVG؛ الباقي (كبد/معدة/
-// أمعاء/كلى) ما فيها إيموجي مناسب فنستخدم أشكال ملوّنة بتدرّج بدلها
-const SL_HUMAN_ORGANS = [
-  { id: 'brain', cx: 100, cy: 38, emoji: '🧠', size: 26 },
-  { id: 'lungs', cx: 78, cy: 108, emoji: '🫁', size: 30 },
-  { id: 'lungs2', partId: 'lungs', cx: 122, cy: 108, emoji: '🫁', size: 30 },
-  { id: 'heart', cx: 100, cy: 122, emoji: '🫀', size: 24 },
-  { id: 'liver', cx: 118, cy: 150, rx: 16, ry: 12, grad: 'slGradLiver' },
-  { id: 'stomach', cx: 82, cy: 152, rx: 13, ry: 12, grad: 'slGradStomach' },
-  { id: 'intestines', cx: 100, cy: 182, rx: 22, ry: 18, grad: 'slGradIntestines' },
-  { id: 'kidneys', cx: 70, cy: 168, rx: 7, ry: 12, grad: 'slGradKidneys' },
-  { id: 'kidneys2', partId: 'kidneys', cx: 130, cy: 168, rx: 7, ry: 12, grad: 'slGradKidneys' },
-];
-function slBuildHumanBodySvg() {
-  const organsHtml = SL_HUMAN_ORGANS.map(o => o.emoji
-    ? `<text class="sl-organ-hotspot" data-part="${o.partId || o.id}" data-cx="${o.cx}" data-cy="${o.cy}"
-         x="${o.cx}" y="${o.cy}" font-size="${o.size}" text-anchor="middle" dominant-baseline="central">${o.emoji}</text>`
-    : `<ellipse class="sl-organ-hotspot" data-part="${o.partId || o.id}" data-cx="${o.cx}" data-cy="${o.cy}"
-         cx="${o.cx}" cy="${o.cy}" rx="${o.rx}" ry="${o.ry}" fill="url(#${o.grad})" stroke="#ffffff80" stroke-width="1.2"/>`
-  ).join('');
-  return `
-    <svg class="sl-body-svg" id="slBodySvg" viewBox="0 0 200 420" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="slSkinGrad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#f5d2a8"/><stop offset="55%" stop-color="#e0ab77"/><stop offset="100%" stop-color="#c4874e"/>
-        </linearGradient>
-        <radialGradient id="slGradBrain" cx="35%" cy="30%"><stop offset="0%" stop-color="#f5b8d8"/><stop offset="100%" stop-color="#c04f8c"/></radialGradient>
-        <radialGradient id="slGradLungs" cx="35%" cy="30%"><stop offset="0%" stop-color="#ff9d9d"/><stop offset="100%" stop-color="#c23a3a"/></radialGradient>
-        <radialGradient id="slGradHeart" cx="35%" cy="30%"><stop offset="0%" stop-color="#ff5470"/><stop offset="100%" stop-color="#9c0d2e"/></radialGradient>
-        <radialGradient id="slGradLiver" cx="35%" cy="30%"><stop offset="0%" stop-color="#c47a4a"/><stop offset="100%" stop-color="#7a3d1a"/></radialGradient>
-        <radialGradient id="slGradStomach" cx="35%" cy="30%"><stop offset="0%" stop-color="#ffcb6b"/><stop offset="100%" stop-color="#d68c1f"/></radialGradient>
-        <radialGradient id="slGradIntestines" cx="35%" cy="30%"><stop offset="0%" stop-color="#f0bc7e"/><stop offset="100%" stop-color="#b87a35"/></radialGradient>
-        <radialGradient id="slGradKidneys" cx="35%" cy="30%"><stop offset="0%" stop-color="#c085e0"/><stop offset="100%" stop-color="#6b2f8a"/></radialGradient>
-      </defs>
-      <g class="sl-organ-hotspot" data-part="skin" data-cx="100" data-cy="210">
-        <rect x="68" y="230" width="28" height="150" rx="14" fill="url(#slSkinGrad)"/>
-        <rect x="104" y="230" width="28" height="150" rx="14" fill="url(#slSkinGrad)"/>
-        <rect x="28" y="78" width="24" height="112" rx="12" fill="url(#slSkinGrad)"/>
-        <rect x="148" y="78" width="24" height="112" rx="12" fill="url(#slSkinGrad)"/>
-        <rect x="62" y="72" width="76" height="130" rx="26" fill="url(#slSkinGrad)"/>
-        <rect x="62" y="185" width="76" height="45" rx="16" fill="url(#slSkinGrad)"/>
-        <rect x="90" y="58" width="20" height="16" fill="url(#slSkinGrad)"/>
-        <circle cx="100" cy="36" r="27" fill="url(#slSkinGrad)"/>
-      </g>
-      ${organsHtml}
-    </svg>
-  `;
+// ---------- رسم تشريحي ثلاثي الأبعاد حقيقي (three.js) - جسم شفاف قليل
+// الأضلاع (low-poly) والأعضاء كرات ملوّنة بداخله فعليًا، تقدر تدوّره
+// بالسحب وتضغط على أي عضو "من جواه مباشرة" (نفس تقنية رف الكيمياء
+// بالضبط - أشكال هندسية + Raycasting - مو رسم يدوي مسطّح) ---------- */
+const SL_ORGAN_3D_DEFS = {
+  brain: { pos: [0, 1.72, 0.05], color: 0xc04f8c, r: 0.1 },
+  heart: { pos: [-0.07, 1.22, 0.2], color: 0xd81e3e, r: 0.09 },
+  lungs: { pos: [0.13, 1.22, 0.15], color: 0xef6b6b, r: 0.13, mirror: true },
+  liver: { pos: [0.14, 0.98, 0.2], color: 0x8a5a2b, r: 0.12 },
+  stomach: { pos: [-0.11, 0.95, 0.2], color: 0xe8a33f, r: 0.1 },
+  intestines: { pos: [0, 0.75, 0.2], color: 0xe0a868, r: 0.15 },
+  kidneys: { pos: [0.19, 0.88, -0.05], color: 0x7b3f8c, r: 0.06, mirror: true },
+  skin: { pos: [0, 1.4, 0.35], color: 0xf0c9a0, r: 0.001 }, // نقطة وهمية، الجلد نفسه هو جسم الشفافية الخارجي
+};
+function slBuildBodyScene(canvas, organIds) {
+  const wrap = canvas.parentElement;
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(38, wrap.clientWidth / Math.max(1, wrap.clientHeight), 0.1, 50);
+  camera.position.set(0, 1.15, 3.6);
+  camera.lookAt(0, 1.1, 0);
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+  const dl = new THREE.DirectionalLight(0xffffff, 0.75);
+  dl.position.set(3, 5, 4);
+  scene.add(dl);
+
+  const bodyGroup = new THREE.Group();
+  const skinMat = new THREE.MeshPhysicalMaterial({ color: 0xf0c9a0, transparent: true, opacity: 0.3, roughness: 0.3, side: THREE.DoubleSide });
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.27, 20, 20), skinMat);
+  head.position.y = 1.72;
+  bodyGroup.add(head);
+  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 0.85, 8, 16), skinMat);
+  torso.position.y = 1.05;
+  bodyGroup.add(torso);
+  const armGeo = new THREE.CapsuleGeometry(0.085, 0.7, 6, 10);
+  const armL = new THREE.Mesh(armGeo, skinMat);
+  armL.position.set(-0.5, 1.05, 0);
+  bodyGroup.add(armL);
+  const armR = new THREE.Mesh(armGeo, skinMat);
+  armR.position.set(0.5, 1.05, 0);
+  bodyGroup.add(armR);
+  const legGeo = new THREE.CapsuleGeometry(0.13, 0.85, 6, 10);
+  const legL = new THREE.Mesh(legGeo, skinMat);
+  legL.position.set(-0.17, 0.15, 0);
+  bodyGroup.add(legL);
+  const legR = new THREE.Mesh(legGeo, skinMat);
+  legR.position.set(0.17, 0.15, 0);
+  bodyGroup.add(legR);
+  scene.add(bodyGroup);
+
+  const hoverables = [];
+  organIds.forEach(id => {
+    const def = SL_ORGAN_3D_DEFS[id];
+    if (!def || id === 'skin') return;
+    const geo = new THREE.SphereGeometry(def.r, 16, 16);
+    const mat = new THREE.MeshStandardMaterial({ color: def.color, roughness: 0.4 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(def.pos[0], def.pos[1], def.pos[2]);
+    mesh.userData.slBodyPart = id;
+    bodyGroup.add(mesh);
+    hoverables.push(mesh);
+    if (def.mirror) {
+      const mesh2 = new THREE.Mesh(geo, mat);
+      mesh2.position.set(-def.pos[0], def.pos[1], def.pos[2]);
+      mesh2.userData.slBodyPart = id;
+      bodyGroup.add(mesh2);
+      hoverables.push(mesh2);
+    }
+  });
+  // الجلد نفسه (جسم الشفافية الخارجي) قابل للضغط لو ما ضغطنا عضو محدد
+  [head, torso, armL, armR, legL, legR].forEach(m => { m.userData.slBodyPart = 'skin'; hoverables.push(m); });
+
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
+  let dragging = false, lastX = 0, lastY = 0;
+
+  function pick(e) {
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    return raycaster.intersectObjects(hoverables, false);
+  }
+  canvas.addEventListener('mousemove', (e) => {
+    if (dragging) {
+      bodyGroup.rotation.y += (e.clientX - lastX) * 0.012;
+      lastX = e.clientX; lastY = e.clientY;
+      return;
+    }
+    canvas.style.cursor = pick(e).length ? 'pointer' : 'grab';
+  });
+  canvas.addEventListener('mousedown', (e) => { dragging = true; lastX = e.clientX; lastY = e.clientY; canvas.style.cursor = 'grabbing'; });
+  window.addEventListener('mouseup', () => { dragging = false; });
+  canvas.addEventListener('click', (e) => {
+    if (Math.abs(e.clientX - lastX) > 3 || Math.abs(e.clientY - lastY) > 3) return; // كانت سحب دوران، مو ضغطة عضو
+    const hits = pick(e);
+    if (hits.length) slShowOrganInfo(hits[0].object.userData.slBodyPart);
+  });
+
+  let frameId;
+  (function animate() {
+    frameId = requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+  })();
+
+  function onResize() {
+    if (!wrap.clientWidth) return;
+    camera.aspect = wrap.clientWidth / wrap.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+  }
+  window.addEventListener('resize', onResize);
+  return { stop() { cancelAnimationFrame(frameId); window.removeEventListener('resize', onResize); } };
 }
-function slZoomToOrgan(cx, cy) {
-  const svg = document.getElementById('slBodySvg');
-  const pctX = (cx / 200) * 100, pctY = (cy / 420) * 100;
-  svg.style.transformOrigin = `${pctX}% ${pctY}%`;
-  svg.classList.add('zoomed');
-  document.getElementById('slBodyZoomOutBtn').classList.remove('hidden');
+function slShowOrganInfo(partId) {
+  const info = SL_PARTS_INFO[partId];
+  if (!info) return;
+  SL.sessionLog.push(`${t('sl_log_part_prefix')}: ${t(info.nameKey)}`);
+  const box = document.getElementById('slPartDescBox');
+  if (!box) return;
+  box.innerHTML = `<b>${t(info.nameKey)}</b><br>${t(info.descKey)}`;
+  box.classList.remove('hidden');
 }
-function slZoomOutBody() {
-  const svg = document.getElementById('slBodySvg');
-  if (svg) svg.classList.remove('zoomed');
-  document.getElementById('slBodyZoomOutBtn').classList.add('hidden');
-}
-function slRenderHumanBody(containerEl) {
+function slRenderBodyScene(containerEl, organIds) {
   containerEl.classList.remove('hidden');
   containerEl.innerHTML = `
     <p class="desc" data-i18n="sl_body_hint">${t('sl_body_hint')}</p>
-    <div class="sl-body-svg-wrap">
-      ${slBuildHumanBodySvg()}
-      <button class="ghost sl-body-zoom-out hidden" id="slBodyZoomOutBtn" data-i18n="sl_zoom_out">🔍 تصغير</button>
-    </div>
+    <div class="sl-body-svg-wrap"><canvas id="slBodyCanvas"></canvas></div>
     <div class="sl-bio-part-desc hidden" id="slPartDescBox"></div>
   `;
-  containerEl.querySelectorAll('.sl-organ-hotspot').forEach(el => {
-    el.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const info = SL_PARTS_INFO[el.dataset.part];
-      if (!info) return;
-      SL.sessionLog.push(`${t('sl_log_part_prefix')}: ${t(info.nameKey)}`);
-      slZoomToOrgan(Number(el.dataset.cx), Number(el.dataset.cy));
-      const box = containerEl.querySelector('#slPartDescBox');
-      box.innerHTML = `<b>${t(info.nameKey)}</b><br>${t(info.descKey)}`;
-      box.classList.remove('hidden');
-    });
-  });
-  containerEl.querySelector('#slBodyZoomOutBtn').addEventListener('click', slZoomOutBody);
+  if (SL.bodySceneHandle) { SL.bodySceneHandle.stop(); SL.bodySceneHandle = null; }
+  try {
+    SL.bodySceneHandle = slBuildBodyScene(containerEl.querySelector('#slBodyCanvas'), organIds);
+  } catch (e) {
+    containerEl.querySelector('.sl-body-svg-wrap').innerHTML = `<p class="desc">${t('sl_err_3d_unsupported')}</p>`;
+  }
 }
 function slOpenBioDetail(kind, animalId) {
   document.getElementById('slBioCategoryView').classList.add('hidden');
@@ -14896,7 +14990,7 @@ function slOpenBioDetail(kind, animalId) {
   const content = document.getElementById('slBioDetailContent');
   if (kind === 'human') {
     content.innerHTML = `<h3 class="sub-heading">${t('sl_cat_human')}</h3><div id="slHumanPartsWrap"></div>`;
-    slRenderHumanBody(content.querySelector('#slHumanPartsWrap'));
+    slRenderBodyScene(content.querySelector('#slHumanPartsWrap'), SL_BODY_PARTS.human);
   } else {
     SL.bioItem = animalId;
     const a = SL_ANIMALS[animalId];
@@ -14906,7 +15000,7 @@ function slOpenBioDetail(kind, animalId) {
       <ul class="sl-bio-fact-list">${a.factsKeys.map(k => `<li>${t(k)}</li>`).join('')}</ul>
       <div id="slAnimalPartsWrap"></div>
     `;
-    slRenderBodyPartsInto(content.querySelector('#slAnimalPartsWrap'), SL_BODY_PARTS.animal_generic);
+    slRenderBodyScene(content.querySelector('#slAnimalPartsWrap'), SL_BODY_PARTS.animal_generic);
   }
 }
 document.getElementById('slBioBackToCategoriesBtn').addEventListener('click', () => {

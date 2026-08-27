@@ -34,17 +34,18 @@
   .sl-scene-hint { position: absolute; bottom: 8px; right: 8px; left: 8px; text-align: center; font-size: 11.5px; background: rgba(255,255,255,.75); border-radius: 8px; padding: 4px 8px; margin: 0; }
   :root:not([data-theme="light"]) .sl-scene-hint { background: rgba(20,24,31,.75); }
 
-  .sl-sink-panel {
-    position: absolute; top: 12px; left: 12px; background: var(--surface); border: 1px solid var(--line);
-    border-radius: 10px; padding: 12px; box-shadow: 0 6px 16px rgba(0,0,0,.2); z-index: 6; width: 220px;
+  /* منبثقة صغيرة بس (بلا مغسلة ولا حنفية ولا أي شكل زايد) تختار منها
+     بروده قطرة الماء وقت ما تضغطها بالرف */
+  .sl-water-picker {
+    position: absolute; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 10px; padding: 6px; box-shadow: 0 6px 16px rgba(0,0,0,.25); z-index: 6;
+    display: flex; gap: 6px; transform: translate(-50%, -110%);
   }
-  .sl-sink-panel-title { font-weight: 700; margin-bottom: 8px; }
-  .sl-sink-options { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-  .sl-sink-options button {
-    flex: 1 1 45%; background: var(--paper-dim); border: 1px solid var(--line); border-radius: 8px;
-    padding: 6px 8px; font-size: 12px; font-family: inherit; cursor: pointer;
+  .sl-water-picker button {
+    background: var(--paper-dim); border: 1px solid var(--line); border-radius: 8px;
+    padding: 6px 10px; font-size: 12px; font-family: inherit; cursor: pointer; white-space: nowrap;
   }
-  .sl-sink-options button:hover { border-color: var(--teal); }
+  .sl-water-picker button:hover { border-color: var(--teal); }
 
   .sl-reaction-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; }
   .sl-tray-label { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
@@ -91,28 +92,36 @@
   .sl-bio-fact-list li {
     background: var(--paper-dim); border-radius: 10px; padding: 10px 14px; font-size: 13.5px; line-height: 1.7;
   }
-  .sl-bio-parts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 10px; }
-  .sl-bio-part-chip {
-    background: var(--teal-dim); border-radius: 10px; padding: 10px 12px; cursor: pointer; font-size: 13px; font-weight: 600;
-    text-align: center; transition: background .15s;
-  }
-  .sl-bio-part-chip:hover { background: var(--highlighter-soft); }
   .sl-bio-part-desc { margin-top: 10px; background: var(--paper-dim); border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.8; }
-  /* ---------- رسم تشريحي حقيقي لجسم الإنسان - أعضاء بمواضعها التقريبية،
-     تضغط عليها مباشرة "من جوا الجسم" فتكبّر (zoom) عليها ---------- */
-  .sl-body-svg-wrap {
+  /* ---------- رسم تشريحي حقيقي - صورة طبية فعلية عليها نقاط ضغط شفافة
+     بمواضع الأعضاء، تضغط على أي عضو "من جوا الجسم" فيكبّر (zoom) عليه
+     ويطلع اسمه ووظيفته تحت ---------- */
+  .sl-body-img-wrap {
     position: relative; overflow: hidden; border-radius: 16px; margin-top: 12px;
-    background: radial-gradient(circle at 50% 15%, #2a3a52, #131a26 75%);
-    padding: 20px 0; display: flex; justify-content: center;
+    background: #10151d; direction: ltr;
   }
-  .sl-body-svg { width: 240px; height: auto; display: block; transition: transform .45s cubic-bezier(.2,.8,.2,1); }
-  .sl-body-svg.zoomed { transform: scale(3.2); }
-  .sl-organ-hotspot { cursor: pointer; transition: filter .15s, opacity .15s; }
-  .sl-organ-hotspot:hover { filter: brightness(1.25) drop-shadow(0 0 6px rgba(255,255,255,.6)); }
+  .sl-body-img {
+    display: block; width: 100%; height: auto;
+    transition: transform .5s cubic-bezier(.2,.8,.2,1);
+    transform-origin: var(--sl-zoom-x, 50%) var(--sl-zoom-y, 50%);
+  }
+  .sl-body-img.zoomed { transform: scale(2.4); }
+  .sl-body-hotspot {
+    position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; padding: 0;
+    border-radius: 50%; border: 2px solid #fff; background: rgba(255, 70, 70, .55); cursor: pointer;
+    box-shadow: 0 0 0 4px rgba(255,70,70,.2); animation: slHotspotPulse 1.8s infinite; transition: opacity .3s;
+  }
+  .sl-body-hotspot:hover, .sl-body-hotspot.active { background: rgba(255,70,70,.85); }
+  .sl-body-img-wrap.zoomed .sl-body-hotspot:not(.active) { opacity: 0; pointer-events: none; }
+  @keyframes slHotspotPulse {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(255,70,70,.2); }
+    50% { box-shadow: 0 0 0 9px rgba(255,70,70,.05); }
+  }
   .sl-body-zoom-out {
     position: absolute; top: 12px; left: 12px; z-index: 3; background: rgba(255,255,255,.92) !important;
     color: #1a1a1a !important; border: none !important; font-size: 12.5px !important; padding: 6px 12px !important;
   }
+  .sl-body-credit { font-size: 10.5px; color: var(--ink-soft); text-align: left; direction: ltr; margin-top: 4px; opacity: .7; }
 
   /* ---------- مساعد ذكيّ مستمر ---------- */
   .sl-chat-panel {

@@ -122,13 +122,38 @@ const SL_SHELF_ITEMS = [
     },
   },
   {
-    id: 'ice', nameKey: 'sl_item_ice_name', descKey: 'sl_item_ice_desc', usageKey: 'sl_item_ice_usage',
+    // قطرة ماء وحدة بلا كوب ولا أي إناء - تضغطها يطلع لك خيار تختار بروده
+    // الماء (بارد/دافئ/حار) بمنبثقة صغيرة، بلا حنفية ولا مغسلة ولا أنيميشن
+    id: 'water', nameKey: 'sl_item_water_name', descKey: 'sl_item_water_desc', usageKey: 'sl_item_water_usage',
     build() {
       const g = new THREE.Group();
-      const cube = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshPhysicalMaterial({ color: 0xbfe8ff, transparent: true, opacity: 0.55, roughness: 0.05 }));
-      cube.rotation.y = 0.4;
-      cube.position.y = 0.05;
-      g.add(cube);
+      const drop = new THREE.Mesh(
+        new THREE.SphereGeometry(0.16, 16, 16),
+        new THREE.MeshPhysicalMaterial({ color: 0x4fb8ff, transparent: true, opacity: 0.88, roughness: 0.1, clearcoat: 1 })
+      );
+      drop.scale.set(1, 1.35, 1);
+      drop.position.y = 0.05;
+      g.add(drop);
+      const tip = new THREE.Mesh(
+        new THREE.ConeGeometry(0.07, 0.16, 16),
+        new THREE.MeshPhysicalMaterial({ color: 0x4fb8ff, transparent: true, opacity: 0.88, roughness: 0.1 })
+      );
+      tip.position.y = 0.32;
+      g.add(tip);
+      return g;
+    },
+  },
+  {
+    id: 'paper', nameKey: 'sl_item_paper_name', descKey: 'sl_item_paper_desc', usageKey: 'sl_item_paper_usage',
+    build() {
+      const g = new THREE.Group();
+      const sheet = new THREE.Mesh(
+        new THREE.BoxGeometry(0.34, 0.012, 0.44),
+        new THREE.MeshStandardMaterial({ color: 0xfbfbf6, roughness: 0.7 })
+      );
+      sheet.position.y = 0.02;
+      sheet.rotation.z = 0.05;
+      g.add(sheet);
       return g;
     },
   },
@@ -155,31 +180,12 @@ function slBuildBottle(liquidColor, height, radius) {
   return g;
 }
 
-function slBuildSink() {
-  const g = new THREE.Group();
-  const basin = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.5, 1), new THREE.MeshStandardMaterial({ color: 0xdcdcdc, metalness: 0.35, roughness: 0.4 }));
-  basin.position.y = 0.25;
-  g.add(basin);
-  const basinHole = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.3, 0.7), new THREE.MeshStandardMaterial({ color: 0x9aa0a6, metalness: 0.4, roughness: 0.5 }));
-  basinHole.position.y = 0.4;
-  g.add(basinHole);
-  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.8, 10), new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.6, roughness: 0.3 }));
-  neck.position.set(0, 0.9, -0.35);
-  g.add(neck);
-  const head = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.35, 10), new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.6, roughness: 0.3 }));
-  head.rotation.z = Math.PI / 2;
-  head.position.set(0.16, 1.28, -0.35);
-  g.add(head);
-  return g;
-}
-
-const SL_VIRTUAL_ITEMS = {
-  water_cold: 'sl_item_water_cold_name', water_warm: 'sl_item_water_warm_name', water_hot: 'sl_item_water_hot_name',
-  paper: 'sl_item_paper_name',
-};
+// قطرة الماء وحدها مو مادة تتفاعل - وقت ما تنضاف للصينية تكون فعليًا
+// بأحد أشكالها الثلاثة (باردة/دافئة/حارة) حسب اختيار الطالب بالمنبثقة
+const SL_WATER_VARIANTS = { water_cold: 'sl_item_water_cold_name', water_warm: 'sl_item_water_warm_name', water_hot: 'sl_item_water_hot_name' };
 function slItemNameKey(id) {
   const shelfItem = SL_SHELF_ITEMS.find(i => i.id === id);
-  return shelfItem ? shelfItem.nameKey : SL_VIRTUAL_ITEMS[id];
+  return shelfItem ? shelfItem.nameKey : SL_WATER_VARIANTS[id];
 }
 
 function slPairKey(a, b) { return [a, b].sort().join('+'); }
@@ -199,9 +205,6 @@ const SL_REACTIONS = {
   [slPairKey('thermometer', 'water_cold')]: 'sl_reaction_thermo_cold',
   [slPairKey('sugar', 'water_hot')]: 'sl_reaction_sugar_hot',
   [slPairKey('sugar', 'water_cold')]: 'sl_reaction_sugar_cold',
-  [slPairKey('ice', 'bunsen_burner')]: 'sl_reaction_ice_burner',
-  [slPairKey('ice', 'water_hot')]: 'sl_reaction_ice_hot',
-  [slPairKey('ice', 'water_cold')]: 'sl_reaction_ice_cold',
 };
 
 // ---------- تصنيف عام لكل قطعة - يُستخدم لتوليد رد تعليمي معقول لأي مزيج
@@ -210,7 +213,7 @@ const SL_REACTIONS = {
 const SL_ITEM_CATEGORY = {
   beaker: 'container', flask: 'container',
   vinegar: 'liquid', food_coloring: 'liquid', water_cold: 'liquid', water_warm: 'liquid', water_hot: 'liquid',
-  baking_soda: 'solid', salt: 'solid', sugar: 'solid', ice: 'solid',
+  baking_soda: 'solid', salt: 'solid', sugar: 'solid',
   bunsen_burner: 'heat', thermometer: 'tool', paper: 'tool',
 };
 function slGenericReactionText(a, b) {
@@ -279,36 +282,24 @@ function slInitThreeScene() {
     SL.hoverables.push(group);
   });
 
-  const sinkGroup = slBuildSink();
-  sinkGroup.position.set(4.6, -0.25, -0.4);
-  sinkGroup.userData.slSink = true;
-  SL.scene.add(sinkGroup);
-  SL.hoverables.push(sinkGroup);
-
-  // كوب + نافورة ماء متحركة تحت الحنفية - تشتغل وقت اختيار نوع الماء
-  const cup = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.14, 0.11, 0.28, 16, 1, true),
-    new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.3, roughness: 0.1, side: THREE.DoubleSide })
+  // صحن تفاعل ثابت قدام الرف مباشرة بمجال الرؤية - كل تفاعل يصير فعليًا
+  // بمكان واحد واضح (يتلوّن، يفور، يطلع فقاعات) بدل ما يكون تأثير عائم
+  // بالهواء بلا مصدر - عشان التفاعل "يصير" فعلًا مو مجرد نص
+  const dishBase = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.55, 0.5, 0.12, 28),
+    new THREE.MeshStandardMaterial({ color: 0xf5f5f2, metalness: 0.1, roughness: 0.3 })
   );
-  cup.position.set(4.6 + 0.16, 0.14, -0.4 - 0.35);
-  SL.scene.add(cup);
-  SL.cupWaterBaseY = 0.02;
-  SL.cupWaterFullHeight = 0.22;
-  SL.cupWaterMesh = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.1, 0.09, SL.cupWaterFullHeight, 16),
-    new THREE.MeshStandardMaterial({ color: 0x66ccff, transparent: true, opacity: 0.85 })
+  dishBase.position.set(0, -0.44, 2.1);
+  SL.scene.add(dishBase);
+  const dishLiquid = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.44, 0.4, 0.5, 28),
+    new THREE.MeshStandardMaterial({ color: 0x66ccff, transparent: true, opacity: 0.88 })
   );
-  SL.cupWaterMesh.position.set(cup.position.x, SL.cupWaterBaseY, cup.position.z);
-  SL.cupWaterMesh.visible = false;
-  SL.scene.add(SL.cupWaterMesh);
-
-  SL.streamMesh = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.02, 0.02, 0.55, 8),
-    new THREE.MeshStandardMaterial({ color: 0x66ccff, transparent: true, opacity: 0.75 })
-  );
-  SL.streamMesh.position.set(4.6 + 0.16, 1.0, -0.4 - 0.75);
-  SL.streamMesh.visible = false;
-  SL.scene.add(SL.streamMesh);
+  dishLiquid.position.set(0, -0.42, 2.1);
+  dishLiquid.scale.y = 0.001;
+  dishLiquid.visible = false;
+  SL.scene.add(dishLiquid);
+  SL.reactionDish = { liquid: dishLiquid, baseY: -0.42, x: 0, z: 2.1 };
 
   SL.raycaster = new THREE.Raycaster();
   SL.mouse = new THREE.Vector2();
@@ -331,37 +322,12 @@ function slOnSceneResize() {
 
 function slAnimate() {
   SL.animFrameId = requestAnimationFrame(slAnimate);
-  if (SL.waterAnim) slUpdateWaterAnim();
   SL.renderer.render(SL.scene, SL.camera);
-}
-
-// ---------- أنيميشن ماء يجي من الحنفية ويتعبى بكوب ----------
-const SL_WATER_COLORS = { cold: 0x66ccff, warm: 0x5fb0e0, hot: 0xff9a66 };
-function slPourWaterAnimation(temp, onDone) {
-  const color = SL_WATER_COLORS[temp] || 0x66ccff;
-  SL.streamMesh.material.color.setHex(color);
-  SL.cupWaterMesh.material.color.setHex(color);
-  SL.cupWaterMesh.scale.y = 0.001;
-  SL.cupWaterMesh.visible = true;
-  SL.streamMesh.visible = true;
-  SL.waterAnim = { startTime: performance.now(), duration: 1100, onDone };
-}
-function slUpdateWaterAnim() {
-  const elapsed = performance.now() - SL.waterAnim.startTime;
-  const progress = Math.min(1, elapsed / SL.waterAnim.duration);
-  SL.cupWaterMesh.scale.y = Math.max(0.001, progress);
-  SL.cupWaterMesh.position.y = SL.cupWaterBaseY - (SL.cupWaterFullHeight * (1 - progress)) / 2;
-  if (progress >= 1) {
-    SL.streamMesh.visible = false;
-    const done = SL.waterAnim.onDone;
-    SL.waterAnim = null;
-    if (done) done();
-  }
 }
 
 function slFindHoverableRoot(object) {
   let o = object;
-  while (o && !o.userData.slItem && !o.userData.slSink) o = o.parent;
+  while (o && !o.userData.slItem) o = o.parent;
   return o;
 }
 function slPointerToNdc(e) {
@@ -398,13 +364,27 @@ function slOnSceneMouseMove(e) {
 function slOnSceneClick(e) {
   slPointerToNdc(e);
   const root = slRaycastHoverables();
-  if (!root) return;
-  if (root.userData.slSink) {
-    document.getElementById('slSinkPanel').classList.remove('hidden');
-  } else if (root.userData.slItem) {
-    slAddToTray(root.userData.slItem.id);
+  const picker = document.getElementById('slWaterPicker');
+  if (!root || !root.userData.slItem) { picker.classList.add('hidden'); return; }
+  const item = root.userData.slItem;
+  if (item.id === 'water') {
+    // بدل ما نحطها بالصينية مباشرة، نطلع منبثقة صغيرة بس (بلا حنفية ولا
+    // مغسلة ولا أي انيميشن) تختار منها بروده الماء
+    const wrapRect = document.getElementById('slSceneWrap').getBoundingClientRect();
+    picker.style.left = (e.clientX - wrapRect.left) + 'px';
+    picker.style.top = (e.clientY - wrapRect.top) + 'px';
+    picker.classList.remove('hidden');
+  } else {
+    picker.classList.add('hidden');
+    slAddToTray(item.id);
   }
 }
+document.querySelectorAll('#slWaterPicker [data-temp]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    slAddToTray('water_' + btn.dataset.temp);
+    document.getElementById('slWaterPicker').classList.add('hidden');
+  });
+});
 
 // ---------- صينية التفاعل ----------
 const SL_TRAY_MAX = 4;
@@ -433,62 +413,124 @@ document.getElementById('slReactBtn').addEventListener('click', () => {
   // نفاعل كل زوج ممكن بين القطع المختارة (مو بس أول قطعتين) - تقدر تحط
   // أكثر من مكونين وتشوف كل التفاعلات الممكنة بينهم دفعة وحدة
   const results = [];
+  const involved = [];
   for (let i = 0; i < SL.tray.length; i++) {
     for (let j = i + 1; j < SL.tray.length; j++) {
       const key = slPairKey(SL.tray[i], SL.tray[j]);
       const reactionKey = SL_REACTIONS[key];
       const text = reactionKey ? t(reactionKey) : slGenericReactionText(SL.tray[i], SL.tray[j]);
       results.push({ a: SL.tray[i], b: SL.tray[j], text });
+      involved.push(SL.tray[i], SL.tray[j]);
       SL.sessionLog.push(`${t('sl_log_reaction_prefix')}: ${t(slItemNameKey(SL.tray[i]))} + ${t(slItemNameKey(SL.tray[j]))} → ${text}`);
     }
   }
   const box = document.getElementById('slReactionResult');
   box.innerHTML = results.map(r => `<p>${escapeHtml(r.text)}</p>`).join('');
   box.classList.remove('hidden');
-  slPlayReactionEffect();
+  slPlayReactionEffect(involved);
   SL.tray = [];
   slRenderTray();
 });
 
-// ---------- تأثير بصري عام وقت أي تفاعل (فقاعات ملوّنة تطلع فوق الرف) ----------
-function slPlayReactionEffect() {
-  if (!SL.scene) return;
-  const colors = [0x66ccff, 0xff8a5c, 0x8be08b, 0xffe14d];
-  for (let i = 0; i < 14; i++) {
+// ---------- تأثير بصري وقت التفاعل - يصير فعليًا بصحن التفاعل الثابت
+// قدام الرف: يتلوّن حسب المواد، يفور ويهتز، يطلع منه فقاعات ورذاذ صاعد،
+// موجة ضوئية تتوسع، وومضة إضاءة قصيرة - كل شي مصدره نقطة واحدة واضحة
+// بمنتصف المشهد، مو مجرد فقاعات عائمة بالهواء بلا مصدر ----------
+function slPlayReactionEffect(itemIds) {
+  if (!SL.scene || !SL.reactionDish) return;
+  const dish = SL.reactionDish;
+  const cats = (itemIds || []).map(id => SL_ITEM_CATEGORY[id]);
+  let colors = [0x8be08b, 0xffffff, 0x9fe6ff, 0xffe14d];
+  let dishColor = 0x9fe6ff;
+  if (itemIds && itemIds.includes('vinegar') && itemIds.includes('baking_soda')) {
+    colors = [0xffffff, 0xd6f5ff, 0x9fe6ff, 0xffffff]; dishColor = 0xeafcff;
+  } else if (cats.includes('heat')) {
+    colors = [0xff8c1a, 0xff5500, 0xffd24d, 0xff2e2e]; dishColor = 0xff8c1a;
+  } else if (itemIds && itemIds.includes('food_coloring')) {
+    colors = [0xe0473a, 0xff7a6b, 0xffb199, 0xffffff]; dishColor = 0xe0473a;
+  }
+
+  // الصحن نفسه يتعبى ويفور وينزل
+  dish.liquid.material.color.setHex(dishColor);
+  dish.liquid.visible = true;
+  dish.liquid.scale.y = 0.001;
+  const dishStart = performance.now();
+  const tickDish = () => {
+    const el = (performance.now() - dishStart) / 1000;
+    if (el < 0.35) {
+      dish.liquid.scale.y = Math.max(0.001, el / 0.35);
+    } else if (el < 1.6) {
+      dish.liquid.scale.y = 1 + Math.sin(el * 14) * 0.07;
+      dish.liquid.position.y = dish.baseY + Math.sin(el * 14) * 0.02;
+    } else if (el < 2.2) {
+      dish.liquid.scale.y = Math.max(0.001, 1 - (el - 1.6) / 0.6);
+    } else {
+      dish.liquid.visible = false;
+      return;
+    }
+    requestAnimationFrame(tickDish);
+  };
+  requestAnimationFrame(tickDish);
+
+  // رذاذ/فقاعات تطلع من فوق الصحن مباشرة
+  for (let i = 0; i < 26; i++) {
     const bubble = new THREE.Mesh(
-      new THREE.SphereGeometry(0.05 + Math.random() * 0.06, 10, 10),
-      new THREE.MeshStandardMaterial({ color: colors[i % colors.length], transparent: true, opacity: 0.85 })
+      new THREE.SphereGeometry(0.045 + Math.random() * 0.08, 10, 10),
+      new THREE.MeshStandardMaterial({ color: colors[i % colors.length], transparent: true, opacity: 0.9 })
     );
-    bubble.position.set(-2 + Math.random() * 4, 1.9, Math.random() * 0.6 - 0.3);
+    bubble.position.set(dish.x + (Math.random() - 0.5) * 0.6, dish.baseY + 0.15, dish.z + (Math.random() - 0.5) * 0.6);
     SL.scene.add(bubble);
     const start = performance.now();
-    const riseSpeed = 0.9 + Math.random() * 0.8;
-    const drift = (Math.random() - 0.5) * 0.6;
-    const startX = bubble.position.x;
+    const delay = Math.random() * 250;
+    const riseSpeed = 1.1 + Math.random() * 1.2;
+    const drift = (Math.random() - 0.5) * 1.1;
+    const startX = bubble.position.x, startZ = bubble.position.z;
     const tick = () => {
-      const elapsed = (performance.now() - start) / 1000;
-      if (elapsed > 1.4) { SL.scene.remove(bubble); bubble.geometry.dispose(); bubble.material.dispose(); return; }
-      bubble.position.y = 1.9 + elapsed * riseSpeed;
-      bubble.position.x = startX + drift * elapsed;
-      bubble.material.opacity = 0.85 * (1 - elapsed / 1.4);
+      const elapsed = performance.now() - start - delay;
+      if (elapsed < 0) { requestAnimationFrame(tick); return; }
+      const sec = elapsed / 1000;
+      if (sec > 1.3) { SL.scene.remove(bubble); bubble.geometry.dispose(); bubble.material.dispose(); return; }
+      bubble.position.y = dish.baseY + 0.15 + sec * riseSpeed;
+      bubble.position.x = startX + drift * sec;
+      bubble.position.z = startZ + drift * 0.4 * sec;
+      bubble.material.opacity = 0.9 * (1 - sec / 1.3);
       requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
   }
-}
 
-// ---------- المغسلة ----------
-document.querySelectorAll('#slSinkPanel [data-temp]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.getElementById('slSinkPanel').classList.add('hidden');
-    slPourWaterAnimation(btn.dataset.temp, () => slAddToTray('water_' + btn.dataset.temp));
-  });
-});
-document.getElementById('slGetPaperBtn').addEventListener('click', () => {
-  slAddToTray('paper');
-  document.getElementById('slSinkPanel').classList.add('hidden');
-});
-document.getElementById('slSinkCloseBtn').addEventListener('click', () => document.getElementById('slSinkPanel').classList.add('hidden'));
+  // موجة ضوئية دائرية تتوسع من الصحن
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(0.05, 0.18, 32),
+    new THREE.MeshBasicMaterial({ color: dishColor, transparent: true, opacity: 0.85, side: THREE.DoubleSide })
+  );
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.set(dish.x, dish.baseY + 0.13, dish.z);
+  SL.scene.add(ring);
+  const ringStart = performance.now();
+  const tickRing = () => {
+    const el = (performance.now() - ringStart) / 1000;
+    if (el > 1) { SL.scene.remove(ring); ring.geometry.dispose(); ring.material.dispose(); return; }
+    const s = 1 + el * 9;
+    ring.scale.set(s, s, 1);
+    ring.material.opacity = 0.85 * (1 - el / 1);
+    requestAnimationFrame(tickRing);
+  };
+  requestAnimationFrame(tickRing);
+
+  // ومضة إضاءة قصيرة تبرز لحظة التفاعل
+  const flash = new THREE.PointLight(dishColor, 3.2, 7);
+  flash.position.set(dish.x, dish.baseY + 1, dish.z + 0.5);
+  SL.scene.add(flash);
+  const flashStart = performance.now();
+  const tickFlash = () => {
+    const el = (performance.now() - flashStart) / 1000;
+    if (el > 0.5) { SL.scene.remove(flash); return; }
+    flash.intensity = 3.2 * (1 - el / 0.5);
+    requestAnimationFrame(tickFlash);
+  };
+  requestAnimationFrame(tickFlash);
+}
 
 // ---------- تبديل التبويب (كيمياء ⇄ أحياء) ----------
 function slSwitchTab(tab) {
@@ -507,7 +549,6 @@ const SL_PROJECTS = {
   volcano: ['vinegar', 'baking_soda'],
   dissolve_race: ['sugar', 'water_hot'],
   diffusion: ['food_coloring', 'water_cold'],
-  melting: ['ice', 'bunsen_burner'],
 };
 document.getElementById('slProjectSelect').addEventListener('change', (e) => {
   const key = e.target.value;
@@ -551,8 +592,8 @@ const SL_ANIMALS = {
 // أعضاء عامة تصلح لمعظم الحيوانات (تبسيط مقصود بدل تأليف مجموعة أعضاء
 // مخصّصة لكل نوع) + مجموعة أكثر تفصيلًا خاصة بجسم الإنسان
 const SL_BODY_PARTS = {
-  animal_generic: ['heart', 'lungs', 'brain', 'stomach', 'skin'],
-  human: ['heart', 'lungs', 'brain', 'stomach', 'kidneys', 'skin'],
+  animal_generic: ['heart', 'lungs', 'brain', 'stomach', 'liver', 'intestines', 'kidneys', 'skin'],
+  human: ['heart', 'lungs', 'brain', 'stomach', 'liver', 'intestines', 'kidneys', 'skin'],
 };
 const SL_PARTS_INFO = {
   heart: { nameKey: 'sl_part_heart_name', descKey: 'sl_part_heart_desc' },
@@ -608,140 +649,45 @@ function slOpenBioCategory(catId) {
     card.addEventListener('click', () => slOpenBioDetail('animal', card.dataset.animal));
   });
 }
-function slRenderBodyPartsInto(containerEl, partIds) {
-  containerEl.classList.remove('hidden');
-  containerEl.innerHTML = `
-    <h4 class="sub-heading" data-i18n="sl_bio_pick_part">${t('sl_bio_pick_part')}</h4>
-    <div class="sl-bio-parts-grid">${partIds.map(pid => `<div class="sl-bio-part-chip" data-part="${pid}">${t(SL_PARTS_INFO[pid].nameKey)}</div>`).join('')}</div>
-    <div class="sl-bio-part-desc hidden" id="slPartDescBox"></div>
-  `;
-  containerEl.querySelectorAll('.sl-bio-part-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      const info = SL_PARTS_INFO[chip.dataset.part];
-      SL.sessionLog.push(`${t('sl_log_part_prefix')}: ${t(info.nameKey)}`);
-      const box = containerEl.querySelector('#slPartDescBox');
-      box.textContent = t(info.descKey);
-      box.classList.remove('hidden');
-    });
-  });
-}
-// ---------- رسم تشريحي ثلاثي الأبعاد حقيقي (three.js) - جسم شفاف قليل
-// الأضلاع (low-poly) والأعضاء كرات ملوّنة بداخله فعليًا، تقدر تدوّره
-// بالسحب وتضغط على أي عضو "من جواه مباشرة" (نفس تقنية رف الكيمياء
-// بالضبط - أشكال هندسية + Raycasting - مو رسم يدوي مسطّح) ---------- */
-const SL_ORGAN_3D_DEFS = {
-  brain: { pos: [0, 1.72, 0.05], color: 0xc04f8c, r: 0.1 },
-  heart: { pos: [-0.07, 1.22, 0.2], color: 0xd81e3e, r: 0.09 },
-  lungs: { pos: [0.13, 1.22, 0.15], color: 0xef6b6b, r: 0.13, mirror: true },
-  liver: { pos: [0.14, 0.98, 0.2], color: 0x8a5a2b, r: 0.12 },
-  stomach: { pos: [-0.11, 0.95, 0.2], color: 0xe8a33f, r: 0.1 },
-  intestines: { pos: [0, 0.75, 0.2], color: 0xe0a868, r: 0.15 },
-  kidneys: { pos: [0.19, 0.88, -0.05], color: 0x7b3f8c, r: 0.06, mirror: true },
-  skin: { pos: [0, 1.4, 0.35], color: 0xf0c9a0, r: 0.001 }, // نقطة وهمية، الجلد نفسه هو جسم الشفافية الخارجي
+// ---------- رسم تشريحي حقيقي - صورة طبية فعلية (مرخّصة استخدام حر) عليها
+// نقاط ضغط شفافة بمواضع الأعضاء، تضغط على أي عضو "من جوا الجسم مباشرة"
+// فيكبّر (zoom) عليه ويطلع اسمه ووظيفته تحت - بدل محاولة رسم/تشكيل تشريح
+// من الصفر بأشكال هندسية ما تعطي نتيجة واقعية ----------
+const SL_BODY_IMAGES = {
+  human: {
+    // صورة تشريح بشري حقيقية - ملكية عامة (CC0) من ويكيميديا كومنز
+    url: 'https://upload.wikimedia.org/wikipedia/commons/e/e3/Internal_organs.svg',
+    credit: null,
+    hotspots: [
+      { part: 'brain', x: 48.6, y: 16.4 },
+      { part: 'heart', x: 44.3, y: 52.4 },
+      { part: 'lungs', x: 35.7, y: 44 },
+      { part: 'lungs', x: 50, y: 44 },
+      { part: 'liver', x: 42.1, y: 63.2 },
+      { part: 'stomach', x: 52.5, y: 68.4 },
+      { part: 'kidneys', x: 38.9, y: 72 },
+      { part: 'kidneys', x: 52.1, y: 70.4 },
+      { part: 'intestines', x: 40, y: 82.8 },
+      { part: 'skin', x: 29.3, y: 48 },
+    ],
+  },
+  animal: {
+    // صورة تشريح حيوان حقيقية (كلب - تصلح كمرجع عام لأعضاء الثدييات) -
+    // رخصة CC BY-SA 4.0 من ويكيميديا كومنز، الإسناد تحت الصورة
+    url: 'https://upload.wikimedia.org/wikipedia/commons/c/c5/Dog_Internal_Anatomy.svg',
+    credit: 'sl_body_credit_animal',
+    hotspots: [
+      { part: 'brain', x: 16.7, y: 9.2 },
+      { part: 'lungs', x: 17.8, y: 26.7 },
+      { part: 'heart', x: 20.6, y: 35 },
+      { part: 'liver', x: 29.4, y: 28.3 },
+      { part: 'stomach', x: 31.1, y: 34.2 },
+      { part: 'kidneys', x: 36.1, y: 25 },
+      { part: 'intestines', x: 39.4, y: 31.7 },
+      { part: 'skin', x: 33.3, y: 46.7 },
+    ],
+  },
 };
-function slBuildBodyScene(canvas, organIds) {
-  const wrap = canvas.parentElement;
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(38, wrap.clientWidth / Math.max(1, wrap.clientHeight), 0.1, 50);
-  camera.position.set(0, 1.15, 3.6);
-  camera.lookAt(0, 1.1, 0);
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  renderer.setSize(wrap.clientWidth, wrap.clientHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-
-  scene.add(new THREE.AmbientLight(0xffffff, 0.85));
-  const dl = new THREE.DirectionalLight(0xffffff, 0.75);
-  dl.position.set(3, 5, 4);
-  scene.add(dl);
-
-  const bodyGroup = new THREE.Group();
-  const skinMat = new THREE.MeshPhysicalMaterial({ color: 0xf0c9a0, transparent: true, opacity: 0.3, roughness: 0.3, side: THREE.DoubleSide });
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.27, 20, 20), skinMat);
-  head.position.y = 1.72;
-  bodyGroup.add(head);
-  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 0.85, 8, 16), skinMat);
-  torso.position.y = 1.05;
-  bodyGroup.add(torso);
-  const armGeo = new THREE.CapsuleGeometry(0.085, 0.7, 6, 10);
-  const armL = new THREE.Mesh(armGeo, skinMat);
-  armL.position.set(-0.5, 1.05, 0);
-  bodyGroup.add(armL);
-  const armR = new THREE.Mesh(armGeo, skinMat);
-  armR.position.set(0.5, 1.05, 0);
-  bodyGroup.add(armR);
-  const legGeo = new THREE.CapsuleGeometry(0.13, 0.85, 6, 10);
-  const legL = new THREE.Mesh(legGeo, skinMat);
-  legL.position.set(-0.17, 0.15, 0);
-  bodyGroup.add(legL);
-  const legR = new THREE.Mesh(legGeo, skinMat);
-  legR.position.set(0.17, 0.15, 0);
-  bodyGroup.add(legR);
-  scene.add(bodyGroup);
-
-  const hoverables = [];
-  organIds.forEach(id => {
-    const def = SL_ORGAN_3D_DEFS[id];
-    if (!def || id === 'skin') return;
-    const geo = new THREE.SphereGeometry(def.r, 16, 16);
-    const mat = new THREE.MeshStandardMaterial({ color: def.color, roughness: 0.4 });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(def.pos[0], def.pos[1], def.pos[2]);
-    mesh.userData.slBodyPart = id;
-    bodyGroup.add(mesh);
-    hoverables.push(mesh);
-    if (def.mirror) {
-      const mesh2 = new THREE.Mesh(geo, mat);
-      mesh2.position.set(-def.pos[0], def.pos[1], def.pos[2]);
-      mesh2.userData.slBodyPart = id;
-      bodyGroup.add(mesh2);
-      hoverables.push(mesh2);
-    }
-  });
-  // الجلد نفسه (جسم الشفافية الخارجي) قابل للضغط لو ما ضغطنا عضو محدد
-  [head, torso, armL, armR, legL, legR].forEach(m => { m.userData.slBodyPart = 'skin'; hoverables.push(m); });
-
-  const raycaster = new THREE.Raycaster();
-  const mouse = new THREE.Vector2();
-  let dragging = false, lastX = 0, lastY = 0;
-
-  function pick(e) {
-    const rect = canvas.getBoundingClientRect();
-    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    raycaster.setFromCamera(mouse, camera);
-    return raycaster.intersectObjects(hoverables, false);
-  }
-  canvas.addEventListener('mousemove', (e) => {
-    if (dragging) {
-      bodyGroup.rotation.y += (e.clientX - lastX) * 0.012;
-      lastX = e.clientX; lastY = e.clientY;
-      return;
-    }
-    canvas.style.cursor = pick(e).length ? 'pointer' : 'grab';
-  });
-  canvas.addEventListener('mousedown', (e) => { dragging = true; lastX = e.clientX; lastY = e.clientY; canvas.style.cursor = 'grabbing'; });
-  window.addEventListener('mouseup', () => { dragging = false; });
-  canvas.addEventListener('click', (e) => {
-    if (Math.abs(e.clientX - lastX) > 3 || Math.abs(e.clientY - lastY) > 3) return; // كانت سحب دوران، مو ضغطة عضو
-    const hits = pick(e);
-    if (hits.length) slShowOrganInfo(hits[0].object.userData.slBodyPart);
-  });
-
-  let frameId;
-  (function animate() {
-    frameId = requestAnimationFrame(animate);
-    renderer.render(scene, camera);
-  })();
-
-  function onResize() {
-    if (!wrap.clientWidth) return;
-    camera.aspect = wrap.clientWidth / wrap.clientHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(wrap.clientWidth, wrap.clientHeight);
-  }
-  window.addEventListener('resize', onResize);
-  return { stop() { cancelAnimationFrame(frameId); window.removeEventListener('resize', onResize); } };
-}
 function slShowOrganInfo(partId) {
   const info = SL_PARTS_INFO[partId];
   if (!info) return;
@@ -751,19 +697,43 @@ function slShowOrganInfo(partId) {
   box.innerHTML = `<b>${t(info.nameKey)}</b><br>${t(info.descKey)}`;
   box.classList.remove('hidden');
 }
-function slRenderBodyScene(containerEl, organIds) {
+function slRenderBodyScene(containerEl, kind, organIds) {
+  const data = SL_BODY_IMAGES[kind];
+  const hotspots = data.hotspots.filter(h => organIds.includes(h.part));
   containerEl.classList.remove('hidden');
   containerEl.innerHTML = `
     <p class="desc" data-i18n="sl_body_hint">${t('sl_body_hint')}</p>
-    <div class="sl-body-svg-wrap"><canvas id="slBodyCanvas"></canvas></div>
+    <div class="sl-body-img-wrap" id="slBodyImgWrap">
+      <button type="button" class="ghost sl-body-zoom-out hidden" id="slBodyZoomOutBtn">${t('sl_zoom_out')}</button>
+      <img class="sl-body-img" id="slBodyImg" src="${data.url}" alt="">
+      ${hotspots.map(h => `<button type="button" class="sl-body-hotspot" data-part="${h.part}" style="left:${h.x}%;top:${h.y}%" title="${escapeHtml(t(SL_PARTS_INFO[h.part].nameKey))}"></button>`).join('')}
+    </div>
+    ${data.credit ? `<p class="sl-body-credit">${t(data.credit)}</p>` : ''}
     <div class="sl-bio-part-desc hidden" id="slPartDescBox"></div>
   `;
-  if (SL.bodySceneHandle) { SL.bodySceneHandle.stop(); SL.bodySceneHandle = null; }
-  try {
-    SL.bodySceneHandle = slBuildBodyScene(containerEl.querySelector('#slBodyCanvas'), organIds);
-  } catch (e) {
-    containerEl.querySelector('.sl-body-svg-wrap').innerHTML = `<p class="desc">${t('sl_err_3d_unsupported')}</p>`;
+  const wrap = containerEl.querySelector('#slBodyImgWrap');
+  const img = containerEl.querySelector('#slBodyImg');
+  const zoomOutBtn = containerEl.querySelector('#slBodyZoomOutBtn');
+  img.addEventListener('error', () => { wrap.innerHTML = `<p class="desc">${t('sl_body_img_error')}</p>`; });
+  function zoomOut() {
+    img.classList.remove('zoomed');
+    wrap.classList.remove('zoomed');
+    zoomOutBtn.classList.add('hidden');
+    wrap.querySelectorAll('.sl-body-hotspot').forEach(b => b.classList.remove('active'));
   }
+  wrap.querySelectorAll('.sl-body-hotspot').forEach(btn => {
+    btn.addEventListener('click', () => {
+      wrap.querySelectorAll('.sl-body-hotspot').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      wrap.style.setProperty('--sl-zoom-x', btn.style.left);
+      wrap.style.setProperty('--sl-zoom-y', btn.style.top);
+      img.classList.add('zoomed');
+      wrap.classList.add('zoomed');
+      zoomOutBtn.classList.remove('hidden');
+      slShowOrganInfo(btn.dataset.part);
+    });
+  });
+  zoomOutBtn.addEventListener('click', zoomOut);
 }
 function slOpenBioDetail(kind, animalId) {
   document.getElementById('slBioCategoryView').classList.add('hidden');
@@ -772,7 +742,7 @@ function slOpenBioDetail(kind, animalId) {
   const content = document.getElementById('slBioDetailContent');
   if (kind === 'human') {
     content.innerHTML = `<h3 class="sub-heading">${t('sl_cat_human')}</h3><div id="slHumanPartsWrap"></div>`;
-    slRenderBodyScene(content.querySelector('#slHumanPartsWrap'), SL_BODY_PARTS.human);
+    slRenderBodyScene(content.querySelector('#slHumanPartsWrap'), 'human', SL_BODY_PARTS.human);
   } else {
     SL.bioItem = animalId;
     const a = SL_ANIMALS[animalId];
@@ -782,7 +752,7 @@ function slOpenBioDetail(kind, animalId) {
       <ul class="sl-bio-fact-list">${a.factsKeys.map(k => `<li>${t(k)}</li>`).join('')}</ul>
       <div id="slAnimalPartsWrap"></div>
     `;
-    slRenderBodyScene(content.querySelector('#slAnimalPartsWrap'), SL_BODY_PARTS.animal_generic);
+    slRenderBodyScene(content.querySelector('#slAnimalPartsWrap'), 'animal', SL_BODY_PARTS.animal_generic);
   }
 }
 document.getElementById('slBioBackToCategoriesBtn').addEventListener('click', () => {

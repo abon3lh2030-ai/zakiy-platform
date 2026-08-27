@@ -16,7 +16,6 @@
         <option value="volcano" data-i18n="sl_project_volcano">🌋 بركان فوّار</option>
         <option value="dissolve_race" data-i18n="sl_project_dissolve_race">⏱️ سباق الذوبان (حار مقابل بارد)</option>
         <option value="diffusion" data-i18n="sl_project_diffusion">🎨 انتشار الألوان</option>
-        <option value="melting" data-i18n="sl_project_melting">🧊 ذوبان الثلج بالحرارة</option>
       </select>
       <button class="ghost" id="slSummaryBtn" data-i18n="sl_show_summary">📋 عرض تلخيص جلستي</button>
     </div>
@@ -33,17 +32,12 @@
               <div class="sl-tooltip-desc" id="slTooltipDesc"></div>
               <div class="sl-tooltip-usage" id="slTooltipUsage"></div>
             </div>
-            <div class="sl-sink-panel hidden" id="slSinkPanel">
-              <div class="sl-sink-panel-title" data-i18n="sl_sink_title">🚰 المغسلة</div>
-              <div class="sl-sink-options">
-                <button data-temp="cold" data-i18n="sl_water_cold">💧 ماء بارد</button>
-                <button data-temp="warm" data-i18n="sl_water_warm">💧 ماء دافئ</button>
-                <button data-temp="hot" data-i18n="sl_water_hot">💧 ماء حار</button>
-                <button id="slGetPaperBtn" data-i18n="sl_get_paper">🧻 ورق</button>
-              </div>
-              <button class="ghost" id="slSinkCloseBtn" data-i18n="btn_close">إغلاق</button>
+            <div class="sl-water-picker hidden" id="slWaterPicker">
+              <button type="button" data-temp="cold" data-i18n="sl_water_cold">❄️ بارد</button>
+              <button type="button" data-temp="warm" data-i18n="sl_water_warm">🌤️ دافئ</button>
+              <button type="button" data-temp="hot" data-i18n="sl_water_hot">🔥 حار</button>
             </div>
-            <p class="desc sl-scene-hint" data-i18n="sl_scene_hint">مرّر الماوس على أي قطعة بالرف لتعرف اسمها واستخدامها، واضغطها لإضافتها لصينية التفاعل. اضغط المغسلة لتجيب ماء أو ورق.</p>
+            <p class="desc sl-scene-hint" data-i18n="sl_scene_hint">مرّر الماوس على أي قطعة بالرف لتعرف اسمها واستخدامها، واضغطها لإضافتها لصينية التفاعل.</p>
           </div>
           <div class="sl-reaction-bar">
             <span class="sl-tray-label" data-i18n="sl_tray_label">صينية التفاعل:</span>

@@ -5,6 +5,7 @@
     <p class="desc" data-i18n="rl_desc">صمّم دائرة أردوينو، وصّل القطع، وابرمجها ببلوكات أو كود شبه-حقيقي - كل شي يشتغل مباشرة بمتصفحك.</p>
 
     <div class="rl-toolbar">
+      <button class="ghost" id="rlBackBtn" data-i18n="btn_back">⬅ رجوع</button>
       <select id="rlExampleSelect" class="text-input">
         <option value="" data-i18n="rl_examples_placeholder">📂 مشروع جاهز...</option>
         <option value="blink" data-i18n="rl_example_blink">LED يومض</option>
@@ -31,8 +32,9 @@
       </div>
 
       <div class="rl-canvas-wrap" id="rlCanvasWrap">
-        <svg class="rl-wires-svg" id="rlWiresSvg"></svg>
         <div class="rl-canvas" id="rlCanvas"></div>
+        <svg class="rl-wires-svg" id="rlWiresSvg"></svg>
+        <div class="rl-wire-buttons" id="rlWireButtons"></div>
       </div>
 
       <div class="rl-side-panel">

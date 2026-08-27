@@ -1272,16 +1272,25 @@
     background-size: 24px 24px;
     direction: ltr;
   }
-  .rl-canvas { position: relative; min-width: 1100px; min-height: 900px; }
+  .rl-canvas { position: relative; min-width: 1100px; min-height: 900px; z-index: 2; }
+  /* الأسلاك فوق كل القطع دايمًا - لو مرّ سلك "تحت" قطعة بصريًا يظل باينًا
+     كامل بدل ما ينحجب جزء منه ---------- */
   .rl-wires-svg {
     position: absolute; inset: 0; width: 100%; height: 100%; min-width: 1100px; min-height: 900px;
-    pointer-events: none; z-index: 1;
+    pointer-events: none; z-index: 5;
   }
   .rl-wire {
     fill: none; stroke: var(--teal); stroke-width: 3.5; pointer-events: stroke; cursor: pointer;
     stroke-linecap: round;
   }
   .rl-wire:hover { stroke: var(--danger); }
+  .rl-wire-buttons { position: absolute; inset: 0; min-width: 1100px; min-height: 900px; pointer-events: none; z-index: 6; }
+  .rl-wire-del-btn {
+    position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%;
+    background: var(--danger); color: #fff; border: 2px solid var(--surface); font-size: 10px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; pointer-events: auto;
+    box-shadow: 0 1px 3px rgba(0,0,0,.3);
+  }
 
   .rl-component {
     position: absolute; z-index: 2; user-select: none; cursor: move;
@@ -1289,12 +1298,12 @@
   .rl-comp-remove {
     position: absolute; top: -10px; left: -10px; width: 20px; height: 20px; border-radius: 50%;
     background: var(--danger); color: #fff; border: none; font-size: 11px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; z-index: 3;
+    display: flex; align-items: center; justify-content: center; z-index: 6;
   }
   .rl-pin {
     position: absolute; width: 13px; height: 13px; margin-left: -6.5px; margin-top: -6.5px;
     background: #d4af37; border: 2px solid #8a6d1a; border-radius: 50%;
-    cursor: crosshair; z-index: 4; transition: background .15s, border-color .15s, transform .1s;
+    cursor: crosshair; z-index: 7; transition: background .15s, border-color .15s, transform .1s;
     box-shadow: 0 1px 2px rgba(0,0,0,.3);
   }
   .rl-pin:hover { border-color: var(--teal); background: #7de0c4; transform: scale(1.35); }
@@ -2875,6 +2884,7 @@
     <p class="desc" data-i18n="rl_desc">صمّم دائرة أردوينو، وصّل القطع، وابرمجها ببلوكات أو كود شبه-حقيقي - كل شي يشتغل مباشرة بمتصفحك.</p>
 
     <div class="rl-toolbar">
+      <button class="ghost" id="rlBackBtn" data-i18n="btn_back">⬅ رجوع</button>
       <select id="rlExampleSelect" class="text-input">
         <option value="" data-i18n="rl_examples_placeholder">📂 مشروع جاهز...</option>
         <option value="blink" data-i18n="rl_example_blink">LED يومض</option>
@@ -2901,8 +2911,9 @@
       </div>
 
       <div class="rl-canvas-wrap" id="rlCanvasWrap">
-        <svg class="rl-wires-svg" id="rlWiresSvg"></svg>
         <div class="rl-canvas" id="rlCanvas"></div>
+        <svg class="rl-wires-svg" id="rlWiresSvg"></svg>
+        <div class="rl-wire-buttons" id="rlWireButtons"></div>
       </div>
 
       <div class="rl-side-panel">
@@ -5068,7 +5079,7 @@ const TOP_LEVEL_SCREENS = [
   'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker', 'step-ai-book-scope',
   'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take', 'step-gradesheet',
   'step-madrasati', 'step-lesson-prep', 'step-enrichment', 'step-results-analysis',
-  'step-homework-help', 'step-study-plan',
+  'step-homework-help', 'step-study-plan', 'step-robotics-lab',
   // لوحات نظام إدارة حسابات المدارس - step-force-password-change مو من ضمنها
   // عمدًا (بوابة صلبة، ما تدخل نظام الرجوع/التنقل العادي)
   'step-admin-dashboard', 'step-school-dashboard', 'step-teacher-dashboard', 'step-student-schedule',
@@ -12927,23 +12938,37 @@ function rlHandlePinClick(compId, pinName) {
   rlRenderAll();
 }
 
+function rlDeleteWire(wireId) {
+  RL.wires = RL.wires.filter(w => w.id !== wireId);
+  rlSaveProject();
+  rlRenderWires();
+}
+
 function rlRenderWires() {
   const svg = document.getElementById('rlWiresSvg');
+  const buttonsWrap = document.getElementById('rlWireButtons');
+  const midpoints = [];
   const paths = RL.wires.map(w => {
     const fromComp = RL.components.find(c => c.id === w.fromComp);
     const toComp = RL.components.find(c => c.id === w.toComp);
     if (!fromComp || !toComp) return '';
     const p1 = rlPinAbsPos(fromComp, w.fromPin), p2 = rlPinAbsPos(toComp, w.toPin);
     const midY = (p1.y + p2.y) / 2;
+    midpoints.push({ id: w.id, x: (p1.x + p2.x) / 2, y: midY });
     return `<path d="M ${p1.x} ${p1.y} C ${p1.x} ${midY}, ${p2.x} ${midY}, ${p2.x} ${p2.y}" class="rl-wire" data-wire="${w.id}"/>`;
   }).join('');
   svg.innerHTML = paths;
   svg.querySelectorAll('.rl-wire').forEach(path => {
-    path.addEventListener('click', () => {
-      RL.wires = RL.wires.filter(w => w.id !== Number(path.dataset.wire));
-      rlSaveProject();
-      rlRenderWires();
-    });
+    path.addEventListener('click', () => rlDeleteWire(Number(path.dataset.wire)));
+  });
+
+  // زر ✕ صغير بنص كل سلك (زي زر حذف القطعة بالضبط) - أسهل بكثير من الضغط
+  // على السلك النحيف نفسه
+  buttonsWrap.innerHTML = midpoints.map(m => `
+    <button class="rl-wire-del-btn" data-wire="${m.id}" style="left:${m.x}px; top:${m.y}px;" title="${t('btn_remove')}">✕</button>
+  `).join('');
+  buttonsWrap.querySelectorAll('.rl-wire-del-btn').forEach(btn => {
+    btn.addEventListener('click', () => rlDeleteWire(Number(btn.dataset.wire)));
   });
 }
 
@@ -13300,6 +13325,10 @@ function rlStopExecution() {
 
 document.getElementById('rlRunBtn').addEventListener('click', rlRunCode);
 document.getElementById('rlStopBtn').addEventListener('click', rlStopExecution);
+document.getElementById('rlBackBtn').addEventListener('click', () => {
+  rlStopExecution();
+  document.getElementById('globalBackBtn').click();
+});
 document.getElementById('rlNewProjectBtn').addEventListener('click', () => {
   if (confirm(t('rl_confirm_new'))) rlNewProject();
 });

@@ -657,23 +657,37 @@ function rlHandlePinClick(compId, pinName) {
   rlRenderAll();
 }
 
+function rlDeleteWire(wireId) {
+  RL.wires = RL.wires.filter(w => w.id !== wireId);
+  rlSaveProject();
+  rlRenderWires();
+}
+
 function rlRenderWires() {
   const svg = document.getElementById('rlWiresSvg');
+  const buttonsWrap = document.getElementById('rlWireButtons');
+  const midpoints = [];
   const paths = RL.wires.map(w => {
     const fromComp = RL.components.find(c => c.id === w.fromComp);
     const toComp = RL.components.find(c => c.id === w.toComp);
     if (!fromComp || !toComp) return '';
     const p1 = rlPinAbsPos(fromComp, w.fromPin), p2 = rlPinAbsPos(toComp, w.toPin);
     const midY = (p1.y + p2.y) / 2;
+    midpoints.push({ id: w.id, x: (p1.x + p2.x) / 2, y: midY });
     return `<path d="M ${p1.x} ${p1.y} C ${p1.x} ${midY}, ${p2.x} ${midY}, ${p2.x} ${p2.y}" class="rl-wire" data-wire="${w.id}"/>`;
   }).join('');
   svg.innerHTML = paths;
   svg.querySelectorAll('.rl-wire').forEach(path => {
-    path.addEventListener('click', () => {
-      RL.wires = RL.wires.filter(w => w.id !== Number(path.dataset.wire));
-      rlSaveProject();
-      rlRenderWires();
-    });
+    path.addEventListener('click', () => rlDeleteWire(Number(path.dataset.wire)));
+  });
+
+  // زر ✕ صغير بنص كل سلك (زي زر حذف القطعة بالضبط) - أسهل بكثير من الضغط
+  // على السلك النحيف نفسه
+  buttonsWrap.innerHTML = midpoints.map(m => `
+    <button class="rl-wire-del-btn" data-wire="${m.id}" style="left:${m.x}px; top:${m.y}px;" title="${t('btn_remove')}">✕</button>
+  `).join('');
+  buttonsWrap.querySelectorAll('.rl-wire-del-btn').forEach(btn => {
+    btn.addEventListener('click', () => rlDeleteWire(Number(btn.dataset.wire)));
   });
 }
 
@@ -1030,6 +1044,10 @@ function rlStopExecution() {
 
 document.getElementById('rlRunBtn').addEventListener('click', rlRunCode);
 document.getElementById('rlStopBtn').addEventListener('click', rlStopExecution);
+document.getElementById('rlBackBtn').addEventListener('click', () => {
+  rlStopExecution();
+  document.getElementById('globalBackBtn').click();
+});
 document.getElementById('rlNewProjectBtn').addEventListener('click', () => {
   if (confirm(t('rl_confirm_new'))) rlNewProject();
 });

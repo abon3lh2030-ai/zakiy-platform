@@ -112,19 +112,23 @@ const SL_SHELF_ITEMS = [
     },
   },
   {
-    id: 'magnifying_glass', nameKey: 'sl_item_magnifying_glass_name', descKey: 'sl_item_magnifying_glass_desc', usageKey: 'sl_item_magnifying_glass_usage',
+    id: 'sugar', nameKey: 'sl_item_sugar_name', descKey: 'sl_item_sugar_desc', usageKey: 'sl_item_sugar_usage',
     build() {
       const g = new THREE.Group();
-      const lens = new THREE.Mesh(new THREE.CircleGeometry(0.22, 20), new THREE.MeshPhysicalMaterial({ color: 0xbfe8ff, transparent: true, opacity: 0.35, side: THREE.DoubleSide }));
-      lens.position.y = 0.25;
-      g.add(lens);
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.025, 8, 24), new THREE.MeshStandardMaterial({ color: 0x8a5a2b, metalness: 0.4 }));
-      ring.position.y = 0.25;
-      g.add(ring);
-      const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.35, 8), new THREE.MeshStandardMaterial({ color: 0x8a5a2b }));
-      handle.position.y = -0.15;
-      handle.rotation.z = 0.3;
-      g.add(handle);
+      const box = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.42, 0.3), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 }));
+      box.position.y = 0.04;
+      g.add(box);
+      return g;
+    },
+  },
+  {
+    id: 'ice', nameKey: 'sl_item_ice_name', descKey: 'sl_item_ice_desc', usageKey: 'sl_item_ice_usage',
+    build() {
+      const g = new THREE.Group();
+      const cube = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshPhysicalMaterial({ color: 0xbfe8ff, transparent: true, opacity: 0.55, roughness: 0.05 }));
+      cube.rotation.y = 0.4;
+      cube.position.y = 0.05;
+      g.add(cube);
       return g;
     },
   },
@@ -193,6 +197,11 @@ const SL_REACTIONS = {
   [slPairKey('bunsen_burner', 'beaker')]: 'sl_reaction_burner_beaker',
   [slPairKey('thermometer', 'water_hot')]: 'sl_reaction_thermo_hot',
   [slPairKey('thermometer', 'water_cold')]: 'sl_reaction_thermo_cold',
+  [slPairKey('sugar', 'water_hot')]: 'sl_reaction_sugar_hot',
+  [slPairKey('sugar', 'water_cold')]: 'sl_reaction_sugar_cold',
+  [slPairKey('ice', 'bunsen_burner')]: 'sl_reaction_ice_burner',
+  [slPairKey('ice', 'water_hot')]: 'sl_reaction_ice_hot',
+  [slPairKey('ice', 'water_cold')]: 'sl_reaction_ice_cold',
 };
 
 // ---------- تهيئة المشهد ثلاثي الأبعاد ----------
@@ -246,6 +255,31 @@ function slInitThreeScene() {
   SL.scene.add(sinkGroup);
   SL.hoverables.push(sinkGroup);
 
+  // كوب + نافورة ماء متحركة تحت الحنفية - تشتغل وقت اختيار نوع الماء
+  const cup = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.14, 0.11, 0.28, 16, 1, true),
+    new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.3, roughness: 0.1, side: THREE.DoubleSide })
+  );
+  cup.position.set(4.6 + 0.16, 0.14, -0.4 - 0.35);
+  SL.scene.add(cup);
+  SL.cupWaterBaseY = 0.02;
+  SL.cupWaterFullHeight = 0.22;
+  SL.cupWaterMesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.1, 0.09, SL.cupWaterFullHeight, 16),
+    new THREE.MeshStandardMaterial({ color: 0x66ccff, transparent: true, opacity: 0.85 })
+  );
+  SL.cupWaterMesh.position.set(cup.position.x, SL.cupWaterBaseY, cup.position.z);
+  SL.cupWaterMesh.visible = false;
+  SL.scene.add(SL.cupWaterMesh);
+
+  SL.streamMesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.02, 0.02, 0.55, 8),
+    new THREE.MeshStandardMaterial({ color: 0x66ccff, transparent: true, opacity: 0.75 })
+  );
+  SL.streamMesh.position.set(4.6 + 0.16, 1.0, -0.4 - 0.75);
+  SL.streamMesh.visible = false;
+  SL.scene.add(SL.streamMesh);
+
   SL.raycaster = new THREE.Raycaster();
   SL.mouse = new THREE.Vector2();
 
@@ -267,7 +301,32 @@ function slOnSceneResize() {
 
 function slAnimate() {
   SL.animFrameId = requestAnimationFrame(slAnimate);
+  if (SL.waterAnim) slUpdateWaterAnim();
   SL.renderer.render(SL.scene, SL.camera);
+}
+
+// ---------- أنيميشن ماء يجي من الحنفية ويتعبى بكوب ----------
+const SL_WATER_COLORS = { cold: 0x66ccff, warm: 0x5fb0e0, hot: 0xff9a66 };
+function slPourWaterAnimation(temp, onDone) {
+  const color = SL_WATER_COLORS[temp] || 0x66ccff;
+  SL.streamMesh.material.color.setHex(color);
+  SL.cupWaterMesh.material.color.setHex(color);
+  SL.cupWaterMesh.scale.y = 0.001;
+  SL.cupWaterMesh.visible = true;
+  SL.streamMesh.visible = true;
+  SL.waterAnim = { startTime: performance.now(), duration: 1100, onDone };
+}
+function slUpdateWaterAnim() {
+  const elapsed = performance.now() - SL.waterAnim.startTime;
+  const progress = Math.min(1, elapsed / SL.waterAnim.duration);
+  SL.cupWaterMesh.scale.y = Math.max(0.001, progress);
+  SL.cupWaterMesh.position.y = SL.cupWaterBaseY - (SL.cupWaterFullHeight * (1 - progress)) / 2;
+  if (progress >= 1) {
+    SL.streamMesh.visible = false;
+    const done = SL.waterAnim.onDone;
+    SL.waterAnim = null;
+    if (done) done();
+  }
 }
 
 function slFindHoverableRoot(object) {
@@ -318,8 +377,9 @@ function slOnSceneClick(e) {
 }
 
 // ---------- صينية التفاعل ----------
+const SL_TRAY_MAX = 4;
 function slAddToTray(id) {
-  if (SL.tray.length >= 2 || SL.tray.includes(id)) return;
+  if (SL.tray.length >= SL_TRAY_MAX || SL.tray.includes(id)) return;
   SL.tray.push(id);
   slRenderTray();
 }
@@ -331,7 +391,7 @@ function slRenderTray() {
   wrap.querySelectorAll('button').forEach(btn => {
     btn.addEventListener('click', () => { SL.tray = SL.tray.filter(x => x !== btn.dataset.id); slRenderTray(); });
   });
-  document.getElementById('slReactBtn').classList.toggle('hidden', SL.tray.length !== 2);
+  document.getElementById('slReactBtn').classList.toggle('hidden', SL.tray.length < 2);
   document.getElementById('slClearTrayBtn').classList.toggle('hidden', SL.tray.length === 0);
 }
 document.getElementById('slClearTrayBtn').addEventListener('click', () => {
@@ -340,22 +400,58 @@ document.getElementById('slClearTrayBtn').addEventListener('click', () => {
   document.getElementById('slReactionResult').classList.add('hidden');
 });
 document.getElementById('slReactBtn').addEventListener('click', () => {
-  const key = slPairKey(SL.tray[0], SL.tray[1]);
-  const reactionKey = SL_REACTIONS[key];
-  const text = reactionKey ? t(reactionKey) : t('sl_reaction_none');
+  // نفاعل كل زوج ممكن بين القطع المختارة (مو بس أول قطعتين) - تقدر تحط
+  // أكثر من مكونين وتشوف كل التفاعلات الممكنة بينهم دفعة وحدة
+  const results = [];
+  for (let i = 0; i < SL.tray.length; i++) {
+    for (let j = i + 1; j < SL.tray.length; j++) {
+      const key = slPairKey(SL.tray[i], SL.tray[j]);
+      const reactionKey = SL_REACTIONS[key];
+      const text = reactionKey ? t(reactionKey) : t('sl_reaction_none_pair', { a: t(slItemNameKey(SL.tray[i])), b: t(slItemNameKey(SL.tray[j])) });
+      results.push({ a: SL.tray[i], b: SL.tray[j], text });
+      SL.sessionLog.push(`${t('sl_log_reaction_prefix')}: ${t(slItemNameKey(SL.tray[i]))} + ${t(slItemNameKey(SL.tray[j]))} → ${text}`);
+    }
+  }
   const box = document.getElementById('slReactionResult');
-  box.textContent = text;
+  box.innerHTML = results.map(r => `<p>${escapeHtml(r.text)}</p>`).join('');
   box.classList.remove('hidden');
-  SL.sessionLog.push(`${t('sl_log_reaction_prefix')}: ${t(slItemNameKey(SL.tray[0]))} + ${t(slItemNameKey(SL.tray[1]))} → ${text}`);
+  slPlayReactionEffect();
   SL.tray = [];
   slRenderTray();
 });
 
+// ---------- تأثير بصري عام وقت أي تفاعل (فقاعات ملوّنة تطلع فوق الرف) ----------
+function slPlayReactionEffect() {
+  if (!SL.scene) return;
+  const colors = [0x66ccff, 0xff8a5c, 0x8be08b, 0xffe14d];
+  for (let i = 0; i < 14; i++) {
+    const bubble = new THREE.Mesh(
+      new THREE.SphereGeometry(0.05 + Math.random() * 0.06, 10, 10),
+      new THREE.MeshStandardMaterial({ color: colors[i % colors.length], transparent: true, opacity: 0.85 })
+    );
+    bubble.position.set(-2 + Math.random() * 4, 1.9, Math.random() * 0.6 - 0.3);
+    SL.scene.add(bubble);
+    const start = performance.now();
+    const riseSpeed = 0.9 + Math.random() * 0.8;
+    const drift = (Math.random() - 0.5) * 0.6;
+    const startX = bubble.position.x;
+    const tick = () => {
+      const elapsed = (performance.now() - start) / 1000;
+      if (elapsed > 1.4) { SL.scene.remove(bubble); bubble.geometry.dispose(); bubble.material.dispose(); return; }
+      bubble.position.y = 1.9 + elapsed * riseSpeed;
+      bubble.position.x = startX + drift * elapsed;
+      bubble.material.opacity = 0.85 * (1 - elapsed / 1.4);
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+}
+
 // ---------- المغسلة ----------
 document.querySelectorAll('#slSinkPanel [data-temp]').forEach(btn => {
   btn.addEventListener('click', () => {
-    slAddToTray('water_' + btn.dataset.temp);
     document.getElementById('slSinkPanel').classList.add('hidden');
+    slPourWaterAnimation(btn.dataset.temp, () => slAddToTray('water_' + btn.dataset.temp));
   });
 });
 document.getElementById('slGetPaperBtn').addEventListener('click', () => {
@@ -374,6 +470,24 @@ function slSwitchTab(tab) {
 }
 document.getElementById('slTabChemistryBtn').addEventListener('click', () => slSwitchTab('chemistry'));
 document.getElementById('slTabBiologyBtn').addEventListener('click', () => slSwitchTab('biology'));
+
+// ---------- مشاريع جاهزة (نفس فكرة أمثلة معمل الروبوتات) - تحمّل قطع
+// جاهزة بصينية التفاعل مباشرة عشان تجرّب سيناريو تعليمي بضغطة وحدة ----------
+const SL_PROJECTS = {
+  volcano: ['vinegar', 'baking_soda'],
+  dissolve_race: ['sugar', 'water_hot'],
+  diffusion: ['food_coloring', 'water_cold'],
+  melting: ['ice', 'bunsen_burner'],
+};
+document.getElementById('slProjectSelect').addEventListener('change', (e) => {
+  const key = e.target.value;
+  e.target.value = '';
+  if (!key || !SL_PROJECTS[key]) return;
+  slSwitchTab('chemistry');
+  SL.tray = [...SL_PROJECTS[key]];
+  slRenderTray();
+  document.getElementById('slReactionResult').classList.add('hidden');
+});
 
 // ============================================================================
 // ---------- مستكشف الأحياء ----------
@@ -417,6 +531,8 @@ const SL_PARTS_INFO = {
   stomach: { nameKey: 'sl_part_stomach_name', descKey: 'sl_part_stomach_desc' },
   kidneys: { nameKey: 'sl_part_kidneys_name', descKey: 'sl_part_kidneys_desc' },
   skin: { nameKey: 'sl_part_skin_name', descKey: 'sl_part_skin_desc' },
+  liver: { nameKey: 'sl_part_liver_name', descKey: 'sl_part_liver_desc' },
+  intestines: { nameKey: 'sl_part_intestines_name', descKey: 'sl_part_intestines_desc' },
 };
 
 function slRenderBioCategories() {
@@ -479,26 +595,102 @@ function slRenderBodyPartsInto(containerEl, partIds) {
     });
   });
 }
+// ---------- رسم تشريحي حقيقي لجسم الإنسان (SVG) - أعضاء بمواضعها التقريبية
+// الصحيحة، تضغط على أي عضو "من جوا الجسم نفسه" فيكبّر (zoom) عليه ويطلع
+// شرحه - بدون أي اختيار من قوائم خارجية ---------- */
+// إيموجي حقيقي (تصميم احترافي جاهز) للأعضاء اللي فيها رمز واضح ومعروف -
+// أدق وأنضف بكثير من محاولة رسم شكل العضو يدويًا بـSVG؛ الباقي (كبد/معدة/
+// أمعاء/كلى) ما فيها إيموجي مناسب فنستخدم أشكال ملوّنة بتدرّج بدلها
+const SL_HUMAN_ORGANS = [
+  { id: 'brain', cx: 100, cy: 38, emoji: '🧠', size: 26 },
+  { id: 'lungs', cx: 78, cy: 108, emoji: '🫁', size: 30 },
+  { id: 'lungs2', partId: 'lungs', cx: 122, cy: 108, emoji: '🫁', size: 30 },
+  { id: 'heart', cx: 100, cy: 122, emoji: '🫀', size: 24 },
+  { id: 'liver', cx: 118, cy: 150, rx: 16, ry: 12, grad: 'slGradLiver' },
+  { id: 'stomach', cx: 82, cy: 152, rx: 13, ry: 12, grad: 'slGradStomach' },
+  { id: 'intestines', cx: 100, cy: 182, rx: 22, ry: 18, grad: 'slGradIntestines' },
+  { id: 'kidneys', cx: 70, cy: 168, rx: 7, ry: 12, grad: 'slGradKidneys' },
+  { id: 'kidneys2', partId: 'kidneys', cx: 130, cy: 168, rx: 7, ry: 12, grad: 'slGradKidneys' },
+];
+function slBuildHumanBodySvg() {
+  const organsHtml = SL_HUMAN_ORGANS.map(o => o.emoji
+    ? `<text class="sl-organ-hotspot" data-part="${o.partId || o.id}" data-cx="${o.cx}" data-cy="${o.cy}"
+         x="${o.cx}" y="${o.cy}" font-size="${o.size}" text-anchor="middle" dominant-baseline="central">${o.emoji}</text>`
+    : `<ellipse class="sl-organ-hotspot" data-part="${o.partId || o.id}" data-cx="${o.cx}" data-cy="${o.cy}"
+         cx="${o.cx}" cy="${o.cy}" rx="${o.rx}" ry="${o.ry}" fill="url(#${o.grad})" stroke="#ffffff80" stroke-width="1.2"/>`
+  ).join('');
+  return `
+    <svg class="sl-body-svg" id="slBodySvg" viewBox="0 0 200 420" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="slSkinGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#f5d2a8"/><stop offset="55%" stop-color="#e0ab77"/><stop offset="100%" stop-color="#c4874e"/>
+        </linearGradient>
+        <radialGradient id="slGradBrain" cx="35%" cy="30%"><stop offset="0%" stop-color="#f5b8d8"/><stop offset="100%" stop-color="#c04f8c"/></radialGradient>
+        <radialGradient id="slGradLungs" cx="35%" cy="30%"><stop offset="0%" stop-color="#ff9d9d"/><stop offset="100%" stop-color="#c23a3a"/></radialGradient>
+        <radialGradient id="slGradHeart" cx="35%" cy="30%"><stop offset="0%" stop-color="#ff5470"/><stop offset="100%" stop-color="#9c0d2e"/></radialGradient>
+        <radialGradient id="slGradLiver" cx="35%" cy="30%"><stop offset="0%" stop-color="#c47a4a"/><stop offset="100%" stop-color="#7a3d1a"/></radialGradient>
+        <radialGradient id="slGradStomach" cx="35%" cy="30%"><stop offset="0%" stop-color="#ffcb6b"/><stop offset="100%" stop-color="#d68c1f"/></radialGradient>
+        <radialGradient id="slGradIntestines" cx="35%" cy="30%"><stop offset="0%" stop-color="#f0bc7e"/><stop offset="100%" stop-color="#b87a35"/></radialGradient>
+        <radialGradient id="slGradKidneys" cx="35%" cy="30%"><stop offset="0%" stop-color="#c085e0"/><stop offset="100%" stop-color="#6b2f8a"/></radialGradient>
+      </defs>
+      <g class="sl-organ-hotspot" data-part="skin" data-cx="100" data-cy="210">
+        <rect x="68" y="230" width="28" height="150" rx="14" fill="url(#slSkinGrad)"/>
+        <rect x="104" y="230" width="28" height="150" rx="14" fill="url(#slSkinGrad)"/>
+        <rect x="28" y="78" width="24" height="112" rx="12" fill="url(#slSkinGrad)"/>
+        <rect x="148" y="78" width="24" height="112" rx="12" fill="url(#slSkinGrad)"/>
+        <rect x="62" y="72" width="76" height="130" rx="26" fill="url(#slSkinGrad)"/>
+        <rect x="62" y="185" width="76" height="45" rx="16" fill="url(#slSkinGrad)"/>
+        <rect x="90" y="58" width="20" height="16" fill="url(#slSkinGrad)"/>
+        <circle cx="100" cy="36" r="27" fill="url(#slSkinGrad)"/>
+      </g>
+      ${organsHtml}
+    </svg>
+  `;
+}
+function slZoomToOrgan(cx, cy) {
+  const svg = document.getElementById('slBodySvg');
+  const pctX = (cx / 200) * 100, pctY = (cy / 420) * 100;
+  svg.style.transformOrigin = `${pctX}% ${pctY}%`;
+  svg.classList.add('zoomed');
+  document.getElementById('slBodyZoomOutBtn').classList.remove('hidden');
+}
+function slZoomOutBody() {
+  const svg = document.getElementById('slBodySvg');
+  if (svg) svg.classList.remove('zoomed');
+  document.getElementById('slBodyZoomOutBtn').classList.add('hidden');
+}
+function slRenderHumanBody(containerEl) {
+  containerEl.classList.remove('hidden');
+  containerEl.innerHTML = `
+    <p class="desc" data-i18n="sl_body_hint">${t('sl_body_hint')}</p>
+    <div class="sl-body-svg-wrap">
+      ${slBuildHumanBodySvg()}
+      <button class="ghost sl-body-zoom-out hidden" id="slBodyZoomOutBtn" data-i18n="sl_zoom_out">🔍 تصغير</button>
+    </div>
+    <div class="sl-bio-part-desc hidden" id="slPartDescBox"></div>
+  `;
+  containerEl.querySelectorAll('.sl-organ-hotspot').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const info = SL_PARTS_INFO[el.dataset.part];
+      if (!info) return;
+      SL.sessionLog.push(`${t('sl_log_part_prefix')}: ${t(info.nameKey)}`);
+      slZoomToOrgan(Number(el.dataset.cx), Number(el.dataset.cy));
+      const box = containerEl.querySelector('#slPartDescBox');
+      box.innerHTML = `<b>${t(info.nameKey)}</b><br>${t(info.descKey)}`;
+      box.classList.remove('hidden');
+    });
+  });
+  containerEl.querySelector('#slBodyZoomOutBtn').addEventListener('click', slZoomOutBody);
+}
 function slOpenBioDetail(kind, animalId) {
   document.getElementById('slBioCategoryView').classList.add('hidden');
   document.getElementById('slBioGridView').classList.add('hidden');
   document.getElementById('slBioDetailView').classList.remove('hidden');
   const content = document.getElementById('slBioDetailContent');
   if (kind === 'human') {
-    content.innerHTML = `
-      <h3 class="sub-heading">${t('sl_cat_human')}</h3>
-      <div class="sl-bio-gender-row">
-        <div class="sl-bio-gender-btn" data-gender="male"><span>🧑</span>${t('sl_gender_male')}</div>
-        <div class="sl-bio-gender-btn" data-gender="female"><span>🧑‍🦰</span>${t('sl_gender_female')}</div>
-      </div>
-      <div class="hidden" id="slHumanPartsWrap"></div>
-    `;
-    content.querySelectorAll('.sl-bio-gender-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        SL.sessionLog.push(`${t('sl_log_gender_prefix')}: ${t(btn.dataset.gender === 'male' ? 'sl_gender_male' : 'sl_gender_female')}`);
-        slRenderBodyPartsInto(content.querySelector('#slHumanPartsWrap'), SL_BODY_PARTS.human);
-      });
-    });
+    content.innerHTML = `<h3 class="sub-heading">${t('sl_cat_human')}</h3><div id="slHumanPartsWrap"></div>`;
+    slRenderHumanBody(content.querySelector('#slHumanPartsWrap'));
   } else {
     SL.bioItem = animalId;
     const a = SL_ANIMALS[animalId];

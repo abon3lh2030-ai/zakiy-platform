@@ -98,13 +98,21 @@
   }
   .sl-bio-part-chip:hover { background: var(--highlighter-soft); }
   .sl-bio-part-desc { margin-top: 10px; background: var(--paper-dim); border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.8; }
-  .sl-bio-gender-row { display: flex; gap: 12px; margin-top: 14px; }
-  .sl-bio-gender-btn {
-    flex: 1; background: var(--paper-dim); border: 1px solid var(--line); border-radius: 14px; padding: 22px 10px;
-    text-align: center; cursor: pointer; font-size: 15px; font-weight: 700; transition: border-color .15s, transform .12s;
+  /* ---------- رسم تشريحي حقيقي لجسم الإنسان - أعضاء بمواضعها التقريبية،
+     تضغط عليها مباشرة "من جوا الجسم" فتكبّر (zoom) عليها ---------- */
+  .sl-body-svg-wrap {
+    position: relative; overflow: hidden; border-radius: 16px; margin-top: 12px;
+    background: radial-gradient(circle at 50% 15%, #2a3a52, #131a26 75%);
+    padding: 20px 0; display: flex; justify-content: center;
   }
-  .sl-bio-gender-btn:hover { border-color: var(--teal); transform: translateY(-3px); }
-  .sl-bio-gender-btn span { display: block; font-size: 36px; margin-bottom: 8px; }
+  .sl-body-svg { width: 240px; height: auto; display: block; transition: transform .45s cubic-bezier(.2,.8,.2,1); }
+  .sl-body-svg.zoomed { transform: scale(3.2); }
+  .sl-organ-hotspot { cursor: pointer; transition: filter .15s, opacity .15s; }
+  .sl-organ-hotspot:hover { filter: brightness(1.25) drop-shadow(0 0 6px rgba(255,255,255,.6)); }
+  .sl-body-zoom-out {
+    position: absolute; top: 12px; left: 12px; z-index: 3; background: rgba(255,255,255,.92) !important;
+    color: #1a1a1a !important; border: none !important; font-size: 12.5px !important; padding: 6px 12px !important;
+  }
 
   /* ---------- مساعد ذكيّ مستمر ---------- */
   .sl-chat-panel {

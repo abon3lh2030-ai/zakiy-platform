@@ -73,14 +73,9 @@ function routeByRole(role) {
   const screenId = INSTITUTIONAL_DASHBOARD_SCREENS[role];
   if (!screenId) {
     show('mode-select');
-    // نفس مبدأ proceedToApp - نرجّع شاشة محفوظة من قبل آخر Reload لو موجودة
-    // (الطالب مثلًا يستخدم نفس تجربة mode-select، فيه سايد بار وشاشات
-    // فرعية زي الواجبات/الرسائل تحتاج نفس الاستعادة)
-    if (tryRestoreLastScreen()) navHistory = [['mode-select']];
     return;
   }
   show(screenId);
-  if (tryRestoreLastScreen()) navHistory = [[screenId]];
   if (role === 'admin') loadAdminDashboard();
   else if (role === 'school_admin' || role === 'school_administration') loadSchoolDashboard();
   else if (role === 'teacher') loadTeacherDashboard();

@@ -17,10 +17,6 @@ function proceedToApp() {
   show('sidebar');
   show('mode-select');
   navHistory = [];
-  // لو فيه شاشة محفوظة من قبل آخر Reload بنفس التبويب (إعدادات/ملاحظات/
-  // مكتبة...) نرجّعك لها بدل الرئيسية - راجع tryRestoreLastScreen بـ
-  // 02-navigation.js
-  if (tryRestoreLastScreen()) navHistory = [['mode-select']];
   updateGlobalBackButton();
 
   // انضمام سريع عبر رابط QR (?join=CODE) - نعبّي فورم الانضمام تلقائيًا أول

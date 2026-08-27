@@ -153,6 +153,10 @@
   },
   {
     "type": "file",
+    "path": "pages/science/science-lab.html"
+  },
+  {
+    "type": "file",
     "path": "pages/settings/settings.html"
   },
   {

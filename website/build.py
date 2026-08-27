@@ -31,7 +31,7 @@ CSS_ORDER = [
     "21-guest-modal", "22-streak-badge", "23-session-rating", "24-live-class",
     "25-qr-modal", "26-friends-archive", "27-lang-buttons", "28-privacy-toggle",
     "29-profile", "30-subscription", "31-notes", "32-assignments",
-    "33-ai-assistant", "34-quizzes", "35-madrasati", "36-robotics-lab",
+    "33-ai-assistant", "34-quizzes", "35-madrasati", "36-robotics-lab", "37-science-lab",
 ]
 
 JS_ORDER = [
@@ -42,7 +42,7 @@ JS_ORDER = [
     "17-admin-dashboard", "18-school-admin-dashboard", "19-teacher-dashboard",
     "20-student-schedule", "21-messages", "22-broadcast-attendance",
     "23-notes", "24-assignments", "25-ai-assistant", "26-quizzes", "27-gradesheet", "28-madrasati",
-    "29-robotics-lab",
+    "29-robotics-lab", "30-science-lab",
 ]
 
 
@@ -78,6 +78,7 @@ def build():
 
     out.append('<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>\n')
     out.append('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>\n')
+    out.append('<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>\n')
     out.append("<script>\n")
     for name in JS_ORDER:
         out.append(read("js", f"{name}.js"))

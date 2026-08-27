@@ -743,6 +743,78 @@ def delete_study_plan(plan_id):
         return jsonify({"error": str(e)}), 500
 
 
+# ============================================================================
+# ---------- مختبر العلوم (محاكاة كيميائية/فيزيائية + مستكشف أحياء ثلاثي
+# الأبعاد بأسلوب تخطيطي، متاح للجميع مثل معمل الروبوتات) - مساعد ذكي مدمج
+# مستمر أثناء الجلسة + تلخيص نهائي لسجل النشاط ----------
+# ============================================================================
+SCIENCE_LAB_SYSTEM_PROMPT = """أنت مساعد "ذكيّ" جوّا مختبر العلوم الافتراضي بمنصة ذكيّ التعليمية. الطالب
+يستكشف تفاعلات كيميائية وفيزيائية ثلاثية الأبعاد، وأيضًا قسم أحياء (حيوانات
+وجسم الإنسان) بمخططات تفاعلية. جاوب بوضوح وبساطة تناسب طالب مدرسة، بالعربية،
+بدون رموز Markdown. لو الطالب يجاوب على سؤال عن عضو أو تصنيف حيوان، قيّم
+إجابته بصراحة: ابدأ ردك بـ"✅ صحيح" لو صحيحة أو "❌ للأسف مو صحيحة" لو غلط، ثم
+اشرح باختصار. لو مجرد سؤال عادي (مو إجابة على اختبار)، جاوب طبيعي بدون هذي
+البادئة."""
+
+
+@app.route("/api/science-lab/chat", methods=["POST"])
+@require_auth
+def science_lab_chat():
+    data = request.get_json(silent=True) or {}
+    message = (data.get("message") or "").strip()
+    interaction_id = data.get("interaction_id")
+    context = (data.get("context") or "").strip()
+    lang = data.get("lang", "ar")
+    if not message:
+        return jsonify({"error": "لازم ترسل رسالة"}), 400
+    try:
+        if interaction_id:
+            input_text = f"{message}{lang_directive(lang)}"
+        else:
+            context_line = f"الطالب يستكشف الآن: {context}\n\n" if context else ""
+            input_text = f"{SCIENCE_LAB_SYSTEM_PROMPT}\n\n{context_line}{lang_directive(lang)}\n\nسؤال/رسالة الطالب: {message}"
+        kwargs = {
+            "model": GEMINI_MODEL, "input": input_text,
+            "generation_config": {"max_output_tokens": 700, "thinking_level": "minimal"},
+        }
+        if interaction_id:
+            kwargs["previous_interaction_id"] = interaction_id
+        interaction = create_interaction(**kwargs)
+        return jsonify({"reply": interaction.output_text, "interaction_id": interaction.id}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/science-lab/summary", methods=["POST"])
+@require_auth
+def science_lab_summary():
+    """تلخيص جلسة استكشاف كاملة بمختبر العلوم - العميل يرسل سجل الأحداث
+    (تفاعلات جرّبها، حيوانات/أعضاء استكشفها، أسئلة سألها) والذكاء يطلّع
+    تلخيص مقروء من البداية للنهاية."""
+    data = request.get_json(silent=True) or {}
+    log_entries = data.get("log") or []
+    lang = data.get("lang", "ar")
+    if not log_entries:
+        return jsonify({"error": "لازم يكون فيه نشاط بالجلسة عشان نلخّصه"}), 400
+    log_text = "\n".join(f"- {entry}" for entry in log_entries[:200])
+    prompt = f"""أنت مساعد تعليمي. تحت سجل أحداث جلسة طالب بمختبر علوم افتراضي
+(تفاعلات كيميائية/فيزيائية جرّبها، حيوانات أو أعضاء جسم استكشفها، أسئلة سألها
+وإجاباته عليها). لخّص الجلسة بشكل مقروء ومشجّع من البداية للنهاية، أبرز أهم
+شي تعلّمه الطالب، بالعربية، بدون رموز Markdown.
+{lang_directive(lang)}
+
+سجل الجلسة:
+{log_text}"""
+    try:
+        interaction = create_interaction(
+            model=GEMINI_MODEL, input=prompt,
+            generation_config={"max_output_tokens": 900, "thinking_level": "minimal"},
+        )
+        return jsonify({"summary": interaction.output_text}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # ---------- شات مع الذكاء الاصطناعي حول الملف (وضع فردي) ----------
 @app.route("/api/chat", methods=["POST"])
 def chat():

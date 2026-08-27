@@ -1,6 +1,6 @@
 // ---------- شاشات الحساب (أدائي / الأرشيف / الأصدقاء / مكتبتي) - كل وحدة
 // مستقلة بزر سايد بار خاص فيها، بدل ما تكون تبويبات جوا شاشة وحدة ----------
-const ACCOUNT_SCREENS = ['step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings', 'step-profile', 'step-notes', 'step-note-editor', 'step-assignments', 'step-assignment-detail', 'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker', 'step-ai-book-scope', 'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take', 'step-gradesheet', 'step-madrasati', 'step-lesson-prep', 'step-enrichment', 'step-results-analysis', 'step-homework-help', 'step-study-plan', 'step-robotics-lab'];
+const ACCOUNT_SCREENS = ['step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings', 'step-profile', 'step-notes', 'step-note-editor', 'step-assignments', 'step-assignment-detail', 'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker', 'step-ai-book-scope', 'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take', 'step-gradesheet', 'step-madrasati', 'step-lesson-prep', 'step-enrichment', 'step-results-analysis', 'step-homework-help', 'step-study-plan', 'step-robotics-lab', 'step-science-lab'];
 function showAccountScreen(id) {
   ['login-form', 'signup-form', 'step-force-password-change', 'mode-select', 'room-mode-select', 'room-create-form',
    'room-join-form', 'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary', 'step-quiz',
@@ -11,7 +11,7 @@ function showAccountScreen(id) {
   // معمل الروبوتات يحتاج عرض أوسع بكثير من عمود المحتوى العادي (880px) عشان
   // مساحة الشغل تكون مريحة - نوسّع حاوية الصفحة نفسها بس وقت هذي الشاشة
   const wrapEl = document.querySelector('.wrap');
-  if (wrapEl) wrapEl.classList.toggle('wrap-wide', id === 'step-robotics-lab');
+  if (wrapEl) wrapEl.classList.toggle('wrap-wide', id === 'step-robotics-lab' || id === 'step-science-lab');
 }
 function showPerformanceDashboard() { showAccountScreen('step-performance'); }
 function showLibraryScreen() { showAccountScreen('step-library'); }
@@ -26,6 +26,7 @@ function showQuizzesScreen() { showAccountScreen('step-quizzes'); loadQuizzesScr
 function showGradesheetScreen() { showAccountScreen('step-gradesheet'); loadGradesheetScreen(); }
 function showMadrasatiScreen() { showAccountScreen('step-madrasati'); loadMadrasatiScreen(); }
 function showRoboticsLabScreen() { showAccountScreen('step-robotics-lab'); loadRoboticsLabScreen(); }
+function showScienceLabScreen() { showAccountScreen('step-science-lab'); loadScienceLabScreen(); }
 
 // ---------- صفحة البروفايل (بروفايلك أو بروفايل شخص ثاني) ----------
 async function showProfileScreen(userId) {
@@ -238,6 +239,12 @@ document.getElementById('roboticsLabBtn').addEventListener('click', () => {
   if (!requireAuthOrPrompt()) return;
   pushNavSnapshot();
   showRoboticsLabScreen();
+  updateGlobalBackButton();
+});
+document.getElementById('scienceLabBtn').addEventListener('click', () => {
+  if (!requireAuthOrPrompt()) return;
+  pushNavSnapshot();
+  showScienceLabScreen();
   updateGlobalBackButton();
 });
 

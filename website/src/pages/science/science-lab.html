@@ -1,0 +1,87 @@
+  <!-- مختبر العلوم - محاكاة كيميائية/فيزيائية ثلاثية الأبعاد + مستكشف أحياء
+       (متاح للجميع: معلم/طالب/حساب فردي) -->
+  <section class="card hidden" id="step-science-lab">
+    <span class="step-label" data-i18n="sl_step_label">🧪 مختبر العلوم</span>
+    <h2 data-i18n="sl_heading">مختبر العلوم</h2>
+    <p class="desc" data-i18n="sl_desc">جرّب تفاعلات كيميائية وفيزيائية بمختبر ثلاثي الأبعاد، واستكشف عالم الأحياء - مع مساعد ذكيّ يرافقك طول الجلسة.</p>
+
+    <div class="sl-toolbar">
+      <button class="ghost" id="slBackBtn" data-i18n="btn_back">⬅ رجوع</button>
+      <span class="sl-tab-toggle">
+        <button class="sl-tab-btn active" id="slTabChemistryBtn" data-i18n="sl_tab_chemistry">🧪 الكيمياء والفيزياء</button>
+        <button class="sl-tab-btn" id="slTabBiologyBtn" data-i18n="sl_tab_biology">🧬 الأحياء</button>
+      </span>
+      <button class="ghost" id="slSummaryBtn" data-i18n="sl_show_summary">📋 عرض تلخيص جلستي</button>
+    </div>
+    <div id="slError"></div>
+
+    <div class="sl-workspace">
+      <div class="sl-main-panel">
+        <!-- ---------- الكيمياء والفيزياء (ثلاثي الأبعاد) ---------- -->
+        <div class="sl-chem-panel" id="slChemPanel">
+          <div class="sl-scene-wrap" id="slSceneWrap">
+            <canvas id="slCanvas"></canvas>
+            <div class="sl-tooltip hidden" id="slTooltip">
+              <div class="sl-tooltip-name" id="slTooltipName"></div>
+              <div class="sl-tooltip-desc" id="slTooltipDesc"></div>
+              <div class="sl-tooltip-usage" id="slTooltipUsage"></div>
+            </div>
+            <div class="sl-sink-panel hidden" id="slSinkPanel">
+              <div class="sl-sink-panel-title" data-i18n="sl_sink_title">🚰 المغسلة</div>
+              <div class="sl-sink-options">
+                <button data-temp="cold" data-i18n="sl_water_cold">💧 ماء بارد</button>
+                <button data-temp="warm" data-i18n="sl_water_warm">💧 ماء دافئ</button>
+                <button data-temp="hot" data-i18n="sl_water_hot">💧 ماء حار</button>
+                <button id="slGetPaperBtn" data-i18n="sl_get_paper">🧻 ورق</button>
+              </div>
+              <button class="ghost" id="slSinkCloseBtn" data-i18n="btn_close">إغلاق</button>
+            </div>
+            <p class="desc sl-scene-hint" data-i18n="sl_scene_hint">مرّر الماوس على أي قطعة بالرف لتعرف اسمها واستخدامها، واضغطها لإضافتها لصينية التفاعل. اضغط المغسلة لتجيب ماء أو ورق.</p>
+          </div>
+          <div class="sl-reaction-bar">
+            <span class="sl-tray-label" data-i18n="sl_tray_label">صينية التفاعل:</span>
+            <div class="sl-tray" id="slTray"></div>
+            <button class="primary hidden" id="slReactBtn" data-i18n="sl_react_btn">⚡ تفاعل!</button>
+            <button class="ghost hidden" id="slClearTrayBtn" data-i18n="sl_clear_tray">مسح</button>
+          </div>
+          <div class="sl-reaction-result hidden" id="slReactionResult"></div>
+        </div>
+
+        <!-- ---------- الأحياء ---------- -->
+        <div class="sl-bio-panel hidden" id="slBioPanel">
+          <div id="slBioCategoryView">
+            <h3 class="sub-heading" data-i18n="sl_bio_pick_category">اختر تصنيف عشان تستكشفه</h3>
+            <div class="sl-bio-categories" id="slBioCategories"></div>
+          </div>
+          <div class="hidden" id="slBioGridView">
+            <button class="ghost" id="slBioBackToCategoriesBtn" data-i18n="sl_back_to_categories">⬅ رجوع للتصنيفات</button>
+            <h3 class="sub-heading" id="slBioGridTitle"></h3>
+            <div class="sl-bio-grid" id="slBioGrid"></div>
+          </div>
+          <div class="hidden" id="slBioDetailView">
+            <button class="ghost" id="slBioBackToGridBtn" data-i18n="btn_back">⬅ رجوع</button>
+            <div id="slBioDetailContent"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---------- مساعد ذكيّ مستمر طول الجلسة ---------- -->
+      <div class="sl-chat-panel">
+        <h3 class="sub-heading" data-i18n="sl_chat_heading">🤖 مساعد ذكيّ</h3>
+        <div class="sl-chat-messages" id="slChatMessages"></div>
+        <div class="sl-chat-input-row">
+          <input type="text" id="slChatInput" class="text-input" data-i18n-ph="sl_chat_placeholder" placeholder="اسأل عن أي شي بالمختبر...">
+          <button class="primary" id="slChatSendBtn" data-i18n="btn_send">إرسال</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- مودال تلخيص الجلسة -->
+    <div class="sl-summary-modal hidden" id="slSummaryModal">
+      <div class="sl-summary-box">
+        <button class="ai-help-close" id="slSummaryCloseBtn">✕</button>
+        <h3 data-i18n="sl_summary_title">📋 تلخيص جلستك</h3>
+        <div id="slSummaryContent"></div>
+      </div>
+    </div>
+  </section>

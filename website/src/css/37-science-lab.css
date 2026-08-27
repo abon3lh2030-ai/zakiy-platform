@@ -1,0 +1,131 @@
+  /* ============================================================
+     مختبر العلوم - محاكاة كيميائية/فيزيائية 3D + مستكشف أحياء
+     ============================================================ */
+  .sl-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 14px 0; }
+  .sl-tab-toggle { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .sl-tab-btn {
+    background: var(--surface); color: var(--ink-soft); border: none; padding: 10px 16px;
+    font-family: inherit; font-size: 14px; cursor: pointer; transition: background .15s, color .15s;
+  }
+  .sl-tab-btn.active { background: var(--emphasis-bg); color: var(--emphasis-text); font-weight: 600; }
+
+  .sl-workspace { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
+  @media (max-width: 1200px) { .sl-workspace { grid-template-columns: 1fr; } }
+
+  .sl-main-panel {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 14px; height: calc(100vh - 210px); min-height: 640px; overflow-y: auto;
+  }
+
+  /* ---------- مشهد الكيمياء ثلاثي الأبعاد ---------- */
+  .sl-scene-wrap {
+    position: relative; width: 100%; height: 60%; min-height: 380px; border-radius: var(--radius);
+    overflow: hidden; background: linear-gradient(180deg, #cfe8f0, #e8f4ee);
+  }
+  .sl-scene-wrap canvas { display: block; width: 100%; height: 100%; cursor: pointer; }
+  .sl-tooltip {
+    position: absolute; max-width: 220px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 10px; padding: 10px 12px; box-shadow: 0 6px 16px rgba(0,0,0,.2);
+    pointer-events: none; z-index: 5; transform: translate(-50%, -110%);
+  }
+  .sl-tooltip-name { font-weight: 700; font-size: 13px; margin-bottom: 3px; }
+  .sl-tooltip-desc { font-size: 12px; color: var(--ink-soft); margin-bottom: 3px; line-height: 1.5; }
+  .sl-tooltip-usage { font-size: 11.5px; color: var(--teal); line-height: 1.5; }
+  .sl-scene-hint { position: absolute; bottom: 8px; right: 8px; left: 8px; text-align: center; font-size: 11.5px; background: rgba(255,255,255,.75); border-radius: 8px; padding: 4px 8px; margin: 0; }
+  :root:not([data-theme="light"]) .sl-scene-hint { background: rgba(20,24,31,.75); }
+
+  .sl-sink-panel {
+    position: absolute; top: 12px; left: 12px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 10px; padding: 12px; box-shadow: 0 6px 16px rgba(0,0,0,.2); z-index: 6; width: 220px;
+  }
+  .sl-sink-panel-title { font-weight: 700; margin-bottom: 8px; }
+  .sl-sink-options { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .sl-sink-options button {
+    flex: 1 1 45%; background: var(--paper-dim); border: 1px solid var(--line); border-radius: 8px;
+    padding: 6px 8px; font-size: 12px; font-family: inherit; cursor: pointer;
+  }
+  .sl-sink-options button:hover { border-color: var(--teal); }
+
+  .sl-reaction-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; }
+  .sl-tray-label { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+  .sl-tray { display: flex; gap: 8px; flex: 1; flex-wrap: wrap; min-height: 34px; }
+  .sl-tray-item {
+    display: flex; align-items: center; gap: 6px; background: var(--teal-dim); border-radius: 999px;
+    padding: 5px 10px; font-size: 12.5px;
+  }
+  .sl-tray-item button { background: none; border: none; cursor: pointer; color: var(--danger); font-size: 11px; }
+  .sl-reaction-result {
+    margin-top: 12px; background: var(--paper-dim); border-radius: 10px; padding: 12px 14px; font-size: 13.5px; line-height: 1.8;
+  }
+
+  /* ---------- مستكشف الأحياء (تصميم تخطيطي أنيق - مو 3D حقيقي، بطاقات
+     ورسوم توضيحية واضحة بدل محاولة تقليد واقعية ما تتحقق بدون أصول فنية
+     ثلاثية الأبعاد جاهزة) ---------- */
+  .sl-bio-categories { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; margin-top: 10px; }
+  .sl-bio-cat-card {
+    background: var(--paper-dim); border: 1px solid var(--line); border-radius: 14px; padding: 18px 10px;
+    text-align: center; cursor: pointer; transition: transform .12s, border-color .15s;
+  }
+  .sl-bio-cat-card:hover { transform: translateY(-3px); border-color: var(--teal); }
+  .sl-bio-cat-icon { font-size: 34px; display: block; margin-bottom: 8px; }
+  .sl-bio-cat-name { font-size: 13.5px; font-weight: 600; }
+
+  .sl-bio-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-top: 12px; }
+  .sl-bio-item-card {
+    background: var(--paper-dim); border: 1px solid var(--line); border-radius: 14px; padding: 16px 10px;
+    text-align: center; cursor: pointer; position: relative; transition: transform .12s, border-color .15s;
+  }
+  .sl-bio-item-card:hover { transform: translateY(-3px); border-color: var(--teal); }
+  .sl-bio-item-icon { font-size: 40px; display: block; margin-bottom: 8px; }
+  .sl-bio-item-name { font-size: 13px; font-weight: 600; }
+  .sl-bio-fact-popover {
+    position: absolute; bottom: 100%; right: 50%; transform: translateX(50%);
+    width: 200px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 12px; font-size: 12px; line-height: 1.6; box-shadow: 0 6px 16px rgba(0,0,0,.2);
+    z-index: 5; margin-bottom: 8px; text-align: right;
+  }
+
+  .sl-bio-detail-header { display: flex; align-items: center; gap: 14px; margin: 14px 0; }
+  .sl-bio-detail-icon { font-size: 60px; }
+  .sl-bio-fact-list { list-style: none; padding: 0; margin: 12px 0; display: flex; flex-direction: column; gap: 8px; }
+  .sl-bio-fact-list li {
+    background: var(--paper-dim); border-radius: 10px; padding: 10px 14px; font-size: 13.5px; line-height: 1.7;
+  }
+  .sl-bio-parts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 10px; }
+  .sl-bio-part-chip {
+    background: var(--teal-dim); border-radius: 10px; padding: 10px 12px; cursor: pointer; font-size: 13px; font-weight: 600;
+    text-align: center; transition: background .15s;
+  }
+  .sl-bio-part-chip:hover { background: var(--highlighter-soft); }
+  .sl-bio-part-desc { margin-top: 10px; background: var(--paper-dim); border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.8; }
+  .sl-bio-gender-row { display: flex; gap: 12px; margin-top: 14px; }
+  .sl-bio-gender-btn {
+    flex: 1; background: var(--paper-dim); border: 1px solid var(--line); border-radius: 14px; padding: 22px 10px;
+    text-align: center; cursor: pointer; font-size: 15px; font-weight: 700; transition: border-color .15s, transform .12s;
+  }
+  .sl-bio-gender-btn:hover { border-color: var(--teal); transform: translateY(-3px); }
+  .sl-bio-gender-btn span { display: block; font-size: 36px; margin-bottom: 8px; }
+
+  /* ---------- مساعد ذكيّ مستمر ---------- */
+  .sl-chat-panel {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 14px; height: calc(100vh - 210px); min-height: 640px; display: flex; flex-direction: column;
+  }
+  .sl-chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin: 10px 0; }
+  .sl-chat-msg { max-width: 92%; padding: 8px 12px; border-radius: 12px; font-size: 13px; line-height: 1.7; }
+  .sl-chat-msg.user { align-self: flex-end; background: var(--emphasis-bg); color: var(--emphasis-text); }
+  .sl-chat-msg.ai { align-self: flex-start; background: var(--paper-dim); }
+  .sl-chat-msg.ai.correct { background: var(--teal-dim); }
+  .sl-chat-msg.ai.incorrect { background: var(--danger-soft); }
+  .sl-chat-input-row { display: flex; gap: 8px; }
+  .sl-chat-input-row input { flex: 1; margin: 0; }
+
+  /* ---------- مودال تلخيص الجلسة ---------- */
+  .sl-summary-modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 500;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sl-summary-box {
+    background: var(--surface); border-radius: var(--radius); padding: 24px; width: min(520px, 90vw);
+    max-height: 80vh; overflow-y: auto; position: relative; line-height: 1.9; font-size: 14px;
+  }

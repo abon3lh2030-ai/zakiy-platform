@@ -1207,6 +1207,8 @@
   /* ============================================================
      معمل الروبوتات - محاكي دوائر أردوينو
      ============================================================ */
+  .wrap.wrap-wide { max-width: 1560px; transition: max-width .15s; }
+
   .rl-toolbar {
     display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
     margin: 14px 0;
@@ -1224,45 +1226,51 @@
 
   .rl-workspace {
     display: grid;
-    grid-template-columns: 200px minmax(0, 1fr) 340px;
+    grid-template-columns: 190px minmax(0, 1fr) 360px;
     gap: 16px;
     align-items: start;
   }
-  @media (max-width: 1100px) {
+  @media (max-width: 1300px) {
     .rl-workspace { grid-template-columns: 1fr; }
   }
 
-  /* ---------- صندوق القطع ---------- */
+  /* ---------- صندوق القطع (بطاقات رأسية بصورة مصغّرة حقيقية للقطعة) ---------- */
   .rl-parts-bin {
     background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
-    padding: 14px;
+    padding: 14px; position: sticky; top: 0;
   }
-  .rl-parts-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+  .rl-parts-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
   .rl-part-chip {
-    display: flex; align-items: center; gap: 8px; background: var(--paper-dim);
-    border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; cursor: grab;
-    font-family: inherit; font-size: 13px; color: var(--ink); text-align: right;
-    transition: border-color .15s, transform .1s;
+    display: flex; flex-direction: column; align-items: center; gap: 6px; background: var(--paper-dim);
+    border: 1px solid var(--line); border-radius: 12px; padding: 8px 6px 10px; cursor: grab;
+    font-family: inherit; color: var(--ink); text-align: center;
+    transition: border-color .15s, transform .1s, box-shadow .15s;
   }
-  .rl-part-chip:hover { border-color: var(--teal); transform: translateY(-1px); }
+  .rl-part-chip:hover { border-color: var(--teal); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,.08); }
   .rl-part-chip:active { cursor: grabbing; }
-  .rl-part-icon { font-size: 18px; }
-  .rl-parts-hint { font-size: 12px; margin-top: 10px; line-height: 1.7; }
+  .rl-part-thumb {
+    display: flex; align-items: center; justify-content: center; position: relative;
+    background: var(--surface); border-radius: 8px; overflow: hidden;
+  }
+  .rl-part-thumb-inner { position: absolute; top: 50%; left: 50%; transform-origin: center; pointer-events: none; }
+  .rl-part-name { font-size: 11.5px; font-weight: 600; line-height: 1.3; }
+  .rl-parts-hint { font-size: 11.5px; margin-top: 12px; line-height: 1.7; color: var(--ink-soft); }
 
   /* ---------- الكانفس ---------- */
   .rl-canvas-wrap {
     position: relative; background: var(--paper-dim); border: 1px solid var(--line);
-    border-radius: var(--radius); min-height: 480px; overflow: auto;
-    background-image: radial-gradient(var(--line) 1px, transparent 1px);
-    background-size: 22px 22px;
+    border-radius: var(--radius); height: 680px; overflow: auto;
+    background-image: radial-gradient(var(--line) 1.5px, transparent 1.5px);
+    background-size: 24px 24px;
   }
-  .rl-canvas { position: relative; min-width: 700px; min-height: 480px; }
+  .rl-canvas { position: relative; min-width: 1100px; min-height: 900px; }
   .rl-wires-svg {
-    position: absolute; inset: 0; width: 100%; height: 100%; min-width: 700px; min-height: 480px;
+    position: absolute; inset: 0; width: 100%; height: 100%; min-width: 1100px; min-height: 900px;
     pointer-events: none; z-index: 1;
   }
   .rl-wire {
-    fill: none; stroke: var(--teal); stroke-width: 3; pointer-events: stroke; cursor: pointer;
+    fill: none; stroke: var(--teal); stroke-width: 3.5; pointer-events: stroke; cursor: pointer;
+    stroke-linecap: round;
   }
   .rl-wire:hover { stroke: var(--danger); }
 
@@ -1275,25 +1283,92 @@
     display: flex; align-items: center; justify-content: center; z-index: 3;
   }
   .rl-pin {
-    position: absolute; width: 12px; height: 12px; margin-left: -6px; margin-top: -6px;
-    background: var(--surface); border: 2px solid var(--ink-soft); border-radius: 50%;
+    position: absolute; width: 13px; height: 13px; margin-left: -6.5px; margin-top: -6.5px;
+    background: #d4af37; border: 2px solid #8a6d1a; border-radius: 50%;
     cursor: crosshair; z-index: 4; transition: background .15s, border-color .15s, transform .1s;
+    box-shadow: 0 1px 2px rgba(0,0,0,.3);
   }
-  .rl-pin:hover { border-color: var(--teal); transform: scale(1.3); }
-  .rl-pin.connecting { background: var(--highlighter); border-color: var(--highlighter); animation: rl-pulse 1s infinite; }
-  @keyframes rl-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.4); } }
+  .rl-pin:hover { border-color: var(--teal); background: #7de0c4; transform: scale(1.35); }
+  .rl-pin.connecting { background: var(--highlighter); border-color: #a67c00; animation: rl-pulse 1s infinite; }
+  @keyframes rl-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.45); } }
 
-  /* Arduino board */
+  /* ---------- Arduino UNO - تصميم تفصيلي واقعي ---------- */
   .rl-type-arduino .rl-board {
-    width: 100%; height: 100%; background: linear-gradient(160deg, #0b5aa0, #063b6b);
-    border-radius: 10px; border: 2px solid #043055; position: relative;
-    box-shadow: 0 4px 14px rgba(0,0,0,.25);
+    width: 100%; height: 100%;
+    background: linear-gradient(155deg, #0c8fae 0%, #086b8a 55%, #054a63 100%);
+    border-radius: 12px; border: 2px solid #033a4d; position: relative;
+    box-shadow: 0 6px 18px rgba(0,0,0,.3), inset 0 0 0 1px rgba(255,255,255,.06);
   }
+  .rl-board-header-strip { position: absolute; left: 0; right: 0; height: 14px; }
+  .rl-board-header-top { top: 4px; }
+  .rl-board-header-bottom { bottom: 4px; }
+  .rl-board-pinmark {
+    position: absolute; top: 3px; width: 6px; height: 8px; margin-left: -3px;
+    background: linear-gradient(#2a2a2a, #111); border-radius: 1px;
+  }
+  .rl-board-usb {
+    position: absolute; left: -10px; top: 24px; width: 20px; height: 26px; background: linear-gradient(#c7c7c7, #8f8f8f);
+    border-radius: 3px; border: 1px solid #666;
+  }
+  .rl-board-power-jack {
+    position: absolute; left: -8px; bottom: 24px; width: 16px; height: 20px; background: #222; border-radius: 3px 0 0 3px;
+  }
+  .rl-board-chip {
+    position: absolute; top: 50%; left: 38%; transform: translate(-50%, -50%);
+    width: 68px; height: 46px; background: #16181c; border-radius: 3px; border: 1px solid #000;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .rl-board-chip span { color: #9aa; font-size: 7px; font-weight: 700; letter-spacing: .3px; transform: rotate(0deg); }
+  .rl-board-crystal {
+    position: absolute; top: 50%; left: 62%; transform: translateY(-50%);
+    width: 18px; height: 10px; background: linear-gradient(#e8e8e8, #b9b9b9); border-radius: 2px; border: 1px solid #888;
+  }
+  .rl-board-reset {
+    position: absolute; top: 24px; right: 14px; width: 12px; height: 12px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ff8a80, #c0392b); border: 1px solid #7a1f10;
+  }
+  .rl-board-led { position: absolute; bottom: 22px; right: 16px; width: 6px; height: 6px; border-radius: 50%; background: #333; }
+  .rl-board-led-on { background: #4dff88; box-shadow: 0 0 6px 2px #4dff88aa; }
   .rl-board-label {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    color: rgba(255,255,255,.85); font-size: 13px; font-weight: 700; letter-spacing: 1px;
+    position: absolute; bottom: 20px; left: 20px;
+    color: rgba(255,255,255,.92); font-size: 11px; font-weight: 700; letter-spacing: .5px; line-height: 1.3;
   }
-  .rl-board-usb { position: absolute; left: -8px; top: 14px; width: 16px; height: 22px; background: #999; border-radius: 3px; }
+  .rl-board-label b { font-size: 14px; }
+
+  /* ---------- بريدبورد ---------- */
+  .rl-type-breadboard { width: 420px; height: 140px; }
+  .rl-breadboard {
+    width: 100%; height: 100%; background: #efe9d8; border: 1px solid #cfc7ac; border-radius: 8px;
+    box-shadow: 0 3px 10px rgba(0,0,0,.15); padding: 6px 8px; box-sizing: border-box;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .rl-bb-rail { height: 8px; border-radius: 2px; position: relative; }
+  .rl-bb-rail-pos::before, .rl-bb-rail-neg::before {
+    content: ''; position: absolute; inset: 0 4px; border-top: 2px solid; opacity: .55;
+  }
+  .rl-bb-rail-pos::before { border-color: #c0392b; }
+  .rl-bb-rail-neg::before { border-color: #2b6cb0; }
+  .rl-bb-holes-row { position: relative; height: 10px; }
+  .rl-bb-hole {
+    position: absolute; top: 0; width: 4px; height: 4px; border-radius: 50%;
+    background: #9c9484; box-shadow: inset 0 1px 1px rgba(0,0,0,.4);
+  }
+  .rl-bb-gap { height: 10px; }
+
+  /* ---------- شاشة LCD (I2C 16×2) ---------- */
+  .rl-type-lcd { width: 200px; height: 90px; }
+  .rl-lcd-frame {
+    width: 100%; height: 100%; background: linear-gradient(160deg, #1c6b3f, #124a2a); border-radius: 8px;
+    border: 2px solid #0b3319; box-shadow: 0 4px 12px rgba(0,0,0,.25); display: flex; align-items: center; justify-content: center;
+  }
+  .rl-lcd-screen {
+    width: 88%; height: 70%; background: #9fd88a; border-radius: 3px; box-shadow: inset 0 0 6px rgba(0,0,0,.35);
+    display: flex; flex-direction: column; justify-content: center; padding: 4px 6px; box-sizing: border-box;
+  }
+  .rl-lcd-line {
+    font-family: 'SFMono-Regular', Consolas, Menlo, monospace; font-size: 10px; color: #0d2b12; line-height: 1.5;
+    white-space: pre; direction: ltr; text-align: left;
+  }
 
   /* LED */
   .rl-type-led { width: 40px; }
@@ -1311,26 +1386,26 @@
   /* Resistor */
   .rl-type-resistor { width: 60px; height: 24px; }
   .rl-resistor-body {
-    width: 100%; height: 100%; background: #d9c48a; border-radius: 6px; border: 2px solid #a5854a;
+    width: 100%; height: 100%; background: linear-gradient(180deg, #e6d19c, #c9ac66); border-radius: 6px; border: 2px solid #a5854a;
     display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #40331a;
   }
 
   /* Button */
   .rl-type-button { width: 46px; height: 46px; }
   .rl-button-cap {
-    width: 100%; height: 100%; background: #444; border-radius: 8px; border: 2px solid #222;
+    width: 100%; height: 100%; background: linear-gradient(160deg, #5a5a5a, #2e2e2e); border-radius: 8px; border: 2px solid #1a1a1a;
     display: flex; align-items: center; justify-content: center; cursor: pointer;
   }
   .rl-button-cap::after {
-    content: ''; width: 60%; height: 60%; background: #d33; border-radius: 6px; transition: transform .08s;
+    content: ''; width: 60%; height: 60%; background: linear-gradient(160deg, #ff5c4d, #b0281c); border-radius: 6px; transition: transform .08s;
   }
-  .rl-button-cap.pressed::after { transform: scale(.82); background: #a11; }
+  .rl-button-cap.pressed::after { transform: scale(.82); background: #7a160c; }
 
   /* Potentiometer */
   .rl-type-potentiometer { width: 60px; height: 60px; }
   .rl-pot-body {
-    width: 56px; height: 56px; border-radius: 50%; background: #3a3f4b; border: 2px solid #20232b;
-    position: relative; cursor: grab;
+    width: 56px; height: 56px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #565d6b, #262a31);
+    border: 2px solid #14161a; position: relative; cursor: grab;
   }
   .rl-pot-knob {
     position: absolute; top: 6px; left: 50%; width: 4px; height: 22px; background: var(--highlighter);
@@ -1340,7 +1415,8 @@
   /* Servo */
   .rl-type-servo { width: 60px; height: 50px; }
   .rl-servo-body {
-    width: 100%; height: 34px; background: #2b6cb0; border-radius: 6px; position: relative; margin-top: 8px;
+    width: 100%; height: 34px; background: linear-gradient(160deg, #4c8ed6, #1f5aa0); border-radius: 6px; position: relative; margin-top: 8px;
+    border: 1px solid #123963;
   }
   .rl-servo-arm {
     position: absolute; top: -6px; left: 50%; width: 26px; height: 6px; background: #fff;
@@ -1350,10 +1426,10 @@
   /* Buzzer */
   .rl-type-buzzer { width: 44px; height: 44px; }
   .rl-buzzer-body {
-    width: 100%; height: 100%; border-radius: 50%; background: #555; border: 2px solid #222;
+    width: 100%; height: 100%; border-radius: 50%; background: linear-gradient(160deg, #6b6b6b, #333); border: 2px solid #1a1a1a;
     position: relative; display: flex; align-items: center; justify-content: center;
   }
-  .rl-buzzer-body::after { content: ''; width: 50%; height: 50%; border-radius: 50%; background: #333; }
+  .rl-buzzer-body::after { content: ''; width: 50%; height: 50%; border-radius: 50%; background: #262626; }
   .rl-buzzer-wave { position: absolute; inset: -8px; border-radius: 50%; border: 2px solid var(--teal); opacity: 0; }
   .rl-buzzer-body.on .rl-buzzer-wave { animation: rl-wave 0.6s infinite; }
   @keyframes rl-wave { 0% { opacity: .8; transform: scale(.8); } 100% { opacity: 0; transform: scale(1.6); } }
@@ -1361,39 +1437,52 @@
   /* ---------- اللوحة الجانبية (بلوكات/كود + سيريال) ---------- */
   .rl-side-panel {
     background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
-    padding: 14px; max-height: 640px; overflow-y: auto;
+    padding: 14px; max-height: 780px; overflow-y: auto;
   }
   .rl-add-block-btn { margin-top: 8px; width: 100%; }
 
-  .rl-block-list { display: flex; flex-direction: column; gap: 6px; }
+  .rl-block-list { display: flex; flex-direction: column; gap: 8px; }
+  /* بلوكات ملوّنة حسب الفئة (زي Scratch) - شكل "قطعة بازل" مبسّط بحواف
+     دائرية + نتوء صغير بالزاوية بدل ما تكون كلها بطاقة رمادية واحدة */
   .rl-block {
-    background: var(--paper-dim); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
-    font-size: 12.5px;
+    position: relative; border-radius: 12px; padding: 10px 12px 10px 16px;
+    font-size: 12.5px; color: #fff; box-shadow: 0 2px 5px rgba(0,0,0,.15);
   }
-  .rl-block-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-  .rl-block-actions { display: flex; gap: 4px; margin-top: 6px; justify-content: flex-start; }
+  .rl-block::before {
+    content: ''; position: absolute; top: 10px; right: -6px; width: 14px; height: 14px;
+    background: inherit; border-radius: 4px; transform: rotate(45deg);
+  }
+  .rl-block-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; position: relative; z-index: 1; }
+  .rl-block-actions { display: flex; gap: 4px; margin-top: 6px; justify-content: flex-start; position: relative; z-index: 1; }
   .rl-block-actions button {
-    background: none; border: none; cursor: pointer; font-size: 12px; padding: 2px 4px; opacity: .7;
+    background: rgba(255,255,255,.18); border: none; cursor: pointer; font-size: 12px; padding: 3px 6px;
+    border-radius: 6px; opacity: .85; color: #fff;
   }
-  .rl-block-actions button:hover { opacity: 1; }
+  .rl-block-actions button:hover { opacity: 1; background: rgba(255,255,255,.3); }
   .rl-b-field {
-    font-family: inherit; font-size: 12px; border: 1px solid var(--line); border-radius: 6px;
-    padding: 3px 6px; background: var(--surface); color: var(--ink);
+    font-family: inherit; font-size: 12px; border: none; border-radius: 6px;
+    padding: 3px 6px; background: rgba(255,255,255,.92); color: #202020;
   }
-  .rl-b-num { width: 60px; } .rl-b-text { width: 100px; }
-  .rl-block-digitalWrite, .rl-block-analogWrite, .rl-block-delay, .rl-block-tone, .rl-block-noTone { border-inline-start: 4px solid var(--teal); }
-  .rl-block-ifElse, .rl-block-repeat { border-inline-start: 4px solid var(--highlighter); }
-  .rl-block-servoAttach, .rl-block-servoWriteMapped, .rl-block-pinMode, .rl-block-serialPrint { border-inline-start: 4px solid #9b7bd8; }
-  .rl-b-nested { margin: 6px 0; padding-inline-start: 12px; border-inline-start: 2px dashed var(--line); }
-  .rl-b-nested-label { font-size: 11px; color: var(--ink-soft); margin-top: 6px; }
-  .rl-b-add-inner { font-size: 11px !important; padding: 4px 8px !important; margin-top: 4px; }
+  .rl-b-num { width: 58px; } .rl-b-text { width: 96px; }
+
+  .rl-block-pinMode, .rl-block-digitalWrite, .rl-block-analogWrite { background: linear-gradient(155deg, #3f8ff5, #2563d6); }
+  .rl-block-delay { background: linear-gradient(155deg, #ffb648, #f08a1c); }
+  .rl-block-tone, .rl-block-noTone { background: linear-gradient(155deg, #ff6bb0, #d63a86); }
+  .rl-block-serialPrint { background: linear-gradient(155deg, #34c9a3, #17967a); }
+  .rl-block-ifElse, .rl-block-repeat { background: linear-gradient(155deg, #ffd23f, #e8a800); color: #3a2c00; }
+  .rl-block-ifElse .rl-block-actions button, .rl-block-repeat .rl-block-actions button { color: #3a2c00; background: rgba(0,0,0,.08); }
+  .rl-block-servoAttach, .rl-block-servoWriteMapped { background: linear-gradient(155deg, #a879e8, #7b3fc4); }
+
+  .rl-b-nested { margin: 8px 0; padding: 6px 10px; border-radius: 8px; background: rgba(255,255,255,.14); }
+  .rl-b-nested-label { font-size: 11px; opacity: .9; margin-top: 6px; font-weight: 600; }
+  .rl-b-add-inner { font-size: 11px !important; padding: 4px 8px !important; margin-top: 4px; background: rgba(255,255,255,.2) !important; border: none !important; color: inherit !important; border-radius: 6px; }
 
   .rl-block-picker-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 500;
     display: flex; align-items: center; justify-content: center;
   }
   .rl-block-picker {
-    background: var(--surface); border-radius: var(--radius); padding: 16px; width: min(420px, 90vw);
+    background: var(--surface); border-radius: var(--radius); padding: 16px; width: min(460px, 90vw);
     max-height: 80vh; overflow-y: auto;
   }
   .rl-picker-header { display: flex; justify-content: space-between; align-items: center; font-weight: 700; margin-bottom: 10px; }
@@ -1406,7 +1495,7 @@
   .rl-picker-item:hover { border-color: var(--teal); }
 
   .rl-code-textarea {
-    width: 100%; min-height: 260px; font-family: 'SFMono-Regular', Consolas, Menlo, monospace;
+    width: 100%; min-height: 320px; font-family: 'SFMono-Regular', Consolas, Menlo, monospace;
     font-size: 13px; direction: ltr; text-align: left; border: 1px solid var(--line); border-radius: 8px;
     padding: 10px; background: var(--paper-dim); color: var(--ink); resize: vertical;
   }
@@ -2781,6 +2870,7 @@
         <option value="blink" data-i18n="rl_example_blink">LED يومض</option>
         <option value="button_led" data-i18n="rl_example_button_led">زر يشغّل LED</option>
         <option value="pot_servo" data-i18n="rl_example_pot_servo">بوتنشيومتر يتحكم بسيرفو</option>
+        <option value="lcd_display" data-i18n="rl_example_lcd_display">شاشة LCD تعرض قراءة</option>
       </select>
       <button class="ghost" id="rlNewProjectBtn" data-i18n="rl_new_project">🆕 مشروع جديد</button>
       <span class="rl-mode-toggle">
@@ -4098,6 +4188,9 @@ const I18N = {
     rl_part_potentiometer: 'بوتنشيومتر',
     rl_part_servo: 'سيرفو',
     rl_part_buzzer: 'بازر (منبّه صوتي)',
+    rl_part_breadboard: 'بريدبورد',
+    rl_part_lcd: 'شاشة LCD',
+    rl_example_lcd_display: 'شاشة LCD تعرض قراءة',
     rl_block_pinmode: 'اضبط الطرف',
     rl_block_digitalwrite: 'شغّل/أطفئ الطرف الرقمي',
     rl_block_analogwrite: 'اضبط قوة الطرف',
@@ -4869,6 +4962,9 @@ const I18N = {
     rl_part_potentiometer: 'Potentiometer',
     rl_part_servo: 'Servo motor',
     rl_part_buzzer: 'Buzzer',
+    rl_part_breadboard: 'Breadboard',
+    rl_part_lcd: 'LCD screen',
+    rl_example_lcd_display: 'LCD shows a reading',
     rl_block_pinmode: 'Set pin',
     rl_block_digitalwrite: 'Set digital pin',
     rl_block_analogwrite: 'Set pin power',
@@ -5487,6 +5583,10 @@ function showAccountScreen(id) {
    ...ACCOUNT_SCREENS]
     .forEach(hide);
   show(id);
+  // معمل الروبوتات يحتاج عرض أوسع بكثير من عمود المحتوى العادي (880px) عشان
+  // مساحة الشغل تكون مريحة - نوسّع حاوية الصفحة نفسها بس وقت هذي الشاشة
+  const wrapEl = document.querySelector('.wrap');
+  if (wrapEl) wrapEl.classList.toggle('wrap-wide', id === 'step-robotics-lab');
 }
 function showPerformanceDashboard() { showAccountScreen('step-performance'); }
 function showLibraryScreen() { showAccountScreen('step-library'); }
@@ -12170,12 +12270,52 @@ const RL_PART_DEFS = {
       return pins;
     },
     render(c) {
+      const topPinsDots = RL_PIN_TOP.map((name, i) => `<span class="rl-board-pinmark" style="left:${20 + i * ((RL_BOARD_W - 40) / (RL_PIN_TOP.length - 1))}px;" title="${name}"></span>`).join('');
+      const bottomPinsDots = RL_PIN_BOTTOM.map((name, i) => `<span class="rl-board-pinmark" style="left:${20 + i * ((RL_BOARD_W - 40) / (RL_PIN_BOTTOM.length - 1))}px;" title="${name}"></span>`).join('');
       return `
         <div class="rl-board">
-          <div class="rl-board-label">ARDUINO UNO</div>
+          <span class="rl-board-header-strip rl-board-header-top">${topPinsDots}</span>
+          <span class="rl-board-header-strip rl-board-header-bottom">${bottomPinsDots}</span>
           <div class="rl-board-usb"></div>
+          <div class="rl-board-power-jack"></div>
+          <div class="rl-board-chip"><span>ATmega328P</span></div>
+          <div class="rl-board-crystal"></div>
+          <div class="rl-board-reset" title="Reset"></div>
+          <div class="rl-board-led rl-board-led-on"></div>
+          <div class="rl-board-label">ARDUINO<br><b>UNO</b></div>
         </div>
       `;
+    },
+  },
+  breadboard: {
+    labelKey: 'rl_part_breadboard', icon: '🟦', w: 420, h: 140, removable: true,
+    pins() { return []; },
+    render() {
+      const holes = Array.from({ length: 30 }, (_, i) => `<span class="rl-bb-hole" style="left:${10 + i * 13.5}px;"></span>`).join('');
+      return `
+        <div class="rl-breadboard">
+          <div class="rl-bb-rail rl-bb-rail-pos"></div>
+          <div class="rl-bb-holes-row">${holes}</div>
+          <div class="rl-bb-holes-row">${holes}</div>
+          <div class="rl-bb-gap"></div>
+          <div class="rl-bb-holes-row">${holes}</div>
+          <div class="rl-bb-holes-row">${holes}</div>
+          <div class="rl-bb-rail rl-bb-rail-neg"></div>
+        </div>
+      `;
+    },
+  },
+  lcd: {
+    labelKey: 'rl_part_lcd', icon: '🖥️', w: 200, h: 90, removable: true,
+    pins() {
+      return [
+        { name: 'GND', dx: 20, dy: 90, role: 'gnd' }, { name: 'VCC', dx: 60, dy: 90, role: 'vcc' },
+        { name: 'SDA', dx: 140, dy: 90, role: 'lcd-sda' }, { name: 'SCL', dx: 180, dy: 90, role: 'lcd-scl' },
+      ];
+    },
+    render(c) {
+      const lines = (c.state.lines || ['', '']).map(l => `<div class="rl-lcd-line">${escapeHtml((l || '').padEnd(16, ' '))}</div>`).join('');
+      return `<div class="rl-lcd-frame"><div class="rl-lcd-screen">${lines}</div></div>`;
     },
   },
   led: {
@@ -12272,6 +12412,18 @@ const RL_EXAMPLES = {
     blocksSetup: [{ type: 'servoAttach', varName: 'myServo', pin: 'D9' }],
     blocksLoop: [{ type: 'servoWriteMapped', varName: 'myServo', pin: 'A0' }, { type: 'delay', ms: 15 }],
   },
+  lcd_display: {
+    nameKey: 'rl_example_lcd_display', forceMode: 'code',
+    components: [
+      { type: 'arduino', x: 40, y: 40 },
+      { type: 'breadboard', x: 40, y: 260 },
+      { type: 'potentiometer', x: 460, y: 300 },
+      { type: 'lcd', x: 420, y: 40 },
+    ],
+    wireDefs: [['arduino', 'A0', 'potentiometer', 'OUT']],
+    code: `LiquidCrystal_I2C lcd(0x27, 16, 2);\n\nvoid setup() {\n  lcd.init();\n  lcd.backlight();\n}\n\nvoid loop() {\n  int value = analogRead(A0);\n  lcd.setCursor(0, 0);\n  lcd.print("Value: ");\n  lcd.print(value);\n  delay(200);\n}\n`,
+    blocksSetup: [], blocksLoop: [],
+  },
 };
 
 const RL = {
@@ -12316,10 +12468,15 @@ function rlLoadExample(key) {
   RL.blocksSetup = JSON.parse(JSON.stringify(ex.blocksSetup || []));
   RL.blocksLoop = JSON.parse(JSON.stringify(ex.blocksLoop || []));
   RL.code = ex.code;
+  if (ex.forceMode) RL.mode = ex.forceMode;
   rlResetPinState();
   rlStopExecution();
   rlSaveProject();
   rlRenderAll();
+  document.getElementById('rlModeBlocksBtn').classList.toggle('active', RL.mode === 'blocks');
+  document.getElementById('rlModeCodeBtn').classList.toggle('active', RL.mode === 'code');
+  document.getElementById('rlBlocksEditor').classList.toggle('hidden', RL.mode !== 'blocks');
+  document.getElementById('rlCodeEditorWrap').classList.toggle('hidden', RL.mode !== 'code');
 }
 
 // ---------- تخزين محلي (بدون سيرفر - المشروع يبقى بجهازك بس) ----------
@@ -12379,11 +12536,19 @@ function rlRenderAll() {
 
 function rlRenderPartsBin() {
   const wrap = document.getElementById('rlPartsList');
-  wrap.innerHTML = Object.entries(RL_PART_DEFS).filter(([type]) => type !== 'arduino').map(([type, def]) => `
-    <button class="rl-part-chip" draggable="true" data-type="${type}" title="${t(def.labelKey)}">
-      <span class="rl-part-icon">${def.icon}</span><span class="rl-part-name">${t(def.labelKey)}</span>
-    </button>
-  `).join('');
+  const previewBoxW = 76, previewBoxH = 64;
+  wrap.innerHTML = Object.entries(RL_PART_DEFS).filter(([type]) => type !== 'arduino').map(([type, def]) => {
+    const scale = Math.min(1, (previewBoxW - 10) / def.w, (previewBoxH - 10) / def.h);
+    const fakeComp = { props: { ...(def.defaultProps || {}) }, state: {} };
+    return `
+      <button class="rl-part-chip" draggable="true" data-type="${type}" title="${t(def.labelKey)}">
+        <span class="rl-part-thumb" style="width:${previewBoxW}px; height:${previewBoxH}px;">
+          <span class="rl-part-thumb-inner rl-type-${type}" style="width:${def.w}px; height:${def.h}px; transform:translate(-50%,-50%) scale(${scale});">${def.render(fakeComp)}</span>
+        </span>
+        <span class="rl-part-name">${t(def.labelKey)}</span>
+      </button>
+    `;
+  }).join('');
   wrap.querySelectorAll('.rl-part-chip').forEach(btn => {
     btn.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/rl-part', btn.dataset.type); });
     btn.addEventListener('click', () => rlAddComponent(btn.dataset.type, 340 + Math.random() * 120, 100 + Math.random() * 100));
@@ -12665,6 +12830,7 @@ function rlPreprocessCode(src) {
   code = code.replace(/\bvoid\s+loop\s*\(\s*\)/g, 'function loop()');
   code = code.replace(/\bvoid\s+(\w+)\s*\(/g, 'function $1(');
   code = code.replace(/\bServo\s+(\w+)\s*;/g, 'let $1 = new Servo();');
+  code = code.replace(/\bLiquidCrystal_I2C\s+(\w+)\s*\(([^)]*)\)\s*;/g, 'let $1 = new LiquidCrystal_I2C($2);');
   code = code.replace(/\b(int|float|double|long|bool|boolean|byte|char|unsigned\s+int|unsigned\s+long|String)\s+(\w+)\s*=/g, 'let $2 =');
   code = code.replace(/\b(int|float|double|long|bool|boolean|byte|char|unsigned\s+int|unsigned\s+long|String)\s+(\w+)\s*;/g, 'let $2;');
   // setup()/loop() لازم تصير async عشان delay() تقدر توقف التنفيذ بدون
@@ -12745,16 +12911,43 @@ async function rlRunCode() {
     };
   }
   const Serial = { begin() {}, println(x) { rlSerialPrint(String(x)); }, print(x) { rlSerialPrint(String(x)); } };
+  // شاشة LCD (I2C 16×2) - نفس واجهة مكتبة LiquidCrystal_I2C الحقيقية
+  // (begin/setCursor/print/clear)، تحدّث كل شاشة LCD موجودة بالكانفس
+  function LiquidCrystal_I2C() {
+    let cursor = { col: 0, row: 0 };
+    const applyToScreens = (fn) => {
+      RL.components.forEach(comp => {
+        if (comp.type !== 'lcd') return;
+        if (!comp.state.lines) comp.state.lines = ['', ''];
+        fn(comp.state.lines);
+      });
+    };
+    return {
+      init() {}, begin() {}, backlight() {}, noBacklight() {},
+      setCursor(col, row) { cursor = { col, row }; },
+      clear() { applyToScreens(lines => { lines[0] = ''; lines[1] = ''; }); cursor = { col: 0, row: 0 }; },
+      print(text) {
+        applyToScreens(lines => {
+          const row = Math.max(0, Math.min(1, cursor.row));
+          const before = (lines[row] || '').padEnd(16, ' ').slice(0, cursor.col);
+          const rest = String(text).slice(0, 16 - cursor.col);
+          const after = (lines[row] || '').padEnd(16, ' ').slice(cursor.col + rest.length);
+          lines[row] = (before + rest + after).slice(0, 16);
+        });
+        cursor.col += String(text).length;
+      },
+    };
+  }
 
   let userFns;
   try {
     const factory = new Function(
       'delay', 'HIGH', 'LOW', 'INPUT', 'OUTPUT', 'INPUT_PULLUP', 'LED_BUILTIN', 'A0', 'A1', 'A2', 'A3', 'A4', 'A5',
-      'pinMode', 'digitalWrite', 'digitalRead', 'analogWrite', 'analogRead', 'tone', 'noTone', 'map', 'constrain', 'Servo', 'Serial',
+      'pinMode', 'digitalWrite', 'digitalRead', 'analogWrite', 'analogRead', 'tone', 'noTone', 'map', 'constrain', 'Servo', 'Serial', 'LiquidCrystal_I2C',
       transpiled + '\nreturn { setup, loop };'
     );
     userFns = factory(delay, HIGH, LOW, INPUT, OUTPUT, INPUT_PULLUP, LED_BUILTIN, A0, A1, A2, A3, A4, A5,
-      pinMode, digitalWrite, digitalRead, analogWrite, analogRead, tone, noTone, map, constrain, Servo, Serial);
+      pinMode, digitalWrite, digitalRead, analogWrite, analogRead, tone, noTone, map, constrain, Servo, Serial, LiquidCrystal_I2C);
   } catch (e) {
     showError('rlError', t('rl_err_syntax') + ': ' + e.message);
     rlStopExecution();

@@ -25,12 +25,52 @@ const RL_PART_DEFS = {
       return pins;
     },
     render(c) {
+      const topPinsDots = RL_PIN_TOP.map((name, i) => `<span class="rl-board-pinmark" style="left:${20 + i * ((RL_BOARD_W - 40) / (RL_PIN_TOP.length - 1))}px;" title="${name}"></span>`).join('');
+      const bottomPinsDots = RL_PIN_BOTTOM.map((name, i) => `<span class="rl-board-pinmark" style="left:${20 + i * ((RL_BOARD_W - 40) / (RL_PIN_BOTTOM.length - 1))}px;" title="${name}"></span>`).join('');
       return `
         <div class="rl-board">
-          <div class="rl-board-label">ARDUINO UNO</div>
+          <span class="rl-board-header-strip rl-board-header-top">${topPinsDots}</span>
+          <span class="rl-board-header-strip rl-board-header-bottom">${bottomPinsDots}</span>
           <div class="rl-board-usb"></div>
+          <div class="rl-board-power-jack"></div>
+          <div class="rl-board-chip"><span>ATmega328P</span></div>
+          <div class="rl-board-crystal"></div>
+          <div class="rl-board-reset" title="Reset"></div>
+          <div class="rl-board-led rl-board-led-on"></div>
+          <div class="rl-board-label">ARDUINO<br><b>UNO</b></div>
         </div>
       `;
+    },
+  },
+  breadboard: {
+    labelKey: 'rl_part_breadboard', icon: '🟦', w: 420, h: 140, removable: true,
+    pins() { return []; },
+    render() {
+      const holes = Array.from({ length: 30 }, (_, i) => `<span class="rl-bb-hole" style="left:${10 + i * 13.5}px;"></span>`).join('');
+      return `
+        <div class="rl-breadboard">
+          <div class="rl-bb-rail rl-bb-rail-pos"></div>
+          <div class="rl-bb-holes-row">${holes}</div>
+          <div class="rl-bb-holes-row">${holes}</div>
+          <div class="rl-bb-gap"></div>
+          <div class="rl-bb-holes-row">${holes}</div>
+          <div class="rl-bb-holes-row">${holes}</div>
+          <div class="rl-bb-rail rl-bb-rail-neg"></div>
+        </div>
+      `;
+    },
+  },
+  lcd: {
+    labelKey: 'rl_part_lcd', icon: '🖥️', w: 200, h: 90, removable: true,
+    pins() {
+      return [
+        { name: 'GND', dx: 20, dy: 90, role: 'gnd' }, { name: 'VCC', dx: 60, dy: 90, role: 'vcc' },
+        { name: 'SDA', dx: 140, dy: 90, role: 'lcd-sda' }, { name: 'SCL', dx: 180, dy: 90, role: 'lcd-scl' },
+      ];
+    },
+    render(c) {
+      const lines = (c.state.lines || ['', '']).map(l => `<div class="rl-lcd-line">${escapeHtml((l || '').padEnd(16, ' '))}</div>`).join('');
+      return `<div class="rl-lcd-frame"><div class="rl-lcd-screen">${lines}</div></div>`;
     },
   },
   led: {
@@ -127,6 +167,18 @@ const RL_EXAMPLES = {
     blocksSetup: [{ type: 'servoAttach', varName: 'myServo', pin: 'D9' }],
     blocksLoop: [{ type: 'servoWriteMapped', varName: 'myServo', pin: 'A0' }, { type: 'delay', ms: 15 }],
   },
+  lcd_display: {
+    nameKey: 'rl_example_lcd_display', forceMode: 'code',
+    components: [
+      { type: 'arduino', x: 40, y: 40 },
+      { type: 'breadboard', x: 40, y: 260 },
+      { type: 'potentiometer', x: 460, y: 300 },
+      { type: 'lcd', x: 420, y: 40 },
+    ],
+    wireDefs: [['arduino', 'A0', 'potentiometer', 'OUT']],
+    code: `LiquidCrystal_I2C lcd(0x27, 16, 2);\n\nvoid setup() {\n  lcd.init();\n  lcd.backlight();\n}\n\nvoid loop() {\n  int value = analogRead(A0);\n  lcd.setCursor(0, 0);\n  lcd.print("Value: ");\n  lcd.print(value);\n  delay(200);\n}\n`,
+    blocksSetup: [], blocksLoop: [],
+  },
 };
 
 const RL = {
@@ -171,10 +223,15 @@ function rlLoadExample(key) {
   RL.blocksSetup = JSON.parse(JSON.stringify(ex.blocksSetup || []));
   RL.blocksLoop = JSON.parse(JSON.stringify(ex.blocksLoop || []));
   RL.code = ex.code;
+  if (ex.forceMode) RL.mode = ex.forceMode;
   rlResetPinState();
   rlStopExecution();
   rlSaveProject();
   rlRenderAll();
+  document.getElementById('rlModeBlocksBtn').classList.toggle('active', RL.mode === 'blocks');
+  document.getElementById('rlModeCodeBtn').classList.toggle('active', RL.mode === 'code');
+  document.getElementById('rlBlocksEditor').classList.toggle('hidden', RL.mode !== 'blocks');
+  document.getElementById('rlCodeEditorWrap').classList.toggle('hidden', RL.mode !== 'code');
 }
 
 // ---------- تخزين محلي (بدون سيرفر - المشروع يبقى بجهازك بس) ----------
@@ -234,11 +291,19 @@ function rlRenderAll() {
 
 function rlRenderPartsBin() {
   const wrap = document.getElementById('rlPartsList');
-  wrap.innerHTML = Object.entries(RL_PART_DEFS).filter(([type]) => type !== 'arduino').map(([type, def]) => `
-    <button class="rl-part-chip" draggable="true" data-type="${type}" title="${t(def.labelKey)}">
-      <span class="rl-part-icon">${def.icon}</span><span class="rl-part-name">${t(def.labelKey)}</span>
-    </button>
-  `).join('');
+  const previewBoxW = 76, previewBoxH = 64;
+  wrap.innerHTML = Object.entries(RL_PART_DEFS).filter(([type]) => type !== 'arduino').map(([type, def]) => {
+    const scale = Math.min(1, (previewBoxW - 10) / def.w, (previewBoxH - 10) / def.h);
+    const fakeComp = { props: { ...(def.defaultProps || {}) }, state: {} };
+    return `
+      <button class="rl-part-chip" draggable="true" data-type="${type}" title="${t(def.labelKey)}">
+        <span class="rl-part-thumb" style="width:${previewBoxW}px; height:${previewBoxH}px;">
+          <span class="rl-part-thumb-inner rl-type-${type}" style="width:${def.w}px; height:${def.h}px; transform:translate(-50%,-50%) scale(${scale});">${def.render(fakeComp)}</span>
+        </span>
+        <span class="rl-part-name">${t(def.labelKey)}</span>
+      </button>
+    `;
+  }).join('');
   wrap.querySelectorAll('.rl-part-chip').forEach(btn => {
     btn.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/rl-part', btn.dataset.type); });
     btn.addEventListener('click', () => rlAddComponent(btn.dataset.type, 340 + Math.random() * 120, 100 + Math.random() * 100));
@@ -520,6 +585,7 @@ function rlPreprocessCode(src) {
   code = code.replace(/\bvoid\s+loop\s*\(\s*\)/g, 'function loop()');
   code = code.replace(/\bvoid\s+(\w+)\s*\(/g, 'function $1(');
   code = code.replace(/\bServo\s+(\w+)\s*;/g, 'let $1 = new Servo();');
+  code = code.replace(/\bLiquidCrystal_I2C\s+(\w+)\s*\(([^)]*)\)\s*;/g, 'let $1 = new LiquidCrystal_I2C($2);');
   code = code.replace(/\b(int|float|double|long|bool|boolean|byte|char|unsigned\s+int|unsigned\s+long|String)\s+(\w+)\s*=/g, 'let $2 =');
   code = code.replace(/\b(int|float|double|long|bool|boolean|byte|char|unsigned\s+int|unsigned\s+long|String)\s+(\w+)\s*;/g, 'let $2;');
   // setup()/loop() لازم تصير async عشان delay() تقدر توقف التنفيذ بدون
@@ -600,16 +666,43 @@ async function rlRunCode() {
     };
   }
   const Serial = { begin() {}, println(x) { rlSerialPrint(String(x)); }, print(x) { rlSerialPrint(String(x)); } };
+  // شاشة LCD (I2C 16×2) - نفس واجهة مكتبة LiquidCrystal_I2C الحقيقية
+  // (begin/setCursor/print/clear)، تحدّث كل شاشة LCD موجودة بالكانفس
+  function LiquidCrystal_I2C() {
+    let cursor = { col: 0, row: 0 };
+    const applyToScreens = (fn) => {
+      RL.components.forEach(comp => {
+        if (comp.type !== 'lcd') return;
+        if (!comp.state.lines) comp.state.lines = ['', ''];
+        fn(comp.state.lines);
+      });
+    };
+    return {
+      init() {}, begin() {}, backlight() {}, noBacklight() {},
+      setCursor(col, row) { cursor = { col, row }; },
+      clear() { applyToScreens(lines => { lines[0] = ''; lines[1] = ''; }); cursor = { col: 0, row: 0 }; },
+      print(text) {
+        applyToScreens(lines => {
+          const row = Math.max(0, Math.min(1, cursor.row));
+          const before = (lines[row] || '').padEnd(16, ' ').slice(0, cursor.col);
+          const rest = String(text).slice(0, 16 - cursor.col);
+          const after = (lines[row] || '').padEnd(16, ' ').slice(cursor.col + rest.length);
+          lines[row] = (before + rest + after).slice(0, 16);
+        });
+        cursor.col += String(text).length;
+      },
+    };
+  }
 
   let userFns;
   try {
     const factory = new Function(
       'delay', 'HIGH', 'LOW', 'INPUT', 'OUTPUT', 'INPUT_PULLUP', 'LED_BUILTIN', 'A0', 'A1', 'A2', 'A3', 'A4', 'A5',
-      'pinMode', 'digitalWrite', 'digitalRead', 'analogWrite', 'analogRead', 'tone', 'noTone', 'map', 'constrain', 'Servo', 'Serial',
+      'pinMode', 'digitalWrite', 'digitalRead', 'analogWrite', 'analogRead', 'tone', 'noTone', 'map', 'constrain', 'Servo', 'Serial', 'LiquidCrystal_I2C',
       transpiled + '\nreturn { setup, loop };'
     );
     userFns = factory(delay, HIGH, LOW, INPUT, OUTPUT, INPUT_PULLUP, LED_BUILTIN, A0, A1, A2, A3, A4, A5,
-      pinMode, digitalWrite, digitalRead, analogWrite, analogRead, tone, noTone, map, constrain, Servo, Serial);
+      pinMode, digitalWrite, digitalRead, analogWrite, analogRead, tone, noTone, map, constrain, Servo, Serial, LiquidCrystal_I2C);
   } catch (e) {
     showError('rlError', t('rl_err_syntax') + ': ' + e.message);
     rlStopExecution();

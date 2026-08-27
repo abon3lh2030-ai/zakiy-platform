@@ -8,6 +8,10 @@ function showAccountScreen(id) {
    ...ACCOUNT_SCREENS]
     .forEach(hide);
   show(id);
+  // معمل الروبوتات يحتاج عرض أوسع بكثير من عمود المحتوى العادي (880px) عشان
+  // مساحة الشغل تكون مريحة - نوسّع حاوية الصفحة نفسها بس وقت هذي الشاشة
+  const wrapEl = document.querySelector('.wrap');
+  if (wrapEl) wrapEl.classList.toggle('wrap-wide', id === 'step-robotics-lab');
 }
 function showPerformanceDashboard() { showAccountScreen('step-performance'); }
 function showLibraryScreen() { showAccountScreen('step-library'); }

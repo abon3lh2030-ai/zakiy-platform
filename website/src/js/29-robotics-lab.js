@@ -43,19 +43,18 @@ const RL_PART_DEFS = {
     },
   },
   breadboard: {
-    labelKey: 'rl_part_breadboard', icon: '🟦', w: 420, h: 140, removable: true,
+    labelKey: 'rl_part_breadboard', icon: '🟦', w: 420, h: 150, removable: true,
     pins() { return []; },
     render() {
-      const holes = Array.from({ length: 30 }, (_, i) => `<span class="rl-bb-hole" style="left:${10 + i * 13.5}px;"></span>`).join('');
+      // شبكة الثقوب بنمط خلفية CSS (radial-gradient متكرر) بدل عناصر منفصلة
+      // لكل ثقب - أدق بالمحاذاة وأخف وأنظف بكثير
       return `
         <div class="rl-breadboard">
-          <div class="rl-bb-rail rl-bb-rail-pos"></div>
-          <div class="rl-bb-holes-row">${holes}</div>
-          <div class="rl-bb-holes-row">${holes}</div>
-          <div class="rl-bb-gap"></div>
-          <div class="rl-bb-holes-row">${holes}</div>
-          <div class="rl-bb-holes-row">${holes}</div>
-          <div class="rl-bb-rail rl-bb-rail-neg"></div>
+          <div class="rl-bb-rail rl-bb-rail-pos"><span>+</span></div>
+          <div class="rl-bb-holes-block"></div>
+          <div class="rl-bb-center-gap"></div>
+          <div class="rl-bb-holes-block"></div>
+          <div class="rl-bb-rail rl-bb-rail-neg"><span>−</span></div>
         </div>
       `;
     },
@@ -121,6 +120,82 @@ const RL_PART_DEFS = {
     pins() { return [{ name: '+', dx: 12, dy: 44, role: 'buzzer-sig' }, { name: '-', dx: 32, dy: 44, role: 'gnd' }]; },
     render(c) { return `<div class="rl-buzzer-body ${c.state && c.state.on ? 'on' : ''}"><span class="rl-buzzer-wave"></span></div>`; },
   },
+  ultrasonic: {
+    labelKey: 'rl_part_ultrasonic', icon: '📡', w: 76, h: 56, removable: true,
+    pins() {
+      return [
+        { name: 'VCC', dx: 8, dy: 56, role: 'vcc' }, { name: 'Trig', dx: 28, dy: 56, role: 'io' },
+        { name: 'Echo', dx: 48, dy: 56, role: 'io' }, { name: 'GND', dx: 68, dy: 56, role: 'gnd' },
+      ];
+    },
+    render(c) {
+      const dist = c.state.distance ?? 20;
+      const pct = Math.max(0, Math.min(100, ((dist - 2) / (400 - 2)) * 100));
+      return `
+        <div class="rl-ultra-body">
+          <span class="rl-ultra-eye"></span><span class="rl-ultra-eye"></span>
+        </div>
+        <div class="rl-ultra-slider" data-role="ultra-slider">
+          <div class="rl-ultra-slider-fill" style="width:${pct}%;"></div>
+          <div class="rl-ultra-slider-handle" style="left:${pct}%;"></div>
+        </div>
+        <div class="rl-ultra-label">${Math.round(dist)}cm</div>
+      `;
+    },
+  },
+  ldr: {
+    labelKey: 'rl_part_ldr', icon: '☀️', w: 40, h: 60, removable: true,
+    pins() { return [{ name: 'GND', dx: 0, dy: 60, role: 'gnd' }, { name: 'OUT', dx: 20, dy: 60, role: 'pot-out' }, { name: 'VCC', dx: 40, dy: 60, role: 'vcc' }]; },
+    render(c) {
+      const value = c.state.value ?? 512;
+      const pct = Math.max(0, Math.min(100, (value / 1023) * 100));
+      return `
+        <div class="rl-ldr-disc"></div>
+        <div class="rl-ldr-slider" data-role="ldr-slider">
+          <div class="rl-ldr-slider-fill" style="height:${pct}%;"></div>
+          <div class="rl-ldr-slider-handle" style="bottom:${pct}%;"></div>
+        </div>
+      `;
+    },
+  },
+  rgbled: {
+    labelKey: 'rl_part_rgbled', icon: '🌈', w: 40, h: 60, removable: true,
+    pins() {
+      return [
+        { name: 'R', dx: 4, dy: 60, role: 'rgb-r' }, { name: 'GND', dx: 14, dy: 60, role: 'gnd' },
+        { name: 'G', dx: 26, dy: 60, role: 'rgb-g' }, { name: 'B', dx: 36, dy: 60, role: 'rgb-b' },
+      ];
+    },
+    render(c) {
+      const [r, g, b] = c.state.rgb || [0, 0, 0];
+      const glow = Math.max(r, g, b) > 0;
+      return `<div class="rl-led-bulb" style="background: rgb(${r},${g},${b}); filter:${glow ? 'none' : 'brightness(.4) saturate(.4)'};">
+                <div class="rl-led-glow" style="opacity:${Math.max(r, g, b) / 255}; box-shadow: 0 0 18px 8px rgb(${r},${g},${b});"></div>
+              </div>
+              <div class="rl-led-legs"></div>`;
+    },
+  },
+  dcmotor: {
+    labelKey: 'rl_part_dcmotor', icon: '🌀', w: 54, h: 54, removable: true,
+    pins() { return [{ name: '+', dx: 14, dy: 54, role: 'io' }, { name: '-', dx: 40, dy: 54, role: 'gnd' }]; },
+    render(c) {
+      const speed = c.state.speed || 0;
+      const duration = speed > 0 ? Math.max(0.15, 1.2 - (speed / 255) * 1.05) : 0;
+      return `<div class="rl-motor-body">
+                <div class="rl-motor-fan" style="animation-duration:${duration}s; animation-play-state:${speed > 0 ? 'running' : 'paused'};"></div>
+              </div>`;
+    },
+  },
+  slideswitch: {
+    labelKey: 'rl_part_slideswitch', icon: '🔀', w: 46, h: 26, removable: true,
+    pins() { return [{ name: '1', dx: 6, dy: 26, role: 'passthrough' }, { name: '2', dx: 40, dy: 26, role: 'passthrough' }]; },
+    render(c) { return `<div class="rl-switch-body ${c.state && c.state.on ? 'on' : ''}"><div class="rl-switch-knob"></div></div>`; },
+  },
+  pir: {
+    labelKey: 'rl_part_pir', icon: '👁️', w: 50, h: 50, removable: true,
+    pins() { return [{ name: 'VCC', dx: 10, dy: 50, role: 'vcc' }, { name: 'OUT', dx: 25, dy: 50, role: 'passthrough-high' }, { name: 'GND', dx: 40, dy: 50, role: 'gnd' }]; },
+    render(c) { return `<div class="rl-pir-body ${c.state && c.state.motion ? 'active' : ''}"><span class="rl-pir-dome"></span></div>`; },
+  },
 };
 
 const RL_EXAMPLES = {
@@ -179,6 +254,21 @@ const RL_EXAMPLES = {
     code: `LiquidCrystal_I2C lcd(0x27, 16, 2);\n\nvoid setup() {\n  lcd.init();\n  lcd.backlight();\n}\n\nvoid loop() {\n  int value = analogRead(A0);\n  lcd.setCursor(0, 0);\n  lcd.print("Value: ");\n  lcd.print(value);\n  delay(200);\n}\n`,
     blocksSetup: [], blocksLoop: [],
   },
+  ultrasonic_distance: {
+    nameKey: 'rl_example_ultrasonic', forceMode: 'code',
+    components: [
+      { type: 'arduino', x: 40, y: 40 },
+      { type: 'ultrasonic', x: 420, y: 60 },
+      { type: 'resistor', x: 420, y: 220, props: { ohms: 220 } },
+      { type: 'led', x: 500, y: 200 },
+    ],
+    wireDefs: [
+      ['arduino', 'D9', 'ultrasonic', 'Trig'], ['arduino', 'D10', 'ultrasonic', 'Echo'],
+      ['arduino', 'D13', 'resistor', '1'], ['resistor', '2', 'led', 'A'], ['led', 'C', 'arduino', 'GND'],
+    ],
+    code: `const int trigPin = 9;\nconst int echoPin = 10;\n\nvoid setup() {\n  pinMode(trigPin, OUTPUT);\n  pinMode(echoPin, INPUT);\n  pinMode(13, OUTPUT);\n  Serial.begin(9600);\n}\n\nvoid loop() {\n  digitalWrite(trigPin, LOW);\n  delayMicroseconds(2);\n  digitalWrite(trigPin, HIGH);\n  delayMicroseconds(10);\n  digitalWrite(trigPin, LOW);\n\n  long duration = pulseIn(echoPin, HIGH);\n  float distance = duration * 0.034 / 2;\n  Serial.print("Distance: ");\n  Serial.println(distance);\n\n  digitalWrite(13, distance < 15 ? HIGH : LOW);\n  delay(300);\n}\n`,
+    blocksSetup: [], blocksLoop: [],
+  },
 };
 
 const RL = {
@@ -190,7 +280,7 @@ const RL = {
 function rlResetPinState() {
   RL.pinState = {};
   [...RL_PIN_TOP, ...RL_PIN_BOTTOM].forEach(name => {
-    RL.pinState[name] = { mode: null, digital: 0, pwm: null, servoAngle: null, toneFreq: null };
+    RL.pinState[name] = { mode: null, digital: 0, pwm: null, servoAngle: null, toneFreq: null, digitalSource: null };
   });
 }
 
@@ -237,7 +327,7 @@ function rlLoadExample(key) {
 // ---------- تخزين محلي (بدون سيرفر - المشروع يبقى بجهازك بس) ----------
 function rlSaveProject() {
   try {
-    localStorage.setItem('zakiy_robotics_project', JSON.stringify({
+    localStorage.setItem('zakiy_robotics_project_v2', JSON.stringify({
       components: RL.components, wires: RL.wires, mode: RL.mode,
       blocksSetup: RL.blocksSetup, blocksLoop: RL.blocksLoop, code: RL.code,
     }));
@@ -245,7 +335,7 @@ function rlSaveProject() {
 }
 function rlLoadSavedOrDefault() {
   try {
-    const raw = localStorage.getItem('zakiy_robotics_project');
+    const raw = localStorage.getItem('zakiy_robotics_project_v2');
     if (raw) {
       const data = JSON.parse(raw);
       if (data.components && data.components.length) {
@@ -361,6 +451,30 @@ function rlRenderCanvas() {
       btn.addEventListener('mouseup', () => press(false));
       btn.addEventListener('mouseleave', () => { if (comp.state.pressed) press(false); });
     }
+    if (el.querySelector('[data-role="ultra-slider"]')) {
+      el.querySelector('[data-role="ultra-slider"]').addEventListener('mousedown', (e) => { e.stopPropagation(); rlStartLinearDrag(id, e, 'distance', 2, 400, 'x'); });
+    }
+    if (el.querySelector('[data-role="ldr-slider"]')) {
+      el.querySelector('[data-role="ldr-slider"]').addEventListener('mousedown', (e) => { e.stopPropagation(); rlStartLinearDrag(id, e, 'value', 0, 1023, 'y-inverted'); });
+    }
+    if (el.querySelector('.rl-switch-body')) {
+      el.querySelector('.rl-switch-body').addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        const comp = RL.components.find(c => c.id === id);
+        comp.state.on = !comp.state.on;
+        rlSaveProject();
+        rlRenderCanvas();
+      });
+    }
+    if (el.querySelector('.rl-pir-body')) {
+      el.querySelector('.rl-pir-body').addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        const comp = RL.components.find(c => c.id === id);
+        comp.state.motion = !comp.state.motion;
+        rlSaveProject();
+        rlRenderCanvas();
+      });
+    }
   });
   canvas.querySelectorAll('.rl-comp-remove').forEach(btn => {
     btn.addEventListener('click', (e) => { e.stopPropagation(); rlRemoveComponent(Number(btn.dataset.id)); });
@@ -387,6 +501,29 @@ function rlStartPotDrag(id, e) {
   const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); rlSaveProject(); };
   document.addEventListener('mousemove', move);
   document.addEventListener('mouseup', up);
+}
+
+// سحب خطي عام (بدل الدوراني) - يُستخدم لشريحة مسافة الحساس فوق الصوتي
+// وشريحة إضاءة مقاوم الضوء (LDR). axis: 'x' لشريط أفقي، 'y-inverted' لشريط
+// رأسي (فوق = قيمة أعلى)
+function rlStartLinearDrag(id, e, stateKey, min, max, axis) {
+  const selector = axis === 'x' ? '[data-role="ultra-slider"]' : '[data-role="ldr-slider"]';
+  const move = (ev) => {
+    const comp = RL.components.find(c => c.id === id);
+    const el = document.querySelector(`.rl-component[data-id="${id}"] ${selector}`);
+    if (!comp || !el) return;
+    const rect = el.getBoundingClientRect();
+    let pct;
+    if (axis === 'x') pct = (ev.clientX - rect.left) / rect.width;
+    else pct = 1 - (ev.clientY - rect.top) / rect.height;
+    pct = Math.max(0, Math.min(1, pct));
+    comp.state[stateKey] = Math.round(min + pct * (max - min));
+    rlRenderCanvas();
+  };
+  const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); rlSaveProject(); };
+  document.addEventListener('mousemove', move);
+  document.addEventListener('mouseup', up);
+  move(e);
 }
 
 function rlHandlePinClick(compId, pinName) {
@@ -523,24 +660,53 @@ function rlSimulateStep() {
       net.arduinoPins.forEach(p => { if (RL.pinState[p].toneFreq) freq = RL.pinState[p].toneFreq; });
       comp.state.on = !!freq;
       rlHandleBuzzerAudio(comp.id, freq);
+    } else if (comp.type === 'rgbled') {
+      const channels = { R: 'r', G: 'g', B: 'b' };
+      const rgb = { r: 0, g: 0, b: 0 };
+      Object.entries(channels).forEach(([pinName, key]) => {
+        const net = rlTraceNet(comp.id, pinName);
+        net.arduinoPins.forEach(p => {
+          if (RL.pinState[p].pwm !== null) rgb[key] = Math.max(rgb[key], RL.pinState[p].pwm);
+          else if (RL.pinState[p].digital === 1) rgb[key] = 255;
+        });
+      });
+      comp.state.rgb = [rgb.r, rgb.g, rgb.b];
+    } else if (comp.type === 'dcmotor') {
+      const netPos = rlTraceNet(comp.id, '+');
+      const netNeg = rlTraceNet(comp.id, '-');
+      const grounded = netNeg.gnd;
+      let speed = 0;
+      if (netPos.vcc) speed = 255;
+      else netPos.arduinoPins.forEach(p => {
+        if (RL.pinState[p].pwm !== null) speed = Math.max(speed, RL.pinState[p].pwm);
+        else if (RL.pinState[p].digital === 1) speed = 255;
+      });
+      comp.state.speed = grounded ? speed : 0;
     }
   });
-  // مدخلات: البوتنشيومتر يحدّث قيمة analogRead لأي طرف أردوينو موصول بـ OUT
+  // مدخلات: البوتنشيومتر/الحساس الضوئي يحدّثون قيمة analogRead لأي طرف
+  // أردوينو موصول بـOUT، والزر/المفتاح الانزلاقي يربطون طرفيهم مؤقتًا،
+  // وحساس الحركة يفرض قيمة رقمية مباشرة على الطرف الموصول بمخرجه
   RL.components.forEach(comp => {
-    if (comp.type === 'potentiometer') {
+    if (comp.type === 'potentiometer' || comp.type === 'ldr') {
       const net = rlTraceNet(comp.id, 'OUT');
-      net.arduinoPins.forEach(p => { RL.pinState[p].potValue = comp.state.value || 0; });
+      net.arduinoPins.forEach(p => { RL.pinState[p].potValue = comp.state.value ?? 512; });
     }
-    if (comp.type === 'button') {
+    if (comp.type === 'button' || comp.type === 'slideswitch') {
+      const pressed = comp.type === 'button' ? comp.state.pressed : comp.state.on;
       const net1 = rlTraceNet(comp.id, '1');
-      if (comp.state.pressed) {
-        // الزر مضغوط = طرفاه متوصلين لبعض فعليًا الحين
+      if (pressed) {
         const net2 = rlTraceNet(comp.id, '2');
         net1.arduinoPins.forEach(p => { RL.pinState[p]._buttonBridge = { gnd: net2.gnd, vcc: net2.vcc, pins: [...net2.arduinoPins] }; });
         net2.arduinoPins.forEach(p => { RL.pinState[p]._buttonBridge = { gnd: net1.gnd, vcc: net1.vcc, pins: [...net1.arduinoPins] }; });
       } else {
         net1.arduinoPins.forEach(p => { delete RL.pinState[p]._buttonBridge; });
+        rlTraceNet(comp.id, '2').arduinoPins.forEach(p => { delete RL.pinState[p]._buttonBridge; });
       }
+    }
+    if (comp.type === 'pir') {
+      const net = rlTraceNet(comp.id, 'OUT');
+      net.arduinoPins.forEach(p => { RL.pinState[p].digitalSource = comp.state.motion ? 1 : 0; });
     }
   });
   rlRenderCanvas();
@@ -586,15 +752,25 @@ function rlPreprocessCode(src) {
   code = code.replace(/\bvoid\s+(\w+)\s*\(/g, 'function $1(');
   code = code.replace(/\bServo\s+(\w+)\s*;/g, 'let $1 = new Servo();');
   code = code.replace(/\bLiquidCrystal_I2C\s+(\w+)\s*\(([^)]*)\)\s*;/g, 'let $1 = new LiquidCrystal_I2C($2);');
-  code = code.replace(/\b(int|float|double|long|bool|boolean|byte|char|unsigned\s+int|unsigned\s+long|String)\s+(\w+)\s*=/g, 'let $2 =');
-  code = code.replace(/\b(int|float|double|long|bool|boolean|byte|char|unsigned\s+int|unsigned\s+long|String)\s+(\w+)\s*;/g, 'let $2;');
+  // "const int x = 9;" أسلوب شائع جدًا بأردوينو لتعريف أرقام الأطراف -
+  // لازم نحافظ على const لو كانت موجودة، وإلا نطلع "const let" (خطأ صياغي)
+  code = code.replace(
+    /\b(const\s+)?(int|float|double|long|bool|boolean|byte|char|unsigned\s+int|unsigned\s+long|String)\s+(\w+)\s*=/g,
+    (m, constKw, type, name) => `${constKw ? 'const' : 'let'} ${name} =`
+  );
+  code = code.replace(
+    /\b(const\s+)?(int|float|double|long|bool|boolean|byte|char|unsigned\s+int|unsigned\s+long|String)\s+(\w+)\s*;/g,
+    (m, constKw, type, name) => `${constKw ? 'const' : 'let'} ${name};`
+  );
   // setup()/loop() لازم تصير async عشان delay() تقدر توقف التنفيذ بدون
   // ما تجمّد المتصفح - سواء كتب المستخدم "void setup()" (تحوّل فوق لـ
   // "function setup()") أو كتبها JS-style مباشرة "function setup()"
   code = code.replace(/(?<!async\s)\bfunction\s+setup\s*\(/g, 'async function setup(');
   code = code.replace(/(?<!async\s)\bfunction\s+loop\s*\(/g, 'async function loop(');
   code = code.replace(/\bdelay\s*\(/g, 'await delay(');
-  code = code.replace(/\bawait\s+await\s+delay\s*\(/g, 'await delay(');
+  code = code.replace(/\bpulseIn\s*\(/g, 'await pulseIn(');
+  code = code.replace(/\bdelayMicroseconds\s*\(/g, 'await delayMicroseconds(');
+  code = code.replace(/\bawait\s+await\s+(delay|pulseIn|delayMicroseconds)\s*\(/g, 'await $1(');
   if (!/async function setup/.test(code)) code += '\nasync function setup() {}\n';
   if (!/async function loop/.test(code)) code += '\nasync function loop() {}\n';
   return code;
@@ -645,6 +821,8 @@ async function rlRunCode() {
     const pin = rlPin(p);
     const st = RL.pinState[pin];
     if (!st) return LOW;
+    // مصدر رقمي مباشر (زي حساس الحركة PIR) يطغى على أي شي ثاني
+    if (st.digitalSource !== null && st.digitalSource !== undefined) return st.digitalSource;
     const bridge = st._buttonBridge;
     if (bridge) {
       if (bridge.gnd) return LOW;
@@ -656,6 +834,17 @@ async function rlRunCode() {
   const analogRead = (p) => { const pin = rlPin(p); return (RL.pinState[pin] && RL.pinState[pin].potValue) || 0; };
   const tone = (p, freq) => { const pin = rlPin(p); if (RL.pinState[pin]) RL.pinState[pin].toneFreq = freq; };
   const noTone = (p) => { const pin = rlPin(p); if (RL.pinState[pin]) RL.pinState[pin].toneFreq = null; };
+  const delayMicroseconds = async () => {}; // دقة المايكروثانية مو مهمة لمحاكاة تعليمية
+  // نفس فكرة pulseIn الحقيقية: نلقى حساس المسافة فوق الصوتي الموصول بطرف
+  // Echo هذا ونحسب مدة النبضة من مسافته الحالية (١cm ≈ ٥٨ مايكروثانية ذهاب-إياب)
+  const pulseIn = async (p) => {
+    const pin = rlPin(p);
+    const comp = RL.components.find(c => c.type === 'ultrasonic' && [...rlTraceNet(c.id, 'Echo').arduinoPins].includes(pin));
+    if (!comp) return 0;
+    const durationUs = Math.round((comp.state.distance ?? 20) * 58);
+    await delay(Math.min(30, durationUs / 1000));
+    return durationUs;
+  };
   const map = (x, inMin, inMax, outMin, outMax) => (x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
   const constrain = (x, a, b) => Math.max(a, Math.min(b, x));
   function Servo() {
@@ -698,11 +887,11 @@ async function rlRunCode() {
   try {
     const factory = new Function(
       'delay', 'HIGH', 'LOW', 'INPUT', 'OUTPUT', 'INPUT_PULLUP', 'LED_BUILTIN', 'A0', 'A1', 'A2', 'A3', 'A4', 'A5',
-      'pinMode', 'digitalWrite', 'digitalRead', 'analogWrite', 'analogRead', 'tone', 'noTone', 'map', 'constrain', 'Servo', 'Serial', 'LiquidCrystal_I2C',
+      'pinMode', 'digitalWrite', 'digitalRead', 'analogWrite', 'analogRead', 'tone', 'noTone', 'map', 'constrain', 'Servo', 'Serial', 'LiquidCrystal_I2C', 'pulseIn', 'delayMicroseconds',
       transpiled + '\nreturn { setup, loop };'
     );
     userFns = factory(delay, HIGH, LOW, INPUT, OUTPUT, INPUT_PULLUP, LED_BUILTIN, A0, A1, A2, A3, A4, A5,
-      pinMode, digitalWrite, digitalRead, analogWrite, analogRead, tone, noTone, map, constrain, Servo, Serial, LiquidCrystal_I2C);
+      pinMode, digitalWrite, digitalRead, analogWrite, analogRead, tone, noTone, map, constrain, Servo, Serial, LiquidCrystal_I2C, pulseIn, delayMicroseconds);
   } catch (e) {
     showError('rlError', t('rl_err_syntax') + ': ' + e.message);
     rlStopExecution();

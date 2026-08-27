@@ -1,7 +1,7 @@
   /* ============================================================
      معمل الروبوتات - محاكي دوائر أردوينو
      ============================================================ */
-  .wrap.wrap-wide { max-width: 1560px; transition: max-width .15s; }
+  .wrap.wrap-wide { max-width: 98vw; transition: max-width .15s; }
 
   .rl-toolbar {
     display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
@@ -20,8 +20,8 @@
 
   .rl-workspace {
     display: grid;
-    grid-template-columns: 190px minmax(0, 1fr) 360px;
-    gap: 16px;
+    grid-template-columns: 160px minmax(0, 1fr) 300px;
+    gap: 14px;
     align-items: start;
   }
   @media (max-width: 1300px) {
@@ -31,7 +31,7 @@
   /* ---------- صندوق القطع (بطاقات رأسية بصورة مصغّرة حقيقية للقطعة) ---------- */
   .rl-parts-bin {
     background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
-    padding: 14px; position: sticky; top: 0;
+    padding: 14px;
   }
   .rl-parts-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
   .rl-part-chip {
@@ -50,10 +50,11 @@
   .rl-part-name { font-size: 11.5px; font-weight: 600; line-height: 1.3; }
   .rl-parts-hint { font-size: 11.5px; margin-top: 12px; line-height: 1.7; color: var(--ink-soft); }
 
-  /* ---------- الكانفس ---------- */
+  /* ---------- الكانفس - يتمدد مع ارتفاع الشاشة عشان يكون فعليًا مساحة
+     شغل كبيرة على أي شاشة، مو رقم ثابت صغير ---------- */
   .rl-canvas-wrap {
     position: relative; background: var(--paper-dim); border: 1px solid var(--line);
-    border-radius: var(--radius); height: 680px; overflow: auto;
+    border-radius: var(--radius); height: calc(100vh - 210px); min-height: 640px; overflow: auto;
     background-image: radial-gradient(var(--line) 1.5px, transparent 1.5px);
     background-size: 24px 24px;
   }
@@ -129,25 +130,31 @@
   }
   .rl-board-label b { font-size: 14px; }
 
-  /* ---------- بريدبورد ---------- */
-  .rl-type-breadboard { width: 420px; height: 140px; }
+  /* ---------- بريدبورد - نمط ثقوب بخلفية CSS متكررة (radial-gradient) بدل
+     مئات العناصر المنفصلة - محاذاة مضبوطة دايمًا ومظهر أنظف ---------- */
+  .rl-type-breadboard { width: 420px; height: 150px; }
   .rl-breadboard {
-    width: 100%; height: 100%; background: #efe9d8; border: 1px solid #cfc7ac; border-radius: 8px;
-    box-shadow: 0 3px 10px rgba(0,0,0,.15); padding: 6px 8px; box-sizing: border-box;
-    display: flex; flex-direction: column; gap: 4px;
+    width: 100%; height: 100%; background: #f4efe0; border: 1px solid #d8d0b8; border-radius: 10px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.18); padding: 10px 14px; box-sizing: border-box;
+    display: flex; flex-direction: column; justify-content: space-between; gap: 8px;
   }
-  .rl-bb-rail { height: 8px; border-radius: 2px; position: relative; }
-  .rl-bb-rail-pos::before, .rl-bb-rail-neg::before {
-    content: ''; position: absolute; inset: 0 4px; border-top: 2px solid; opacity: .55;
+  .rl-bb-rail {
+    height: 16px; border-radius: 999px; position: relative; display: flex; align-items: center;
+    background: linear-gradient(#00000008, #00000008);
   }
-  .rl-bb-rail-pos::before { border-color: #c0392b; }
-  .rl-bb-rail-neg::before { border-color: #2b6cb0; }
-  .rl-bb-holes-row { position: relative; height: 10px; }
-  .rl-bb-hole {
-    position: absolute; top: 0; width: 4px; height: 4px; border-radius: 50%;
-    background: #9c9484; box-shadow: inset 0 1px 1px rgba(0,0,0,.4);
+  .rl-bb-rail span {
+    position: absolute; right: 6px; font-size: 12px; font-weight: 800; line-height: 1;
   }
-  .rl-bb-gap { height: 10px; }
+  .rl-bb-rail-pos { background-image: radial-gradient(#c0392b 1.6px, transparent 1.6px); background-size: 12px 12px; background-position: 8px center; }
+  .rl-bb-rail-pos span { color: #c0392b; }
+  .rl-bb-rail-neg { background-image: radial-gradient(#2b6cb0 1.6px, transparent 1.6px); background-size: 12px 12px; background-position: 8px center; }
+  .rl-bb-rail-neg span { color: #2b6cb0; }
+  .rl-bb-holes-block {
+    flex: 1; border-radius: 4px;
+    background-image: radial-gradient(#a89f88 1.4px, transparent 1.4px);
+    background-size: 11px 11px;
+  }
+  .rl-bb-center-gap { height: 4px; background: #e2dabf; border-radius: 2px; }
 
   /* ---------- شاشة LCD (I2C 16×2) ---------- */
   .rl-type-lcd { width: 200px; height: 90px; }
@@ -231,7 +238,7 @@
   /* ---------- اللوحة الجانبية (بلوكات/كود + سيريال) ---------- */
   .rl-side-panel {
     background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
-    padding: 14px; max-height: 780px; overflow-y: auto;
+    padding: 14px; height: calc(100vh - 210px); min-height: 640px; overflow-y: auto;
   }
   .rl-add-block-btn { margin-top: 8px; width: 100%; }
 
@@ -299,3 +306,77 @@
     font-family: 'SFMono-Regular', Consolas, Menlo, monospace; font-size: 12px; direction: ltr; text-align: left;
     min-height: 70px; max-height: 140px; overflow-y: auto;
   }
+
+  /* ---------- حساس المسافة فوق الصوتي (HC-SR04) ---------- */
+  .rl-ultra-body {
+    width: 76px; height: 30px; background: linear-gradient(160deg, #4a5568, #2d3340); border-radius: 6px;
+    border: 1px solid #1a1e26; display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .rl-ultra-eye {
+    width: 20px; height: 20px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #cfd8e3, #8f9bb0);
+    border: 2px solid #5a6376;
+  }
+  .rl-ultra-slider {
+    position: relative; width: 76px; height: 10px; margin-top: 6px; background: var(--paper-dim);
+    border-radius: 999px; cursor: ew-resize; border: 1px solid var(--line);
+  }
+  .rl-ultra-slider-fill { position: absolute; inset: 0; border-radius: 999px; background: var(--teal-dim); }
+  .rl-ultra-slider-handle {
+    position: absolute; top: 50%; width: 14px; height: 14px; border-radius: 50%; background: var(--teal);
+    transform: translate(-50%, -50%); box-shadow: 0 1px 3px rgba(0,0,0,.3);
+  }
+  .rl-ultra-label { text-align: center; font-size: 10px; color: var(--ink-soft); margin-top: 2px; }
+
+  /* ---------- مقاوم ضوئي (LDR) ---------- */
+  .rl-type-ldr { width: 40px; }
+  .rl-ldr-disc {
+    width: 26px; height: 26px; margin: 0 auto; border-radius: 50%;
+    background: radial-gradient(circle, #f2e6a8 0%, #c9b25c 70%, #a08a3c 100%);
+    border: 2px solid #7a692c; position: relative;
+  }
+  .rl-ldr-disc::before {
+    content: ''; position: absolute; inset: 5px; border-radius: 50%;
+    background-image: repeating-conic-gradient(#7a692c 0deg 8deg, transparent 8deg 16deg);
+    opacity: .5;
+  }
+  .rl-ldr-slider {
+    position: relative; width: 10px; height: 26px; margin: 6px auto 0; background: var(--paper-dim);
+    border-radius: 999px; cursor: ns-resize; border: 1px solid var(--line);
+  }
+  .rl-ldr-slider-fill { position: absolute; bottom: 0; right: 0; left: 0; border-radius: 999px; background: #ffd23f; }
+  .rl-ldr-slider-handle {
+    position: absolute; right: 50%; width: 14px; height: 14px; border-radius: 50%; background: #e8a800;
+    transform: translate(50%, 50%); box-shadow: 0 1px 3px rgba(0,0,0,.3);
+  }
+
+  /* ---------- محرك DC ---------- */
+  .rl-motor-body {
+    width: 100%; height: 100%; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #6b7280, #383d47);
+    border: 2px solid #1f232b; display: flex; align-items: center; justify-content: center;
+  }
+  .rl-motor-fan {
+    width: 60%; height: 60%; border-radius: 50%;
+    background: conic-gradient(#e0e4ea 0deg 90deg, #9aa3b2 90deg 180deg, #e0e4ea 180deg 270deg, #9aa3b2 270deg 360deg);
+    animation: rl-spin linear infinite; animation-duration: 1s;
+  }
+  @keyframes rl-spin { to { transform: rotate(360deg); } }
+
+  /* ---------- مفتاح انزلاقي ---------- */
+  .rl-switch-body {
+    width: 100%; height: 100%; background: #cfcac0; border-radius: 999px; border: 1px solid #a39d90;
+    display: flex; align-items: center; padding: 3px; cursor: pointer; box-sizing: border-box;
+  }
+  .rl-switch-knob { width: 40%; height: 100%; background: #4a4a4a; border-radius: 999px; transition: transform .15s; margin-inline-start: 0; }
+  .rl-switch-body.on { background: var(--teal-dim); }
+  .rl-switch-body.on .rl-switch-knob { margin-inline-start: 60%; background: var(--teal); }
+
+  /* ---------- حساس حركة PIR ---------- */
+  .rl-pir-body {
+    width: 100%; height: 100%; background: #e8e4d8; border-radius: 8px; border: 1px solid #c4bfae;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .rl-pir-dome {
+    width: 60%; height: 60%; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #d8d4c4);
+    border: 1px solid #b5b09c; transition: box-shadow .15s;
+  }
+  .rl-pir-body.active .rl-pir-dome { box-shadow: 0 0 12px 4px #ffd23faa; background: radial-gradient(circle at 35% 30%, #fff6d0, #ffd23f); }

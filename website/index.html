@@ -15106,6 +15106,37 @@ const SL_BODY_IMAGES = {
       { part: 'skin', x: 33.3, y: 46.7 },
     ],
   },
+  elephant: {
+    // رسم تشريح فيل مخصص (مرسوم يدويًا وبعنوان عربي أصلاً) - ملف محلي
+    // بالمشروع مو رابط خارجي، ما فيه رئتين ولا جلد واضحين بهذا الرسم
+    url: '/assets/animals/elephant.jpg',
+    credit: null,
+    hotspots: [
+      { part: 'brain', x: 22.5, y: 30.2 },
+      { part: 'heart', x: 40.7, y: 40.9 },
+      { part: 'liver', x: 48.7, y: 42.7 },
+      { part: 'stomach', x: 52.2, y: 47.4 },
+      { part: 'intestines', x: 62.5, y: 48.6 },
+      { part: 'kidneys', x: 72, y: 26.7 },
+      { part: 'kidneys', x: 75.2, y: 34.4 },
+    ],
+  },
+  crocodile: {
+    // رسم تشريح تمساح مخصص (مرسوم يدويًا وبعنوان عربي أصلاً) - ملف
+    // محلي بالمشروع مو رابط خارجي
+    url: '/assets/animals/crocodile.jpg',
+    credit: null,
+    hotspots: [
+      { part: 'brain', x: 23, y: 19.4 },
+      { part: 'heart', x: 42.8, y: 47.5 },
+      { part: 'liver', x: 44.9, y: 41 },
+      { part: 'lungs', x: 52.2, y: 36.7 },
+      { part: 'stomach', x: 52.8, y: 48.6 },
+      { part: 'intestines', x: 64.8, y: 41 },
+      { part: 'kidneys', x: 72.6, y: 37.8 },
+      { part: 'skin', x: 86.7, y: 64.8 },
+    ],
+  },
   cat: {
     // قطة - رخصة CC BY-SA 3.0 من ويكيميديا كومنز (لا يوجد تشريح مخصص
     // للأسد فعليًا بأي مصدر حر، والقطة أقرب قريب حقيقي له - نفس الفصيلة)
@@ -15210,8 +15241,8 @@ const SL_BODY_IMAGES = {
 // أي حيوان يستخدم أي صورة - أقرب تصنيف حقيقي متوفر له
 const SL_ANIMAL_BODY_KEY = {
   lion: 'cat', cat: 'cat',
-  elephant: 'dog', whale: 'whale',
-  crocodile: 'reptile', turtle: 'turtle', snake: 'reptile',
+  elephant: 'elephant', whale: 'whale',
+  crocodile: 'crocodile', turtle: 'turtle', snake: 'reptile',
   frog: 'frog', salamander: 'frog',
   eagle: 'bird', penguin: 'bird', parrot: 'bird',
   shark: 'fish', goldfish: 'fish',

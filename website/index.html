@@ -4602,7 +4602,7 @@ const I18N = {
     sl_body_hint_3d: 'اسحب الجسم عشان تدوّره من أي زاوية، واضغط على أي عضو حقيقي الشكل من جواه عشان تعرف وظيفته.',
     sl_body_credit_human3d: 'نموذج تشريحي حقيقي - بيانات BodyParts3D/Anatomography، قاعدة بيانات علوم الحياة اليابانية (DBCLS)، رخصة CC BY-SA 2.1 اليابان',
     sl_zoom_out: '🔍 تصغير',
-    sl_body_credit_dog: 'صورة تشريح مرجعية (كلب - أقرب مرجع حر متوفر، ما فيه مصدر تشريحي مخصص لهذا الحيوان تحديدًا) - ويكيميديا كومنز، رخصة CC BY-SA 4.0',
+    sl_body_credit_dog: 'صورة تشريح كلب حقيقية - ويكيميديا كومنز، رخصة CC BY-SA 4.0',
     sl_body_credit_cat: 'صورة تشريح قطة (أقرب قريب حقيقي متوفر - نفس فصيلة السنوريات) - ويكيميديا كومنز، رخصة CC BY-SA 3.0',
     sl_body_credit_reptile: 'صورة تشريح أفعى (مرجع عام للزواحف) - ويكيميديا كومنز، رخصة CC BY-SA 3.0',
     sl_body_credit_fish: 'صورة تشريح سمكة عظمية - ويكيميديا كومنز، رخصة CC BY-SA 3.0',
@@ -4626,6 +4626,11 @@ const I18N = {
     sl_animal_cat_fact1: 'القطط تقدر تدور أذنها ١٨٠ درجة.',
     sl_animal_cat_fact2: 'كل قطة لها بصمة أنف فريدة زي بصمة إصبع الإنسان.',
     sl_animal_cat_fact3: 'القطط ما تقدر تتذوق الحلاوة.',
+    sl_animal_dog_name: 'كلب',
+    sl_animal_dog_quick: 'الكلاب من أقدم الحيوانات الأليفة اللي رافقت الإنسان.',
+    sl_animal_dog_fact1: 'حاسة شم الكلب أقوى من الإنسان بآلاف المرات.',
+    sl_animal_dog_fact2: 'بصمة أنف الكلب فريدة زي بصمة إصبع الإنسان.',
+    sl_animal_dog_fact3: 'الكلاب تتعرق بس من وسادات كفوفها، وتلهث عشان تبرّد جسمها.',
     sl_animal_whale_name: 'حوت',
     sl_animal_whale_quick: 'الحوت الأزرق أكبر حيوان عاش على الأرض على الإطلاق.',
     sl_animal_whale_fact1: 'قلب الحوت الأزرق بحجم سيارة صغيرة تقريبًا.',
@@ -5582,7 +5587,7 @@ const I18N = {
     sl_body_hint_3d: 'Drag the body to rotate it from any angle, and click any real-shaped organ inside it to learn its function.',
     sl_body_credit_human3d: 'Real anatomical model - BodyParts3D/Anatomography data, Database Center for Life Science (DBCLS) Japan, CC BY-SA 2.1 Japan',
     sl_zoom_out: '🔍 Zoom out',
-    sl_body_credit_dog: "Reference anatomy image (dog - closest free reference available; no anatomy source exists specifically for this animal) - Wikimedia Commons, CC BY-SA 4.0",
+    sl_body_credit_dog: "Real dog anatomy image - Wikimedia Commons, CC BY-SA 4.0",
     sl_body_credit_cat: "Cat anatomy image (closest real relative available - same family as lions) - Wikimedia Commons, CC BY-SA 3.0",
     sl_body_credit_reptile: 'Snake anatomy image (general reptile reference) - Wikimedia Commons, CC BY-SA 3.0',
     sl_body_credit_fish: 'Bony fish anatomy image - Wikimedia Commons, CC BY-SA 3.0',
@@ -5606,6 +5611,11 @@ const I18N = {
     sl_animal_cat_fact1: 'Cats can rotate their ears 180 degrees.',
     sl_animal_cat_fact2: "Every cat has a unique nose print, like a human fingerprint.",
     sl_animal_cat_fact3: "Cats can't taste sweetness.",
+    sl_animal_dog_name: 'Dog',
+    sl_animal_dog_quick: 'Dogs are among the oldest domesticated animals to accompany humans.',
+    sl_animal_dog_fact1: "A dog's sense of smell is thousands of times stronger than a human's.",
+    sl_animal_dog_fact2: "A dog's nose print is unique, like a human fingerprint.",
+    sl_animal_dog_fact3: 'Dogs only sweat through their paw pads, and pant to cool their body down.',
     sl_animal_whale_name: 'Whale',
     sl_animal_whale_quick: 'The blue whale is the largest animal ever to have lived on Earth.',
     sl_animal_whale_fact1: "A blue whale's heart is roughly the size of a small car.",
@@ -14809,7 +14819,7 @@ document.getElementById('slProjectSelect').addEventListener('change', (e) => {
 // ---------- مستكشف الأحياء ----------
 // ============================================================================
 const SL_BIO_CATEGORIES = {
-  mammals: { nameKey: 'sl_cat_mammals', icon: '🦁', animals: ['lion', 'elephant', 'cat', 'whale'] },
+  mammals: { nameKey: 'sl_cat_mammals', icon: '🦁', animals: ['lion', 'elephant', 'cat', 'dog', 'whale'] },
   reptiles: { nameKey: 'sl_cat_reptiles', icon: '🐊', animals: ['crocodile', 'turtle', 'snake'] },
   amphibians: { nameKey: 'sl_cat_amphibians', icon: '🐸', animals: ['frog', 'salamander'] },
   birds: { nameKey: 'sl_cat_birds', icon: '🦅', animals: ['eagle', 'penguin', 'parrot'] },
@@ -14820,6 +14830,7 @@ const SL_ANIMALS = {
   lion: { nameKey: 'sl_animal_lion_name', icon: '🦁', quickFactKey: 'sl_animal_lion_quick', factsKeys: ['sl_animal_lion_fact1', 'sl_animal_lion_fact2', 'sl_animal_lion_fact3'] },
   elephant: { nameKey: 'sl_animal_elephant_name', icon: '🐘', quickFactKey: 'sl_animal_elephant_quick', factsKeys: ['sl_animal_elephant_fact1', 'sl_animal_elephant_fact2', 'sl_animal_elephant_fact3'] },
   cat: { nameKey: 'sl_animal_cat_name', icon: '🐱', quickFactKey: 'sl_animal_cat_quick', factsKeys: ['sl_animal_cat_fact1', 'sl_animal_cat_fact2', 'sl_animal_cat_fact3'] },
+  dog: { nameKey: 'sl_animal_dog_name', icon: '🐶', quickFactKey: 'sl_animal_dog_quick', factsKeys: ['sl_animal_dog_fact1', 'sl_animal_dog_fact2', 'sl_animal_dog_fact3'] },
   whale: { nameKey: 'sl_animal_whale_name', icon: '🐋', quickFactKey: 'sl_animal_whale_quick', factsKeys: ['sl_animal_whale_fact1', 'sl_animal_whale_fact2', 'sl_animal_whale_fact3'] },
   crocodile: { nameKey: 'sl_animal_crocodile_name', icon: '🐊', quickFactKey: 'sl_animal_crocodile_quick', factsKeys: ['sl_animal_crocodile_fact1', 'sl_animal_crocodile_fact2', 'sl_animal_crocodile_fact3'] },
   turtle: { nameKey: 'sl_animal_turtle_name', icon: '🐢', quickFactKey: 'sl_animal_turtle_quick', factsKeys: ['sl_animal_turtle_fact1', 'sl_animal_turtle_fact2', 'sl_animal_turtle_fact3'] },
@@ -15240,7 +15251,7 @@ const SL_BODY_IMAGES = {
 };
 // أي حيوان يستخدم أي صورة - أقرب تصنيف حقيقي متوفر له
 const SL_ANIMAL_BODY_KEY = {
-  lion: 'cat', cat: 'cat',
+  lion: 'cat', cat: 'cat', dog: 'dog',
   elephant: 'elephant', whale: 'whale',
   crocodile: 'crocodile', turtle: 'turtle', snake: 'reptile',
   frog: 'frog', salamander: 'frog',

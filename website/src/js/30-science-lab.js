@@ -593,7 +593,7 @@ document.getElementById('slProjectSelect').addEventListener('change', (e) => {
 // ---------- مستكشف الأحياء ----------
 // ============================================================================
 const SL_BIO_CATEGORIES = {
-  mammals: { nameKey: 'sl_cat_mammals', icon: '🦁', animals: ['lion', 'elephant', 'cat', 'whale'] },
+  mammals: { nameKey: 'sl_cat_mammals', icon: '🦁', animals: ['lion', 'elephant', 'cat', 'dog', 'whale'] },
   reptiles: { nameKey: 'sl_cat_reptiles', icon: '🐊', animals: ['crocodile', 'turtle', 'snake'] },
   amphibians: { nameKey: 'sl_cat_amphibians', icon: '🐸', animals: ['frog', 'salamander'] },
   birds: { nameKey: 'sl_cat_birds', icon: '🦅', animals: ['eagle', 'penguin', 'parrot'] },
@@ -604,6 +604,7 @@ const SL_ANIMALS = {
   lion: { nameKey: 'sl_animal_lion_name', icon: '🦁', quickFactKey: 'sl_animal_lion_quick', factsKeys: ['sl_animal_lion_fact1', 'sl_animal_lion_fact2', 'sl_animal_lion_fact3'] },
   elephant: { nameKey: 'sl_animal_elephant_name', icon: '🐘', quickFactKey: 'sl_animal_elephant_quick', factsKeys: ['sl_animal_elephant_fact1', 'sl_animal_elephant_fact2', 'sl_animal_elephant_fact3'] },
   cat: { nameKey: 'sl_animal_cat_name', icon: '🐱', quickFactKey: 'sl_animal_cat_quick', factsKeys: ['sl_animal_cat_fact1', 'sl_animal_cat_fact2', 'sl_animal_cat_fact3'] },
+  dog: { nameKey: 'sl_animal_dog_name', icon: '🐶', quickFactKey: 'sl_animal_dog_quick', factsKeys: ['sl_animal_dog_fact1', 'sl_animal_dog_fact2', 'sl_animal_dog_fact3'] },
   whale: { nameKey: 'sl_animal_whale_name', icon: '🐋', quickFactKey: 'sl_animal_whale_quick', factsKeys: ['sl_animal_whale_fact1', 'sl_animal_whale_fact2', 'sl_animal_whale_fact3'] },
   crocodile: { nameKey: 'sl_animal_crocodile_name', icon: '🐊', quickFactKey: 'sl_animal_crocodile_quick', factsKeys: ['sl_animal_crocodile_fact1', 'sl_animal_crocodile_fact2', 'sl_animal_crocodile_fact3'] },
   turtle: { nameKey: 'sl_animal_turtle_name', icon: '🐢', quickFactKey: 'sl_animal_turtle_quick', factsKeys: ['sl_animal_turtle_fact1', 'sl_animal_turtle_fact2', 'sl_animal_turtle_fact3'] },
@@ -1024,7 +1025,7 @@ const SL_BODY_IMAGES = {
 };
 // أي حيوان يستخدم أي صورة - أقرب تصنيف حقيقي متوفر له
 const SL_ANIMAL_BODY_KEY = {
-  lion: 'cat', cat: 'cat',
+  lion: 'cat', cat: 'cat', dog: 'dog',
   elephant: 'elephant', whale: 'whale',
   crocodile: 'crocodile', turtle: 'turtle', snake: 'reptile',
   frog: 'frog', salamander: 'frog',

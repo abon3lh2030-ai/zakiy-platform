@@ -593,7 +593,7 @@ document.getElementById('slProjectSelect').addEventListener('change', (e) => {
 // ---------- مستكشف الأحياء ----------
 // ============================================================================
 const SL_BIO_CATEGORIES = {
-  mammals: { nameKey: 'sl_cat_mammals', icon: '🦁', animals: ['lion', 'elephant', 'cat', 'whale', 'bat'] },
+  mammals: { nameKey: 'sl_cat_mammals', icon: '🦁', animals: ['lion', 'elephant', 'cat', 'whale'] },
   reptiles: { nameKey: 'sl_cat_reptiles', icon: '🐊', animals: ['crocodile', 'turtle', 'snake', 'chameleon'] },
   amphibians: { nameKey: 'sl_cat_amphibians', icon: '🐸', animals: ['frog', 'salamander'] },
   birds: { nameKey: 'sl_cat_birds', icon: '🦅', animals: ['eagle', 'penguin', 'parrot'] },
@@ -605,7 +605,6 @@ const SL_ANIMALS = {
   elephant: { nameKey: 'sl_animal_elephant_name', icon: '🐘', quickFactKey: 'sl_animal_elephant_quick', factsKeys: ['sl_animal_elephant_fact1', 'sl_animal_elephant_fact2', 'sl_animal_elephant_fact3'] },
   cat: { nameKey: 'sl_animal_cat_name', icon: '🐱', quickFactKey: 'sl_animal_cat_quick', factsKeys: ['sl_animal_cat_fact1', 'sl_animal_cat_fact2', 'sl_animal_cat_fact3'] },
   whale: { nameKey: 'sl_animal_whale_name', icon: '🐋', quickFactKey: 'sl_animal_whale_quick', factsKeys: ['sl_animal_whale_fact1', 'sl_animal_whale_fact2', 'sl_animal_whale_fact3'] },
-  bat: { nameKey: 'sl_animal_bat_name', icon: '🦇', quickFactKey: 'sl_animal_bat_quick', factsKeys: ['sl_animal_bat_fact1', 'sl_animal_bat_fact2', 'sl_animal_bat_fact3'] },
   crocodile: { nameKey: 'sl_animal_crocodile_name', icon: '🐊', quickFactKey: 'sl_animal_crocodile_quick', factsKeys: ['sl_animal_crocodile_fact1', 'sl_animal_crocodile_fact2', 'sl_animal_crocodile_fact3'] },
   turtle: { nameKey: 'sl_animal_turtle_name', icon: '🐢', quickFactKey: 'sl_animal_turtle_quick', factsKeys: ['sl_animal_turtle_fact1', 'sl_animal_turtle_fact2', 'sl_animal_turtle_fact3'] },
   snake: { nameKey: 'sl_animal_snake_name', icon: '🐍', quickFactKey: 'sl_animal_snake_quick', factsKeys: ['sl_animal_snake_fact1', 'sl_animal_snake_fact2', 'sl_animal_snake_fact3'] },
@@ -934,17 +933,72 @@ const SL_BODY_IMAGES = {
       { part: 'stomach', x: 44.3, y: 59.1 },
       { part: 'intestines', x: 38.5, y: 68.4 },
       { part: 'kidneys', x: 47.2, y: 48.1 },
-      { part: 'skin', x: 19.3, y: 27.7 },
+      { part: 'skin', x: 67.4, y: 27.7 }, // كانت 19.3% فتهبط برّه الجسم فوق السمكة تمامًا - صححتها
+    ],
+  },
+  whale: {
+    // حوت أوركا حقيقي - رخصة CC BY-SA 3.0 من ويكيميديا كومنز (تشريح
+    // كامل وواضح يغطي كل الأعضاء المتتبّعة، أفضل صورة لقيتها بالجلسة)
+    url: 'https://upload.wikimedia.org/wikipedia/commons/8/88/Orca_internal_anatomy.svg',
+    credit: 'sl_body_credit_whale',
+    hotspots: [
+      { part: 'brain', x: 14, y: 51.7 },
+      { part: 'heart', x: 29.6, y: 68.1 },
+      { part: 'lungs', x: 28.6, y: 46.6 },
+      { part: 'liver', x: 40.1, y: 64.7 },
+      { part: 'stomach', x: 41.3, y: 54.8 },
+      { part: 'kidneys', x: 50.7, y: 56 },
+      { part: 'intestines', x: 47.5, y: 65.5 },
+      { part: 'skin', x: 67.9, y: 30.2 },
+    ],
+  },
+  turtle: {
+    // سلحفاة حقيقية - رخصة GFDL/CC BY-SA من ويكيميديا كومنز (ما فيها
+    // كليتين ولا دماغ ظاهرين بهذا الرسم بالذات، عادي - باقي الأعضاء حقيقية)
+    url: 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Scheme_turtle_anatomy-numbers.svg',
+    credit: 'sl_body_credit_turtle',
+    hotspots: [
+      { part: 'lungs', x: 74, y: 37.9 },
+      { part: 'heart', x: 74.8, y: 40.4 },
+      { part: 'stomach', x: 71.8, y: 46.5 },
+      { part: 'liver', x: 78.5, y: 45.6 },
+      { part: 'intestines', x: 74, y: 55.1 },
+      { part: 'skin', x: 65.1, y: 37.9 },
+    ],
+  },
+  frog: {
+    // رسم تشريحي حقيقي لضفدع من كتاب علمي (1907) - ملكية عامة (انتهت
+    // حقوقه لقدمه). رسم لأنثى ضفدع مركّز على جهاز التكاثر، فما فيه
+    // معدة ولا أمعاء ولا جلد واضحين بس الأعضاء الأربعة الأساسية موجودة
+    url: 'https://upload.wikimedia.org/wikipedia/commons/0/0e/The_biology_of_the_frog_%28Page_75%2C_Fig._10%29_BHL7720765.jpg',
+    credit: 'sl_body_credit_frog',
+    hotspots: [
+      { part: 'heart', x: 44.9, y: 6.7 },
+      { part: 'lungs', x: 30.7, y: 8.5 },
+      { part: 'lungs', x: 63.8, y: 10.7 },
+      { part: 'liver', x: 54.4, y: 8.2 },
+      { part: 'kidneys', x: 28.4, y: 18.3 },
+    ],
+  },
+  bird: {
+    // الجهاز الهضمي لبطة برية حقيقية - رخصة CC BY-SA 3.0 من ويكيميديا
+    // كومنز. ما لقيت أي صورة تشريح حرة لقلب/رئتين طائر، فبس المعدة
+    // (القونصة) والأمعاء متوفرة - أفضل من صورة كلب لطائر بأي حال
+    url: 'https://upload.wikimedia.org/wikipedia/commons/1/1c/Gastrointestinal_track_of_the_Mallard-Uklad_pokarmowy_krzyzowki.svg',
+    credit: 'sl_body_credit_bird',
+    hotspots: [
+      { part: 'stomach', x: 48.5, y: 75 },
+      { part: 'intestines', x: 37.5, y: 65.4 },
     ],
   },
 };
 // أي حيوان يستخدم أي صورة - أقرب تصنيف حقيقي متوفر له
 const SL_ANIMAL_BODY_KEY = {
   lion: 'cat', cat: 'cat',
-  elephant: 'dog', whale: 'dog', bat: 'dog',
-  crocodile: 'reptile', turtle: 'reptile', snake: 'reptile', chameleon: 'reptile',
-  frog: 'dog', salamander: 'dog',
-  eagle: 'dog', penguin: 'dog', parrot: 'dog',
+  elephant: 'dog', whale: 'whale',
+  crocodile: 'reptile', turtle: 'turtle', snake: 'reptile', chameleon: 'reptile',
+  frog: 'frog', salamander: 'frog',
+  eagle: 'bird', penguin: 'bird', parrot: 'bird',
   shark: 'fish', goldfish: 'fish',
 };
 function slShowOrganInfo(partId) {

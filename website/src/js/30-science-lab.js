@@ -594,7 +594,7 @@ document.getElementById('slProjectSelect').addEventListener('change', (e) => {
 // ============================================================================
 const SL_BIO_CATEGORIES = {
   mammals: { nameKey: 'sl_cat_mammals', icon: '🦁', animals: ['lion', 'elephant', 'cat', 'whale'] },
-  reptiles: { nameKey: 'sl_cat_reptiles', icon: '🐊', animals: ['crocodile', 'turtle', 'snake', 'chameleon'] },
+  reptiles: { nameKey: 'sl_cat_reptiles', icon: '🐊', animals: ['crocodile', 'turtle', 'snake'] },
   amphibians: { nameKey: 'sl_cat_amphibians', icon: '🐸', animals: ['frog', 'salamander'] },
   birds: { nameKey: 'sl_cat_birds', icon: '🦅', animals: ['eagle', 'penguin', 'parrot'] },
   fish: { nameKey: 'sl_cat_fish', icon: '🦈', animals: ['shark', 'goldfish'] },
@@ -608,7 +608,6 @@ const SL_ANIMALS = {
   crocodile: { nameKey: 'sl_animal_crocodile_name', icon: '🐊', quickFactKey: 'sl_animal_crocodile_quick', factsKeys: ['sl_animal_crocodile_fact1', 'sl_animal_crocodile_fact2', 'sl_animal_crocodile_fact3'] },
   turtle: { nameKey: 'sl_animal_turtle_name', icon: '🐢', quickFactKey: 'sl_animal_turtle_quick', factsKeys: ['sl_animal_turtle_fact1', 'sl_animal_turtle_fact2', 'sl_animal_turtle_fact3'] },
   snake: { nameKey: 'sl_animal_snake_name', icon: '🐍', quickFactKey: 'sl_animal_snake_quick', factsKeys: ['sl_animal_snake_fact1', 'sl_animal_snake_fact2', 'sl_animal_snake_fact3'] },
-  chameleon: { nameKey: 'sl_animal_chameleon_name', icon: '🦎', quickFactKey: 'sl_animal_chameleon_quick', factsKeys: ['sl_animal_chameleon_fact1', 'sl_animal_chameleon_fact2', 'sl_animal_chameleon_fact3'] },
   frog: { nameKey: 'sl_animal_frog_name', icon: '🐸', quickFactKey: 'sl_animal_frog_quick', factsKeys: ['sl_animal_frog_fact1', 'sl_animal_frog_fact2', 'sl_animal_frog_fact3'] },
   salamander: { nameKey: 'sl_animal_salamander_name', icon: '🦎', quickFactKey: 'sl_animal_salamander_quick', factsKeys: ['sl_animal_salamander_fact1', 'sl_animal_salamander_fact2', 'sl_animal_salamander_fact3'] },
   eagle: { nameKey: 'sl_animal_eagle_name', icon: '🦅', quickFactKey: 'sl_animal_eagle_quick', factsKeys: ['sl_animal_eagle_fact1', 'sl_animal_eagle_fact2', 'sl_animal_eagle_fact3'] },
@@ -996,7 +995,7 @@ const SL_BODY_IMAGES = {
 const SL_ANIMAL_BODY_KEY = {
   lion: 'cat', cat: 'cat',
   elephant: 'dog', whale: 'whale',
-  crocodile: 'reptile', turtle: 'turtle', snake: 'reptile', chameleon: 'reptile',
+  crocodile: 'reptile', turtle: 'turtle', snake: 'reptile',
   frog: 'frog', salamander: 'frog',
   eagle: 'bird', penguin: 'bird', parrot: 'bird',
   shark: 'fish', goldfish: 'fish',

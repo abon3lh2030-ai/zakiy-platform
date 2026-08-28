@@ -93,7 +93,15 @@
     background: var(--paper-dim); border-radius: 10px; padding: 10px 14px; font-size: 13.5px; line-height: 1.7;
   }
   .sl-bio-part-desc { margin-top: 10px; background: var(--paper-dim); border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.8; }
-  /* ---------- رسم تشريحي حقيقي - صورة طبية فعلية عليها نقاط ضغط شفافة
+  /* ---------- جسم الإنسان: نموذج 3D حقيقي (بيانات تشريحية طبية فعلية،
+     مو أشكال هندسية) - جلد شفاف تدوّره بالسحب وأعضاء حقيقية الشكل
+     تضغط عليها من جواه مباشرة ---------- */
+  .sl-body-canvas-wrap {
+    position: relative; width: 100%; height: 420px; border-radius: 16px; margin-top: 12px;
+    overflow: hidden; background: radial-gradient(circle at 50% 20%, #1c2636, #0d1119 75%);
+  }
+  .sl-body-canvas-wrap canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+  /* ---------- رسم تشريحي الحيوانات - صورة طبية فعلية عليها نقاط ضغط شفافة
      بمواضع الأعضاء، تضغط على أي عضو "من جوا الجسم" فيكبّر (zoom) عليه
      ويطلع اسمه ووظيفته تحت ---------- */
   .sl-body-img-wrap {

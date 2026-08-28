@@ -538,7 +538,10 @@ function slSwitchTab(tab) {
   document.getElementById('slTabBiologyBtn').classList.toggle('active', tab === 'biology');
   document.getElementById('slChemPanel').classList.toggle('hidden', tab !== 'chemistry');
   document.getElementById('slBioPanel').classList.toggle('hidden', tab !== 'biology');
-  if (tab === 'chemistry') setTimeout(slOnSceneResize, 0);
+  if (tab === 'chemistry') {
+    setTimeout(slOnSceneResize, 0);
+    if (SL.bodySceneHandle) { SL.bodySceneHandle.stop(); SL.bodySceneHandle = null; }
+  }
 }
 document.getElementById('slTabChemistryBtn').addEventListener('click', () => slSwitchTab('chemistry'));
 document.getElementById('slTabBiologyBtn').addEventListener('click', () => slSwitchTab('biology'));
@@ -649,28 +652,184 @@ function slOpenBioCategory(catId) {
     card.addEventListener('click', () => slOpenBioDetail('animal', card.dataset.animal));
   });
 }
-// ---------- رسم تشريحي حقيقي - صورة طبية فعلية (مرخّصة استخدام حر) عليها
-// نقاط ضغط شفافة بمواضع الأعضاء، تضغط على أي عضو "من جوا الجسم مباشرة"
-// فيكبّر (zoom) عليه ويطلع اسمه ووظيفته تحت - بدل محاولة رسم/تشكيل تشريح
-// من الصفر بأشكال هندسية ما تعطي نتيجة واقعية ----------
+// ============================================================================
+// ---------- جسم الإنسان: نموذج 3D حقيقي (مو صورة، مو أشكال هندسية بدائية)
+// مبني من بيانات تشريحية طبية فعلية (BodyParts3D/Anatomography، مشروع
+// قاعدة بيانات علوم الحياة اليابانية DBCLS، رخصة CC BY-SA 2.1 اليابان).
+// الملفات مبسّطة الشبكة (quadric decimation) عشان تحمّل بسرعة بالمتصفح -
+// كل عضو شكله الحقيقي (مو كرة/كبسولة)، وكلها بنفس نظام إحداثيات الجسم
+// الأصلي فتترتب صح تلقائيًا بدون أي تخمين مواضع يدوي. تقدر تسحب الجسم
+// تدوّره، وتضغط على أي عضو حقيقي الشكل من جواه فيطلع اسمه ووظيفته تحت.
+// ============================================================================
+const SL_ORGANS_BASE_URL = '/assets/organs/';
+const SL_HUMAN_ORGAN_MODELS = [
+  { part: 'heart', file: 'heart.stl', color: 0xd81e3e },
+  { part: 'lungs', file: 'lungs.stl', color: 0xef6b6b },
+  { part: 'liver', file: 'liver.stl', color: 0x8a5a2b },
+  { part: 'stomach', file: 'stomach.stl', color: 0xe8a33f },
+  { part: 'kidneys', file: 'kidneys.stl', color: 0x7b3f8c },
+  { part: 'intestines', file: 'intestines.stl', color: 0xe0a868 },
+];
+// محلّل ملفات STL الثنائية - صيغة بسيطة وثابتة (لا تحتاج مكتبة خارجية):
+// 80 بايت هيدر + 4 بايت عدد المثلثات، وبعدها لكل مثلث 12 بايت اتجاه
+// عمودي + 3×12 بايت رؤوس + 2 بايت attribute
+function slParseSTL(buffer) {
+  const dv = new DataView(buffer);
+  const triCount = dv.getUint32(80, true);
+  const positions = new Float32Array(triCount * 9);
+  const normals = new Float32Array(triCount * 9);
+  let offset = 84;
+  for (let i = 0; i < triCount; i++) {
+    const nx = dv.getFloat32(offset, true), ny = dv.getFloat32(offset + 4, true), nz = dv.getFloat32(offset + 8, true);
+    offset += 12;
+    for (let v = 0; v < 3; v++) {
+      const vi = i * 9 + v * 3;
+      positions[vi] = dv.getFloat32(offset, true);
+      positions[vi + 1] = dv.getFloat32(offset + 4, true);
+      positions[vi + 2] = dv.getFloat32(offset + 8, true);
+      normals[vi] = nx; normals[vi + 1] = ny; normals[vi + 2] = nz;
+      offset += 12;
+    }
+    offset += 2;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+  return geo;
+}
+async function slFetchSTL(file) {
+  const res = await fetch(SL_ORGANS_BASE_URL + file);
+  if (!res.ok) throw new Error('fetch ' + file + ' failed');
+  return slParseSTL(await res.arrayBuffer());
+}
+async function slBuildHumanBodyScene3D(canvas) {
+  const wrap = canvas.parentElement;
+  const [skinGeo, ...organGeos] = await Promise.all([
+    slFetchSTL('skin.stl'),
+    ...SL_HUMAN_ORGAN_MODELS.map(o => slFetchSTL(o.file)),
+  ]);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(40, wrap.clientWidth / Math.max(1, wrap.clientHeight), 0.1, 100);
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+  const dl = new THREE.DirectionalLight(0xffffff, 0.9);
+  dl.position.set(3, 6, 4);
+  scene.add(dl);
+  const dl2 = new THREE.DirectionalLight(0xffffff, 0.4);
+  dl2.position.set(-3, -1, -4);
+  scene.add(dl2);
+
+  const bodyGroup = new THREE.Group();
+  const skinMesh = new THREE.Mesh(skinGeo, new THREE.MeshPhysicalMaterial({
+    color: 0xf0c9a0, transparent: true, opacity: 0.22, roughness: 0.4, side: THREE.DoubleSide, depthWrite: false,
+  }));
+  bodyGroup.add(skinMesh);
+
+  const hoverables = [];
+  SL_HUMAN_ORGAN_MODELS.forEach((def, i) => {
+    const mesh = new THREE.Mesh(organGeos[i], new THREE.MeshStandardMaterial({ color: def.color, roughness: 0.55, flatShading: true }));
+    mesh.userData.slBodyPart = def.part;
+    bodyGroup.add(mesh);
+    hoverables.push(mesh);
+  });
+
+  // الدماغ - الاستثناء الوحيد: بيانات المصدر تقسّمه لأكثر من 100 قطعة
+  // تلافيف صغيرة بلا نصف-كرة واحدة متاحة، فتركته شكل بيضاوي بسيط بمكان
+  // الرأس (كل الأعضاء الست الثانية + الجلد حقيقية 100%)
+  const brainMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(60, 20, 16),
+    new THREE.MeshStandardMaterial({ color: 0xc04f8c, roughness: 0.5 })
+  );
+  brainMesh.scale.set(1.1, 0.85, 1.3);
+  brainMesh.position.set(0, 1555, 95);
+  brainMesh.userData.slBodyPart = 'brain';
+  bodyGroup.add(brainMesh);
+  hoverables.push(brainMesh);
+
+  // البيانات الأصلية بالميليمتر (طول ~1650) - نصغّرها لمقياس مريح ونوسّطها
+  const box = new THREE.Box3().setFromObject(bodyGroup);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  // مهم: نحسب المقياس أول، وبعدين نطبّق الإزاحة "بعد" ضربها بنفس المقياس -
+  // لأن تحويل three.js يطبّق (Scale) على الإحداثيات المحلية قبل (Position)،
+  // فلو حطينا مركز الجسم كموضع بوحدات المليمتر الأصلية الضخمة بدون تصغيرها
+  // بيفضل الجسم "بعيد" آلاف الوحدات عن الكاميرا رغم إنه صغّرناه بصريًا
+  const scale = 3.4 / size.y;
+  bodyGroup.scale.setScalar(scale);
+  bodyGroup.position.copy(center).multiplyScalar(-scale);
+  scene.add(bodyGroup);
+
+  camera.position.set(0, 0, 6.2);
+  camera.lookAt(0, 0, 0);
+
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
+  let dragging = false, lastX = 0, lastY = 0;
+
+  function pick(e) {
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    return raycaster.intersectObjects(hoverables, false);
+  }
+  canvas.addEventListener('mousemove', (e) => {
+    if (dragging) {
+      bodyGroup.rotation.y += (e.clientX - lastX) * 0.012;
+      lastX = e.clientX; lastY = e.clientY;
+      return;
+    }
+    canvas.style.cursor = pick(e).length ? 'pointer' : 'grab';
+  });
+  canvas.addEventListener('mousedown', (e) => { dragging = true; lastX = e.clientX; lastY = e.clientY; canvas.style.cursor = 'grabbing'; });
+  window.addEventListener('mouseup', () => { dragging = false; });
+  canvas.addEventListener('click', (e) => {
+    if (Math.abs(e.clientX - lastX) > 3 || Math.abs(e.clientY - lastY) > 3) return; // كانت سحب دوران، مو ضغطة عضو
+    const hits = pick(e);
+    if (hits.length) slShowOrganInfo(hits[0].object.userData.slBodyPart);
+  });
+
+  let frameId;
+  (function animate() {
+    frameId = requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+  })();
+
+  function onResize() {
+    if (!wrap.clientWidth) return;
+    camera.aspect = wrap.clientWidth / wrap.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+  }
+  window.addEventListener('resize', onResize);
+  return { stop() { cancelAnimationFrame(frameId); window.removeEventListener('resize', onResize); } };
+}
+function slRenderHumanBodyScene3D(containerEl) {
+  containerEl.classList.remove('hidden');
+  containerEl.innerHTML = `
+    <p class="desc">${t('sl_body_hint_3d')}</p>
+    <div class="sl-body-canvas-wrap"><canvas id="slBodyCanvas3D"></canvas></div>
+    <p class="sl-body-credit">${t('sl_body_credit_human3d')}</p>
+    <div class="sl-bio-part-desc hidden" id="slPartDescBox"></div>
+  `;
+  if (SL.bodySceneHandle) { SL.bodySceneHandle.stop(); SL.bodySceneHandle = null; }
+  slBuildHumanBodyScene3D(containerEl.querySelector('#slBodyCanvas3D'))
+    .then(handle => { SL.bodySceneHandle = handle; })
+    .catch(() => {
+      const w = containerEl.querySelector('.sl-body-canvas-wrap');
+      if (w) w.innerHTML = `<p class="desc">${t('sl_body_img_error')}</p>`;
+    });
+}
+
+// ---------- رسم تشريحي للحيوانات - صورة طبية فعلية (مرخّصة استخدام حر)
+// عليها نقاط ضغط شفافة بمواضع الأعضاء، تضغط على أي عضو "من جوا الجسم
+// مباشرة" فيكبّر (zoom) عليه ويطلع اسمه ووظيفته تحت (ما فيه بيانات 3D
+// حرة الترخيص لحيوانات متاحة زي الإنسان، فهذا أفضل بديل واقعي) ----------
 const SL_BODY_IMAGES = {
-  human: {
-    // صورة تشريح بشري حقيقية - ملكية عامة (CC0) من ويكيميديا كومنز
-    url: 'https://upload.wikimedia.org/wikipedia/commons/e/e3/Internal_organs.svg',
-    credit: null,
-    hotspots: [
-      { part: 'brain', x: 48.6, y: 16.4 },
-      { part: 'heart', x: 44.3, y: 52.4 },
-      { part: 'lungs', x: 35.7, y: 44 },
-      { part: 'lungs', x: 50, y: 44 },
-      { part: 'liver', x: 42.1, y: 63.2 },
-      { part: 'stomach', x: 52.5, y: 68.4 },
-      { part: 'kidneys', x: 38.9, y: 72 },
-      { part: 'kidneys', x: 52.1, y: 70.4 },
-      { part: 'intestines', x: 40, y: 82.8 },
-      { part: 'skin', x: 29.3, y: 48 },
-    ],
-  },
   // صور تشريح حسب أقرب تصنيف حيوان حقيقي متوفر - بدل صورة واحدة عامة
   // لكل الحيوانات (كانت تطلع "كلب" حتى لو فاتح صفحة أسد) نستخدم أقرب قريب
   // حقيقي متوفر له صورة تشريح موثوقة: قطط فعلية للأسد والقطة (نفس الفصيلة)،
@@ -799,7 +958,7 @@ function slOpenBioDetail(kind, animalId) {
   const content = document.getElementById('slBioDetailContent');
   if (kind === 'human') {
     content.innerHTML = `<h3 class="sub-heading">${t('sl_cat_human')}</h3><div id="slHumanPartsWrap"></div>`;
-    slRenderBodyScene(content.querySelector('#slHumanPartsWrap'), 'human', SL_BODY_PARTS.human);
+    slRenderHumanBodyScene3D(content.querySelector('#slHumanPartsWrap'));
   } else {
     SL.bioItem = animalId;
     const a = SL_ANIMALS[animalId];
@@ -818,6 +977,7 @@ document.getElementById('slBioBackToCategoriesBtn').addEventListener('click', ()
   document.getElementById('slBioCategoryView').classList.remove('hidden');
 });
 document.getElementById('slBioBackToGridBtn').addEventListener('click', () => {
+  if (SL.bodySceneHandle) { SL.bodySceneHandle.stop(); SL.bodySceneHandle = null; }
   document.getElementById('slBioDetailView').classList.add('hidden');
   if (SL.bioCategory === 'human') document.getElementById('slBioCategoryView').classList.remove('hidden');
   else document.getElementById('slBioGridView').classList.remove('hidden');

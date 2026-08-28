@@ -101,11 +101,16 @@ const SL_SHELF_ITEMS = [
   {
     id: 'thermometer', nameKey: 'sl_item_thermometer_name', descKey: 'sl_item_thermometer_desc', usageKey: 'sl_item_thermometer_usage',
     build() {
+      // كان رفيع جدًا (نصف قطر 0.035) وأبيض بالكامل فيختفي تقريبًا على
+      // خلفية فاتحة - كبّرته وحطيت خط أحمر بداخله (زي ميزان حرارة حقيقي)
       const g = new THREE.Group();
-      const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.55, 10), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 }));
+      const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.55, 12), new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.75, roughness: 0.1 }));
       tube.position.y = 0.1;
       g.add(tube);
-      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), new THREE.MeshStandardMaterial({ color: 0xdd3333 }));
+      const mercury = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.5, 10), new THREE.MeshStandardMaterial({ color: 0xdd3333 }));
+      mercury.position.y = 0.12;
+      g.add(mercury);
+      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.075, 14, 14), new THREE.MeshStandardMaterial({ color: 0xdd3333 }));
       bulb.position.y = -0.2;
       g.add(bulb);
       return g;
@@ -146,14 +151,24 @@ const SL_SHELF_ITEMS = [
   {
     id: 'paper', nameKey: 'sl_item_paper_name', descKey: 'sl_item_paper_desc', usageKey: 'sl_item_paper_usage',
     build() {
+      // ورقة مايلة بزاوية واضحة تجاه الكاميرا (مو مسطّحة أفقيًا) عشان
+      // تبين وجهها مو حرفها بس - قطعة رفيعة أفقية كانت تختفي شبه كليًا
       const g = new THREE.Group();
       const sheet = new THREE.Mesh(
-        new THREE.BoxGeometry(0.34, 0.012, 0.44),
-        new THREE.MeshStandardMaterial({ color: 0xfbfbf6, roughness: 0.7 })
+        new THREE.BoxGeometry(0.4, 0.02, 0.52),
+        new THREE.MeshStandardMaterial({ color: 0xfbfbf6, roughness: 0.75 })
       );
-      sheet.position.y = 0.02;
-      sheet.rotation.z = 0.05;
+      sheet.position.y = 0.24;
+      sheet.rotation.x = -0.55;
+      sheet.rotation.z = 0.08;
       g.add(sheet);
+      const line1 = new THREE.Mesh(
+        new THREE.BoxGeometry(0.28, 0.022, 0.02),
+        new THREE.MeshStandardMaterial({ color: 0xc7c7c0, roughness: 0.8 })
+      );
+      line1.position.set(0, 0.29, 0.12);
+      line1.rotation.x = -0.55;
+      g.add(line1);
       return g;
     },
   },
@@ -284,22 +299,30 @@ function slInitThreeScene() {
 
   // صحن تفاعل ثابت قدام الرف مباشرة بمجال الرؤية - كل تفاعل يصير فعليًا
   // بمكان واحد واضح (يتلوّن، يفور، يطلع فقاعات) بدل ما يكون تأثير عائم
-  // بالهواء بلا مصدر - عشان التفاعل "يصير" فعلًا مو مجرد نص
+  // بالهواء بلا مصدر - عشان التفاعل "يصير" فعلًا مو مجرد نص. حلقة تركوازية
+  // بارزة حول الحافة عشان يبين حتى وهو فاضي (كان يذوب بلون الأرضية)
   const dishBase = new THREE.Mesh(
     new THREE.CylinderGeometry(0.55, 0.5, 0.12, 28),
     new THREE.MeshStandardMaterial({ color: 0xf5f5f2, metalness: 0.1, roughness: 0.3 })
   );
-  dishBase.position.set(0, -0.44, 2.1);
+  dishBase.position.set(0, -0.3, 2.1);
   SL.scene.add(dishBase);
+  const dishRim = new THREE.Mesh(
+    new THREE.TorusGeometry(0.55, 0.035, 12, 32),
+    new THREE.MeshStandardMaterial({ color: 0x2a9d8f, roughness: 0.4, metalness: 0.2 })
+  );
+  dishRim.rotation.x = Math.PI / 2;
+  dishRim.position.set(0, -0.24, 2.1);
+  SL.scene.add(dishRim);
   const dishLiquid = new THREE.Mesh(
     new THREE.CylinderGeometry(0.44, 0.4, 0.5, 28),
     new THREE.MeshStandardMaterial({ color: 0x66ccff, transparent: true, opacity: 0.88 })
   );
-  dishLiquid.position.set(0, -0.42, 2.1);
+  dishLiquid.position.set(0, -0.28, 2.1);
   dishLiquid.scale.y = 0.001;
   dishLiquid.visible = false;
   SL.scene.add(dishLiquid);
-  SL.reactionDish = { liquid: dishLiquid, baseY: -0.42, x: 0, z: 2.1 };
+  SL.reactionDish = { liquid: dishLiquid, baseY: -0.28, x: 0, z: 2.1 };
 
   SL.raycaster = new THREE.Raycaster();
   SL.mouse = new THREE.Vector2();
@@ -830,6 +853,23 @@ function slRenderHumanBodyScene3D(containerEl) {
 // مباشرة" فيكبّر (zoom) عليه ويطلع اسمه ووظيفته تحت (ما فيه بيانات 3D
 // حرة الترخيص لحيوانات متاحة زي الإنسان، فهذا أفضل بديل واقعي) ----------
 const SL_BODY_IMAGES = {
+  human: {
+    // صورة تشريح بشري حقيقية - ملكية عامة (CC0) من ويكيميديا كومنز
+    url: 'https://upload.wikimedia.org/wikipedia/commons/e/e3/Internal_organs.svg',
+    credit: null,
+    hotspots: [
+      { part: 'brain', x: 48.6, y: 16.4 },
+      { part: 'heart', x: 44.3, y: 52.4 },
+      { part: 'lungs', x: 35.7, y: 44 },
+      { part: 'lungs', x: 50, y: 44 },
+      { part: 'liver', x: 42.1, y: 63.2 },
+      { part: 'stomach', x: 52.5, y: 68.4 },
+      { part: 'kidneys', x: 38.9, y: 72 },
+      { part: 'kidneys', x: 52.1, y: 70.4 },
+      { part: 'intestines', x: 40, y: 82.8 },
+      { part: 'skin', x: 29.3, y: 48 },
+    ],
+  },
   // صور تشريح حسب أقرب تصنيف حيوان حقيقي متوفر - بدل صورة واحدة عامة
   // لكل الحيوانات (كانت تطلع "كلب" حتى لو فاتح صفحة أسد) نستخدم أقرب قريب
   // حقيقي متوفر له صورة تشريح موثوقة: قطط فعلية للأسد والقطة (نفس الفصيلة)،
@@ -872,12 +912,12 @@ const SL_BODY_IMAGES = {
     credit: 'sl_body_credit_reptile',
     hotspots: [
       { part: 'heart', x: 50, y: 15 },
-      { part: 'lungs', x: 33.3, y: 26.7 },
+      { part: 'lungs', x: 41.7, y: 15 },
       { part: 'liver', x: 25, y: 50 },
-      { part: 'stomach', x: 54.2, y: 40 },
+      { part: 'stomach', x: 50, y: 35.8 },
       { part: 'intestines', x: 82.8, y: 33.7 },
-      { part: 'kidneys', x: 73.3, y: 76.7 },
-      { part: 'skin', x: 83.3, y: 10 },
+      { part: 'kidneys', x: 75, y: 81.7 },
+      { part: 'skin', x: 10, y: 78.3 },
     ],
   },
   fish: {
@@ -886,12 +926,12 @@ const SL_BODY_IMAGES = {
     url: 'https://upload.wikimedia.org/wikipedia/commons/b/b0/Fish-anatomy.svg',
     credit: 'sl_body_credit_fish',
     hotspots: [
-      { part: 'heart', x: 45.8, y: 60.1 },
-      { part: 'liver', x: 57.8, y: 80.4 },
-      { part: 'stomach', x: 76.1, y: 91.5 },
-      { part: 'intestines', x: 63.1, y: 69.3 },
-      { part: 'kidneys', x: 92.5, y: 49.9 },
-      { part: 'skin', x: 28.9, y: 37 },
+      { part: 'heart', x: 28.9, y: 58.8 },
+      { part: 'liver', x: 40, y: 55.5 },
+      { part: 'stomach', x: 44.3, y: 59.1 },
+      { part: 'intestines', x: 38.5, y: 68.4 },
+      { part: 'kidneys', x: 47.2, y: 48.1 },
+      { part: 'skin', x: 19.3, y: 27.7 },
     ],
   },
 };
@@ -958,7 +998,7 @@ function slOpenBioDetail(kind, animalId) {
   const content = document.getElementById('slBioDetailContent');
   if (kind === 'human') {
     content.innerHTML = `<h3 class="sub-heading">${t('sl_cat_human')}</h3><div id="slHumanPartsWrap"></div>`;
-    slRenderHumanBodyScene3D(content.querySelector('#slHumanPartsWrap'));
+    slRenderBodyScene(content.querySelector('#slHumanPartsWrap'), 'human', SL_BODY_PARTS.human);
   } else {
     SL.bioItem = animalId;
     const a = SL_ANIMALS[animalId];

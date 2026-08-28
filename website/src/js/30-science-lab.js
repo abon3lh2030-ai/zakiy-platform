@@ -279,14 +279,17 @@ function slInitThreeScene() {
   wall.position.set(0, 4.5, -2);
   SL.scene.add(wall);
 
-  const shelf = new THREE.Mesh(new THREE.BoxGeometry(9.2, 0.18, 1.4), new THREE.MeshStandardMaterial({ color: 0x8a5a2b }));
-  shelf.position.set(-1.4, 1.5, 0);
+  // عرض الرف لازم يتغطى كل القطع (11 قطعة، من -5.4 لين +5.1) - كان
+  // مضبوط لعدد أقل من القطع فصارت آخر قطعتين (الماء والورق) عايمتين
+  // بره الرف تمامًا بدون أي شي تحتهم
+  const shelf = new THREE.Mesh(new THREE.BoxGeometry(11.7, 0.18, 1.4), new THREE.MeshStandardMaterial({ color: 0x8a5a2b }));
+  shelf.position.set(-0.15, 1.5, 0);
   SL.scene.add(shelf);
   const shelfSupportL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.5, 1.4), new THREE.MeshStandardMaterial({ color: 0x6e4620 }));
-  shelfSupportL.position.set(-5.9, 0.75, 0);
+  shelfSupportL.position.set(-5.95, 0.75, 0);
   SL.scene.add(shelfSupportL);
   const shelfSupportR = new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.5, 1.4), new THREE.MeshStandardMaterial({ color: 0x6e4620 }));
-  shelfSupportR.position.set(3.1, 0.75, 0);
+  shelfSupportR.position.set(5.65, 0.75, 0);
   SL.scene.add(shelfSupportR);
 
   SL_SHELF_ITEMS.forEach((item, i) => {

@@ -31,7 +31,8 @@
   .sl-tooltip-name { font-weight: 700; font-size: 13px; margin-bottom: 3px; }
   .sl-tooltip-desc { font-size: 12px; color: var(--ink-soft); margin-bottom: 3px; line-height: 1.5; }
   .sl-tooltip-usage { font-size: 11.5px; color: var(--teal); line-height: 1.5; }
-  .sl-scene-hint { position: absolute; bottom: 8px; right: 8px; left: 8px; text-align: center; font-size: 11.5px; background: rgba(255,255,255,.75); border-radius: 8px; padding: 4px 8px; margin: 0; }
+  /* فوق مو تحت - تحت كان يغطي على صحن التفاعل نفسه ويصير مو باين */
+  .sl-scene-hint { position: absolute; top: 8px; right: 8px; left: 8px; text-align: center; font-size: 11.5px; background: rgba(255,255,255,.75); border-radius: 8px; padding: 4px 8px; margin: 0; }
   :root:not([data-theme="light"]) .sl-scene-hint { background: rgba(20,24,31,.75); }
 
   /* منبثقة صغيرة بس (بلا مغسلة ولا حنفية ولا أي شكل زايد) تختار منها

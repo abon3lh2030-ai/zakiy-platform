@@ -1557,7 +1557,8 @@
   .sl-tooltip-name { font-weight: 700; font-size: 13px; margin-bottom: 3px; }
   .sl-tooltip-desc { font-size: 12px; color: var(--ink-soft); margin-bottom: 3px; line-height: 1.5; }
   .sl-tooltip-usage { font-size: 11.5px; color: var(--teal); line-height: 1.5; }
-  .sl-scene-hint { position: absolute; bottom: 8px; right: 8px; left: 8px; text-align: center; font-size: 11.5px; background: rgba(255,255,255,.75); border-radius: 8px; padding: 4px 8px; margin: 0; }
+  /* فوق مو تحت - تحت كان يغطي على صحن التفاعل نفسه ويصير مو باين */
+  .sl-scene-hint { position: absolute; top: 8px; right: 8px; left: 8px; text-align: center; font-size: 11.5px; background: rgba(255,255,255,.75); border-radius: 8px; padding: 4px 8px; margin: 0; }
   :root:not([data-theme="light"]) .sl-scene-hint { background: rgba(20,24,31,.75); }
 
   /* منبثقة صغيرة بس (بلا مغسلة ولا حنفية ولا أي شكل زايد) تختار منها
@@ -14506,14 +14507,17 @@ function slInitThreeScene() {
   wall.position.set(0, 4.5, -2);
   SL.scene.add(wall);
 
-  const shelf = new THREE.Mesh(new THREE.BoxGeometry(9.2, 0.18, 1.4), new THREE.MeshStandardMaterial({ color: 0x8a5a2b }));
-  shelf.position.set(-1.4, 1.5, 0);
+  // عرض الرف لازم يتغطى كل القطع (11 قطعة، من -5.4 لين +5.1) - كان
+  // مضبوط لعدد أقل من القطع فصارت آخر قطعتين (الماء والورق) عايمتين
+  // بره الرف تمامًا بدون أي شي تحتهم
+  const shelf = new THREE.Mesh(new THREE.BoxGeometry(11.7, 0.18, 1.4), new THREE.MeshStandardMaterial({ color: 0x8a5a2b }));
+  shelf.position.set(-0.15, 1.5, 0);
   SL.scene.add(shelf);
   const shelfSupportL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.5, 1.4), new THREE.MeshStandardMaterial({ color: 0x6e4620 }));
-  shelfSupportL.position.set(-5.9, 0.75, 0);
+  shelfSupportL.position.set(-5.95, 0.75, 0);
   SL.scene.add(shelfSupportL);
   const shelfSupportR = new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.5, 1.4), new THREE.MeshStandardMaterial({ color: 0x6e4620 }));
-  shelfSupportR.position.set(3.1, 0.75, 0);
+  shelfSupportR.position.set(5.65, 0.75, 0);
   SL.scene.add(shelfSupportR);
 
   SL_SHELF_ITEMS.forEach((item, i) => {

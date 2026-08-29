@@ -156,9 +156,14 @@ function onAuthSuccess(session) {
         return;
       }
       if (currentUserRole) {
-        navHistory = [];
-        routeByRole(currentUserRole);
-        updateGlobalBackButton();
+        // السايد بار يظهر فورًا من الـ HTML الأساسي (قبل ما نعرف الدور أصلًا)،
+        // و/api/me ممكن ياخذ وقت (سيرفر Render نايم/بارد) - لو المستخدم ضغط
+        // أي زر بالسايد بار بهالفترة (كل زر يناديه pushNavSnapshot أول)، ما
+        // نبي نلغي تنقّله بتوجيه تلقائي متأخر للوحته الرئيسية فوق اختياره
+        if (navHistory.length === 0) {
+          routeByRole(currentUserRole);
+          updateGlobalBackButton();
+        }
       } else {
         proceedToApp();
         // حساب قديم بدون اسم محفوظ - نطلبه مرة وحدة (يقدر يلغيها ويبقى بالإيميل).

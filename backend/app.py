@@ -12,6 +12,7 @@ from collections import Counter
 from datetime import datetime, timedelta, timezone
 import csv
 import io
+import json
 import os
 import random
 import re
@@ -748,13 +749,19 @@ def delete_study_plan(plan_id):
 # الأبعاد بأسلوب تخطيطي، متاح للجميع مثل معمل الروبوتات) - مساعد ذكي مدمج
 # مستمر أثناء الجلسة + تلخيص نهائي لسجل النشاط ----------
 # ============================================================================
-SCIENCE_LAB_SYSTEM_PROMPT = """أنت مساعد "ذكيّ" جوّا مختبر العلوم الافتراضي بمنصة ذكيّ التعليمية. الطالب
-يستكشف تفاعلات كيميائية وفيزيائية ثلاثية الأبعاد، وأيضًا قسم أحياء (حيوانات
-وجسم الإنسان) بمخططات تفاعلية. جاوب بوضوح وبساطة تناسب طالب مدرسة، بالعربية،
-بدون رموز Markdown. لو الطالب يجاوب على سؤال عن عضو أو تصنيف حيوان، قيّم
-إجابته بصراحة: ابدأ ردك بـ"✅ صحيح" لو صحيحة أو "❌ للأسف مو صحيحة" لو غلط، ثم
-اشرح باختصار. لو مجرد سؤال عادي (مو إجابة على اختبار)، جاوب طبيعي بدون هذي
-البادئة."""
+SCIENCE_LAB_SYSTEM_PROMPT = """أنت مساعد مختبر تعليمي ذكي في منصة ذكيّ. لديك سياق كامل
+عن تجربة الطالب الحالية: المجال، الفرضية وتفسيرها، المتغيرات، المحاولات، سجل
+الخطوات، الأخطاء، النتائج والاستنتاج. استخدم هذا السياق فعلًا في ردك.
+
+اتبع أسلوب التوجيه السقراطي: لا تعط الإجابة النهائية ولا خطوات الحل كاملة. ابدأ
+بملاحظة قصيرة مرتبطة ببيانات الطالب نفسها، ثم اطرح سؤالًا واحدًا أو سؤالين
+يساعدانه على اكتشاف العلاقة أو الخطأ بنفسه. عند وجود خطأ منهجي، وضح أثره على
+عدالة المقارنة بدون حل التجربة عنه. ميّز بين سرعة التفاعل وكمية الناتج، واكشف
+المفهوم الخاطئ بصيغة احتمالية لا كحكم قطعي. اجعل الرد قصيرًا وواضحًا ومناسبًا
+لطالب مدرسة، وبلا Markdown. لا تخترع قياسات غير موجودة في السياق. التزم
+بالمجال الموجود في lab_context: إذا كان المجال أحياء وفكرة الطالب عن العقل أو
+الجسم فلا تخلطها بالكيمياء أو الإنزيمات. لا تستخدم سؤالًا افتراضيًا أو محفوظًا
+عند غياب السياق؛ اطلب إعادة المحاولة بدلًا من ذلك."""
 
 
 @app.route("/api/science-lab/chat", methods=["POST"])
@@ -764,15 +771,18 @@ def science_lab_chat():
     message = (data.get("message") or "").strip()
     interaction_id = data.get("interaction_id")
     context = (data.get("context") or "").strip()
+    lab_context = data.get("lab_context") or {}
     lang = data.get("lang", "ar")
     if not message:
         return jsonify({"error": "لازم ترسل رسالة"}), 400
     try:
-        if interaction_id:
-            input_text = f"{message}{lang_directive(lang)}"
-        else:
-            context_line = f"الطالب يستكشف الآن: {context}\n\n" if context else ""
-            input_text = f"{SCIENCE_LAB_SYSTEM_PROMPT}\n\n{context_line}{lang_directive(lang)}\n\nسؤال/رسالة الطالب: {message}"
+        serialized_context = json.dumps(lab_context, ensure_ascii=False, default=str)[:12000]
+        context_line = f"وصف التجربة: {context}\n" if context else ""
+        turn_text = (
+            f"{context_line}سياق المختبر الحالي بصيغة JSON:\n{serialized_context}\n\n"
+            f"رسالة الطالب أو حدث التجربة: {message}{lang_directive(lang)}"
+        )
+        input_text = turn_text if interaction_id else f"{SCIENCE_LAB_SYSTEM_PROMPT}\n\n{turn_text}"
         kwargs = {
             "model": GEMINI_MODEL, "input": input_text,
             "generation_config": {"max_output_tokens": 700, "thinking_level": "minimal"},
@@ -780,7 +790,28 @@ def science_lab_chat():
         if interaction_id:
             kwargs["previous_interaction_id"] = interaction_id
         interaction = create_interaction(**kwargs)
-        return jsonify({"reply": interaction.output_text, "interaction_id": interaction.id}), 200
+        reply = (interaction.output_text or "").strip()
+        if not reply:
+            return jsonify({"error": "لم يرجع الذكاء الاصطناعي تحليلًا صالحًا؛ أعد المحاولة"}), 502
+        required_prefix = str(lab_context.get("required_prefix") or "").strip()
+        if required_prefix and not reply.startswith(required_prefix):
+            return jsonify({"error": "لم يؤكد الذكاء الاصطناعي اكتمال المعاملة الحالية؛ لن ننتقل للمرحلة التالية"}), 422
+        if lab_context.get("phase") == "experiment_setup":
+            idea = str(lab_context.get("student_idea") or "").strip()
+            proof_line = f"تم تحليل الفكرة: {idea}"
+            if not idea or not reply.startswith(proof_line):
+                return jsonify({"error": "لم يؤكد الذكاء الاصطناعي قراءة فكرة الطالب؛ لم نستخدم أي سؤال بديل"}), 422
+            if lab_context.get("subject") == "biology" and re.search(r"عقل|دماغ|إنسان|جسم|عصب", idea, re.I):
+                if re.search(r"كاتالاز|فوق أكسيد|بيروكسيد|إنزيم", reply, re.I):
+                    return jsonify({"error": "رد الذكاء الاصطناعي غير مرتبط بفكرة العقل أو جسم الإنسان؛ أعد المحاولة"}), 422
+        if lab_context.get("phase") == "personalized_quiz":
+            idea = str(lab_context.get("student_idea") or "").strip()
+            proof_line = f"تم إنشاء التقييم للفكرة: {idea}"
+            if not idea or not reply.startswith(proof_line):
+                return jsonify({"error": "لم يُنشئ الذكاء الاصطناعي تقييمًا من أداء الطالب؛ لم نستخدم سؤالًا بديلًا"}), 422
+        if lab_context.get("phase") == "class_summary" and not reply.startswith("تم تحليل بيانات الفصل:"):
+            return jsonify({"error": "لم يؤكد الذكاء الاصطناعي تحليل بيانات الفصل؛ لم نستخدم ملخصًا بديلًا"}), 422
+        return jsonify({"reply": reply, "interaction_id": interaction.id}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -811,6 +842,100 @@ def science_lab_summary():
             generation_config={"max_output_tokens": 900, "thinking_level": "minimal"},
         )
         return jsonify({"summary": interaction.output_text}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/science-lab/sessions", methods=["POST"])
+@require_auth
+def save_science_lab_session():
+    """يحفظ سجل التفكير الكامل ويربط المفاهيم الخاطئة بملف الطالب العام."""
+    data = request.get_json(silent=True) or {}
+    hypothesis = str(data.get("hypothesis") or "").strip()
+    attempts = data.get("attempts") if isinstance(data.get("attempts"), list) else []
+    if not hypothesis or not attempts:
+        return jsonify({"error": "الفرضية ومحاولة واحدة على الأقل مطلوبة"}), 400
+
+    misconceptions = [str(x)[:240] for x in (data.get("misconceptions") or []) if str(x).strip()][:20]
+    row = {
+        "user_id": request.user_id,
+        "experiment_key": str(data.get("experiment_key") or "reaction_rate_showcase")[:80],
+        "mode": str(data.get("mode") or "guided")[:30],
+        "hypothesis": hypothesis[:2000],
+        "hypothesis_reason": str(data.get("reason") or "")[:1500],
+        "attempts": attempts[:50],
+        "actions": (data.get("actions") or [])[:500],
+        "errors": (data.get("errors") or [])[:100],
+        "conclusion": str(data.get("conclusion") or "")[:3000],
+        "misconceptions": misconceptions,
+        "score": max(0, min(100, int(data.get("score") or 0))),
+        "understanding_change": max(-100, min(100, int(data.get("understanding_change") or 0))),
+        "completed_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    try:
+        saved = supabase_admin.table("science_lab_sessions").insert(row).execute().data[0]
+        for concept in misconceptions:
+            supabase_admin.table("student_learning_insights").upsert({
+                "user_id": request.user_id,
+                "concept": concept,
+                "source_key": "science_lab:reaction_rate_showcase",
+                "status": "needs_review",
+                "evidence": {"session_id": saved["id"], "conclusion": row["conclusion"][:600]},
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }, on_conflict="user_id,concept,source_key").execute()
+        return jsonify({"session": saved, "profile_insights_saved": len(misconceptions)}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/science-lab/analytics", methods=["GET"])
+@require_role("teacher", "school_admin", "school_administration")
+def science_lab_analytics():
+    """تحليلات حقيقية لفصول المعلم/المدرسة مع أكثر الأخطاء والمفاهيم شيوعًا."""
+    profile = request.profile
+    try:
+        students_query = supabase_admin.table("profiles").select("user_id, username, full_name, class_id").eq("role", "student")
+        if profile["role"] in ("school_admin", "school_administration"):
+            students_query = students_query.eq("school_id", profile["school_id"])
+        else:
+            class_rows = supabase_admin.table("class_teachers").select("class_id").eq("teacher_id", request.user_id).execute().data
+            class_ids = [r["class_id"] for r in class_rows]
+            if not class_ids:
+                return jsonify({"students_count": 0, "completed_count": 0, "completion_rate": 0, "average_score": 0, "average_understanding_change": 0, "common_errors": [], "common_misconceptions": [], "students": []}), 200
+            students_query = students_query.in_("class_id", class_ids)
+        students = students_query.execute().data
+        student_map = {s["user_id"]: s for s in students}
+        ids = list(student_map)
+        sessions = [] if not ids else supabase_admin.table("science_lab_sessions").select("*").in_("user_id", ids).execute().data
+        latest = {}
+        for session in sorted(sessions, key=lambda x: x.get("created_at") or "", reverse=True):
+            latest.setdefault(session["user_id"], session)
+        errors = Counter(str(e.get("type") or "خطأ غير مصنف") for s in latest.values() for e in (s.get("errors") or []) if isinstance(e, dict))
+        misconceptions = Counter(str(m) for s in latest.values() for m in (s.get("misconceptions") or []))
+        rows = []
+        for uid, session in latest.items():
+            student = student_map[uid]
+            rows.append({
+                "user_id": uid,
+                "name": student.get("full_name") or student.get("username") or "طالب",
+                "attempts_count": len(session.get("attempts") or []),
+                "score": session.get("score") or 0,
+                "understanding_change": session.get("understanding_change") or 0,
+                "hypothesis": session.get("hypothesis"), "conclusion": session.get("conclusion"),
+                "attempts": session.get("attempts") or [], "errors": session.get("errors") or [],
+                "actions": session.get("actions") or [], "misconceptions": session.get("misconceptions") or [],
+            })
+        completed = len(rows)
+        return jsonify({
+            "students_count": len(students), "completed_count": completed,
+            "completion_rate": round(completed / len(students) * 100) if students else 0,
+            "average_score": round(sum(r["score"] for r in rows) / completed) if completed else 0,
+            "average_understanding_change": round(sum(r["understanding_change"] for r in rows) / completed) if completed else 0,
+            "common_errors": [{"name": k, "count": v} for k, v in errors.most_common(5)],
+            "common_misconceptions": [{"name": k, "count": v} for k, v in misconceptions.most_common(5)],
+            "students": rows,
+        }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

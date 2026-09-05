@@ -1527,7 +1527,8 @@
   /* ============================================================
      مختبر العلوم - محاكاة كيميائية/فيزيائية 3D + مستكشف أحياء
      ============================================================ */
-  .sl-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 14px 0; }
+  .sl-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 14px 0; padding:10px; background:var(--surface); border:1px solid var(--line); border-radius:14px; box-shadow:0 5px 18px rgba(27,42,74,.05); }
+  #slSmartLearningBtn { background:linear-gradient(135deg,#2856d9,#1bb7a5); border:0; color:#fff; box-shadow:0 5px 15px rgba(40,86,217,.2); }
   .sl-tab-toggle { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
   .sl-tab-btn {
     background: var(--surface); color: var(--ink-soft); border: none; padding: 10px 16px;
@@ -1540,15 +1541,45 @@
 
   .sl-main-panel {
     background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
-    padding: 14px; height: calc(100vh - 210px); min-height: 640px; overflow-y: auto;
+    padding: 16px; height: calc(100vh - 210px); min-height: 640px; overflow-y: auto;
+    box-shadow:0 8px 28px rgba(27,42,74,.07);
   }
 
   /* ---------- مشهد الكيمياء ثلاثي الأبعاد ---------- */
   .sl-scene-wrap {
     position: relative; width: 100%; height: 60%; min-height: 380px; border-radius: var(--radius);
-    overflow: hidden; background: linear-gradient(180deg, #cfe8f0, #e8f4ee);
+    overflow: hidden; background: radial-gradient(circle at 50% 12%,#e9f8fb,#cfe8f0 52%,#d9eee7);
+    border:1px solid rgba(72,135,157,.18); box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 8px 24px rgba(27,73,91,.1);
   }
   .sl-scene-wrap canvas { display: block; width: 100%; height: 100%; cursor: pointer; }
+  .sl-lab-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+  .sl-lab-heading h3 { margin:0; font-family:'Almarai',sans-serif; }
+  .sl-lab-badges { display:flex; gap:7px; flex-wrap:wrap; }
+  .sl-lab-badges span { background:var(--paper-dim); border:1px solid var(--line); border-radius:999px; padding:5px 9px; font-size:12px; }
+  .sl-scene-status { position:absolute; left:14px; bottom:14px; z-index:4; display:flex; gap:8px; direction:rtl; }
+  .sl-scene-meter { min-width:92px; padding:8px 10px; border:1px solid rgba(255,255,255,.15); border-radius:11px; background:rgba(8,20,38,.78); color:#fff; backdrop-filter:blur(8px); text-align:center; }
+  .sl-scene-meter strong { display:block; font-size:18px; font-variant-numeric:tabular-nums; }
+  .sl-scene-meter small { color:#bcd0e5; font-size:11px; }
+  .sl-inventory-panel { margin-top:12px; padding:14px; border:1px solid var(--line); border-radius:14px; background:var(--paper-dim); }
+  .sl-inventory-head { display:flex; justify-content:space-between; gap:10px; align-items:center; margin-bottom:10px; }
+  .sl-inventory-head strong { font-size:14px; }
+  .sl-inventory-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(105px,1fr)); gap:8px; }
+  .sl-inventory-item { display:flex; align-items:center; gap:8px; min-width:0; border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:11px; padding:9px; font-family:inherit; cursor:grab; text-align:right; transition:transform .15s,border-color .15s,box-shadow .15s; }
+  .sl-inventory-item:hover { transform:translateY(-2px); border-color:var(--teal); box-shadow:0 5px 14px rgba(20,55,72,.1); }
+  .sl-inventory-item:active { cursor:grabbing; transform:scale(.98); }
+  .sl-inventory-icon { display:grid; place-items:center; flex:0 0 34px; width:34px; height:34px; border-radius:9px; background:linear-gradient(145deg,#e5f8f5,#dceaff); font-size:19px; }
+  .sl-inventory-item span:last-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
+  .sl-setup-panel { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
+  .sl-setup-control { border:1px solid var(--line); border-radius:12px; padding:11px 13px; background:var(--surface); }
+  .sl-setup-control label { display:flex; justify-content:space-between; font-size:13px; font-weight:600; margin-bottom:7px; }
+  .sl-setup-control output { color:var(--teal); font-weight:700; }
+  .sl-setup-control input { width:100%; accent-color:var(--teal); }
+  .sl-tray.drop-ready { outline:2px dashed var(--teal); outline-offset:4px; background:var(--teal-dim); border-radius:10px; }
+  .sl-result-metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; }
+  .sl-result-metric { background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:9px; text-align:center; }
+  .sl-result-metric strong { display:block; font-size:18px; color:var(--teal); }
+  .sl-result-metric small { color:var(--ink-soft); font-size:11px; }
+  @media(max-width:700px){.sl-lab-heading{align-items:flex-start;flex-direction:column}.sl-setup-panel{grid-template-columns:1fr}.sl-inventory-grid{grid-template-columns:repeat(2,1fr)}.sl-scene-status{right:10px;left:10px}.sl-scene-meter{flex:1;min-width:0}}
   .sl-tooltip {
     position: absolute; max-width: 220px; background: var(--surface); border: 1px solid var(--line);
     border-radius: 10px; padding: 10px 12px; box-shadow: 0 6px 16px rgba(0,0,0,.2);
@@ -1680,6 +1711,204 @@
   .sl-summary-box {
     background: var(--surface); border-radius: var(--radius); padding: 24px; width: min(520px, 90vw);
     max-height: 80vh; overflow-y: auto; position: relative; line-height: 1.9; font-size: 14px;
+  }
+
+  /* ============================================================
+     مختبر ذكيّ التجريبي — Showcase تعليمي كامل
+     ============================================================ */
+  #step-science-lab { max-width: 1400px; padding: 22px; }
+  #step-science-lab:not(.zlab-classic-active) > .sl-toolbar,
+  #step-science-lab:not(.zlab-classic-active) > .sl-workspace,
+  #step-science-lab:not(.zlab-classic-active) > #slError,
+  #step-science-lab:not(.zlab-classic-active) > .step-label,
+  #step-science-lab:not(.zlab-classic-active) > h2,
+  #step-science-lab:not(.zlab-classic-active) > .desc { display: none !important; }
+  .zlab-shell { --zlab-blue:#2856d9; --zlab-cyan:#1bb7a5; --zlab-orange:#ff9f43; --zlab-deep:#10214d; display:none; }
+  #step-science-lab.zlab-smart-active > .zlab-shell { display:block; }
+  .zlab-choice { --zlab-blue:#2856d9; --zlab-cyan:#1bb7a5; --zlab-deep:#10214d; display:none; min-height:560px; align-items:center; padding:22px; }
+  #step-science-lab.zlab-mode-choice > .zlab-choice { display:grid; }
+  .zlab-choice-inner { width:min(940px,100%); margin:auto; }
+  .zlab-choice-head { text-align:center; margin-bottom:24px; }
+  .zlab-choice-head h2 { font:800 clamp(25px,4vw,36px)/1.4 'Almarai',sans-serif; margin-bottom:7px; }
+  .zlab-choice-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .zlab-subject-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  .zlab-subject-card { min-height:190px; }
+  .zlab-subject-card strong { display:block; color:var(--teal); font-size:11px; margin-top:13px; }
+  .zlab-setup-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .zlab-equipment { display:flex; flex-wrap:wrap; gap:7px; margin-top:15px; }
+  .zlab-equipment span { background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.2); border-radius:999px; padding:5px 9px; font-size:11px; }
+  .zlab-choice-card { text-align:right; background:var(--surface); color:var(--ink); border:1px solid var(--line); border-radius:20px; padding:22px; cursor:pointer; font-family:inherit; transition:transform .18s,border-color .18s,box-shadow .18s; }
+  .zlab-choice-card:hover { transform:translateY(-4px); border-color:var(--zlab-blue,#2856d9); box-shadow:0 14px 35px rgba(27,42,74,.1); }
+  .zlab-choice-card.smart { background:linear-gradient(145deg,#10214d,#244cae); color:#fff; border:0; }
+  .zlab-choice-icon { display:grid; place-items:center; width:48px; height:48px; border-radius:15px; background:var(--paper-dim); font-size:24px; margin-bottom:16px; }
+  .zlab-choice-card.smart .zlab-choice-icon { background:rgba(255,255,255,.13); }
+  .zlab-choice-card h3 { font:700 20px 'Almarai',sans-serif; margin-bottom:8px; }
+  .zlab-choice-card p { color:var(--ink-soft); font-size:14px; min-height:50px; }
+  .zlab-choice-card.smart p { color:#dbe7ff; }
+  .zlab-choice-points { display:flex; flex-wrap:wrap; gap:7px; margin-top:16px; }
+  .zlab-choice-points span { border:1px solid var(--line); border-radius:999px; padding:4px 8px; font-size:11px; }
+  .zlab-choice-card.smart .zlab-choice-points span { border-color:rgba(255,255,255,.2); color:#dbe7ff; }
+  .zlab-topbar { display:flex; align-items:center; gap:14px; margin-bottom:18px; }
+  .zlab-back { width:42px; height:42px; padding:0 !important; border-radius:12px !important; }
+  .zlab-title { flex:1; }
+  .zlab-title h2 { font-family:'Almarai',sans-serif; font-size:22px; margin:0 0 3px; }
+  .zlab-title p { color:var(--ink-soft); font-size:13px; }
+  .zlab-live { display:flex; align-items:center; gap:7px; border:1px solid var(--line); background:var(--surface); border-radius:999px; padding:7px 12px; font-size:12px; }
+  .zlab-live::before { content:''; width:8px; height:8px; background:#27b36a; border-radius:50%; box-shadow:0 0 0 4px rgba(39,179,106,.13); }
+  .zlab-role-tabs { display:flex; gap:4px; padding:4px; background:var(--paper-dim); border-radius:12px; }
+  .zlab-role-tab { border:0; background:transparent; color:var(--ink-soft); font-family:inherit; font-weight:600; padding:9px 14px; border-radius:9px; cursor:pointer; }
+  .zlab-role-tab.active { color:white; background:var(--zlab-deep); box-shadow:0 3px 10px rgba(16,33,77,.18); }
+  .zlab-progress { display:grid; grid-template-columns:repeat(4,1fr); position:relative; margin:0 0 18px; }
+  .zlab-progress::before { content:''; position:absolute; top:14px; right:10%; left:10%; height:2px; background:var(--line); }
+  .zlab-step { position:relative; z-index:1; text-align:center; color:var(--ink-soft); font-size:12px; }
+  .zlab-step span { display:grid; place-items:center; width:30px; height:30px; margin:0 auto 5px; border-radius:50%; background:var(--paper-dim); border:2px solid var(--surface); font-weight:700; }
+  .zlab-step.active { color:var(--zlab-blue); font-weight:700; }
+  .zlab-step.active span,.zlab-step.done span { background:var(--zlab-blue); color:#fff; }
+  .zlab-step.done { color:var(--teal); }
+  .zlab-stage { display:none; }
+  .zlab-stage.active { display:block; animation:zlabIn .3s ease both; }
+  .zlab-stage[data-zlab-stage="hypothesis"].active + .zlab-stage[data-zlab-stage="experiment"].active { margin-top:22px; }
+  @keyframes zlabIn { from { opacity:0; transform:translateY(8px); } }
+  .zlab-card { background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:20px; box-shadow:0 6px 24px rgba(27,42,74,.05); }
+  .zlab-card h3 { font-family:'Almarai',sans-serif; font-size:18px; margin-bottom:8px; }
+  .zlab-muted { color:var(--ink-soft); font-size:14px; }
+  .zlab-hypothesis-grid { display:grid; grid-template-columns:1.15fr .85fr; gap:18px; }
+  .zlab-question { background:linear-gradient(135deg,#10214d,#244cae); color:#fff; border-radius:18px; padding:24px; min-height:250px; position:relative; overflow:hidden; }
+  .zlab-question::after { content:'CO₂'; position:absolute; left:-8px; bottom:-34px; font:800 88px/1 'Almarai'; color:rgba(255,255,255,.06); }
+  .zlab-kicker { display:inline-flex; gap:6px; align-items:center; color:#b8d5ff; font-size:12px; font-weight:700; margin-bottom:16px; }
+  .zlab-question h3 { font-size:25px; line-height:1.55; margin-bottom:16px; }
+  .zlab-goal { display:flex; gap:8px; align-items:flex-start; font-size:13px; color:#dbe7ff; }
+  .zlab-field { margin-top:15px; }
+  .zlab-field label { display:block; font-size:13px; font-weight:700; margin-bottom:7px; }
+  .zlab-field textarea,.zlab-field input,.zlab-field select { width:100%; background:var(--paper); color:var(--ink); border:1px solid var(--line); border-radius:11px; padding:11px 13px; font-family:inherit; font-size:14px; resize:vertical; }
+  .zlab-field textarea:focus,.zlab-field input:focus { outline:2px solid rgba(40,86,217,.2); border-color:var(--zlab-blue); }
+  .zlab-primary { border:0; background:var(--zlab-blue,#2856d9); color:#fff; padding:11px 17px; border-radius:11px; font:600 14px inherit; cursor:pointer; box-shadow:0 5px 14px rgba(40,86,217,.2); }
+  .zlab-primary:disabled { opacity:.45; cursor:not-allowed; box-shadow:none; }
+  .zlab-secondary { border:1px solid var(--line); background:var(--surface); color:var(--ink); padding:10px 15px; border-radius:11px; font:600 14px inherit; cursor:pointer; }
+  .zlab-actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:18px; }
+  .zlab-mode-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .zlab-mode { border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); padding:8px 12px; border-radius:999px; font:600 13px inherit; cursor:pointer; }
+  .zlab-mode.active { color:var(--zlab-blue); background:#edf2ff; border-color:#afc1ff; }
+  .zlab-workbench { display:grid; grid-template-columns:240px minmax(330px,1fr) 310px; gap:14px; align-items:start; }
+  .zlab-controls { display:flex; flex-direction:column; gap:14px; }
+  .zlab-control { padding-bottom:12px; border-bottom:1px solid var(--line); }
+  .zlab-control:last-child { border:0; padding-bottom:0; }
+  .zlab-control-head { display:flex; justify-content:space-between; gap:8px; font-size:13px; margin-bottom:7px; }
+  .zlab-value { color:var(--zlab-blue); font-weight:700; font-variant-numeric:tabular-nums; }
+  .zlab-control input[type=range] { width:100%; accent-color:var(--zlab-blue); }
+  .zlab-variable-tag { display:inline-flex; margin-top:5px; color:var(--ink-soft); font-size:11px; }
+  .zlab-reactor { position:relative; min-height:390px; background:radial-gradient(circle at 50% 10%,#1c4f80,#0a1734 72%); border-radius:18px; overflow:hidden; color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .zlab-reactor::before { content:''; position:absolute; inset:0; opacity:.2; background-image:linear-gradient(rgba(255,255,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.08) 1px,transparent 1px); background-size:32px 32px; }
+  .zlab-reactor-meta { position:absolute; top:14px; right:14px; left:14px; display:flex; justify-content:space-between; font-size:12px; color:#c9daf2; z-index:2; }
+  .zlab-smart-dock { position:absolute; top:46px; right:14px; left:14px; z-index:4; padding:9px; border:1px solid rgba(255,255,255,.13); border-radius:12px; background:rgba(7,20,47,.56); backdrop-filter:blur(8px); }
+  .zlab-smart-dock-head { display:flex; justify-content:space-between; gap:8px; color:#c9daf2; font-size:11px; margin-bottom:7px; }
+  .zlab-smart-tools { display:flex; gap:6px; overflow:auto; padding-bottom:2px; }
+  .zlab-smart-tool { flex:0 0 auto; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.09); color:#fff; border-radius:9px; padding:6px 8px; font:600 11px inherit; cursor:grab; }
+  .zlab-smart-tool.assembled { color:#bff9e7; border-color:#36d0aa; background:rgba(27,183,165,.2); }
+  .zlab-vessel.drop-ready { border-color:#60f2d1; filter:drop-shadow(0 0 16px rgba(27,183,165,.65)); }
+  .zlab-assembly-status { position:absolute; bottom:12px; right:14px; left:14px; z-index:4; text-align:center; color:#c9daf2; font-size:11px; }
+  .zlab-chem-rig { display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; }
+  .zlab-physics-rig { width:88%; position:relative; z-index:2; padding-top:105px; }
+  .zlab-physics-rig.hidden { display:none; }
+  .zlab-ramp-scene { height:190px; position:relative; overflow:hidden; border-radius:16px; background:linear-gradient(180deg,rgba(70,145,210,.18),rgba(5,16,37,.1)); border:1px solid rgba(255,255,255,.1); }
+  .zlab-ramp { position:absolute; width:78%; height:10px; right:11%; bottom:48px; border-radius:999px; background:linear-gradient(180deg,#9eb5c9,#526d86); transform-origin:right center; transform:rotate(var(--ramp-angle,-18deg)); box-shadow:0 8px 18px rgba(0,0,0,.35); }
+  .zlab-cart { position:absolute; right:17%; bottom:64px; width:70px; height:38px; border-radius:9px 9px 5px 5px; background:linear-gradient(135deg,#ffb24d,#ef6c35); transform:translateX(var(--cart-x,0)) rotate(var(--ramp-angle,-18deg)); transition:transform 1.2s cubic-bezier(.2,.75,.25,1); box-shadow:0 8px 15px rgba(0,0,0,.28); }
+  .zlab-cart::before,.zlab-cart::after { content:''; position:absolute; bottom:-10px; width:18px; height:18px; border-radius:50%; background:#17263a; border:3px solid #8ea3b8; }
+  .zlab-cart::before{right:7px}.zlab-cart::after{left:7px}
+  .zlab-force-arrow { position:absolute; right:15%; top:35px; color:#8eead8; font-size:13px; }
+  .zlab-physics-readout { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; }
+  .zlab-biology-workspace { background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:18px; min-height:520px; }
+  .zlab-stage.zlab-biology-mode > .zlab-mode-row,.zlab-stage.zlab-biology-mode > .zlab-workbench,.zlab-stage.zlab-biology-mode > .zlab-data-grid,.zlab-stage.zlab-biology-mode > .zlab-actions { display:none; }
+  .zlab-stage.zlab-biology-mode > .zlab-biology-workspace { display:block !important; }
+  .zlab-vessel { position:relative; width:150px; height:205px; margin-top:28px; border:4px solid rgba(210,239,255,.6); border-top:0; border-radius:8px 8px 34px 34px; overflow:visible; filter:drop-shadow(0 16px 24px rgba(0,0,0,.25)); z-index:2; }
+  .zlab-liquid { position:absolute; right:5px; left:5px; bottom:5px; height:50%; border-radius:4px 4px 27px 27px; background:linear-gradient(180deg,#60d2dc,#2586bb); transition:height .6s ease,filter .3s; }
+  .zlab-foam { position:absolute; right:4px; left:4px; bottom:48%; height:0; border-radius:45% 45% 10px 10px; background:linear-gradient(#fff,#bdeeff); opacity:.95; transition:height .8s cubic-bezier(.2,.8,.2,1),bottom .8s; }
+  .zlab-vessel.running { animation:zlabShake .12s linear 8; }
+  .zlab-vessel.running .zlab-foam { height:var(--foam,85px); }
+  @keyframes zlabShake { 50% { transform:translateX(3px) rotate(1deg); } }
+  .zlab-bubbles { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+  .zlab-bubble { position:absolute; bottom:105px; width:10px; height:10px; border:1px solid rgba(255,255,255,.8); border-radius:50%; animation:zlabBubble var(--speed,1.4s) ease-out forwards; }
+  @keyframes zlabBubble { to { transform:translate(var(--drift,0),-180px) scale(1.7); opacity:0; } }
+  .zlab-run-readout { position:relative; z-index:2; display:flex; gap:10px; margin-top:22px; }
+  .zlab-metric { min-width:100px; text-align:center; background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:8px; }
+  .zlab-metric strong { display:block; font-size:21px; font-variant-numeric:tabular-nums; }
+  .zlab-metric small { color:#c9daf2; }
+  .zlab-ai { display:flex; flex-direction:column; min-height:0; max-height:560px; align-self:start; }
+  .zlab-ai-head { display:flex; align-items:center; gap:10px; padding-bottom:12px; border-bottom:1px solid var(--line); }
+  .zlab-ai-orb { width:36px; height:36px; display:grid; place-items:center; border-radius:12px; background:linear-gradient(135deg,var(--zlab-blue),var(--zlab-cyan)); color:#fff; box-shadow:0 5px 14px rgba(40,86,217,.2); }
+  .zlab-ai-context { font-size:11px; color:var(--teal); }
+  .zlab-ai-feed { flex:0 1 auto; overflow:auto; max-height:330px; padding:12px 0; display:flex; flex-direction:column; gap:9px; }
+  .zlab-msg { background:var(--paper-dim); border-radius:12px 12px 3px 12px; padding:10px 11px; font-size:13px; line-height:1.7; }
+  .zlab-msg.hint { border-right:3px solid var(--zlab-orange); background:#fff6e8; color:#60400f; }
+  [data-theme="dark"] .zlab-msg.hint { background:#362812; color:#ffe2ad; }
+  .zlab-ai-input { display:flex; gap:6px; margin-top:2px; }
+  .zlab-ai-input input { min-width:0; flex:1; border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:10px; padding:9px; font-family:inherit; }
+  .zlab-data-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px; }
+  .zlab-table-wrap { overflow:auto; }
+  .zlab-table { width:100%; border-collapse:collapse; font-size:13px; }
+  .zlab-table th,.zlab-table td { text-align:right; padding:10px 8px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  .zlab-table th { color:var(--ink-soft); font-size:12px; }
+  .zlab-chart { min-height:220px; position:relative; }
+  .zlab-chart svg { width:100%; height:205px; overflow:visible; }
+  .zlab-chart line { stroke:var(--line); }
+  .zlab-chart polyline { fill:none; stroke:var(--zlab-blue); stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+  .zlab-chart circle { fill:var(--surface); stroke:var(--zlab-blue); stroke-width:3; cursor:pointer; }
+  .zlab-chart-tip { position:absolute; background:var(--zlab-deep); color:#fff; padding:6px 9px; border-radius:8px; font-size:11px; pointer-events:none; transform:translate(-50%,-115%); }
+  .zlab-insight { display:flex; gap:10px; margin-top:12px; padding:12px; border-radius:12px; background:var(--teal-dim); font-size:13px; }
+  .zlab-analysis-grid { display:grid; grid-template-columns:1fr .9fr; gap:14px; }
+  .zlab-compare { display:grid; grid-template-columns:1fr auto 1fr; gap:12px; align-items:stretch; margin-top:14px; }
+  .zlab-compare-box { border:1px solid var(--line); background:var(--paper-dim); border-radius:14px; padding:15px; }
+  .zlab-compare-box strong { display:block; color:var(--ink-soft); font-size:12px; margin-bottom:7px; }
+  .zlab-compare-arrow { align-self:center; color:var(--zlab-blue); font-size:22px; }
+  .zlab-misconception { margin-top:12px; border:1px solid #ffd29a; background:#fff8eb; border-radius:14px; padding:14px; }
+  [data-theme="dark"] .zlab-misconception { background:#362812; }
+  .zlab-score-ring { --score:0; width:130px; height:130px; margin:14px auto; display:grid; place-items:center; border-radius:50%; background:conic-gradient(var(--zlab-cyan) calc(var(--score)*1%),var(--paper-dim) 0); position:relative; }
+  .zlab-score-ring::before { content:''; position:absolute; inset:11px; border-radius:50%; background:var(--surface); }
+  .zlab-score-ring div { position:relative; text-align:center; }
+  .zlab-score-ring strong { display:block; font-size:29px; }
+  .zlab-quiz-option { display:block; width:100%; text-align:right; border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:10px; padding:10px 12px; margin:8px 0; font-family:inherit; cursor:pointer; }
+  .zlab-quiz-option:hover { border-color:var(--zlab-blue); }
+  .zlab-quiz-option.correct { border-color:#27b36a; background:var(--teal-dim); }
+  .zlab-quiz-option.wrong { border-color:var(--danger); background:var(--danger-soft); }
+  .zlab-teacher { display:none; }
+  .zlab-teacher.active { display:block; animation:zlabIn .3s ease both; }
+  .zlab-kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:14px; }
+  .zlab-kpi { background:var(--surface); border:1px solid var(--line); border-radius:15px; padding:16px; }
+  .zlab-kpi span { display:block; color:var(--ink-soft); font-size:12px; }
+  .zlab-kpi strong { font-size:27px; }
+  .zlab-kpi em { color:var(--teal); font-style:normal; font-size:11px; }
+  .zlab-teacher-grid { display:grid; grid-template-columns:1.15fr .85fr; gap:14px; }
+  .zlab-summary-banner { background:linear-gradient(135deg,#10214d,#244cae); color:#fff; border-radius:17px; padding:18px; margin-bottom:14px; display:flex; gap:12px; align-items:flex-start; }
+  .zlab-summary-banner p { color:#d9e6ff; font-size:13px; margin-top:4px; }
+  .zlab-bar-row { display:grid; grid-template-columns:120px 1fr 40px; gap:9px; align-items:center; font-size:12px; margin:12px 0; }
+  .zlab-bar { height:9px; background:var(--paper-dim); border-radius:999px; overflow:hidden; }
+  .zlab-bar i { display:block; height:100%; background:linear-gradient(90deg,var(--zlab-blue),var(--zlab-cyan)); border-radius:inherit; }
+  .zlab-student-row { cursor:pointer; }
+  .zlab-student-row:hover { background:var(--paper-dim); }
+  .zlab-status { display:inline-block; border-radius:999px; padding:3px 8px; font-size:11px; background:var(--teal-dim); color:var(--teal); }
+  .zlab-modal { position:fixed; inset:0; z-index:900; display:grid; place-items:center; background:rgba(8,17,38,.66); padding:18px; }
+  .zlab-modal.hidden { display:none; }
+  .zlab-modal-box { width:min(780px,96vw); max-height:88vh; overflow:auto; background:var(--surface); border-radius:20px; padding:22px; position:relative; }
+  .zlab-close { position:absolute; left:16px; top:16px; width:36px; height:36px; border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:10px; cursor:pointer; }
+  .zlab-report-section { margin-top:15px; padding-top:13px; border-top:1px solid var(--line); }
+  .zlab-report-section h4 { margin-bottom:5px; }
+  .zlab-report-vars { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .zlab-report-vars div { background:var(--paper-dim); border-radius:10px; padding:10px; font-size:12px; }
+  .zlab-toast { position:fixed; left:24px; bottom:24px; z-index:1000; background:var(--zlab-deep); color:#fff; border-radius:12px; padding:11px 15px; box-shadow:0 10px 30px rgba(0,0,0,.25); animation:zlabIn .25s ease; }
+  @media (max-width:1100px) { .zlab-workbench { grid-template-columns:220px 1fr; } .zlab-ai { grid-column:1/-1; min-height:0; max-height:none; } .zlab-ai-feed { max-height:220px; } }
+  @media (max-width:760px) {
+    #step-science-lab { padding:14px; }
+    .zlab-topbar { align-items:flex-start; flex-wrap:wrap; }
+    .zlab-live { display:none; }
+    .zlab-role-tabs { margin-inline-start:auto; }
+    .zlab-progress { overflow:auto; }
+    .zlab-step { min-width:86px; }
+    .zlab-choice-grid,.zlab-subject-grid,.zlab-setup-grid,.zlab-hypothesis-grid,.zlab-workbench,.zlab-data-grid,.zlab-analysis-grid,.zlab-teacher-grid { grid-template-columns:1fr; }
+    .zlab-ai { grid-column:auto; }
+    .zlab-kpis { grid-template-columns:1fr 1fr; }
+    .zlab-compare { grid-template-columns:1fr; }
+    .zlab-compare-arrow { transform:rotate(90deg); justify-self:center; }
+    .zlab-report-vars { grid-template-columns:1fr; }
   }
 </style>
 </head>
@@ -3104,12 +3333,256 @@
   <!-- مختبر العلوم - محاكاة كيميائية/فيزيائية ثلاثية الأبعاد + مستكشف أحياء
        (متاح للجميع: معلم/طالب/حساب فردي) -->
   <section class="card hidden" id="step-science-lab">
+    <div class="zlab-choice" id="zlabChoice">
+      <div class="zlab-choice-inner">
+        <div class="zlab-choice-head"><span class="step-label">🧪 مختبر العلوم</span><h2>كيف تريد أن تتعلّم اليوم؟</h2><p class="zlab-muted" id="zlabChoiceIntro">اختر التجربة المناسبة لك قبل البدء. يمكنك الرجوع والتبديل في أي وقت.</p></div>
+        <div class="zlab-choice-grid" id="zlabLearningModePicker">
+          <button class="zlab-choice-card smart" id="zlabChooseSmart">
+            <span class="zlab-choice-icon">✦</span><h3 id="zlabSmartChoiceTitle">التعلم الذكي</h3>
+            <p id="zlabSmartChoiceDesc">ابدأ بفرضية، غيّر المتغيرات، ثم دع مساعد المختبر يحلل طريقة تفكيرك ويخصص التقييم لك.</p>
+            <span class="zlab-choice-points"><span>فرضية</span><span>AI موجّه</span><span>رسوم وبيانات</span><span>تقرير تلقائي</span></span>
+          </button>
+          <button class="zlab-choice-card" id="zlabChooseClassic">
+            <span class="zlab-choice-icon">🧪</span><h3>المختبر التقليدي والاستكشاف</h3>
+            <p>استخدم المحاكاة الكيميائية والفيزيائية أو مستكشف الأحياء التفاعلي.</p>
+            <span class="zlab-choice-points"><span>كيمياء وفيزياء</span><span>مشاريع جاهزة</span><span>الأحياء</span><span>تشريح تفاعلي</span></span>
+          </button>
+        </div>
+        <div id="zlabSubjectPicker" class="hidden">
+          <div class="zlab-choice-head"><h2>اختر مجال التعلم الذكي</h2><p class="zlab-muted">كل مجال يبدأ بفرضية، ويسجل المحاولات، ويستخدم AI للتوجيه والتقييم.</p></div>
+          <div class="zlab-subject-grid">
+            <button class="zlab-choice-card zlab-subject-card smart" data-zlab-subject="chemistry"><span class="zlab-choice-icon">⚗️</span><h3>الكيمياء</h3><p>سرعة تفاعل الخل وبيكربونات الصوديوم وتأثير الحرارة.</p><strong>Showcase كامل · 2–3 دقائق</strong></button>
+            <button class="zlab-choice-card zlab-subject-card" data-zlab-subject="physics"><span class="zlab-choice-icon">⚙️</span><h3>الفيزياء</h3><p>جرّب الحركة والقوى على عربة ومسار مائل بمتغيرات قابلة للقياس.</p><strong>تجربة ذكية متاحة</strong></button>
+            <button class="zlab-choice-card zlab-subject-card" data-zlab-subject="biology"><span class="zlab-choice-icon">🧬</span><h3>الأحياء</h3><p>استكشف الكائنات وجسم الإنسان، بما فيه الدماغ والجهاز العصبي.</p><strong>مستكشف تفاعلي ذكي</strong></button>
+          </div>
+          <div class="zlab-actions" style="justify-content:center"><button class="zlab-secondary" id="zlabSubjectsBack">الرجوع لاختيار طريقة التعلم</button></div>
+        </div>
+        <div id="zlabLessonPicker" class="hidden">
+          <div class="zlab-choice-head"><h2 id="zlabLessonHeading">ما الفكرة التي تريد اكتشافها؟</h2><p class="zlab-muted">اكتب فكرتك، وسيحدد AI الدرس ويجهز لك مسألة وأدوات تناسبها.</p></div>
+          <div class="zlab-card">
+            <div class="zlab-setup-grid">
+              <div class="zlab-field" style="margin-top:0"><label for="zlabStudentName">اسم الطالب</label><input id="zlabStudentName" autocomplete="name" placeholder="اكتب اسمك"></div>
+              <div class="zlab-field" style="margin-top:0"><label for="zlabStudentIdea">فكرتك أو الشيء الذي تريد اكتشافه</label><input id="zlabStudentIdea" placeholder="مثال: أريد معرفة أثر الحرارة"></div>
+            </div>
+            <div class="zlab-actions"><button class="zlab-primary" id="zlabPrepareExperiment" disabled>✦ جهّز تجربتي بالذكاء الاصطناعي</button><span class="zlab-muted" id="zlabSetupStatus" role="status" aria-live="polite">اكتب اسمك وفكرتك.</span></div>
+          </div>
+          <div class="zlab-actions" style="justify-content:center"><button class="zlab-secondary" id="zlabLessonsBack">الرجوع للمجالات</button></div>
+        </div>
+        <div class="zlab-actions" style="justify-content:center"><button class="zlab-secondary" id="zlabChoiceBack">الرجوع للرئيسية</button></div>
+      </div>
+    </div>
+    <div class="zlab-shell" id="zlabApp">
+      <div class="zlab-topbar">
+        <button class="ghost zlab-back" id="zlabBackBtn" aria-label="الرجوع">→</button>
+        <div class="zlab-title">
+          <h2 id="zlabExperimentTitle">مختبر ذكيّ</h2>
+          <p id="zlabExperimentSubtitle">تجارب تقيس طريقة تفكيرك، لا النتيجة فقط</p>
+        </div>
+        <span class="zlab-live">تسجيل التعلم نشط</span>
+        <div class="zlab-role-tabs" aria-label="نوع العرض">
+          <button class="zlab-role-tab active" data-zlab-view="student">الطالب</button>
+          <button class="zlab-role-tab" data-zlab-view="teacher">المعلم</button>
+        </div>
+      </div>
+
+      <div id="zlabStudentView">
+        <div class="zlab-progress" id="zlabProgress">
+          <div class="zlab-step active" data-step="hypothesis"><span>1</span>الفرضية والتجربة</div>
+          <div class="zlab-step" data-step="analysis"><span>2</span>التحليل</div>
+          <div class="zlab-step" data-step="quiz"><span>3</span>التقييم</div>
+          <div class="zlab-step" data-step="complete"><span>4</span>النتيجة</div>
+        </div>
+
+        <section class="zlab-stage active" data-zlab-stage="hypothesis">
+          <div class="zlab-hypothesis-grid">
+            <div class="zlab-question">
+              <span class="zlab-kicker" id="zlabExperimentKicker">⚗️ تجربة العرض · 2–3 دقائق</span>
+              <h3 id="zlabExperimentQuestion">بانتظار تحليل فكرتك بواسطة AI…</h3>
+              <div class="zlab-goal"><span>🎯</span><span id="zlabExperimentGoal">لن تظهر المهمة قبل نجاح تحليل AI.</span></div>
+              <div class="zlab-equipment" id="zlabEquipmentList"></div>
+            </div>
+            <div class="zlab-card">
+              <h3>قبل أن نبدأ، ماذا تتوقع؟</h3>
+              <p class="zlab-muted">لا نبحث عن إجابة صحيحة؛ نريد أن نرى كيف تفكر قبل مشاهدة النتيجة.</p>
+              <div class="zlab-field">
+                <label for="zlabHypothesis">توقعي للنتيجة</label>
+                <textarea id="zlabHypothesis" rows="3" placeholder="أتوقع أن... لأن..."></textarea>
+              </div>
+              <div class="zlab-field">
+                <label for="zlabHypReason">التفسير المختصر</label>
+                <input id="zlabHypReason" type="text" placeholder="ما الفكرة العلمية وراء توقعك؟">
+              </div>
+              <div class="zlab-actions">
+                <button class="zlab-primary" id="zlabStartBtn" disabled>احفظ الفرضية واجعل AI يقرأها</button>
+                <span class="zlab-muted" id="zlabHypSaved"></span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="zlab-stage" data-zlab-stage="experiment">
+          <div class="zlab-mode-row">
+            <button class="zlab-mode active" data-mode="guided">مسار موجه</button>
+            <button class="zlab-mode" data-mode="free">استكشاف حر</button>
+            <button class="zlab-mode" data-mode="challenge">🏆 تحدّي: حقّق أسرع تفاعل بمحاولتين</button>
+          </div>
+          <div class="zlab-workbench">
+            <div class="zlab-card zlab-controls">
+              <div>
+                <h3>متغيرات التجربة</h3>
+                <p class="zlab-muted" id="zlabModeHint">غيّر الحرارة فقط في المحاولة الأولى.</p>
+              </div>
+              <div class="zlab-control">
+                <div class="zlab-control-head"><label for="zlabTemp" id="zlabTempLabel">درجة الحرارة</label><span class="zlab-value" id="zlabTempValue">25°م</span></div>
+                <input type="range" id="zlabTemp" min="10" max="70" value="25" step="5">
+                <span class="zlab-variable-tag">المتغير المستقل</span>
+              </div>
+              <div class="zlab-control">
+                <div class="zlab-control-head"><label for="zlabAmount" id="zlabAmountLabel">كمية البيكربونات</label><span class="zlab-value" id="zlabAmountValue">10 غ</span></div>
+                <input type="range" id="zlabAmount" min="5" max="20" value="10" step="5">
+                <span class="zlab-variable-tag">متغير ثابت مقترح</span>
+              </div>
+              <div class="zlab-control">
+                <div class="zlab-control-head"><label for="zlabConc" id="zlabConcLabel">تركيز الخل</label><span class="zlab-value" id="zlabConcValue">5%</span></div>
+                <input type="range" id="zlabConc" min="3" max="9" value="5" step="1">
+                <span class="zlab-variable-tag">متغير ثابت مقترح</span>
+              </div>
+              <div class="zlab-control">
+                <div class="zlab-control-head"><label for="zlabTime">زمن الرصد</label><span class="zlab-value" id="zlabTimeValue">20 ث</span></div>
+                <input type="range" id="zlabTime" min="10" max="30" value="20" step="5">
+              </div>
+              <button class="zlab-primary" id="zlabRunBtn">ابدأ التفاعل</button>
+            </div>
+
+            <div class="zlab-reactor" aria-label="محاكاة وعاء التفاعل">
+              <div class="zlab-reactor-meta"><span id="zlabSensorLabel">حساس CO₂ متصل</span><span id="zlabAttemptLabel">جاهز للمحاولة 1</span></div>
+              <div class="zlab-smart-dock"><div class="zlab-smart-dock-head"><strong>منضدة التجربة الذكية</strong><span>اسحب أو اضغط لإضافة الأدوات</span></div><div class="zlab-smart-tools" id="zlabPreparedDock"></div></div>
+              <div class="zlab-chem-rig" id="zlabChemRig">
+                <div class="zlab-vessel" id="zlabVessel"><div class="zlab-liquid"></div><div class="zlab-foam" id="zlabFoam"></div><div class="zlab-bubbles" id="zlabBubbles"></div></div>
+              </div>
+              <div class="zlab-physics-rig hidden" id="zlabPhysicsRig">
+                <div class="zlab-ramp-scene"><div class="zlab-force-arrow">القوة المؤثرة ←</div><div class="zlab-ramp" id="zlabRamp"></div><div class="zlab-cart" id="zlabCart"></div></div>
+              </div>
+              <div class="zlab-run-readout">
+                <div class="zlab-metric"><strong id="zlabRate">—</strong><small id="zlabRateUnit">مل CO₂ / ث</small></div>
+                <div class="zlab-metric"><strong id="zlabVolume">—</strong><small id="zlabVolumeUnit">مل CO₂</small></div>
+              </div>
+              <div class="zlab-assembly-status" id="zlabAssemblyStatus">أضف أداتين على الأقل لتجهيز التجربة.</div>
+            </div>
+
+            <aside class="zlab-card zlab-ai">
+              <div class="zlab-ai-head"><span class="zlab-ai-orb">✦</span><div><strong>مساعد المختبر</strong><div class="zlab-ai-context" id="zlabAiContext">يعرف فرضيتك ومتغيراتك وخطواتك</div></div></div>
+              <div class="zlab-ai-feed" id="zlabAiFeed">
+                <div class="zlab-msg">بانتظار رد AI المتصل…</div>
+              </div>
+              <div class="zlab-ai-input"><input id="zlabAiInput" placeholder="اسأل أو اشرح ما لاحظته"><button class="zlab-primary" id="zlabAiSend">↑</button></div>
+            </aside>
+          </div>
+
+          <div class="zlab-data-grid">
+            <div class="zlab-card">
+              <h3>سجل المحاولات</h3>
+              <div class="zlab-table-wrap"><table class="zlab-table"><thead><tr><th>#</th><th id="zlabTablePrimary">الحرارة</th><th id="zlabTableAmount">الكمية</th><th id="zlabTableConc">التركيز</th><th id="zlabTableRate">معدل CO₂</th><th>الملاحظة</th></tr></thead><tbody id="zlabAttemptsBody"><tr><td colspan="6" class="zlab-muted">ستظهر بياناتك هنا بعد أول محاولة.</td></tr></tbody></table></div>
+            </div>
+            <div class="zlab-card zlab-chart">
+              <h3 id="zlabChartTitle">العلاقة بين الحرارة وسرعة التفاعل</h3>
+              <svg id="zlabChart" viewBox="0 0 420 180" role="img" aria-label="رسم بياني للمحاولات"></svg>
+              <div class="zlab-chart-tip hidden" id="zlabChartTip"></div>
+              <div class="zlab-insight" id="zlabInsight"><span>🔎</span><span>نفّذ محاولتين على الأقل لتكشف العلاقة.</span></div>
+            </div>
+          </div>
+          <div class="zlab-actions">
+            <button class="zlab-primary" id="zlabAnalyzeBtn" disabled>أنهِ التجربة وحلّل النتائج</button>
+            <button class="zlab-secondary" id="zlabResetAttempt">إعادة ضبط المتغيرات</button>
+            <span class="zlab-muted" id="zlabAttemptCount">0 محاولات · 0 أخطاء منهجية</span>
+          </div>
+          <div class="zlab-biology-workspace hidden" id="zlabBiologyWorkspace"><div id="zlabBioHost"></div><div class="zlab-actions"><button class="zlab-primary" id="zlabBioContinue" disabled>AI، اقرأ استكشافي ثم انتقل للتحليل</button></div></div>
+        </section>
+
+        <section class="zlab-stage" data-zlab-stage="analysis">
+          <div class="zlab-analysis-grid">
+            <div class="zlab-card">
+              <h3>هل دعمت البيانات فرضيتك؟</h3>
+              <div class="zlab-compare">
+                <div class="zlab-compare-box"><strong>فرضيتك قبل التجربة</strong><span id="zlabHypReview">—</span></div>
+                <div class="zlab-compare-arrow">←</div>
+                <div class="zlab-compare-box"><strong>ما أظهرته البيانات</strong><span id="zlabResultReview">—</span></div>
+              </div>
+              <div class="zlab-field"><label for="zlabConclusion">فسّر سبب التوافق أو الاختلاف</label><textarea id="zlabConclusion" rows="3" placeholder="توافقت/اختلفت لأن البيانات أظهرت..."></textarea></div>
+              <div class="zlab-misconception" id="zlabMisconception"><strong>🧠 فحص المفاهيم قيد الانتظار</strong><p class="zlab-muted">لن يظهر تحليل قبل وصول رد AI.</p></div>
+              <div class="zlab-actions"><button class="zlab-primary" id="zlabSaveConclusion" disabled>حلّل فهمي وأنشئ التقييم</button></div>
+            </div>
+            <div class="zlab-card">
+              <h3>تحليل مساعد المختبر</h3>
+              <div class="zlab-ai-head"><span class="zlab-ai-orb">✦</span><div><strong>قرأت محاولاتك كاملة</strong><div class="zlab-ai-context">السجل، الأخطاء، والنتائج</div></div></div>
+              <div class="zlab-insight" style="margin-top:14px"><span>💡</span><span id="zlabAnalysisText">بانتظار تحليل AI…</span></div>
+              <div class="zlab-report-section"><h4>تقييم طريقة التفكير</h4><div class="zlab-bar-row"><span>ضبط المتغيرات</span><div class="zlab-bar"><i id="zlabControlBar" style="width:0%"></i></div><span id="zlabControlScore">—</span></div><div class="zlab-bar-row"><span>الاستدلال بالبيانات</span><div class="zlab-bar"><i id="zlabReasonBar" style="width:0%"></i></div><span id="zlabReasonScore">—</span></div></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="zlab-stage" data-zlab-stage="quiz">
+          <div class="zlab-analysis-grid">
+            <div class="zlab-card">
+              <span class="zlab-kicker" style="color:var(--zlab-blue)">تقييم مخصص يولّده AI</span>
+              <h3 id="zlabQuizQuestion">بانتظار إنشاء التقييم بواسطة AI…</h3>
+              <div id="zlabQuizOptions"></div>
+              <div class="zlab-insight hidden" id="zlabQuizFeedback"></div>
+              <div class="zlab-actions"><button class="zlab-primary" id="zlabFinishQuiz" disabled>عرض نتيجتي</button></div>
+            </div>
+            <div class="zlab-card"><h3>لماذا هذا السؤال؟</h3><p class="zlab-muted" id="zlabQuizWhy">سيشرح AI سبب اختيار السؤال بعد قراءة أدائك.</p><div class="zlab-insight"><span>↗</span><span>النشاط التالي المقترح: <strong id="zlabNextActivity">بانتظار اقتراح AI…</strong></span></div></div>
+          </div>
+        </section>
+
+        <section class="zlab-stage" data-zlab-stage="complete">
+          <div class="zlab-analysis-grid">
+            <div class="zlab-card">
+              <h3>اكتملت التجربة بنجاح</h3>
+              <p class="zlab-muted">حُفظت النتائج والمفاهيم التي تحتاج مراجعة في ملفك التعليمي.</p>
+              <div class="zlab-score-ring" id="zlabScoreRing"><div><strong id="zlabFinalScore">—</strong><small>الأداء</small></div></div>
+              <div class="zlab-insight"><span>🧠</span><span id="zlabUnderstandingText">تغير فهمك أصبح أوضح بعد مقارنة الفرضية بالبيانات.</span></div>
+              <div class="zlab-actions"><button class="zlab-primary" id="zlabOpenReport">فتح تقرير المختبر</button></div>
+            </div>
+            <div class="zlab-card">
+              <h3>خطوتك التالية</h3>
+              <p class="zlab-muted">بناءً على أدائك، يقترح مساعد ذكيّ:</p>
+              <div class="zlab-question" style="min-height:auto;margin-top:13px;padding:18px"><span class="zlab-kicker">تجربة موصى بها من AI</span><h3 id="zlabCompleteNext" style="font-size:19px">بانتظار اقتراح AI…</h3></div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="zlab-teacher" id="zlabTeacherView">
+        <div class="zlab-summary-banner"><span class="zlab-ai-orb">✦</span><div><strong>ملخص ذكيّ للفصل</strong><p id="zlabTeacherSummary">بانتظار تحميل بيانات الفصل الفعلية…</p></div></div>
+        <div class="zlab-kpis">
+          <div class="zlab-kpi"><span>أجروا التجربة</span><strong id="zlabTeacherCompleted">—</strong><em id="zlabTeacherTotal">بيانات فعلية</em></div>
+          <div class="zlab-kpi"><span>نسبة الإكمال</span><strong id="zlabTeacherCompletion">—</strong><em>من سجلات الفصل</em></div>
+          <div class="zlab-kpi"><span>متوسط الأداء</span><strong id="zlabTeacherAvg">—</strong><em>من التجارب المكتملة</em></div>
+          <div class="zlab-kpi"><span>متوسط تغير الفهم</span><strong id="zlabTeacherGrowth">—</strong><em>نقطة معرفية</em></div>
+        </div>
+        <div class="zlab-teacher-grid">
+          <div class="zlab-card">
+            <h3>أداء الطلاب</h3>
+            <div class="zlab-table-wrap"><table class="zlab-table"><thead><tr><th>الطالب</th><th>المحاولات</th><th>الأداء</th><th>تغير الفهم</th><th>الحالة</th></tr></thead><tbody id="zlabStudentsTable"><tr><td colspan="5" class="zlab-muted">بانتظار بيانات الفصل…</td></tr></tbody></table></div>
+          </div>
+          <div class="zlab-card">
+            <h3>الأخطاء والمفاهيم الشائعة</h3>
+            <div id="zlabTeacherPatterns" class="zlab-muted">بانتظار بيانات الفصل الفعلية…</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="zlab-modal hidden" id="zlabReportModal" role="dialog" aria-modal="true" aria-labelledby="zlabReportTitle">
+        <div class="zlab-modal-box"><button class="zlab-close" id="zlabCloseReport">✕</button><div id="zlabReportContent"></div></div>
+      </div>
+    </div>
     <span class="step-label" data-i18n="sl_step_label">🧪 مختبر العلوم</span>
     <h2 data-i18n="sl_heading">مختبر العلوم</h2>
     <p class="desc" data-i18n="sl_desc">جرّب تفاعلات كيميائية وفيزيائية بمختبر ثلاثي الأبعاد، واستكشف عالم الأحياء - مع مساعد ذكيّ يرافقك طول الجلسة.</p>
 
     <div class="sl-toolbar">
       <button class="ghost" id="slBackBtn" data-i18n="btn_back">⬅ رجوع</button>
+      <button class="primary" id="slSmartLearningBtn">✦ التعلم الذكي</button>
       <span class="sl-tab-toggle">
         <button class="sl-tab-btn active" id="slTabChemistryBtn" data-i18n="sl_tab_chemistry">🧪 الكيمياء والفيزياء</button>
         <button class="sl-tab-btn" id="slTabBiologyBtn" data-i18n="sl_tab_biology">🧬 الأحياء</button>
@@ -3118,6 +3591,7 @@
         <option value="" data-i18n="sl_projects_placeholder">📂 مشروع جاهز...</option>
         <option value="volcano" data-i18n="sl_project_volcano">🌋 بركان فوّار</option>
         <option value="dissolve_race" data-i18n="sl_project_dissolve_race">⏱️ سباق الذوبان (حار مقابل بارد)</option>
+        <option value="thermal_measurement" data-i18n="sl_project_thermal_measurement">🌡️ قياس انتقال الحرارة</option>
         <option value="diffusion" data-i18n="sl_project_diffusion">🎨 انتشار الألوان</option>
       </select>
       <button class="ghost" id="slSummaryBtn" data-i18n="sl_show_summary">📋 عرض تلخيص جلستي</button>
@@ -3128,6 +3602,7 @@
       <div class="sl-main-panel">
         <!-- ---------- الكيمياء والفيزياء (ثلاثي الأبعاد) ---------- -->
         <div class="sl-chem-panel" id="slChemPanel">
+          <div class="sl-lab-heading"><div><h3>مختبر الكيمياء والفيزياء</h3><p class="zlab-muted">اختر الأدوات من القائمة أو من المشهد، ثم اضبط ظروف التجربة وشغّلها.</p></div><div class="sl-lab-badges"><span>⚗️ كيمياء</span><span>⚙️ فيزياء</span><span>● تسجيل القياسات</span></div></div>
           <div class="sl-scene-wrap" id="slSceneWrap">
             <canvas id="slCanvas"></canvas>
             <div class="sl-tooltip hidden" id="slTooltip">
@@ -3141,6 +3616,15 @@
               <button type="button" data-temp="hot" data-i18n="sl_water_hot">🔥 حار</button>
             </div>
             <p class="desc sl-scene-hint" data-i18n="sl_scene_hint">مرّر الماوس على أي قطعة بالرف لتعرف اسمها واستخدامها، واضغطها لإضافتها لصينية التفاعل.</p>
+            <div class="sl-scene-status"><div class="sl-scene-meter"><strong id="slLiveTemp">25°</strong><small>درجة الحرارة</small></div><div class="sl-scene-meter"><strong id="slLiveAmount">10 g</strong><small>كمية المادة</small></div><div class="sl-scene-meter"><strong id="slLiveState">جاهز</strong><small>حالة التجربة</small></div></div>
+          </div>
+          <div class="sl-inventory-panel">
+            <div class="sl-inventory-head"><strong>الأدوات والمواد</strong><span class="zlab-muted">اضغط أو اسحب إلى صينية التجربة</span></div>
+            <div class="sl-inventory-grid" id="slInventoryGrid"></div>
+          </div>
+          <div class="sl-setup-panel">
+            <div class="sl-setup-control"><label for="slClassicTemp"><span>درجة حرارة التجربة</span><output id="slClassicTempValue">25°م</output></label><input id="slClassicTemp" type="range" min="5" max="100" value="25" step="5"></div>
+            <div class="sl-setup-control"><label for="slClassicAmount"><span>كمية المادة</span><output id="slClassicAmountValue">10 غ</output></label><input id="slClassicAmount" type="range" min="5" max="30" value="10" step="5"></div>
           </div>
           <div class="sl-reaction-bar">
             <span class="sl-tray-label" data-i18n="sl_tray_label">صينية التفاعل:</span>
@@ -3152,6 +3636,7 @@
         </div>
 
         <!-- ---------- الأحياء ---------- -->
+        <div id="slBioOriginalMount"></div>
         <div class="sl-bio-panel hidden" id="slBioPanel">
           <div id="slBioCategoryView">
             <h3 class="sub-heading" data-i18n="sl_bio_pick_category">اختر تصنيف عشان تستكشفه</h3>
@@ -3649,7 +4134,9 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script>
-const API_BASE = "https://zakiy-platform.onrender.com";
+const API_BASE = ['127.0.0.1','localhost'].includes(window.location.hostname)
+  ? 'http://127.0.0.1:5001'
+  : 'https://zakiy-platform.onrender.com';
 const socket = io(API_BASE);
 
 const SUPABASE_URL = "https://qwlbufcailgpxxatgyez.supabase.co";
@@ -4531,6 +5018,7 @@ const I18N = {
     sl_projects_placeholder: '📂 مشروع جاهز...',
     sl_project_volcano: '🌋 بركان فوّار',
     sl_project_dissolve_race: '⏱️ سباق الذوبان (حار مقابل بارد)',
+    sl_project_thermal_measurement: '🌡️ قياس انتقال الحرارة',
     sl_project_diffusion: '🎨 انتشار الألوان',
     sl_item_beaker_name: 'كأس مخبري (Beaker)',
     sl_item_beaker_desc: 'إناء زجاجي أسطواني يُستخدم لخلط وتسخين وقياس كميات السوائل تقريبيًا.',
@@ -5471,7 +5959,7 @@ const I18N = {
     nav_science_lab: 'Science Lab',
     btn_close: 'Close',
     sl_step_label: '🧪 Science Lab',
-    sl_heading: 'Science Lab',
+    sl_heading: 'Smart Science Lab',
     sl_desc: 'Try chemical and physical reactions in a 3D lab, and explore the world of biology - with an AI assistant by your side the whole session.',
     sl_tab_chemistry: '🧪 Chemistry & Physics',
     sl_tab_biology: '🧬 Biology',
@@ -5516,6 +6004,7 @@ const I18N = {
     sl_projects_placeholder: '📂 Load a project...',
     sl_project_volcano: '🌋 Fizzing Volcano',
     sl_project_dissolve_race: '⏱️ Dissolving Race (hot vs. cold)',
+    sl_project_thermal_measurement: '🌡️ Heat Transfer Measurement',
     sl_project_diffusion: '🎨 Color Diffusion',
     sl_item_beaker_name: 'Beaker',
     sl_item_beaker_desc: 'A cylindrical glass container used to mix, heat, and roughly measure liquids.',
@@ -6450,7 +6939,8 @@ document.getElementById('roboticsLabBtn').addEventListener('click', () => {
   updateGlobalBackButton();
 });
 document.getElementById('scienceLabBtn').addEventListener('click', () => {
-  if (!requireAuthOrPrompt()) return;
+  // المختبر الذكي متاح كعرض مباشر للضيف أيضًا؛ تُحفظ جلسته التعليمية محليًا،
+  // وعند تسجيل الدخول يمكن مزامنتها لاحقًا مع ملف الطالب.
   pushNavSnapshot();
   showScienceLabScreen();
   updateGlobalBackButton();
@@ -14238,7 +14728,8 @@ function rlCompileBlocksToCode() {
 const SL = {
   scene: null, camera: null, renderer: null, raycaster: null, mouse: null,
   hoverables: [], tray: [], chatInteractionId: null, sessionLog: [],
-  bioCategory: null, bioItem: null, animFrameId: null, initialized: false,
+  bioCategory: null, bioItem: null, animFrameId: null, initialized: false, hoveredObject: null,
+  settings: { temperature: 25, amount: 10 }, experimentCount: 0,
 };
 
 // ---------- قطع الرف (ثلاثي الأبعاد حقيقي) ----------
@@ -14433,6 +14924,29 @@ function slItemNameKey(id) {
   const shelfItem = SL_SHELF_ITEMS.find(i => i.id === id);
   return shelfItem ? shelfItem.nameKey : SL_WATER_VARIANTS[id];
 }
+const SL_ITEM_ICONS = {
+  beaker:'🥛', flask:'⚗️', vinegar:'🧴', baking_soda:'◻️', salt:'🧂',
+  food_coloring:'🎨', bunsen_burner:'🔥', thermometer:'🌡️', sugar:'◇', water:'💧', paper:'📄',
+  water_cold:'❄️', water_warm:'💧', water_hot:'♨️',
+};
+function slRenderInventory() {
+  const grid=document.getElementById('slInventoryGrid');
+  if (!grid) return;
+  const items=SL_SHELF_ITEMS.filter(item=>item.id!=='water').map(item=>item.id).concat(['water_cold','water_warm','water_hot']);
+  grid.innerHTML=items.map(id=>`<button class="sl-inventory-item" type="button" draggable="true" data-sl-item="${id}" title="${escapeHtml(t(slItemNameKey(id)))}"><span class="sl-inventory-icon">${SL_ITEM_ICONS[id]||'🧪'}</span><span>${escapeHtml(t(slItemNameKey(id)))}</span></button>`).join('');
+  grid.querySelectorAll('[data-sl-item]').forEach(button=>{
+    button.addEventListener('click',()=>slAddToTray(button.dataset.slItem));
+    button.addEventListener('dragstart',event=>{event.dataTransfer.setData('text/sl-item',button.dataset.slItem);event.dataTransfer.effectAllowed='copy';});
+  });
+}
+function slUpdateClassicSettings() {
+  SL.settings.temperature=+document.getElementById('slClassicTemp').value;
+  SL.settings.amount=+document.getElementById('slClassicAmount').value;
+  document.getElementById('slClassicTempValue').textContent=`${SL.settings.temperature}°م`;
+  document.getElementById('slClassicAmountValue').textContent=`${SL.settings.amount} غ`;
+  document.getElementById('slLiveTemp').textContent=`${SL.settings.temperature}°`;
+  document.getElementById('slLiveAmount').textContent=`${SL.settings.amount} g`;
+}
 
 function slPairKey(a, b) { return [a, b].sort().join('+'); }
 const SL_REACTIONS = {
@@ -14488,45 +15002,50 @@ function slInitThreeScene() {
   const canvas = document.getElementById('slCanvas');
   const wrap = document.getElementById('slSceneWrap');
   SL.scene = new THREE.Scene();
-  SL.camera = new THREE.PerspectiveCamera(42, wrap.clientWidth / wrap.clientHeight, 0.1, 100);
-  SL.camera.position.set(0, 3.2, 8.5);
-  SL.camera.lookAt(0, 1.4, 0);
+  SL.camera = new THREE.PerspectiveCamera(38, wrap.clientWidth / wrap.clientHeight, 0.1, 100);
+  SL.camera.position.set(0, 3.15, 8.1);
+  SL.camera.lookAt(0, 1.15, 0);
 
   SL.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   SL.renderer.setSize(wrap.clientWidth, wrap.clientHeight);
   SL.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  SL.renderer.shadowMap.enabled = true;
+  SL.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  if ('outputColorSpace' in SL.renderer) SL.renderer.outputColorSpace = THREE.SRGBColorSpace;
+  SL.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  SL.renderer.toneMappingExposure = 1.08;
 
-  SL.scene.add(new THREE.AmbientLight(0xffffff, 0.75));
-  const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
+  SL.scene.add(new THREE.HemisphereLight(0xdff5ff,0x223047,1.35));
+  SL.scene.add(new THREE.AmbientLight(0xffffff, 0.42));
+  const dirLight = new THREE.DirectionalLight(0xffffff, 1.65);
   dirLight.position.set(5, 8, 5);
+  dirLight.castShadow = true;
   SL.scene.add(dirLight);
 
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(24, 24), new THREE.MeshStandardMaterial({ color: 0xdccdb0 }));
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(24, 24), new THREE.MeshStandardMaterial({ color: 0x24364a, roughness:.72, metalness:.08 }));
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = -0.5;
+  floor.receiveShadow = true;
   SL.scene.add(floor);
 
-  const wall = new THREE.Mesh(new THREE.PlaneGeometry(24, 10), new THREE.MeshStandardMaterial({ color: 0xeef2ef }));
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(24, 10), new THREE.MeshStandardMaterial({ color: 0x102139, roughness:.86 }));
   wall.position.set(0, 4.5, -2);
   SL.scene.add(wall);
 
-  // عرض الرف لازم يتغطى كل القطع (11 قطعة، من -5.4 لين +5.1) - كان
-  // مضبوط لعدد أقل من القطع فصارت آخر قطعتين (الماء والورق) عايمتين
-  // بره الرف تمامًا بدون أي شي تحتهم
-  const shelf = new THREE.Mesh(new THREE.BoxGeometry(11.7, 0.18, 1.4), new THREE.MeshStandardMaterial({ color: 0x8a5a2b }));
-  shelf.position.set(-0.15, 1.5, 0);
-  SL.scene.add(shelf);
-  const shelfSupportL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.5, 1.4), new THREE.MeshStandardMaterial({ color: 0x6e4620 }));
-  shelfSupportL.position.set(-5.95, 0.75, 0);
-  SL.scene.add(shelfSupportL);
-  const shelfSupportR = new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.5, 1.4), new THREE.MeshStandardMaterial({ color: 0x6e4620 }));
-  shelfSupportR.position.set(5.65, 0.75, 0);
-  SL.scene.add(shelfSupportR);
+  const shelfMaterial=new THREE.MeshStandardMaterial({color:0x48627b,roughness:.32,metalness:.62});
+  [1.02,2.22].forEach(y=>{const shelf=new THREE.Mesh(new THREE.BoxGeometry(7.7,.13,1.15),shelfMaterial);shelf.position.set(0,y,-.25);shelf.castShadow=true;shelf.receiveShadow=true;SL.scene.add(shelf);});
+  [-3.85,3.85].forEach(x=>{const support=new THREE.Mesh(new THREE.BoxGeometry(.13,2.55,1.15),shelfMaterial);support.position.set(x,1.05,-.25);support.castShadow=true;SL.scene.add(support);});
+  const backPanel=new THREE.Mesh(new THREE.BoxGeometry(7.8,2.55,.08),new THREE.MeshStandardMaterial({color:0x1a314a,roughness:.62}));
+  backPanel.position.set(0,1.05,-.86);backPanel.receiveShadow=true;SL.scene.add(backPanel);
 
   SL_SHELF_ITEMS.forEach((item, i) => {
     const group = item.build();
-    group.position.set(-5.4 + i * 1.05, 1.6, 0);
+    const top=i<6,slot=top?i:i-6;
+    group.position.set((top?-3.1:-2.5)+slot*1.24,top?2.34:1.14,-.08);
+    group.scale.setScalar(1.05);
+    group.userData.baseScale=1.05;
     group.userData.slItem = item;
+    group.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
     SL.scene.add(group);
     SL.hoverables.push(group);
   });
@@ -14539,24 +15058,35 @@ function slInitThreeScene() {
     new THREE.CylinderGeometry(0.55, 0.5, 0.12, 28),
     new THREE.MeshStandardMaterial({ color: 0xf5f5f2, metalness: 0.1, roughness: 0.3 })
   );
-  dishBase.position.set(0, -0.3, 2.1);
+  dishBase.scale.set(1.45,1.45,1.45);
+  dishBase.position.set(0, -0.3, 2.15);
   SL.scene.add(dishBase);
   const dishRim = new THREE.Mesh(
     new THREE.TorusGeometry(0.55, 0.035, 12, 32),
     new THREE.MeshStandardMaterial({ color: 0x2a9d8f, roughness: 0.4, metalness: 0.2 })
   );
   dishRim.rotation.x = Math.PI / 2;
-  dishRim.position.set(0, -0.24, 2.1);
+  dishRim.scale.setScalar(1.45);
+  dishRim.position.set(0, -0.21, 2.15);
   SL.scene.add(dishRim);
+  const reactionGlass=new THREE.Mesh(
+    new THREE.CylinderGeometry(.78,.7,1.25,36,1,true),
+    new THREE.MeshPhysicalMaterial({color:0xc9efff,transparent:true,opacity:.26,roughness:.08,metalness:0,clearcoat:1,side:THREE.DoubleSide})
+  );
+  reactionGlass.position.set(0,.38,2.15);reactionGlass.castShadow=true;SL.scene.add(reactionGlass);
+  const glassRim=new THREE.Mesh(new THREE.TorusGeometry(.78,.035,12,40),new THREE.MeshStandardMaterial({color:0x8fdcf4,roughness:.2,metalness:.18}));
+  glassRim.rotation.x=Math.PI/2;glassRim.position.set(0,1.01,2.15);SL.scene.add(glassRim);
+  [0.05,.28,.51].forEach((y,index)=>{const mark=new THREE.Mesh(new THREE.BoxGeometry(.18,.018,.012),new THREE.MeshBasicMaterial({color:0x9ddff4,transparent:true,opacity:.72}));mark.position.set(.7,y,2.86);mark.rotation.y=-.05;SL.scene.add(mark);});
   const dishLiquid = new THREE.Mesh(
     new THREE.CylinderGeometry(0.44, 0.4, 0.5, 28),
     new THREE.MeshStandardMaterial({ color: 0x66ccff, transparent: true, opacity: 0.88 })
   );
-  dishLiquid.position.set(0, -0.28, 2.1);
+  dishLiquid.scale.x=1.42;dishLiquid.scale.z=1.42;
+  dishLiquid.position.set(0, -0.25, 2.15);
   dishLiquid.scale.y = 0.001;
   dishLiquid.visible = false;
   SL.scene.add(dishLiquid);
-  SL.reactionDish = { liquid: dishLiquid, baseY: -0.28, x: 0, z: 2.1 };
+  SL.reactionDish = { liquid: dishLiquid, baseY: -0.25, x: 0, z: 2.15 };
 
   SL.raycaster = new THREE.Raycaster();
   SL.mouse = new THREE.Vector2();
@@ -14565,6 +15095,7 @@ function slInitThreeScene() {
   canvas.addEventListener('click', slOnSceneClick);
   canvas.addEventListener('mouseleave', () => document.getElementById('slTooltip').classList.add('hidden'));
   window.addEventListener('resize', slOnSceneResize);
+  if (window.ResizeObserver) new ResizeObserver(slOnSceneResize).observe(wrap);
 
   slAnimate();
 }
@@ -14579,6 +15110,12 @@ function slOnSceneResize() {
 
 function slAnimate() {
   SL.animFrameId = requestAnimationFrame(slAnimate);
+  SL.hoverables.forEach(group => {
+    const base=group.userData.baseScale||1;
+    const target = group === SL.hoveredObject ? base*1.16 : base;
+    const next = group.scale.x + (target - group.scale.x) * .16;
+    group.scale.setScalar(next);
+  });
   SL.renderer.render(SL.scene, SL.camera);
 }
 
@@ -14604,6 +15141,7 @@ function slOnSceneMouseMove(e) {
   const root = slRaycastHoverables();
   const tooltip = document.getElementById('slTooltip');
   if (root && root.userData.slItem) {
+    SL.hoveredObject = root;
     const item = root.userData.slItem;
     const wrapRect = document.getElementById('slSceneWrap').getBoundingClientRect();
     tooltip.style.left = (e.clientX - wrapRect.left) + 'px';
@@ -14614,6 +15152,7 @@ function slOnSceneMouseMove(e) {
     tooltip.classList.remove('hidden');
     SL.renderer.domElement.style.cursor = 'pointer';
   } else {
+    SL.hoveredObject = null;
     tooltip.classList.add('hidden');
     SL.renderer.domElement.style.cursor = root ? 'pointer' : 'default';
   }
@@ -14642,12 +15181,20 @@ document.querySelectorAll('#slWaterPicker [data-temp]').forEach(btn => {
     document.getElementById('slWaterPicker').classList.add('hidden');
   });
 });
+['slClassicTemp','slClassicAmount'].forEach(id=>document.getElementById(id).addEventListener('input',slUpdateClassicSettings));
+const slTrayDrop=document.getElementById('slTray');
+slTrayDrop.addEventListener('dragover',event=>{event.preventDefault();slTrayDrop.classList.add('drop-ready');});
+slTrayDrop.addEventListener('dragleave',()=>slTrayDrop.classList.remove('drop-ready'));
+slTrayDrop.addEventListener('drop',event=>{event.preventDefault();slTrayDrop.classList.remove('drop-ready');const id=event.dataTransfer.getData('text/sl-item');if(id)slAddToTray(id);});
 
 // ---------- صينية التفاعل ----------
 const SL_TRAY_MAX = 4;
 function slAddToTray(id) {
-  if (SL.tray.length >= SL_TRAY_MAX || SL.tray.includes(id)) return;
+  if (SL.tray.length >= SL_TRAY_MAX) { document.getElementById('slLiveState').textContent='الصينية ممتلئة'; return; }
+  if (SL.tray.includes(id)) { document.getElementById('slLiveState').textContent='مضاف مسبقًا'; return; }
   SL.tray.push(id);
+  document.getElementById('slLiveState').textContent='قيد التجهيز';
+  SL.sessionLog.push(`أضاف ${t(slItemNameKey(id))} إلى صينية التجربة`);
   slRenderTray();
 }
 function slRenderTray() {
@@ -14664,6 +15211,7 @@ function slRenderTray() {
 document.getElementById('slClearTrayBtn').addEventListener('click', () => {
   SL.tray = [];
   slRenderTray();
+  document.getElementById('slLiveState').textContent='جاهز';
   document.getElementById('slReactionResult').classList.add('hidden');
 });
 document.getElementById('slReactBtn').addEventListener('click', () => {
@@ -14682,19 +15230,32 @@ document.getElementById('slReactBtn').addEventListener('click', () => {
     }
   }
   const box = document.getElementById('slReactionResult');
-  box.innerHTML = results.map(r => `<p>${escapeHtml(r.text)}</p>`).join('');
+  const tempFactor=Math.max(.35,Math.pow(1.55,(SL.settings.temperature-25)/25));
+  const amountFactor=Math.pow(SL.settings.amount/10,.72);
+  const hasChemical=SL.tray.includes('vinegar')&&SL.tray.includes('baking_soda');
+  const hasDissolving=SL.tray.some(id=>['salt','sugar','baking_soda'].includes(id))&&SL.tray.some(id=>id.startsWith('water_'));
+  const baseRate=hasChemical?12:hasDissolving?7:4.5;
+  const rate=+(baseRate*tempFactor*amountFactor).toFixed(1);
+  const duration=+(Math.max(1.2,24/rate)).toFixed(1);
+  const energy=+(SL.settings.amount*SL.settings.temperature*.12).toFixed(0);
+  const intensity=Math.max(.65,Math.min(2.4,rate/10));
+  box.innerHTML = results.map(r => `<p>${escapeHtml(r.text)}</p>`).join('')+`<div class="sl-result-metrics"><div class="sl-result-metric"><strong>${rate}</strong><small>معدل التغير</small></div><div class="sl-result-metric"><strong>${duration} ث</strong><small>الزمن المتوقع</small></div><div class="sl-result-metric"><strong>${energy}</strong><small>مؤشر الطاقة</small></div></div>`;
   box.classList.remove('hidden');
-  slPlayReactionEffect(involved);
-  SL.tray = [];
-  slRenderTray();
+  document.getElementById('slLiveState').textContent='جارٍ التفاعل';
+  document.getElementById('slReactBtn').disabled=true;
+  slPlayReactionEffect(involved,intensity);
+  SL.experimentCount++;
+  SL.sessionLog.push(`المحاولة ${SL.experimentCount}: حرارة ${SL.settings.temperature}°م، كمية ${SL.settings.amount}غ، معدل ${rate}`);
+  setTimeout(()=>{document.getElementById('slLiveState').textContent='اكتمل القياس';document.getElementById('slReactBtn').disabled=false;},2200);
 });
 
 // ---------- تأثير بصري وقت التفاعل - يصير فعليًا بصحن التفاعل الثابت
 // قدام الرف: يتلوّن حسب المواد، يفور ويهتز، يطلع منه فقاعات ورذاذ صاعد،
 // موجة ضوئية تتوسع، وومضة إضاءة قصيرة - كل شي مصدره نقطة واحدة واضحة
 // بمنتصف المشهد، مو مجرد فقاعات عائمة بالهواء بلا مصدر ----------
-function slPlayReactionEffect(itemIds) {
+function slPlayReactionEffect(itemIds, intensity) {
   if (!SL.scene || !SL.reactionDish) return;
+  intensity=intensity||1;
   const dish = SL.reactionDish;
   const cats = (itemIds || []).map(id => SL_ITEM_CATEGORY[id]);
   let colors = [0x8be08b, 0xffffff, 0x9fe6ff, 0xffe14d];
@@ -14717,7 +15278,7 @@ function slPlayReactionEffect(itemIds) {
     if (el < 0.35) {
       dish.liquid.scale.y = Math.max(0.001, el / 0.35);
     } else if (el < 1.6) {
-      dish.liquid.scale.y = 1 + Math.sin(el * 14) * 0.07;
+      dish.liquid.scale.y = 1 + Math.sin(el * (12+intensity*5)) * (0.05+intensity*.035);
       dish.liquid.position.y = dish.baseY + Math.sin(el * 14) * 0.02;
     } else if (el < 2.2) {
       dish.liquid.scale.y = Math.max(0.001, 1 - (el - 1.6) / 0.6);
@@ -14730,16 +15291,16 @@ function slPlayReactionEffect(itemIds) {
   requestAnimationFrame(tickDish);
 
   // رذاذ/فقاعات تطلع من فوق الصحن مباشرة
-  for (let i = 0; i < 26; i++) {
+  for (let i = 0; i < Math.round(20+intensity*18); i++) {
     const bubble = new THREE.Mesh(
-      new THREE.SphereGeometry(0.045 + Math.random() * 0.08, 10, 10),
+      new THREE.SphereGeometry((0.04 + Math.random() * 0.075)*Math.min(1.35,intensity), 10, 10),
       new THREE.MeshStandardMaterial({ color: colors[i % colors.length], transparent: true, opacity: 0.9 })
     );
     bubble.position.set(dish.x + (Math.random() - 0.5) * 0.6, dish.baseY + 0.15, dish.z + (Math.random() - 0.5) * 0.6);
     SL.scene.add(bubble);
     const start = performance.now();
     const delay = Math.random() * 250;
-    const riseSpeed = 1.1 + Math.random() * 1.2;
+    const riseSpeed = (1.05 + Math.random() * 1.2) * Math.min(1.5,intensity);
     const drift = (Math.random() - 0.5) * 1.1;
     const startX = bubble.position.x, startZ = bubble.position.z;
     const tick = () => {
@@ -14776,14 +15337,14 @@ function slPlayReactionEffect(itemIds) {
   requestAnimationFrame(tickRing);
 
   // ومضة إضاءة قصيرة تبرز لحظة التفاعل
-  const flash = new THREE.PointLight(dishColor, 3.2, 7);
+  const flash = new THREE.PointLight(dishColor, 2.5+intensity*1.8, 7+intensity*2);
   flash.position.set(dish.x, dish.baseY + 1, dish.z + 0.5);
   SL.scene.add(flash);
   const flashStart = performance.now();
   const tickFlash = () => {
     const el = (performance.now() - flashStart) / 1000;
     if (el > 0.5) { SL.scene.remove(flash); return; }
-    flash.intensity = 3.2 * (1 - el / 0.5);
+    flash.intensity = (2.5+intensity*1.8) * (1 - el / 0.5);
     requestAnimationFrame(tickFlash);
   };
   requestAnimationFrame(tickFlash);
@@ -14808,6 +15369,7 @@ document.getElementById('slTabBiologyBtn').addEventListener('click', () => slSwi
 const SL_PROJECTS = {
   volcano: ['vinegar', 'baking_soda'],
   dissolve_race: ['sugar', 'water_hot'],
+  thermal_measurement: ['thermometer', 'water_hot'],
   diffusion: ['food_coloring', 'water_cold'],
 };
 document.getElementById('slProjectSelect').addEventListener('change', (e) => {
@@ -14816,6 +15378,7 @@ document.getElementById('slProjectSelect').addEventListener('change', (e) => {
   if (!key || !SL_PROJECTS[key]) return;
   slSwitchTab('chemistry');
   SL.tray = [...SL_PROJECTS[key]];
+  SL.sessionLog.push(`${t('sl_projects_placeholder')}: ${key}`);
   slRenderTray();
   document.getElementById('slReactionResult').classList.add('hidden');
 });
@@ -15363,7 +15926,15 @@ async function slSendChatMessage() {
   try {
     const contextParts = [];
     if (SL.bioItem) contextParts.push(t(SL_ANIMALS[SL.bioItem].nameKey));
-    const body = { message, lang: currentLang, context: contextParts.join(', ') };
+    if (SL.tray.length) contextParts.push(`صينية التجربة: ${SL.tray.join(', ')}`);
+    const body = {
+      message, lang: currentLang, context: contextParts.join('، '),
+      lab_context: {
+        mode:'traditional', current_tab:SL.bioItem?'biology':'chemistry_physics',
+        tray:[...SL.tray], explored_biology_item:SL.bioItem,
+        recent_actions:SL.sessionLog.slice(-20),
+      },
+    };
     if (SL.chatInteractionId) body.interaction_id = SL.chatInteractionId;
     const res = await apiCall('POST', '/api/science-lab/chat', body);
     SL.chatInteractionId = res.interaction_id;
@@ -15395,10 +15966,10 @@ document.getElementById('slSummaryBtn').addEventListener('click', async () => {
 document.getElementById('slSummaryCloseBtn').addEventListener('click', () => document.getElementById('slSummaryModal').classList.add('hidden'));
 
 // ---------- الرجوع ----------
-document.getElementById('slBackBtn').addEventListener('click', () => document.getElementById('globalBackBtn').click());
+document.getElementById('slBackBtn').addEventListener('click', () => zlabReturnToChoice());
 
 // ---------- تحميل الشاشة ----------
-function loadScienceLabScreen() {
+function loadClassicScienceLabScreen() {
   clearError('slError');
   if (!SL.initialized) {
     try {
@@ -15407,11 +15978,754 @@ function loadScienceLabScreen() {
       showError('slError', t('sl_err_3d_unsupported'));
     }
     slRenderBioCategories();
+    slRenderInventory();
+    slUpdateClassicSettings();
     slRenderTray();
     SL.initialized = true;
   } else {
     setTimeout(slOnSceneResize, 0);
   }
+}
+function loadScienceLabScreen() { zlabPrepareEntry(); }
+
+// ============================================================================
+// مختبر ذكيّ التجريبي — قياس التفكير، سجل تعلم، تحليل وتقرير محلي فوري
+// ============================================================================
+const ZLAB = {
+  stage: 'hypothesis', mode: 'guided', subject: 'chemistry', lesson: '', studentName: '', idea: '', aiTask: '', preparedEquipment: [], assembledEquipment: [], hypothesis: '', reason: '', conclusion: '',
+  attempts: [], actions: [], errors: [], misconceptions: [], quizCorrect: false, quizData: null,
+  changedSinceRun: new Set(), startedAt: null, score: 0, understandingChange: 0,
+  aiInteractionId: null, aiBusy: false, pendingAIReview: null,
+  aiApprovals: {setup:false,hypothesis:false,analysis:false,quiz:false,complete:false},
+};
+const ZLAB_SUBJECTS = {
+  chemistry: {
+    title:'الكيمياء الذكية', subtitle:'سرعة التفاعل · Showcase متكامل', kicker:'⚗️ تجربة العرض · 2–3 دقائق',
+    goal:'هدفك: اختبر عاملًا واحدًا مع تثبيت بقية المتغيرات، ثم فسّر النمط الذي تراه.',
+    amount:'كمية البيكربونات', conc:'تركيز الخل', sensor:'حساس CO₂ متصل', rate:'مل CO₂ / ث', volume:'مل CO₂',
+    chart:'العلاقة بين الحرارة وسرعة التفاعل', experiment:'سرعة تفاعل الخل وبيكربونات الصوديوم',
+    equipment:['خل','بيكربونات الصوديوم','وعاء تفاعل','حساس CO₂','ميزان حرارة'],
+    primary:'درجة الحرارة', units:{temp:'°م',amount:' غ',conc:'%',time:' ث'}, ranges:{temp:[10,70,25,5],amount:[5,20,10,5],conc:[3,9,5,1],time:[10,30,20,5]},
+  },
+  physics: {
+    title:'الفيزياء الذكية', subtitle:'الحركة والقوى · تجربة استقصائية', kicker:'⚙️ فيزياء · تعلم ذكي',
+    goal:'هدفك: غيّر عاملًا واحدًا، ثم قارن تسارع العربة وسرعتها بقياسات واضحة.',
+    amount:'كتلة العربة', conc:'قوة الدفع', sensor:'حساس الحركة متصل', rate:'م/ث² تسارع', volume:'م/ث سرعة',
+    chart:'العلاقة بين زاوية السطح وتسارع العربة', experiment:'حركة عربة على سطح مائل',
+    equipment:['عربة ديناميكية','مسار مائل','حساس حركة','مجموعة كتل','مقياس قوة'],
+    primary:'زاوية السطح', units:{temp:'°',amount:' كغ',conc:' نيوتن',time:' ث'}, ranges:{temp:[5,45,20,5],amount:[1,5,2,1],conc:[2,10,4,1],time:[2,10,5,1]},
+  },
+  biology: {
+    title:'الأحياء الذكية', subtitle:'استكشاف الكائنات وجسم الإنسان', kicker:'🧬 أحياء · تعلم ذكي',
+    goal:'هدفك: استخدم مستكشف الأحياء، دوّن ما تلاحظه، ثم اربط بين التركيب والوظيفة بدليل واضح.',
+    amount:'الملاحظة', conc:'المقارنة', sensor:'مستكشف الأحياء جاهز', rate:'نتيجة الاستكشاف', volume:'الأدلة',
+    chart:'سجل استكشاف الأحياء', experiment:'استكشاف الكائنات وجسم الإنسان',
+    equipment:['مستكشف التصنيفات','نموذج جسم الإنسان','خرائط الأعضاء','بطاقات المقارنة','مساعد AI'],
+    primary:'درجة الحرارة', units:{temp:'°م',amount:' مل',conc:'%',time:' ث'}, ranges:{temp:[10,70,37,5],amount:[5,20,10,5],conc:[3,9,5,1],time:[10,30,20,5]},
+  },
+};
+function zlabEl(id) { return document.getElementById(id); }
+function zlabLog(type, detail) {
+  ZLAB.actions.push({ type, detail, at: new Date().toISOString() });
+}
+function zlabToast(message) {
+  const old = document.querySelector('.zlab-toast');
+  if (old) old.remove();
+  const el = document.createElement('div');
+  el.className = 'zlab-toast'; el.textContent = message;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2400);
+}
+function zlabCanViewTeacherAnalytics() {
+  return ['teacher','school_admin','school_administration'].includes(currentUserRole);
+}
+function zlabPrepareEntry() {
+  const section=zlabEl('step-science-lab');
+  if (!section) return;
+  zlabRestoreClassicBiology();
+  section.classList.remove('zlab-smart-active','zlab-classic-active');
+  section.classList.add('zlab-mode-choice');
+  zlabResetChoice();
+  const isSchool=!!currentUserRole;
+  zlabEl('zlabSmartChoiceTitle').textContent=isSchool?'المختبر التعليمي الذكي':'التعلم الذكي';
+  zlabEl('zlabSmartChoiceDesc').textContent=isSchool
+    ?'مسار تجريبي يقيس الفرضية والمحاولات وتغير الفهم، ويربط النتائج بملف الطالب وتحليلات المعلم.'
+    :'مسار اختياري يبدأ بفرضيتك، ويحلل مساعد AI محاولاتك ويخصص التقييم والنشاط التالي لك.';
+  const teacherTab=document.querySelector('[data-zlab-view="teacher"]');
+  if (teacherTab) teacherTab.classList.toggle('hidden',!zlabCanViewTeacherAnalytics());
+  zlabShowView('student');
+}
+function zlabOpenSubjectPicker() {
+  zlabPrepareEntry();
+  zlabEl('zlabLearningModePicker').classList.add('hidden');
+  zlabEl('zlabSubjectPicker').classList.remove('hidden');
+}
+function zlabResetChoice() {
+  zlabEl('zlabSubjectPicker').classList.add('hidden');
+  zlabEl('zlabLessonPicker').classList.add('hidden');
+  zlabEl('zlabLearningModePicker').classList.remove('hidden');
+}
+function zlabShowLessonPicker(subject) {
+  ZLAB.subject=subject; ZLAB.lesson='درس مخصص بالذكاء الاصطناعي';
+  zlabEl('zlabSubjectPicker').classList.add('hidden');
+  zlabEl('zlabLessonPicker').classList.remove('hidden');
+  const config=ZLAB_SUBJECTS[subject] || ZLAB_SUBJECTS.chemistry;
+  zlabEl('zlabLessonHeading').textContent=`اكتب فكرتك في ${config.title.replace(' الذكية','')}`;
+  zlabEl('zlabSetupStatus').textContent='اكتب اسمك وفكرتك.';
+  zlabValidateSetup();
+}
+function zlabValidateSetup() {
+  const valid=zlabEl('zlabStudentName').value.trim().length>=2 && zlabEl('zlabStudentIdea').value.trim().length>=5;
+  zlabEl('zlabPrepareExperiment').disabled=!valid;
+  zlabEl('zlabSetupStatus').textContent=valid?'جاهز — اضغط الزر ليحدد AI الدرس ويجهز المسألة والأدوات.':'اكتب اسمك وفكرتك.';
+}
+function zlabPreparedEquipment(config) {
+  const items=[...config.equipment], idea=ZLAB.idea.toLowerCase();
+  const extras=[];
+  if (/حرار|تسخين|تبريد/.test(idea) || /heat|temperature/.test(idea)) extras.push('حمام حراري قابل للضبط');
+  if (/تركيز|كمية/.test(idea) || /concentration|amount/.test(idea)) extras.push('أسطوانة مدرجة','ميزان رقمي');
+  if (ZLAB.subject==='physics' && /حركة|عربة|قوة|سطح|سرعة/.test(idea)) extras.push('شريط قياس','بوابة ضوئية');
+  if (ZLAB.subject==='biology' && /عقل|دماغ|إنسان|جسم|عصب/.test(idea)) extras.push('نموذج جسم الإنسان','خريطة الجهاز العصبي','نموذج الدماغ');
+  if (ZLAB.subject==='biology' && /حيوان|كائن|تصنيف|ثدي|طير|سمك/.test(idea)) extras.push('بطاقات التصنيف','شجرة العلاقات');
+  return [...new Set([...items,...extras])];
+}
+async function zlabPrepareWithAI() {
+  if (zlabEl('zlabPrepareExperiment').disabled) return;
+  const subject=ZLAB.subject, config=ZLAB_SUBJECTS[subject]||ZLAB_SUBJECTS.chemistry;
+  ZLAB.aiApprovals={setup:false,hypothesis:false,analysis:false,quiz:false,complete:false};
+  ZLAB.studentName=zlabEl('zlabStudentName').value.trim();
+  ZLAB.idea=zlabEl('zlabStudentIdea').value.trim();
+  const preparedEquipment=zlabPreparedEquipment(config);
+  const button=zlabEl('zlabPrepareExperiment'); button.disabled=true;
+  zlabEl('zlabSetupStatus').textContent='AI يصمم المسألة ويجهز الأدوات…';
+  if (!currentAccessToken) {
+    zlabEl('zlabSetupStatus').textContent='يلزم تسجيل الدخول ليقرأ AI الفكرة ويجهز التجربة.';
+    button.disabled=false; return;
+  }
+  let task='';
+  try {
+    const proofLine=`تم تحليل الفكرة: ${ZLAB.idea}`;
+    const setupInstruction=subject==='biology'
+      ? `فكرة الطالب ${ZLAB.studentName} هي: «${ZLAB.idea}». أنشئ له مهمة استكشاف أحياء قصيرة جدًا داخل مستكشف الكائنات أو نموذج جسم الإنسان. إذا كانت الفكرة عن العقل أو الدماغ فاجعل المهمة عن الدماغ والجهاز العصبي ووظائف أجزائه. لا تقترح إنزيمات أو مواد كيميائية أو تجربة كاتالاز إلا إذا ذكرها الطالب صراحة. يجب أن يبدأ ردك حرفيًا بالسطر «${proofLine}»، ثم اكتب في السطر التالي «المهمة:» وسؤال الاستكشاف في جملة واحدة فقط. لا تضف أي نص آخر ولا تعط الحل.`
+      : `استنتج الدرس المناسب من فكرة الطالب ${ZLAB.studentName}: «${ZLAB.idea}»، ثم أنشئ مسألة تجريبية قصيرة جدًا في مجال ${config.title}. يجب أن يبدأ ردك حرفيًا بالسطر «${proofLine}»، ثم اكتب في السطر التالي «المهمة:» وسؤالًا واحدًا فقط. لا تضف أي نص آخر ولا تعط الحل.`;
+    const data=await apiCall('POST','/api/science-lab/chat',{
+      message:setupInstruction,
+      context:`إعداد تجربة ${config.title}`,
+      lab_context:{phase:'experiment_setup',student_name:ZLAB.studentName,subject,lesson:'يستنتجه AI من الفكرة',student_idea:ZLAB.idea,prepared_equipment:preparedEquipment},
+      lang:currentLang||'ar',
+    });
+    const reply=(data.reply||'').trim();
+    if (!reply.startsWith(proofLine)) throw new Error('لم يؤكد AI أنه قرأ فكرتك؛ لم يتم استخدام أي نشاط بديل');
+    const taskMatch=reply.match(/المهمة\s*:\s*(.+)/s);
+    task=(taskMatch?.[1]||'').trim();
+    if (!task || task.length<12) throw new Error('قرأ AI الفكرة لكنه لم يُنشئ مهمة صالحة؛ لم يتم استخدام أي نشاط بديل');
+    ZLAB.aiInteractionId=data.interaction_id||null;
+  } catch(error) {
+    zlabEl('zlabSetupStatus').textContent=`لم يكتمل تجهيز AI: ${error.message}. حاول مرة أخرى.`;
+    zlabToast(`خطأ: ${error.message}`);
+    button.disabled=false; return;
+  }
+  ZLAB.aiTask=task;
+  ZLAB.aiApprovals.setup=true;
+  ZLAB.preparedEquipment=preparedEquipment;
+  zlabLaunchPreparedExperiment(subject,task,preparedEquipment);
+}
+function zlabLaunchPreparedExperiment(subject, task, preparedEquipment) {
+  if (!ZLAB.aiApprovals.setup) { zlabToast('خطأ: لم تكتمل معاملة AI لتجهيز التجربة'); return; }
+  const config=ZLAB_SUBJECTS[subject] || ZLAB_SUBJECTS.chemistry;
+  ZLAB.subject=subject; ZLAB.stage='hypothesis'; ZLAB.mode='guided';
+  ZLAB.pendingAIReview=null; ZLAB.aiBusy=false;
+  ZLAB.preparedEquipment=preparedEquipment||config.equipment;
+  ZLAB.assembledEquipment=[];
+  ZLAB.hypothesis=''; ZLAB.reason=''; ZLAB.conclusion=''; ZLAB.attempts=[]; ZLAB.actions=[];
+  ZLAB.errors=[]; ZLAB.misconceptions=[]; ZLAB.changedSinceRun=new Set();
+  ZLAB.quizCorrect=false; ZLAB.quizData=null;
+  zlabEl('zlabExperimentTitle').textContent=config.title;
+  zlabEl('zlabExperimentSubtitle').textContent=`${config.subtitle} · ${ZLAB.studentName}`;
+  zlabEl('zlabExperimentKicker').textContent=config.kicker;
+  zlabEl('zlabExperimentQuestion').textContent=task;
+  zlabEl('zlabExperimentGoal').textContent=config.goal;
+  zlabEl('zlabTempLabel').textContent=config.primary;
+  zlabEl('zlabAmountLabel').textContent=config.amount;
+  zlabEl('zlabConcLabel').textContent=config.conc;
+  zlabEl('zlabSensorLabel').textContent=config.sensor;
+  zlabEl('zlabRateUnit').textContent=config.rate;
+  zlabEl('zlabVolumeUnit').textContent=config.volume;
+  zlabEl('zlabTableAmount').textContent=config.amount;
+  zlabEl('zlabTableConc').textContent=config.conc;
+  zlabEl('zlabTableRate').textContent=config.rate;
+  zlabEl('zlabTablePrimary').textContent=config.primary;
+  zlabEl('zlabChartTitle').textContent=config.chart;
+  Object.entries(config.ranges).forEach(([key,range])=>{
+    const ids={temp:'zlabTemp',amount:'zlabAmount',conc:'zlabConc',time:'zlabTime'},input=zlabEl(ids[key]);
+    [input.min,input.max,input.value,input.step]=range;
+  });
+  zlabEl('zlabTempValue').textContent=zlabEl('zlabTemp').value+config.units.temp;
+  zlabEl('zlabAmountValue').textContent=zlabEl('zlabAmount').value+config.units.amount;
+  zlabEl('zlabConcValue').textContent=zlabEl('zlabConc').value+config.units.conc;
+  zlabEl('zlabTimeValue').textContent=zlabEl('zlabTime').value+config.units.time;
+  zlabEl('zlabChemRig').classList.toggle('hidden',subject==='physics');
+  zlabEl('zlabPhysicsRig').classList.toggle('hidden',subject!=='physics');
+  zlabEl('zlabRamp').style.setProperty('--ramp-angle',`-${zlabEl('zlabTemp').value}deg`);
+  zlabEl('zlabCart').style.setProperty('--ramp-angle',`-${zlabEl('zlabTemp').value}deg`);
+  const experimentStage=document.querySelector('[data-zlab-stage="experiment"]');
+  experimentStage.classList.toggle('zlab-biology-mode',subject==='biology');
+  zlabEl('zlabEquipmentList').innerHTML=ZLAB.preparedEquipment.map(item=>`<span>${item}</span>`).join('');
+  zlabRenderPreparedDock();
+  zlabEl('zlabHypothesis').value=''; zlabEl('zlabHypReason').value=''; zlabEl('zlabConclusion').value='';
+  zlabEl('zlabQuizQuestion').textContent='بانتظار إنشاء التقييم بواسطة AI…';
+  zlabEl('zlabQuizOptions').innerHTML='';
+  zlabEl('zlabQuizWhy').textContent='سيشرح AI سبب اختيار السؤال بعد قراءة أدائك.';
+  zlabEl('zlabNextActivity').textContent='بانتظار اقتراح AI…';
+  zlabEl('zlabStartBtn').disabled=true; zlabEl('zlabStartBtn').textContent='احفظ الفرضية واجعل AI يقرأها'; zlabEl('zlabAnalyzeBtn').disabled=true;
+  zlabEl('zlabRunBtn').disabled=false;
+  zlabEl('zlabAttemptsBody').innerHTML='<tr><td colspan="6" class="zlab-muted">ستظهر بياناتك هنا بعد أول محاولة.</td></tr>';
+  zlabEl('zlabAiFeed').innerHTML='<div class="zlab-msg">بانتظار أول رد من AI المتصل…</div>';
+  zlabOpenMode('smart');
+  if (subject==='biology') zlabMountClassicBiology();
+  zlabSetStage('hypothesis');
+  zlabLog('تجهيز تجربة AI',`${ZLAB.studentName} | ${subject} | ${ZLAB.lesson} | ${ZLAB.idea}`);
+}
+function zlabMountClassicBiology() {
+  const panel=zlabEl('slBioPanel');
+  if (!zlabEl('slBioCategories').children.length) slRenderBioCategories();
+  zlabEl('zlabBioHost').appendChild(panel); panel.classList.remove('hidden');
+}
+function zlabRestoreClassicBiology() {
+  const panel=zlabEl('slBioPanel'),mount=zlabEl('slBioOriginalMount');
+  if (panel&&mount&&panel.parentElement===zlabEl('zlabBioHost')) { mount.insertAdjacentElement('afterend',panel); panel.classList.add('hidden'); }
+}
+function zlabRenderPreparedDock() {
+  const dock=zlabEl('zlabPreparedDock');
+  dock.innerHTML=ZLAB.preparedEquipment.map((item,index)=>`<button type="button" class="zlab-smart-tool${ZLAB.assembledEquipment.includes(item)?' assembled':''}" draggable="true" data-equipment-index="${index}">${ZLAB.assembledEquipment.includes(item)?'✓ ':''}${escapeHtml(item)}</button>`).join('');
+  dock.querySelectorAll('[data-equipment-index]').forEach(button=>{
+    button.addEventListener('click',()=>zlabAssembleEquipment(+button.dataset.equipmentIndex));
+    button.addEventListener('dragstart',event=>event.dataTransfer.setData('text/zlab-equipment',button.dataset.equipmentIndex));
+  });
+  const count=ZLAB.assembledEquipment.length;
+  zlabEl('zlabAssemblyStatus').textContent=count<2?`أضفت ${count} من الأدوات — أضف أداتين على الأقل.`:`✓ التجربة مجهزة بـ${count} أدوات ويمكن تنفيذها.`;
+  const unavailable=count<2 || ZLAB.stage!=='hypothesis';
+  zlabEl('zlabRunBtn').disabled=!!ZLAB.aiBusy;
+  zlabEl('zlabRunBtn').setAttribute('aria-disabled',String(unavailable));
+}
+function zlabAssembleEquipment(index) {
+  const item=ZLAB.preparedEquipment[index]; if (!item || ZLAB.assembledEquipment.includes(item)) return;
+  ZLAB.assembledEquipment.push(item); zlabLog('تركيب أداة',item); zlabRenderPreparedDock();
+}
+function zlabOpenMode(mode) {
+  const section=zlabEl('step-science-lab');
+  section.classList.remove('zlab-mode-choice','zlab-smart-active','zlab-classic-active');
+  section.classList.add(mode==='smart'?'zlab-smart-active':'zlab-classic-active');
+  if (mode==='classic') {
+    zlabRestoreClassicBiology();
+    loadClassicScienceLabScreen();
+    setTimeout(slOnSceneResize,0);
+  }
+  zlabLog('اختيار نوع المختبر',mode==='smart'?'التعلم الذكي':'التقليدي والأحياء');
+}
+function zlabReturnToChoice() {
+  zlabPrepareEntry();
+  zlabEl('step-science-lab').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function zlabSetStage(stage) {
+  const order = ['hypothesis','analysis','quiz','complete'];
+  const requiredApproval={hypothesis:'setup',analysis:'analysis',quiz:'quiz',complete:'complete'}[stage];
+  if (requiredApproval && !ZLAB.aiApprovals[requiredApproval]) {
+    zlabToast(`خطأ: معاملة AI لمرحلة ${stage} لم تكتمل`);
+    zlabLog('منع انتقال',`${stage}: AI غير مكتمل`);
+    return false;
+  }
+  ZLAB.stage = stage;
+  document.querySelectorAll('[data-zlab-stage]').forEach(el => {
+    const visible=el.dataset.zlabStage===stage || (stage==='hypothesis'&&el.dataset.zlabStage==='experiment');
+    el.classList.toggle('active',visible);
+  });
+  zlabEl('zlabBioContinue').disabled=stage!=='hypothesis';
+  zlabRenderPreparedDock();
+  document.querySelectorAll('#zlabProgress .zlab-step').forEach(el => {
+    const at = order.indexOf(el.dataset.step), current = order.indexOf(stage);
+    el.classList.toggle('active', at === current);
+    el.classList.toggle('done', at < current);
+  });
+  zlabLog('انتقال مرحلة', stage);
+  zlabEl('zlabStudentView').scrollIntoView({ behavior:'smooth', block:'start' });
+  return true;
+}
+function zlabShowView(view) {
+  if (view==='teacher'&&!zlabCanViewTeacherAnalytics()) {
+    view='student';
+    zlabToast('لوحة المعلم متاحة لحسابات المدرسة المخوّلة فقط');
+  }
+  document.querySelectorAll('[data-zlab-view]').forEach(btn => btn.classList.toggle('active', btn.dataset.zlabView === view));
+  zlabEl('zlabStudentView').style.display = view === 'student' ? '' : 'none';
+  zlabEl('zlabTeacherView').classList.toggle('active', view === 'teacher');
+  zlabLog('فتح عرض', view === 'teacher' ? 'لوحة المعلم' : 'مسار الطالب');
+}
+function zlabAppendAI(message, hint) {
+  const msg = document.createElement('div');
+  msg.className = 'zlab-msg' + (hint ? ' hint' : '');
+  msg.textContent = message;
+  zlabEl('zlabAiFeed').appendChild(msg);
+  zlabEl('zlabAiFeed').scrollTop = zlabEl('zlabAiFeed').scrollHeight;
+  zlabLog('تدخل AI', message);
+}
+function zlabAIContextPayload() {
+  const config=ZLAB_SUBJECTS[ZLAB.subject] || ZLAB_SUBJECTS.chemistry;
+  return {
+    subject: ZLAB.subject,
+    lesson: ZLAB.lesson,
+    student_name: ZLAB.studentName,
+    student_idea: ZLAB.idea,
+    ai_generated_task: ZLAB.aiTask,
+    prepared_equipment: ZLAB.preparedEquipment,
+    assembled_equipment: ZLAB.assembledEquipment,
+    experiment: config.experiment,
+    stage: ZLAB.stage,
+    learning_mode: ZLAB.mode,
+    hypothesis: ZLAB.hypothesis,
+    hypothesis_reason: ZLAB.reason,
+    current_variables: zlabValues(),
+    attempts: ZLAB.attempts.slice(-8),
+    methodological_errors: ZLAB.errors.slice(-8),
+    recent_actions: ZLAB.actions.slice(-20),
+    biology_exploration: ZLAB.subject==='biology'?SL.sessionLog.slice(-30):[],
+    conclusion: ZLAB.conclusion,
+    detected_misconceptions: ZLAB.misconceptions,
+  };
+}
+async function zlabRequestAI(message, expectedPrefix='', phase='guidance') {
+  if (ZLAB.aiBusy) return false;
+  if (!currentAccessToken) {
+    zlabAppendAI('سجّل الدخول لتفعيل مساعد AI المتصل وحفظ سياق تجربتك.', true);
+    return false;
+  }
+  ZLAB.aiBusy = true;
+  zlabEl('zlabAiSend').disabled = true;
+  zlabEl('zlabAiContext').textContent = 'يحلل سياق تجربتك الآن…';
+  const loading = document.createElement('div');
+  loading.className = 'zlab-msg'; loading.textContent = 'يفكّر في بيانات محاولتك…';
+  zlabEl('zlabAiFeed').appendChild(loading);
+  try {
+    const data = await apiCall('POST','/api/science-lab/chat',{
+      message,
+      context:'مختبر التعلم الذكي — تجربة متغيرة حسب المجال',
+      lab_context:{...zlabAIContextPayload(),phase,required_prefix:expectedPrefix},
+      interaction_id:ZLAB.aiInteractionId,
+      lang:currentLang || 'ar',
+    });
+    loading.remove();
+    if (!data.reply || !data.reply.trim()) throw new Error('لم يرجع AI ردًا صالحًا');
+    ZLAB.aiInteractionId = data.interaction_id || ZLAB.aiInteractionId;
+    const reply=data.reply.trim();
+    if (expectedPrefix && !reply.startsWith(expectedPrefix)) throw new Error('لم يؤكد AI إكمال هذه المعاملة');
+    zlabAppendAI(reply, true);
+    return reply;
+  } catch (error) {
+    loading.remove();
+    zlabAppendAI(`تعذر وصول طلب AI للخادم الآن: ${error.message || 'خطأ اتصال'}. أعد المحاولة بعد التحقق من تشغيل الخادم.`, true);
+    return false;
+  } finally {
+    ZLAB.aiBusy = false;
+    zlabEl('zlabAiSend').disabled = false;
+    zlabEl('zlabAiContext').textContent = `متصل بسياق الفرضية و${ZLAB.attempts.length} محاولة و${ZLAB.errors.length} خطأ`;
+  }
+}
+function zlabValues() {
+  return {
+    temp: +zlabEl('zlabTemp').value, amount: +zlabEl('zlabAmount').value,
+    conc: +zlabEl('zlabConc').value, time: +zlabEl('zlabTime').value,
+  };
+}
+function zlabUpdateControl(inputId, outputId, unitKey) {
+  const input = zlabEl(inputId), output = zlabEl(outputId);
+  input.addEventListener('input', () => {
+    const config=ZLAB_SUBJECTS[ZLAB.subject]||ZLAB_SUBJECTS.chemistry;
+    const suffix=config.units[unitKey];
+    const labels={temp:config.primary,amount:config.amount,conc:config.conc,time:'زمن الرصد'},key=labels[unitKey];
+    output.textContent = input.value + suffix;
+    ZLAB.changedSinceRun.add(key);
+    zlabLog('تغيير متغير', `${key}: ${input.value}${suffix}`);
+    if (ZLAB.subject==='physics'&&unitKey==='temp') zlabEl('zlabRamp').style.setProperty('--ramp-angle',`-${input.value}deg`);
+  });
+}
+function zlabCalculate(v) {
+  if (ZLAB.subject === 'biology') {
+    // نشاط الكاتالاز يبلغ ذروة تعليمية قرب 37°م ثم ينخفض بسبب تمسخ الإنزيم.
+    const optimum = Math.exp(-Math.pow((v.temp - 37) / 19, 2));
+    const rate = Math.max(1.2, 18 * optimum * Math.pow(v.amount / 10,.65) * Math.pow(v.conc / 5,.8));
+    const maxVolume = Math.min(v.amount * 45, v.conc * 76);
+    return { rate:+rate.toFixed(1), volume:+Math.min(maxVolume,rate*v.time*.72).toFixed(0), maxVolume:+maxVolume.toFixed(0) };
+  }
+  if (ZLAB.subject === 'physics') {
+    // عربة على سطح مائل: مركبة الجاذبية مع قوة دفع إضافية مقسومة على الكتلة.
+    const angleRadians=v.temp*Math.PI/180;
+    const acceleration=Math.max(.2,9.81*Math.sin(angleRadians)+(v.conc/v.amount)*.42);
+    const speed=Math.min(24,acceleration*v.time*.34);
+    return { rate:+acceleration.toFixed(2), volume:+speed.toFixed(1), maxVolume:24 };
+  }
+  // نموذج الكيمياء: معدل التصادمات يزيد مع الحرارة والتركيز ومساحة/كمية المتفاعل.
+  const tempFactor = Math.pow(1.72, (v.temp - 25) / 20);
+  const amountFactor = Math.pow(v.amount / 10, .72);
+  const concentrationFactor = Math.pow(v.conc / 5, 1.08);
+  const rate = Math.max(2.1, 7.8 * tempFactor * amountFactor * concentrationFactor);
+  const maxVolume = Math.min(v.amount * 52, v.conc * 88);
+  const observed = Math.min(maxVolume, rate * v.time * .78);
+  return { rate:+rate.toFixed(1), volume:+observed.toFixed(0), maxVolume:+maxVolume.toFixed(0) };
+}
+function zlabAnimateReaction(result) {
+  if (ZLAB.subject==='physics') {
+    const cart=zlabEl('zlabCart'),angle=zlabEl('zlabTemp').value;
+    cart.style.setProperty('--ramp-angle',`-${angle}deg`); cart.style.setProperty('--cart-x','0px');
+    void cart.offsetWidth;
+    cart.style.setProperty('--cart-x',`${-Math.min(420,120+result.rate*35)}px`);
+    zlabEl('zlabRate').textContent=result.rate.toFixed(2); zlabEl('zlabVolume').textContent=result.volume.toFixed(1);
+    setTimeout(()=>cart.style.setProperty('--cart-x','0px'),1700);
+    return;
+  }
+  const vessel = zlabEl('zlabVessel'), bubbles = zlabEl('zlabBubbles');
+  const foamHeight = Math.min(155, 45 + result.rate * 2.4);
+  zlabEl('zlabFoam').style.setProperty('--foam', foamHeight + 'px');
+  vessel.classList.remove('running'); void vessel.offsetWidth; vessel.classList.add('running');
+  bubbles.innerHTML = '';
+  const count = Math.min(30, Math.round(result.rate));
+  for (let i=0;i<count;i++) {
+    const b = document.createElement('i'); b.className = 'zlab-bubble';
+    b.style.left = (8 + Math.random()*84) + '%';
+    b.style.setProperty('--speed', (.7 + Math.random()*1.1) + 's');
+    b.style.setProperty('--drift', (-35 + Math.random()*70) + 'px');
+    b.style.animationDelay = (Math.random()*.45) + 's'; bubbles.appendChild(b);
+  }
+  let displayed = 0;
+  const timer = setInterval(() => {
+    displayed = Math.min(result.rate, displayed + Math.max(.5,result.rate/14));
+    zlabEl('zlabRate').textContent = displayed.toFixed(1);
+    zlabEl('zlabVolume').textContent = Math.round(result.volume * displayed/result.rate);
+    if (displayed >= result.rate) clearInterval(timer);
+  },55);
+  setTimeout(() => vessel.classList.remove('running'), 1500);
+}
+async function zlabRun() {
+  const runButton=zlabEl('zlabRunBtn');
+  if (ZLAB.stage!=='hypothesis') { zlabToast('خطأ: التنفيذ متاح في مرحلة الفرضية والتجربة فقط'); return; }
+  if (ZLAB.assembledEquipment.length<2) { zlabEl('zlabAssemblyStatus').textContent='خطأ: أضف أداتين على الأقل قبل التنفيذ.'; zlabToast('خطأ: أدوات التجربة غير مكتملة'); return; }
+  if (!currentAccessToken) { zlabAppendAI('خطأ: مساعد AI غير متصل. سجّل الدخول ثم أعد المحاولة؛ لم تُستخدم نتيجة بديلة.',true); zlabToast('خطأ: AI غير متصل'); return; }
+  if (ZLAB.pendingAIReview && ZLAB.pendingAIReview.type==='attempt') {
+    runButton.disabled=true; runButton.textContent='AI يراجع المحاولة…';
+    const reviewed=await zlabRequestAI(ZLAB.pendingAIReview.prompt,ZLAB.pendingAIReview.prefix,'attempt_review');
+    runButton.disabled=false;
+    if (!reviewed) { runButton.textContent='↻ أعد إرسال المحاولة إلى AI'; return; }
+    ZLAB.pendingAIReview=null; runButton.textContent='ابدأ التفاعل';
+    zlabEl('zlabAnalyzeBtn').disabled=ZLAB.attempts.length<2;
+    return;
+  }
+  const v = zlabValues(), result = zlabCalculate(v), number = ZLAB.attempts.length + 1;
+  ZLAB.aiApprovals.analysis=false; ZLAB.aiApprovals.quiz=false; ZLAB.aiApprovals.complete=false;
+  let methodologicalError = false;
+  if (ZLAB.attempts.length && ZLAB.changedSinceRun.size > 1) {
+    methodologicalError = true;
+    ZLAB.errors.push({ attempt:number, type:'تغيير أكثر من متغير', variables:[...ZLAB.changedSinceRun] });
+  }
+  const attempt = { number, ...v, ...result, changed:[...ZLAB.changedSinceRun], methodologicalError, at:new Date().toISOString() };
+  ZLAB.attempts.push(attempt);
+  zlabLog('تنفيذ محاولة', JSON.stringify(attempt));
+  zlabAnimateReaction(result); zlabRenderAttempts(); zlabRenderChart();
+  zlabEl('zlabAttemptLabel').textContent = `المحاولة ${number} · اكتملت`;
+  zlabEl('zlabAttemptCount').textContent = `${ZLAB.attempts.length} محاولات · ${ZLAB.errors.length} أخطاء منهجية`;
+  zlabEl('zlabAnalyzeBtn').disabled = true;
+  zlabEl('zlabAiContext').textContent = `يعرف فرضيتك و${ZLAB.attempts.length} محاولة و${ZLAB.errors.length} خطأ`;
+  const reviewPrefix=`تم تحليل المحاولة: ${number}`;
+  const reviewPrompt=`ابدأ ردك حرفيًا بـ«${reviewPrefix}». ثم حلّل المحاولة رقم ${number} من بيانات السياق ووجّهني بسؤال قصير لاكتشاف العلاقة${methodologicalError?'، وانتبه إلى خطأ المقارنة المنهجية':''} ولا تعطِ الإجابة النهائية.`;
+  ZLAB.pendingAIReview={type:'attempt',prompt:reviewPrompt,prefix:reviewPrefix};
+  runButton.disabled=true; runButton.textContent='AI يقرأ المحاولة…';
+  const reviewed=await zlabRequestAI(reviewPrompt,reviewPrefix,'attempt_review');
+  runButton.disabled=false;
+  if (reviewed) {
+    ZLAB.pendingAIReview=null; runButton.textContent='ابدأ التفاعل';
+    zlabEl('zlabAnalyzeBtn').disabled=ZLAB.attempts.length<2;
+  } else {
+    runButton.textContent='↻ أعد إرسال المحاولة إلى AI';
+  }
+  ZLAB.changedSinceRun.clear();
+  try { localStorage.setItem('zakiy-smart-lab-session', JSON.stringify(ZLAB)); } catch (_) {}
+}
+function zlabRenderAttempts() {
+  const config=ZLAB_SUBJECTS[ZLAB.subject]||ZLAB_SUBJECTS.chemistry;
+  zlabEl('zlabAttemptsBody').innerHTML = ZLAB.attempts.map(a => `<tr><td>${a.number}</td><td>${a.temp}${config.units.temp}</td><td>${a.amount}${config.units.amount}</td><td>${a.conc}${config.units.conc}</td><td><strong>${a.rate}</strong></td><td>${a.methodologicalError ? '⚠ مقارنة غير عادلة' : 'مقارنة صالحة'}</td></tr>`).join('');
+}
+function zlabRenderChart() {
+  const svg = zlabEl('zlabChart');
+  const config=ZLAB_SUBJECTS[ZLAB.subject]||ZLAB_SUBJECTS.chemistry;
+  const W=420,H=180,p={r:18,l:48,t:15,b:34};
+  const [xMin,xMax]=config.ranges.temp,yMax=ZLAB.subject==='physics'?14:45;
+  const pts=ZLAB.attempts.map(a=>({ a, x:p.l+(a.temp-xMin)/(xMax-xMin)*(W-p.l-p.r), y:H-p.b-(Math.min(yMax,a.rate)/yMax)*(H-p.t-p.b) }));
+  const grid=[0,yMax/3,yMax*2/3,yMax].map(v=>{const y=H-p.b-(v/yMax)*(H-p.t-p.b);return `<line x1="${p.l}" y1="${y}" x2="${W-p.r}" y2="${y}"/><text x="${p.l-8}" y="${y+4}" text-anchor="end" fill="currentColor" font-size="10">${+v.toFixed(1)}</text>`}).join('');
+  const labels=[xMin,xMin+(xMax-xMin)/3,xMin+(xMax-xMin)*2/3,xMax].map(v=>{const x=p.l+(v-xMin)/(xMax-xMin)*(W-p.l-p.r);return `<text x="${x}" y="${H-10}" text-anchor="middle" fill="currentColor" font-size="10">${Math.round(v)}${config.units.temp}</text>`}).join('');
+  svg.innerHTML = grid+labels+(pts.length>1?`<polyline points="${pts.map(p=>`${p.x},${p.y}`).join(' ')}"/>`:'')+pts.map((p,i)=>`<circle cx="${p.x}" cy="${p.y}" r="6" data-i="${i}" tabindex="0"/>`).join('');
+  svg.querySelectorAll('circle').forEach(c=>{
+    const show=()=>{const p=pts[+c.dataset.i],tip=zlabEl('zlabChartTip');tip.textContent=`${p.a.temp}${config.units.temp} ← ${p.a.rate} ${config.rate}`;tip.style.left=(p.x/420*100)+'%';tip.style.top=(p.y/180*205)+'px';tip.classList.remove('hidden');};
+    c.addEventListener('mouseenter',show); c.addEventListener('focus',show); c.addEventListener('mouseleave',()=>zlabEl('zlabChartTip').classList.add('hidden')); c.addEventListener('blur',()=>zlabEl('zlabChartTip').classList.add('hidden'));
+  });
+  if (ZLAB.attempts.length>=2) {
+    const sorted=[...ZLAB.attempts].sort((a,b)=>a.temp-b.temp), low=sorted[0], high=sorted[sorted.length-1];
+    const pct=Math.round((high.rate-low.rate)/low.rate*100);
+    zlabEl('zlabInsight').innerHTML=`<span>📈</span><span>من ${low.temp}° إلى ${high.temp}°، تغيّر معدل التفاعل بنسبة <strong>${pct}%</strong>. هل تكفي هذه المقارنة لعزل أثر الحرارة؟</span>`;
+  }
+}
+async function zlabAnalyze() {
+  if (!ZLAB.aiApprovals.hypothesis) { zlabToast('خطأ: اجعل AI يقرأ الفرضية قبل الانتقال إلى التحليل'); return; }
+  ZLAB.aiApprovals.analysis=false;
+  const button=zlabEl('zlabAnalyzeBtn'); button.disabled=true; button.textContent='AI يقرأ جميع المحاولات…';
+  const prefix='تم تحليل كل المحاولات:';
+  const reviewed=await zlabRequestAI(`ابدأ ردك حرفيًا بـ«${prefix}». اقرأ جميع محاولاتي وأخطائي المنهجية قبل مرحلة التحليل، ثم وجّهني إلى أقوى دليل عددي دون إعطاء الاستنتاج.`,prefix,'attempts_analysis');
+  if (!reviewed) { button.disabled=false; button.textContent='↻ أعد طلب تحليل AI'; return; }
+  ZLAB.aiApprovals.analysis=true;
+  const sorted=[...ZLAB.attempts].sort((a,b)=>a.temp-b.temp), low=sorted[0], high=sorted[sorted.length-1];
+  zlabEl('zlabHypReview').textContent=ZLAB.hypothesis;
+  zlabEl('zlabResultReview').textContent=`عند ${low.temp}°م كان المعدل ${low.rate}، وعند ${high.temp}°م أصبح ${high.rate}.`;
+  const valid=ZLAB.attempts.filter(a=>!a.methodologicalError).length;
+  const control=Math.max(45,Math.round(valid/ZLAB.attempts.length*100));
+  zlabEl('zlabControlBar').style.width=control+'%'; zlabEl('zlabControlScore').textContent=control+'%';
+  zlabEl('zlabAnalysisText').textContent=reviewed;
+  button.textContent='أنهِ التجربة وحلّل النتائج';
+  zlabSetStage('analysis');
+}
+async function zlabAnalyzeBiology() {
+  if (!ZLAB.aiApprovals.hypothesis) { zlabToast('خطأ: اجعل AI يقرأ الفرضية قبل الانتقال إلى التحليل'); return; }
+  ZLAB.aiApprovals.analysis=false;
+  const button=zlabEl('zlabBioContinue');
+  button.disabled=true; button.textContent='AI يقرأ استكشافك…';
+  const exploration=(SL.sessionLog||[]).slice(-30);
+  zlabLog('استكشاف أحياء',exploration.length?`${exploration.length} خطوة في مستكشف الأحياء`:'فتح مستكشف الأحياء');
+  const prefix='تم تحليل استكشاف الأحياء:';
+  const reviewed=await zlabRequestAI(`ابدأ ردك حرفيًا بـ«${prefix}». اقرأ خطوات استكشافي للأحياء وفكرتي «${ZLAB.idea}». اربط ما استكشفته بموضوعي، ثم اسألني سؤالًا واحدًا عن العلاقة بين التركيب والوظيفة دون إعطاء الإجابة.`,prefix,'biology_analysis');
+  if (!reviewed) { button.disabled=false; button.textContent='↻ أعد إرسال الاستكشاف إلى AI'; return; }
+  ZLAB.aiApprovals.analysis=true;
+  if (!ZLAB.attempts.length) {
+    ZLAB.attempts.push({
+      number:1, type:'biology_exploration', idea:ZLAB.idea,
+      exploredItem:SL.bioItem||null, explorationSteps:exploration.length,
+      at:new Date().toISOString(), methodologicalError:false,
+    });
+    zlabLog('تسجيل محاولة أحياء',`${exploration.length} خطوة استكشاف`);
+  }
+  zlabEl('zlabHypReview').textContent=ZLAB.hypothesis;
+  zlabEl('zlabResultReview').textContent=exploration.length
+    ? `سجّل المستكشف ${exploration.length} خطوة مرتبطة بفكرة «${ZLAB.idea}».`
+    : `استخدم الطالب مستكشف الأحياء لدراسة «${ZLAB.idea}».`;
+  const explorationScore=Math.min(100,60+exploration.length*5);
+  zlabEl('zlabControlBar').style.width=explorationScore+'%';
+  zlabEl('zlabControlScore').textContent=explorationScore+'%';
+  zlabEl('zlabAnalysisText').textContent=reviewed;
+  button.textContent='AI، اقرأ استكشافي ثم انتقل للتحليل';
+  zlabSetStage('analysis');
+}
+async function zlabGenerateQuizAI() {
+  ZLAB.aiApprovals.quiz=false;
+  const proofLine=`تم إنشاء التقييم للفكرة: ${ZLAB.idea}`;
+  try {
+    const data=await apiCall('POST','/api/science-lab/chat',{
+      message:`حلل مفهومي من فرضيتي ومحاولاتي وأخطائي واستنتاجي، ثم أنشئ سؤال اختيار من متعدد مخصصًا. لا تستخدم تحليلًا أو سؤالًا عامًا محفوظًا. ابدأ حرفيًا بـ«${proofLine}»، ثم اكتب الأسطر التالية فقط بهذه المفاتيح: المفهوم: (اكتب المفهوم الخاطئ أو «لا يوجد»)، السؤال:، أ:، ب:، ج:، الإجابة: (حرف واحد)، السبب:، النشاط التالي:.`,
+      context:'إنشاء تقييم مختبر مخصص من أداء الطالب',
+      lab_context:{...zlabAIContextPayload(),phase:'personalized_quiz'},
+      interaction_id:ZLAB.aiInteractionId,
+      lang:currentLang||'ar',
+    });
+    const reply=(data.reply||'').trim();
+    if (!reply.startsWith(proofLine)) throw new Error('لم يؤكد AI إنشاء تقييم من فكرتك');
+    const pick=label=>(reply.match(new RegExp(`^${label}\\s*:\\s*(.+)$`,'m'))||[])[1]?.trim()||'';
+    const concept=pick('المفهوم'), question=pick('السؤال'), a=pick('أ'), b=pick('ب'), c=pick('ج');
+    const answer=pick('الإجابة').replace(/[^أبج]/g,'').charAt(0), reason=pick('السبب'), next=pick('النشاط التالي');
+    if (!concept||!question||!a||!b||!c||!['أ','ب','ج'].includes(answer)||!reason||!next) throw new Error('رد AI لا يحتوي تحليلًا وتقييمًا كاملين');
+    ZLAB.aiInteractionId=data.interaction_id||ZLAB.aiInteractionId;
+    ZLAB.aiApprovals.quiz=true;
+    ZLAB.quizData={question,options:{أ:a,ب:b,ج:c},answer,reason,next};
+    zlabEl('zlabQuizQuestion').textContent=question;
+    zlabEl('zlabQuizOptions').innerHTML=Object.entries(ZLAB.quizData.options).map(([key,value])=>`<button class="zlab-quiz-option" data-correct="${key===answer}">${escapeHtml(value)}</button>`).join('');
+    zlabEl('zlabQuizWhy').textContent=reason;
+    zlabEl('zlabNextActivity').textContent=next;
+    zlabEl('zlabCompleteNext').textContent=next;
+    const noConcept=/^(لا يوجد|لايوجد|none)$/i.test(concept);
+    ZLAB.misconceptions=noConcept?[]:[concept];
+    zlabEl('zlabMisconception').innerHTML=noConcept
+      ? `<strong>✅ تحليل AI</strong><p class="zlab-muted">${escapeHtml(concept)}</p>`
+      : `<strong>⚠️ مفهوم رصده AI ويحتاج مراجعة</strong><p class="zlab-muted">${escapeHtml(concept)}</p>`;
+    zlabAppendAI(`أنشأت لك تقييمًا مخصصًا من أدائك في «${ZLAB.idea}».`,true);
+    return true;
+  } catch(error) {
+    zlabAppendAI(`خطأ: لم يتم إنشاء التقييم بواسطة AI (${error.message}). لن نستخدم سؤالًا بديلًا.`,true);
+    zlabToast('خطأ في إنشاء تقييم AI — لم يُستخدم سؤال بديل');
+    return false;
+  }
+}
+async function zlabSaveConclusion() {
+  ZLAB.aiApprovals.quiz=false; ZLAB.aiApprovals.complete=false;
+  const button=zlabEl('zlabSaveConclusion'); button.disabled=true; button.textContent='AI يقرأ استنتاجك…';
+  const text=zlabEl('zlabConclusion').value.trim(); ZLAB.conclusion=text; zlabLog('استنتاج الطالب',text);
+  const lower=text.toLowerCase();
+  const hasEvidence=/\d|معدل|بيانات|محاولة|درجة/.test(lower);
+  zlabEl('zlabMisconception').innerHTML='<strong>🧠 AI يحلل المفاهيم الآن…</strong><p class="zlab-muted">لن يظهر حكم محفوظ مسبقًا.</p>';
+  const reasonScore=hasEvidence?90:65; zlabEl('zlabReasonBar').style.width=reasonScore+'%'; zlabEl('zlabReasonScore').textContent=reasonScore+'%';
+  const controlScore=Math.max(45,100-ZLAB.errors.length*25);
+  ZLAB.score=Math.round(controlScore*.45+reasonScore*.35+(ZLAB.quizCorrect?20:12));
+  ZLAB.understandingChange=Math.max(12,Math.min(46,18+(hasEvidence?14:4)+(ZLAB.attempts.length>=2?9:0)-ZLAB.errors.length*4));
+  try { localStorage.setItem('zakiy-student-misconceptions',JSON.stringify(ZLAB.misconceptions)); localStorage.setItem('zakiy-smart-lab-session',JSON.stringify(ZLAB)); } catch(_) {}
+  const reviewed=await zlabGenerateQuizAI();
+  if (!reviewed) { button.disabled=false; button.textContent='↻ أعد تحليل استنتاجي'; return; }
+  button.textContent='حلّل فهمي وأنشئ التقييم';
+  zlabSetStage('quiz');
+}
+async function zlabSyncSession() {
+  if (!currentAccessToken || !ZLAB.attempts.length) return;
+  try {
+    await apiCall('POST','/api/science-lab/sessions',{
+      experiment_key:`smart_${ZLAB.subject}_showcase`, mode:ZLAB.mode,
+      student_name:ZLAB.studentName, lesson:ZLAB.lesson, idea:ZLAB.idea,
+      ai_task:ZLAB.aiTask, prepared_equipment:ZLAB.preparedEquipment,
+      hypothesis:ZLAB.hypothesis, reason:ZLAB.reason, attempts:ZLAB.attempts,
+      actions:ZLAB.actions, errors:ZLAB.errors, conclusion:ZLAB.conclusion,
+      misconceptions:ZLAB.misconceptions, score:ZLAB.score,
+      understanding_change:ZLAB.understandingChange,
+    });
+    zlabToast('حُفظت التجربة في ملفك التعليمي');
+  } catch (error) {
+    zlabToast(`خطأ: تعذر حفظ التجربة في ملف الطالب (${error.message})`);
+  }
+}
+async function zlabLoadAnalytics() {
+  if (!currentAccessToken) return;
+  try {
+    const data=await apiCall('GET','/api/science-lab/analytics');
+    ZLAB.analyticsStudents=data.students||[];
+    zlabEl('zlabTeacherCompleted').textContent=data.completed_count||0;
+    zlabEl('zlabTeacherTotal').textContent=`من ${data.students_count||0} طالبًا`;
+    zlabEl('zlabTeacherCompletion').textContent=(data.completion_rate||0)+'%';
+    zlabEl('zlabTeacherAvg').textContent=(data.average_score||0)+'%';
+    zlabEl('zlabTeacherGrowth').textContent='+'+(data.average_understanding_change||0);
+    zlabEl('zlabStudentsTable').innerHTML=ZLAB.analyticsStudents.length
+      ? ZLAB.analyticsStudents.map((student,index)=>`<tr class="zlab-student-row" data-analytics-student="${index}"><td>${escapeHtml(student.name||'طالب')}</td><td>${student.attempts_count||0}</td><td>${student.score||0}%</td><td>+${student.understanding_change||0}</td><td><span class="zlab-status">مكتمل</span></td></tr>`).join('')
+      : '<tr><td colspan="5" class="zlab-muted">لا توجد تجارب مكتملة في الفصل بعد.</td></tr>';
+    const patterns=[...(data.common_errors||[]),...(data.common_misconceptions||[])];
+    zlabEl('zlabTeacherPatterns').innerHTML=patterns.length
+      ? patterns.map(item=>`<div class="zlab-bar-row"><span>${escapeHtml(item.name)}</span><div class="zlab-bar"><i style="width:${Math.min(100,(item.count||0)*10)}%"></i></div><span>${item.count||0}</span></div>`).join('')
+      : 'لا توجد أخطاء أو مفاهيم خاطئة مسجلة بعد.';
+    if (!ZLAB.analyticsStudents.length) { zlabEl('zlabTeacherSummary').textContent='لا توجد بيانات فصل كافية لإنشاء ملخص AI.'; return; }
+    try {
+      const proof='تم تحليل بيانات الفصل:';
+      const summary=await apiCall('POST','/api/science-lab/chat',{
+        message:`حلل بيانات الفصل الفعلية الموجودة في السياق. ابدأ حرفيًا بـ«${proof}» ثم اكتب ملخصًا عربيًا قصيرًا يذكر ما فهمه الطلاب وأكثر مفهوم يحتاج مراجعة. لا تستخدم أرقامًا غير موجودة.`,
+        context:'ملخص معلم بعد تجربة المختبر',
+        lab_context:{phase:'class_summary',analytics:data},lang:currentLang||'ar',
+      });
+      const reply=(summary.reply||'').trim();
+      if (!reply.startsWith(proof)) throw new Error('رد غير مؤكد');
+      zlabEl('zlabTeacherSummary').textContent=reply.slice(proof.length).trim();
+    } catch(error) { zlabEl('zlabTeacherSummary').textContent=`خطأ: لم يصل تحليل AI لبيانات الفصل (${error.message}).`; }
+  } catch (error) {
+    zlabEl('zlabTeacherSummary').textContent=`خطأ: تعذر تحميل بيانات الفصل (${error.message}).`;
+    zlabEl('zlabTeacherPatterns').textContent='خطأ في تحميل البيانات — لا توجد بيانات بديلة.';
+  }
+}
+function zlabOpenAnalyticsStudent(student) {
+  const attempts=(student.attempts||[]).map(a=>`<li>المحاولة ${a.number||'—'}: ${escapeHtml(JSON.stringify(a))}</li>`).join('')||'<li>لا توجد محاولات.</li>';
+  const errors=(student.errors||[]).map(e=>`<li>${escapeHtml(e.type||JSON.stringify(e))}</li>`).join('')||'<li>لا توجد أخطاء مسجلة.</li>';
+  const actions=(student.actions||[]).map(a=>`<li>${escapeHtml(`${a.type||''}: ${a.detail||''}`)}</li>`).join('')||'<li>لا توجد إجراءات مسجلة.</li>';
+  zlabEl('zlabReportContent').innerHTML=`<h2 id="zlabReportTitle">ملف الطالب — ${escapeHtml(student.name||'طالب')}</h2><div class="zlab-report-section"><h4>الفرضية</h4><p>${escapeHtml(student.hypothesis||'—')}</p></div><div class="zlab-report-section"><h4>المحاولات</h4><ol>${attempts}</ol></div><div class="zlab-report-section"><h4>الأخطاء</h4><ul>${errors}</ul></div><div class="zlab-report-section"><h4>سجل الخطوات وتدخلات AI</h4><ul>${actions}</ul></div><div class="zlab-report-section"><h4>الاستنتاج والنتيجة</h4><p>${escapeHtml(student.conclusion||'—')}</p><p>الأداء: ${student.score||0}% · تغير الفهم: +${student.understanding_change||0}</p></div>`;
+  zlabEl('zlabReportModal').classList.remove('hidden');
+}
+async function zlabFinish() {
+  ZLAB.aiApprovals.complete=false;
+  const finishButton=zlabEl('zlabFinishQuiz'); finishButton.disabled=true; finishButton.textContent='AI يراجع إجابتك…';
+  const prefix='تمت مراجعة التقييم:';
+  const reviewed=await zlabRequestAI(`ابدأ ردك حرفيًا بـ«${prefix}». اقرأ إجابتي في التقييم (${ZLAB.quizCorrect?'صحيحة':'غير صحيحة'}) مع أدائي السابق، وحدد باختصار المفهوم الذي أراجعه لاحقًا.`,prefix,'quiz_review');
+  if (!reviewed) { finishButton.disabled=false; finishButton.textContent='↻ أعد مراجعة AI'; return; }
+  ZLAB.aiApprovals.complete=true;
+  ZLAB.score=Math.min(98,ZLAB.score+(ZLAB.quizCorrect?7:0));
+  zlabEl('zlabFinalScore').textContent=ZLAB.score+'%'; zlabEl('zlabScoreRing').style.setProperty('--score',ZLAB.score);
+  zlabEl('zlabUnderstandingText').innerHTML=`ارتفع مؤشر فهمك <strong>+${ZLAB.understandingChange} نقطة</strong> بين الفرضية والاستنتاج. ${ZLAB.misconceptions.length?'أُضيف مفهوم واحد إلى قائمة المراجعة.':'لم يُرصد مفهوم خاطئ ثابت.'}`;
+  zlabLog('إكمال التجربة',`الأداء ${ZLAB.score}%، تغير الفهم +${ZLAB.understandingChange}`);
+  try { localStorage.setItem('zakiy-smart-lab-session',JSON.stringify(ZLAB)); } catch(_) {}
+  zlabSetStage('complete');
+  zlabSyncSession();
+}
+function zlabReportHTML(studentDetail) {
+  const config=ZLAB_SUBJECTS[ZLAB.subject] || ZLAB_SUBJECTS.chemistry;
+  const rows=ZLAB.attempts.map(a=>`<tr><td>${a.number}</td><td>${a.temp}°م</td><td>${a.amount} غ</td><td>${a.conc}%</td><td>${a.time} ث</td><td>${a.rate} مل/ث</td><td>${a.volume} مل</td></tr>`).join('')||'<tr><td colspan="7">لم تُسجل محاولات بعد</td></tr>';
+  const interventions=ZLAB.actions.filter(a=>a.type==='تدخل AI').map(a=>`<li>${escapeHtml(a.detail)}</li>`).join('')||'<li>لا توجد تدخلات مسجلة بعد.</li>';
+  const chartPoints=ZLAB.attempts.map(a=>`${45+(a.temp-10)/60*330},${145-(Math.min(45,a.rate)/45)*115}`).join(' ');
+  const reportChart=`<svg viewBox="0 0 420 170" style="width:100%;max-height:210px;background:var(--paper-dim);border-radius:12px;padding:8px" role="img" aria-label="رسم العلاقة بين الحرارة ومعدل التفاعل"><line x1="45" y1="145" x2="390" y2="145" stroke="var(--line)"/><line x1="45" y1="25" x2="45" y2="145" stroke="var(--line)"/><polyline points="${chartPoints}" fill="none" stroke="var(--zlab-blue)" stroke-width="3"/>${ZLAB.attempts.map(a=>`<circle cx="${45+(a.temp-10)/60*330}" cy="${145-(Math.min(45,a.rate)/45)*115}" r="5" fill="var(--surface)" stroke="var(--zlab-blue)" stroke-width="3"/>`).join('')}<text x="215" y="164" text-anchor="middle" fill="currentColor" font-size="11">درجة الحرارة (°م)</text><text x="12" y="85" text-anchor="middle" fill="currentColor" font-size="10" transform="rotate(-90 12 85)">معدل CO₂</text></svg>`;
+  return `<h2 id="zlabReportTitle">${studentDetail?`ملف الطالب — ${escapeHtml(ZLAB.studentName||'الطالب')}`:'تقرير مختبر تلقائي'}</h2><p class="zlab-muted">أُنشئ بواسطة مختبر ذكيّ · ${new Date().toLocaleDateString('ar-SA')}</p>
+    <div class="zlab-report-section"><h4>اسم التجربة والهدف</h4><p><strong>${escapeHtml(config.experiment)}</strong><br>${escapeHtml(ZLAB.aiTask)}</p></div>
+    <div class="zlab-report-section"><h4>الطالب والدرس والفكرة</h4><p>${escapeHtml(ZLAB.studentName||'الطالب')} · ${escapeHtml(ZLAB.lesson||'—')}<br>${escapeHtml(ZLAB.idea||'—')}</p><p><strong>الأدوات المجهزة:</strong> ${escapeHtml((ZLAB.preparedEquipment||[]).join('، '))}</p></div>
+    <div class="zlab-report-section"><h4>الفرضية</h4><p>${escapeHtml(ZLAB.hypothesis||'لم تُكتب بعد')} — ${escapeHtml(ZLAB.reason||'')}</p></div>
+    <div class="zlab-report-section"><div class="zlab-report-vars"><div><strong>المتغير المستقل</strong><br>درجة الحرارة</div><div><strong>المتغير التابع</strong><br>معدل إنتاج CO₂</div><div><strong>المتغيرات الثابتة</strong><br>الكمية، التركيز، زمن الرصد</div></div></div>
+    <div class="zlab-report-section"><h4>خطوات التجربة</h4><ol><li>تحديد الفرضية وتفسيرها.</li><li>ضبط درجة الحرارة والكمية والتركيز.</li><li>تشغيل التفاعل وقياس معدل وحجم CO₂.</li><li>تكرار المحاولة مع تغيير عامل واحد.</li><li>مقارنة البيانات وكتابة الاستنتاج.</li></ol></div>
+    <div class="zlab-report-section"><h4>البيانات</h4><div class="zlab-table-wrap"><table class="zlab-table"><thead><tr><th>#</th><th>الحرارة</th><th>الكمية</th><th>التركيز</th><th>الزمن</th><th>المعدل</th><th>الحجم</th></tr></thead><tbody>${rows}</tbody></table></div></div>
+    <div class="zlab-report-section"><h4>الرسم البياني</h4>${reportChart}</div>
+    <div class="zlab-report-section"><h4>النتيجة والاستنتاج</h4><p>${escapeHtml(ZLAB.conclusion||'لم يُكتب بعد')}</p></div>
+    <div class="zlab-report-section"><h4>ملاحظات الذكاء الاصطناعي</h4><p>الأداء: ${ZLAB.score||'—'}% · تغير الفهم: +${ZLAB.understandingChange||0} · الأخطاء المنهجية: ${ZLAB.errors.length}</p><p>${ZLAB.misconceptions.length?'مفهوم يحتاج مراجعة: '+escapeHtml(ZLAB.misconceptions.join('، ')):'لم يُرصد مفهوم خاطئ ثابت.'}</p>${studentDetail?`<h4 style="margin-top:12px">تدخلات المساعد</h4><ul>${interventions}</ul><h4 style="margin-top:12px">سجل الإجراءات</h4><p>${ZLAB.actions.length} إجراء مسجل منذ بدء التجربة.</p>`:''}</div>`;
+}
+function zlabOpenReport(studentDetail) {
+  zlabEl('zlabReportContent').innerHTML=zlabReportHTML(studentDetail);
+  zlabEl('zlabReportModal').classList.remove('hidden');
+}
+async function zlabAskAI() {
+  const input=zlabEl('zlabAiInput'),q=input.value.trim(); if(!q)return;
+  const user=document.createElement('div'); user.className='zlab-msg'; user.style.background='var(--emphasis-bg)';user.style.color='white';user.textContent=q;zlabEl('zlabAiFeed').appendChild(user);input.value='';zlabLog('سؤال الطالب',q);
+  await zlabRequestAI(q);
+}
+function zlabInit() {
+  if (!zlabEl('zlabApp') || ZLAB.bound) return; ZLAB.bound=true;
+  zlabEl('zlabChooseSmart').addEventListener('click',zlabOpenSubjectPicker);
+  zlabEl('zlabChooseClassic').addEventListener('click',()=>zlabOpenMode('classic'));
+  zlabEl('slSmartLearningBtn').addEventListener('click',zlabOpenSubjectPicker);
+  zlabEl('zlabSubjectsBack').addEventListener('click',zlabResetChoice);
+  zlabEl('zlabLessonsBack').addEventListener('click',()=>{zlabEl('zlabLessonPicker').classList.add('hidden');zlabEl('zlabSubjectPicker').classList.remove('hidden');});
+  zlabEl('zlabStudentName').addEventListener('input',zlabValidateSetup);
+  zlabEl('zlabStudentIdea').addEventListener('input',zlabValidateSetup);
+  zlabEl('zlabPrepareExperiment').addEventListener('click',zlabPrepareWithAI);
+  document.querySelectorAll('[data-zlab-subject]').forEach(button=>button.addEventListener('click',()=>zlabShowLessonPicker(button.dataset.zlabSubject)));
+  zlabEl('zlabVessel').addEventListener('dragover',event=>{event.preventDefault();zlabEl('zlabVessel').classList.add('drop-ready');});
+  zlabEl('zlabVessel').addEventListener('dragleave',()=>zlabEl('zlabVessel').classList.remove('drop-ready'));
+  zlabEl('zlabVessel').addEventListener('drop',event=>{event.preventDefault();zlabEl('zlabVessel').classList.remove('drop-ready');const index=event.dataTransfer.getData('text/zlab-equipment');if(index!=='')zlabAssembleEquipment(+index);});
+  zlabEl('zlabPhysicsRig').addEventListener('dragover',event=>{event.preventDefault();zlabEl('zlabPhysicsRig').classList.add('drop-ready');});
+  zlabEl('zlabPhysicsRig').addEventListener('dragleave',()=>zlabEl('zlabPhysicsRig').classList.remove('drop-ready'));
+  zlabEl('zlabPhysicsRig').addEventListener('drop',event=>{event.preventDefault();zlabEl('zlabPhysicsRig').classList.remove('drop-ready');const index=event.dataTransfer.getData('text/zlab-equipment');if(index!=='')zlabAssembleEquipment(+index);});
+  zlabEl('zlabChoiceBack').addEventListener('click',()=>document.getElementById('globalBackBtn').click());
+  zlabUpdateControl('zlabTemp','zlabTempValue','temp');
+  zlabUpdateControl('zlabAmount','zlabAmountValue','amount');
+  zlabUpdateControl('zlabConc','zlabConcValue','conc');
+  zlabUpdateControl('zlabTime','zlabTimeValue','time');
+  const validateHyp=()=>{zlabEl('zlabStartBtn').disabled=zlabEl('zlabHypothesis').value.trim().length<12||zlabEl('zlabHypReason').value.trim().length<5;};
+  zlabEl('zlabHypothesis').addEventListener('input',validateHyp); zlabEl('zlabHypReason').addEventListener('input',validateHyp);
+  zlabEl('zlabConclusion').addEventListener('input',()=>zlabEl('zlabSaveConclusion').disabled=zlabEl('zlabConclusion').value.trim().length<18);
+  zlabEl('zlabStartBtn').addEventListener('click',async()=>{
+    const button=zlabEl('zlabStartBtn');
+    ZLAB.hypothesis=zlabEl('zlabHypothesis').value.trim(); ZLAB.reason=zlabEl('zlabHypReason').value.trim();
+    ZLAB.aiApprovals.hypothesis=false; ZLAB.aiApprovals.analysis=false; ZLAB.aiApprovals.quiz=false; ZLAB.aiApprovals.complete=false;
+    ZLAB.startedAt=new Date().toISOString(); zlabLog('حفظ الفرضية',`${ZLAB.hypothesis} | ${ZLAB.reason}`);
+    button.disabled=true; button.textContent='AI يقرأ فرضيتك…'; zlabEl('zlabHypSaved').textContent='جاري التحقق من قراءة AI';
+    const prefix=`تمت قراءة الفرضية: ${ZLAB.hypothesis}`;
+    const reviewed=await zlabRequestAI(`ابدأ ردك حرفيًا بـ«${prefix}». اقرأ فرضيتي وتفسيري قبل بدء التجربة. لا تصححها ولا تعط النتيجة؛ اسألني سؤالًا واحدًا يساعدني على تحديد المتغير المستقل والثوابت.`,prefix,'hypothesis_review');
+    if (!reviewed) { button.disabled=false; button.textContent='↻ أعد إرسال الفرضية إلى AI'; zlabEl('zlabHypSaved').textContent='لم تُقرأ الفرضية بعد'; return; }
+    ZLAB.aiApprovals.hypothesis=true;
+    button.textContent='✓ قرأ AI الفرضية'; zlabEl('zlabHypSaved').textContent='✓ حُفظت الفرضية — أكمل التجربة ثم انتقل للتحليل'; zlabRenderPreparedDock();
+  });
+  document.querySelectorAll('[data-zlab-view]').forEach(b=>b.addEventListener('click',()=>{zlabShowView(b.dataset.zlabView);if(b.dataset.zlabView==='teacher')zlabLoadAnalytics();}));
+  document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('active',x===b));ZLAB.mode=b.dataset.mode;zlabEl('zlabModeHint').textContent=ZLAB.mode==='free'?'غيّر أي متغير بحرية واكتشف العلاقات بنفسك.':ZLAB.mode==='challenge'?'خطط لمحاولتين فقط؛ نقيم استراتيجيتك وعدالة المقارنة.':'غيّر الحرارة فقط وثبّت بقية المتغيرات.';zlabLog('تغيير النمط',ZLAB.mode);}));
+  zlabEl('zlabRunBtn').addEventListener('click',zlabRun); zlabEl('zlabAnalyzeBtn').addEventListener('click',zlabAnalyze); zlabEl('zlabSaveConclusion').addEventListener('click',zlabSaveConclusion);
+  zlabEl('zlabBioContinue').addEventListener('click',zlabAnalyzeBiology);
+  zlabEl('zlabResetAttempt').addEventListener('click',()=>{zlabEl('zlabTemp').value=25;zlabEl('zlabAmount').value=10;zlabEl('zlabConc').value=5;zlabEl('zlabTime').value=20;['zlabTemp','zlabAmount','zlabConc','zlabTime'].forEach(id=>zlabEl(id).dispatchEvent(new Event('input')));ZLAB.changedSinceRun.clear();zlabLog('إعادة ضبط','القيم الافتراضية');});
+  zlabEl('zlabAiSend').addEventListener('click',zlabAskAI); zlabEl('zlabAiInput').addEventListener('keydown',e=>{if(e.key==='Enter')zlabAskAI();});
+  zlabEl('zlabQuizOptions').addEventListener('click',e=>{const btn=e.target.closest('.zlab-quiz-option');if(!btn)return;document.querySelectorAll('.zlab-quiz-option').forEach(x=>x.disabled=true);ZLAB.quizCorrect=btn.dataset.correct==='true';btn.classList.add(ZLAB.quizCorrect?'correct':'wrong');zlabEl('zlabQuizFeedback').classList.remove('hidden');zlabEl('zlabQuizFeedback').innerHTML=ZLAB.quizCorrect?'<span>✅</span><span>صحيح. هكذا تصبح المقارنة عادلة ويمكن تفسير النتيجة.</span>':'<span>↻</span><span>راجع الفكرة: إذا تغيّرت الكمية والحرارة معًا فلن نعرف سبب اختلاف السرعة.</span>';zlabEl('zlabFinishQuiz').disabled=false;zlabLog('إجابة التقييم',ZLAB.quizCorrect?'صحيحة':'خاطئة');});
+  zlabEl('zlabFinishQuiz').addEventListener('click',zlabFinish); zlabEl('zlabOpenReport').addEventListener('click',()=>zlabOpenReport(false));
+  zlabEl('zlabStudentsTable').addEventListener('click',e=>{const row=e.target.closest('[data-analytics-student]');if(row)zlabOpenAnalyticsStudent(ZLAB.analyticsStudents[+row.dataset.analyticsStudent]);});
+  zlabEl('zlabCloseReport').addEventListener('click',()=>zlabEl('zlabReportModal').classList.add('hidden')); zlabEl('zlabReportModal').addEventListener('click',e=>{if(e.target===zlabEl('zlabReportModal'))zlabEl('zlabReportModal').classList.add('hidden');});
+  zlabEl('zlabBackBtn').addEventListener('click',zlabReturnToChoice);
+}
+zlabInit();
+// رابط عرض مباشر للجنة التحكيم: يفتح صفحة المختبر، ثم يترك اختيار النمط للطالب.
+if (new URLSearchParams(window.location.search).get('showcase') === 'lab') {
+  setTimeout(() => { showScienceLabScreen(); }, 0);
 }
 </script>
 </body>

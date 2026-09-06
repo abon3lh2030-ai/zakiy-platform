@@ -2078,6 +2078,28 @@
     <span class="step-label" data-i18n="admin_dash_label">🛠️ لوحة الإدارة العامة</span>
     <h2 data-i18n="admin_dash_heading">المدارس المشتركة</h2>
 
+    <div class="card" style="margin:18px 0; padding:20px; box-shadow:none;">
+      <h3 class="sub-heading" style="margin-top:0;" data-i18n="admin_free_access_heading">🎁 المجانية العامة للمنصة</h3>
+      <p class="desc" data-i18n="admin_free_access_desc">عند تفعيلها تُلغى كل الحدود في الموقع وiOS وAndroid، مع بقاء الاشتراك متاحًا من الإعدادات.</p>
+      <div class="actions" style="align-items:end; flex-wrap:wrap;">
+        <label style="display:flex; align-items:center; gap:8px; min-height:46px;">
+          <input type="checkbox" id="platformFreeAccessEnabled" style="width:20px;height:20px;">
+          <span data-i18n="admin_free_access_enabled">تفعيل المجانية</span>
+        </label>
+        <label style="display:grid; gap:6px;">
+          <span data-i18n="admin_free_access_start">تبدأ في (اختياري)</span>
+          <input type="datetime-local" id="platformFreeAccessStart" class="text-input">
+        </label>
+        <label style="display:grid; gap:6px;">
+          <span data-i18n="admin_free_access_end">تنتهي في (اختياري)</span>
+          <input type="datetime-local" id="platformFreeAccessEnd" class="text-input">
+        </label>
+        <button class="primary" id="savePlatformFreeAccessBtn" data-i18n="admin_free_access_save">حفظ الإعداد</button>
+      </div>
+      <div id="platformFreeAccessStatus" class="desc" style="margin-top:12px;"></div>
+      <div id="platformFreeAccessError"></div>
+    </div>
+
     <h3 class="sub-heading" data-i18n="admin_add_school_heading">➕ إضافة مدرسة جديدة</h3>
     <div class="actions" style="flex-wrap:wrap;">
       <input type="text" id="newSchoolName" class="text-input" placeholder="اسم المدرسة" data-i18n-ph="ph_school_name">
@@ -4690,6 +4712,15 @@ const I18N = {
     // ---- لوحة الأدمن العام ----
     admin_dash_label: '🛠️ لوحة الإدارة العامة',
     admin_dash_heading: 'المدارس المشتركة',
+    admin_free_access_heading: '🎁 المجانية العامة للمنصة',
+    admin_free_access_desc: 'عند تفعيلها تُلغى كل الحدود في الموقع وiOS وAndroid، مع بقاء الاشتراك متاحًا من الإعدادات.',
+    admin_free_access_enabled: 'تفعيل المجانية',
+    admin_free_access_start: 'تبدأ في (اختياري)',
+    admin_free_access_end: 'تنتهي في (اختياري)',
+    admin_free_access_save: 'حفظ الإعداد',
+    admin_free_access_active: '● المجانية مفعّلة الآن — جميع المستخدمين بلا حدود',
+    admin_free_access_scheduled: '◷ المجانية مجدولة وليست فعّالة الآن',
+    admin_free_access_inactive: 'المجانية غير مفعّلة',
     admin_add_school_heading: '➕ إضافة مدرسة جديدة',
     admin_schools_list_heading: '🏫 كل المدارس',
     admin_no_schools: 'ما فيه مدارس بعد',
@@ -5676,6 +5707,15 @@ const I18N = {
     // ---- Platform admin dashboard ----
     admin_dash_label: '🛠️ Platform Admin',
     admin_dash_heading: 'Subscribed Schools',
+    admin_free_access_heading: '🎁 Platform-wide free access',
+    admin_free_access_desc: 'When enabled, all limits are removed on web, iOS, and Android while subscriptions remain available in Settings.',
+    admin_free_access_enabled: 'Enable free access',
+    admin_free_access_start: 'Starts at (optional)',
+    admin_free_access_end: 'Ends at (optional)',
+    admin_free_access_save: 'Save setting',
+    admin_free_access_active: '● Free access is active — all users are unlimited',
+    admin_free_access_scheduled: '◷ Free access is scheduled and not active yet',
+    admin_free_access_inactive: 'Free access is disabled',
     admin_add_school_heading: '➕ Add a New School',
     admin_schools_list_heading: '🏫 All Schools',
     admin_no_schools: 'No schools yet',
@@ -9921,6 +9961,7 @@ function exportQrBooklet(students) {
 
 // ---------- Admin: لوحة المدارس ----------
 async function loadAdminDashboard() {
+  loadPlatformFreeAccess();
   const tbody = document.getElementById('adminSchoolsTableBody');
   tbody.innerHTML = `<tr><td colspan="5">${t('loading')}</td></tr>`;
   try {
@@ -9990,6 +10031,50 @@ async function loadAdminDashboard() {
     tbody.innerHTML = `<tr><td colspan="5">${escapeHtml(e.message)}</td></tr>`;
   }
 }
+
+function isoToLocalInput(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
+
+async function loadPlatformFreeAccess() {
+  const status = document.getElementById('platformFreeAccessStatus');
+  if (!status) return;
+  try {
+    const data = await apiCall('GET', '/api/admin/platform-access');
+    document.getElementById('platformFreeAccessEnabled').checked = !!data.free_access_enabled;
+    document.getElementById('platformFreeAccessStart').value = isoToLocalInput(data.free_access_starts_at);
+    document.getElementById('platformFreeAccessEnd').value = isoToLocalInput(data.free_access_ends_at);
+    status.textContent = data.free_access_active ? t('admin_free_access_active') : (data.free_access_enabled ? t('admin_free_access_scheduled') : t('admin_free_access_inactive'));
+    status.style.color = data.free_access_active ? 'var(--teal)' : '';
+  } catch (e) {
+    status.textContent = '';
+    showError('platformFreeAccessError', e.message);
+  }
+}
+
+document.getElementById('savePlatformFreeAccessBtn').addEventListener('click', async () => {
+  clearError('platformFreeAccessError');
+  const button = document.getElementById('savePlatformFreeAccessBtn');
+  const startValue = document.getElementById('platformFreeAccessStart').value;
+  const endValue = document.getElementById('platformFreeAccessEnd').value;
+  const payload = {
+    free_access_enabled: document.getElementById('platformFreeAccessEnabled').checked,
+    free_access_starts_at: startValue ? new Date(startValue).toISOString() : null,
+    free_access_ends_at: endValue ? new Date(endValue).toISOString() : null,
+  };
+  button.disabled = true;
+  try {
+    await apiCall('PUT', '/api/admin/platform-access', payload);
+    await loadPlatformFreeAccess();
+  } catch (e) {
+    showError('platformFreeAccessError', e.message);
+  } finally {
+    button.disabled = false;
+  }
+});
 document.getElementById('createSchoolBtn').addEventListener('click', async () => {
   clearError('createSchoolError');
   const name = document.getElementById('newSchoolName').value.trim();

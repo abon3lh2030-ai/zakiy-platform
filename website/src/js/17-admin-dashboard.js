@@ -1,5 +1,6 @@
 // ---------- Admin: لوحة المدارس ----------
 async function loadAdminDashboard() {
+  loadPlatformFreeAccess();
   const tbody = document.getElementById('adminSchoolsTableBody');
   tbody.innerHTML = `<tr><td colspan="5">${t('loading')}</td></tr>`;
   try {
@@ -69,6 +70,50 @@ async function loadAdminDashboard() {
     tbody.innerHTML = `<tr><td colspan="5">${escapeHtml(e.message)}</td></tr>`;
   }
 }
+
+function isoToLocalInput(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
+
+async function loadPlatformFreeAccess() {
+  const status = document.getElementById('platformFreeAccessStatus');
+  if (!status) return;
+  try {
+    const data = await apiCall('GET', '/api/admin/platform-access');
+    document.getElementById('platformFreeAccessEnabled').checked = !!data.free_access_enabled;
+    document.getElementById('platformFreeAccessStart').value = isoToLocalInput(data.free_access_starts_at);
+    document.getElementById('platformFreeAccessEnd').value = isoToLocalInput(data.free_access_ends_at);
+    status.textContent = data.free_access_active ? t('admin_free_access_active') : (data.free_access_enabled ? t('admin_free_access_scheduled') : t('admin_free_access_inactive'));
+    status.style.color = data.free_access_active ? 'var(--teal)' : '';
+  } catch (e) {
+    status.textContent = '';
+    showError('platformFreeAccessError', e.message);
+  }
+}
+
+document.getElementById('savePlatformFreeAccessBtn').addEventListener('click', async () => {
+  clearError('platformFreeAccessError');
+  const button = document.getElementById('savePlatformFreeAccessBtn');
+  const startValue = document.getElementById('platformFreeAccessStart').value;
+  const endValue = document.getElementById('platformFreeAccessEnd').value;
+  const payload = {
+    free_access_enabled: document.getElementById('platformFreeAccessEnabled').checked,
+    free_access_starts_at: startValue ? new Date(startValue).toISOString() : null,
+    free_access_ends_at: endValue ? new Date(endValue).toISOString() : null,
+  };
+  button.disabled = true;
+  try {
+    await apiCall('PUT', '/api/admin/platform-access', payload);
+    await loadPlatformFreeAccess();
+  } catch (e) {
+    showError('platformFreeAccessError', e.message);
+  } finally {
+    button.disabled = false;
+  }
+});
 document.getElementById('createSchoolBtn').addEventListener('click', async () => {
   clearError('createSchoolError');
   const name = document.getElementById('newSchoolName').value.trim();
@@ -88,4 +133,3 @@ document.getElementById('createSchoolBtn').addEventListener('click', async () =>
     showError('createSchoolError', e.message);
   }
 });
-

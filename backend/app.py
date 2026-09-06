@@ -73,6 +73,64 @@ if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
     supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
 
+def _parse_utc_datetime(value):
+    """يحوّل ISO-8601 لتاريخ واعٍ بالمنطقة الزمنية، أو None للقيمة الفارغة."""
+    if value in (None, ""):
+        return None
+    parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _platform_access_state(now=None):
+    """مصدر الحقيقة لوضع المجانية. يفشل بشكل آمن للوضع العادي إذا لم تُطبّق
+    الهجرة بعد أو تعذّر الوصول لقاعدة البيانات، بدل تعطيل المنصة كاملة."""
+    row = {}
+    if supabase_admin is not None:
+        try:
+            rows = (
+                supabase_admin.table("platform_access_settings")
+                .select("free_access_enabled, free_access_starts_at, free_access_ends_at, updated_at")
+                .eq("singleton", True)
+                .limit(1)
+                .execute()
+                .data
+            )
+            row = rows[0] if rows else {}
+        except Exception:
+            row = {}
+
+    enabled = bool(row.get("free_access_enabled"))
+    try:
+        starts_at = _parse_utc_datetime(row.get("free_access_starts_at"))
+        ends_at = _parse_utc_datetime(row.get("free_access_ends_at"))
+    except (TypeError, ValueError):
+        starts_at = ends_at = None
+        enabled = False
+    current = now or datetime.now(timezone.utc)
+    active = enabled and (starts_at is None or current >= starts_at) and (ends_at is None or current < ends_at)
+    return {
+        "free_access_enabled": enabled,
+        "free_access_active": active,
+        "free_access_starts_at": starts_at.isoformat() if starts_at else None,
+        "free_access_ends_at": ends_at.isoformat() if ends_at else None,
+        "updated_at": row.get("updated_at"),
+    }
+
+
+@app.route("/api/platform/access", methods=["GET"])
+def platform_access():
+    """حالة الوصول الفعلية فقط للعملاء؛ بلا تفاصيل باقات أو رسائل ترويجية."""
+    state = _platform_access_state()
+    return jsonify({
+        "free_access_enabled": state["free_access_enabled"],
+        "free_access_active": state["free_access_active"],
+        "free_access_starts_at": state["free_access_starts_at"],
+        "free_access_ends_at": state["free_access_ends_at"],
+    }), 200
+
+
 def require_auth(f):
     """يتحقق من Authorization: Bearer <jwt> عبر Supabase ويحط request.user_id."""
 
@@ -3070,6 +3128,39 @@ def resolve_login_identifier():
 
 
 # ---------- Admin (صاحب المنصة) ----------
+@app.route("/api/admin/platform-access", methods=["GET", "PUT"])
+@require_role("admin")
+def admin_platform_access():
+    if request.method == "GET":
+        return jsonify(_platform_access_state()), 200
+
+    data = request.get_json(silent=True) or {}
+    enabled = data.get("free_access_enabled")
+    if not isinstance(enabled, bool):
+        return jsonify({"error": "حالة المجانية لازم تكون قيمة منطقية صحيحة"}), 400
+    try:
+        starts_at = _parse_utc_datetime(data.get("free_access_starts_at"))
+        ends_at = _parse_utc_datetime(data.get("free_access_ends_at"))
+    except (TypeError, ValueError):
+        return jsonify({"error": "صيغة تاريخ بداية أو نهاية المجانية غير صحيحة"}), 400
+    if starts_at and ends_at and starts_at >= ends_at:
+        return jsonify({"error": "نهاية الفترة المجانية لازم تكون بعد بدايتها"}), 400
+
+    saved = {
+        "singleton": True,
+        "free_access_enabled": enabled,
+        "free_access_starts_at": starts_at.isoformat() if starts_at else None,
+        "free_access_ends_at": ends_at.isoformat() if ends_at else None,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "updated_by": request.user_id,
+    }
+    try:
+        supabase_admin.table("platform_access_settings").upsert(saved, on_conflict="singleton").execute()
+    except Exception as e:
+        return jsonify({"error": f"تعذّر حفظ إعداد المجانية: {e}"}), 500
+    return jsonify(_platform_access_state()), 200
+
+
 @app.route("/api/admin/schools", methods=["POST"])
 @require_role("admin")
 def admin_create_school():
@@ -3256,7 +3347,9 @@ def _sync_school_over_limit_state(school_row, usage):
     المدرسة تحت الحد (حذفوا حسابات) نمسح المهلة. يرجّع dict فيه over_limit_since/
     over_limit_deadline/over_limit_expired جاهزة تُضاف لرد أي endpoint يعرض
     معلومات المدرسة."""
-    is_over = usage > school_row["max_accounts"]
+    # خلال المجانية العامة تصبح حسابات المدارس بلا سقف أيضًا، ونمسح أي
+    # مهلة تجاوز قديمة حتى لا تُعطّل المدرسة أو تظهر لها رسالة اشتراك.
+    is_over = (not _platform_access_state()["free_access_active"]) and usage > school_row["max_accounts"]
     current = school_row.get("over_limit_since")
 
     if is_over and not current:
@@ -3306,7 +3399,7 @@ def school_add_teacher():
     school = supabase_admin.table("schools").select("max_accounts").eq("id", school_id).limit(1).execute().data
     if not school:
         return jsonify({"error": "مدرستك غير موجودة"}), 400
-    if _school_account_usage(school_id) >= school[0]["max_accounts"]:
+    if not _platform_access_state()["free_access_active"] and _school_account_usage(school_id) >= school[0]["max_accounts"]:
         return jsonify({"error": "وصلت الحد الأقصى لعدد الحسابات المسموح لمدرستك"}), 400
 
     temp_password = generate_strong_password()
@@ -3398,7 +3491,7 @@ def school_add_administration():
     school = supabase_admin.table("schools").select("max_accounts").eq("id", school_id).limit(1).execute().data
     if not school:
         return jsonify({"error": "مدرستك غير موجودة"}), 400
-    if _school_account_usage(school_id) >= school[0]["max_accounts"]:
+    if not _platform_access_state()["free_access_active"] and _school_account_usage(school_id) >= school[0]["max_accounts"]:
         return jsonify({"error": "وصلت الحد الأقصى لعدد الحسابات المسموح لمدرستك"}), 400
 
     temp_password = generate_strong_password()
@@ -3848,8 +3941,9 @@ def school_bulk_add_students():
     school = supabase_admin.table("schools").select("max_accounts").eq("id", school_id).limit(1).execute().data
     if not school:
         return jsonify({"error": "مدرستك غير موجودة"}), 400
+    free_access_active = _platform_access_state()["free_access_active"]
     remaining = school[0]["max_accounts"] - _school_account_usage(school_id)
-    if len(names) > remaining:
+    if not free_access_active and len(names) > remaining:
         return jsonify(
             {
                 "error": f"العدد يتجاوز الحد الأقصى المسموح لمدرستك (متبقي {max(remaining, 0)} حساب)",
@@ -5514,8 +5608,13 @@ def _resolve_subscription(profile):
     """يرجّع الباقة الفعّالة لحساب معيّن. حساب مؤسسي (role موجود - طالب/معلم/
     إدارة مدرسة) دايمًا بلا حدود بغض النظر عن أي اشتراك شخصي مسجّل له، تماشيًا
     مع نفس قاعدة UsageLimiter.owner بتطبيق iOS - وصوله محكوم بعضوية مدرسته."""
+    platform_free = _platform_access_state()["free_access_active"]
     if profile.get("role"):
-        return {"tier": "school", "period": None, "expires_at": None, "unlimited": True}
+        return {
+            "tier": "school", "period": None, "expires_at": None,
+            "unlimited": True, "subscription_unlimited": True,
+            "platform_free_access_active": platform_free,
+        }
 
     tier = profile.get("subscription_tier") or "free"
     expires_at = profile.get("subscription_expires_at")
@@ -5531,11 +5630,14 @@ def _resolve_subscription(profile):
                 days_remaining = max(1, -(-int(remaining.total_seconds()) // 86400))
         except Exception:
             pass
+    subscription_unlimited = tier in ("ultimate", "owner")
     return {
         "tier": tier,
         "period": profile.get("subscription_period"),
         "expires_at": expires_at,
-        "unlimited": tier in ("ultimate", "owner"),
+        "unlimited": subscription_unlimited or platform_free,
+        "subscription_unlimited": subscription_unlimited,
+        "platform_free_access_active": platform_free,
         "days_remaining": days_remaining,
     }
 

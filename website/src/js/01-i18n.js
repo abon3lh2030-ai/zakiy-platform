@@ -502,6 +502,15 @@ const I18N = {
     // ---- لوحة الأدمن العام ----
     admin_dash_label: '🛠️ لوحة الإدارة العامة',
     admin_dash_heading: 'المدارس المشتركة',
+    admin_free_access_heading: '🎁 المجانية العامة للمنصة',
+    admin_free_access_desc: 'عند تفعيلها تُلغى كل الحدود في الموقع وiOS وAndroid، مع بقاء الاشتراك متاحًا من الإعدادات.',
+    admin_free_access_enabled: 'تفعيل المجانية',
+    admin_free_access_start: 'تبدأ في (اختياري)',
+    admin_free_access_end: 'تنتهي في (اختياري)',
+    admin_free_access_save: 'حفظ الإعداد',
+    admin_free_access_active: '● المجانية مفعّلة الآن — جميع المستخدمين بلا حدود',
+    admin_free_access_scheduled: '◷ المجانية مجدولة وليست فعّالة الآن',
+    admin_free_access_inactive: 'المجانية غير مفعّلة',
     admin_add_school_heading: '➕ إضافة مدرسة جديدة',
     admin_schools_list_heading: '🏫 كل المدارس',
     admin_no_schools: 'ما فيه مدارس بعد',
@@ -1487,6 +1496,15 @@ const I18N = {
     // ---- Platform admin dashboard ----
     admin_dash_label: '🛠️ Platform Admin',
     admin_dash_heading: 'Subscribed Schools',
+    admin_free_access_heading: '🎁 Platform-wide free access',
+    admin_free_access_desc: 'When enabled, all limits are removed on web, iOS, and Android while subscriptions remain available in Settings.',
+    admin_free_access_enabled: 'Enable free access',
+    admin_free_access_start: 'Starts at (optional)',
+    admin_free_access_end: 'Ends at (optional)',
+    admin_free_access_save: 'Save setting',
+    admin_free_access_active: '● Free access is active — all users are unlimited',
+    admin_free_access_scheduled: '◷ Free access is scheduled and not active yet',
+    admin_free_access_inactive: 'Free access is disabled',
     admin_add_school_heading: '➕ Add a New School',
     admin_schools_list_heading: '🏫 All Schools',
     admin_no_schools: 'No schools yet',
@@ -2023,4 +2041,3 @@ function hide(id) {
   document.getElementById(id).classList.add('hidden');
   if (id === 'sidebar') document.body.classList.remove('with-sidebar');
 }
-

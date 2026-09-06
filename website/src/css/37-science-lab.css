@@ -66,16 +66,17 @@
   .sl-bio-categories { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; margin-top: 10px; }
   .sl-bio-cat-card {
     background: var(--paper-dim); border: 1px solid var(--line); border-radius: 14px; padding: 18px 10px;
-    text-align: center; cursor: pointer; transition: transform .12s, border-color .15s;
+    width: 100%; color: var(--ink); font-family: inherit; text-align: center; cursor: pointer; transition: transform .12s, border-color .15s;
   }
   .sl-bio-cat-card:hover { transform: translateY(-3px); border-color: var(--teal); }
+  .sl-bio-cat-card:focus-visible, .sl-bio-item-card:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
   .sl-bio-cat-icon { font-size: 34px; display: block; margin-bottom: 8px; }
   .sl-bio-cat-name { font-size: 13.5px; font-weight: 600; }
 
   .sl-bio-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-top: 12px; }
   .sl-bio-item-card {
     background: var(--paper-dim); border: 1px solid var(--line); border-radius: 14px; padding: 16px 10px;
-    text-align: center; cursor: pointer; position: relative; transition: transform .12s, border-color .15s;
+    width: 100%; color: var(--ink); font-family: inherit; text-align: center; cursor: pointer; position: relative; transition: transform .12s, border-color .15s;
   }
   .sl-bio-item-card:hover { transform: translateY(-3px); border-color: var(--teal); }
   .sl-bio-item-icon { font-size: 40px; display: block; margin-bottom: 8px; }

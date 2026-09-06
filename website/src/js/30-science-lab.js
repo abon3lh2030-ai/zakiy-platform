@@ -637,10 +637,10 @@ const SL_PARTS_INFO = {
 function slRenderBioCategories() {
   const wrap = document.getElementById('slBioCategories');
   wrap.innerHTML = Object.entries(SL_BIO_CATEGORIES).map(([id, cat]) => `
-    <div class="sl-bio-cat-card" data-cat="${id}">
+    <button type="button" class="sl-bio-cat-card" data-cat="${id}">
       <span class="sl-bio-cat-icon">${cat.icon}</span>
       <span class="sl-bio-cat-name">${t(cat.nameKey)}</span>
-    </div>
+    </button>
   `).join('');
   wrap.querySelectorAll('.sl-bio-cat-card').forEach(card => {
     card.addEventListener('click', () => slOpenBioCategory(card.dataset.cat));
@@ -658,10 +658,10 @@ function slOpenBioCategory(catId) {
   grid.innerHTML = cat.animals.map(id => {
     const a = SL_ANIMALS[id];
     return `
-      <div class="sl-bio-item-card" data-animal="${id}">
+      <button type="button" class="sl-bio-item-card" data-animal="${id}">
         <span class="sl-bio-item-icon">${a.icon}</span>
         <span class="sl-bio-item-name">${t(a.nameKey)}</span>
-      </div>
+      </button>
     `;
   }).join('');
   grid.querySelectorAll('.sl-bio-item-card').forEach(card => {

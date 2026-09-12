@@ -348,6 +348,34 @@
     color: var(--ink);
   }
   .text-input:focus { outline: none; border-color: var(--teal); }
+  .password-field {
+    position: relative;
+    display: flex;
+    flex: 1;
+    min-width: 180px;
+  }
+  .password-field > .text-input {
+    width: 100%;
+    padding-inline-end: 48px !important;
+  }
+  .password-toggle {
+    position: absolute;
+    inset-inline-end: 7px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ink-soft);
+    font-size: 18px;
+    cursor: pointer;
+  }
+  .password-toggle:hover,
+  .password-toggle:focus-visible { background: var(--paper); color: var(--ink); }
   #joinRoomCode { width: 130px; letter-spacing: 2px; text-transform: uppercase; }
 
   .room-code-badge {
@@ -4235,6 +4263,8 @@ const I18N = {
     login_desc: 'أدخل بياناتك للمتابعة، أو سوّي حساب يحفظ تقدمك',
     ph_email: 'الإيميل',
     ph_password: 'كلمة المرور',
+    show_password: 'إظهار كلمة المرور',
+    hide_password: 'إخفاء كلمة المرور',
     btn_enter: 'دخول',
     link_go_signup: '🆕 ما عندك حساب؟ أنشئ واحد',
     link_continue_guest: '➡️ استمر بدون حساب',
@@ -5230,6 +5260,8 @@ const I18N = {
     login_desc: 'Enter your details to continue, or make an account to save your progress',
     ph_email: 'Email',
     ph_password: 'Password',
+    show_password: 'Show password',
+    hide_password: 'Hide password',
     btn_enter: 'Log In',
     link_go_signup: "🆕 Don't have an account? Create one",
     link_continue_guest: '➡️ Continue without an account',
@@ -6228,8 +6260,47 @@ function applyLanguage() {
   document.querySelectorAll('[data-i18n]').forEach(el => { el.innerHTML = t(el.getAttribute('data-i18n')); });
   document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.getAttribute('data-i18n-ph')); });
   document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.getAttribute('data-i18n-title')); });
+  if (typeof updatePasswordToggleLabels === 'function') updatePasswordToggleLabels();
   updateLangButtonsActiveState();
   if (typeof updateDarkModeButtonLabel === 'function') updateDarkModeButtonLabel();
+}
+
+function updatePasswordToggleLabels() {
+  document.querySelectorAll('.password-toggle').forEach(button => {
+    const input = document.getElementById(button.dataset.passwordTarget);
+    if (!input) return;
+    const label = t(input.type === 'text' ? 'hide_password' : 'show_password');
+    button.setAttribute('aria-label', label);
+    button.title = label;
+    button.setAttribute('aria-pressed', input.type === 'text' ? 'true' : 'false');
+  });
+}
+
+function setupPasswordToggles() {
+  document.querySelectorAll('input[type="password"]').forEach(input => {
+    if (input.parentElement?.classList.contains('password-field')) return;
+    const wrapper = document.createElement('span');
+    wrapper.className = 'password-field';
+    input.parentNode.insertBefore(wrapper, input);
+    wrapper.appendChild(input);
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'password-toggle';
+    button.dataset.passwordTarget = input.id;
+    button.textContent = '👁';
+    button.addEventListener('click', () => {
+      const selectionStart = input.selectionStart;
+      const selectionEnd = input.selectionEnd;
+      input.type = input.type === 'password' ? 'text' : 'password';
+      button.textContent = input.type === 'text' ? '🙈' : '👁';
+      updatePasswordToggleLabels();
+      input.focus();
+      if (selectionStart !== null && selectionEnd !== null) input.setSelectionRange(selectionStart, selectionEnd);
+    });
+    wrapper.appendChild(button);
+  });
+  updatePasswordToggleLabels();
 }
 
 document.querySelectorAll('.lang-choice-btn').forEach(btn => {
@@ -6243,6 +6314,7 @@ document.querySelectorAll('.lang-choice-btn').forEach(btn => {
   });
 });
 
+setupPasswordToggles();
 applyLanguage();
 
 function show(id) {

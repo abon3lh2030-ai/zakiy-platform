@@ -2138,6 +2138,26 @@
     <div id="createSchoolError"></div>
     <div id="createSchoolResult" class="credential-reveal hidden"></div>
 
+    <div class="card" style="margin:22px 0; padding:20px; box-shadow:none;">
+      <h3 class="sub-heading" style="margin-top:0;" data-i18n="admin_curriculum_heading">📚 مسارات الكتب المدرسية</h3>
+      <p class="desc" data-i18n="admin_curriculum_desc">أنشئ مسارًا وارفع كتبه مرة واحدة لتظهر تلقائيًا لكل مدرسة تختاره.</p>
+      <div class="actions">
+        <input type="text" id="adminCurriculumNameInput" class="text-input" data-i18n-ph="curriculum_name_placeholder" placeholder="اسم المسار">
+        <button class="primary" id="adminCreateCurriculumBtn" data-i18n="create_curriculum_path">إنشاء المسار</button>
+      </div>
+      <div id="adminCurriculumList" style="margin-top:16px;"></div>
+      <h4 data-i18n="add_curriculum_book">إضافة كتاب للمسار</h4>
+      <div class="actions">
+        <select id="adminCurriculumPathSelect" class="text-input"></select>
+        <input type="file" id="adminCurriculumFileInput" accept="application/pdf">
+        <button class="ghost" id="adminCurriculumChooseFileBtn" data-i18n="choose_pdf">اختيار PDF</button>
+        <span id="adminCurriculumFileName" class="desc"></span>
+        <input type="text" id="adminCurriculumBookTitle" class="text-input" data-i18n-ph="ph_book_title" placeholder="اسم الكتاب">
+        <button class="primary" id="adminAddCurriculumBookBtn" disabled data-i18n="add_book">إضافة الكتاب</button>
+      </div>
+      <div id="adminCurriculumError"></div>
+    </div>
+
     <h3 class="sub-heading" data-i18n="admin_schools_list_heading">🏫 كل المدارس</h3>
     <div class="data-table-wrap">
       <table class="data-table">
@@ -2513,6 +2533,16 @@
       <span class="step-label" data-i18n="school_library_step_label">🏫 مكتبة المدرسة</span>
       <h2 data-i18n="school_library_heading">كتب المدرسة</h2>
       <p class="desc" data-i18n="school_library_desc">كتب تضيفها لفصل معيّن أو لكل فصول المدرسة، تظهر تلقائيًا بمكتبة أي طالب مستهدف بدون ما يسوي شي.</p>
+
+      <div class="card" style="padding:16px; box-shadow:none; margin:14px 0;">
+        <h3 class="sub-heading" style="margin-top:0;" data-i18n="school_curriculum_heading">المسار الدراسي للمدرسة</h3>
+        <p class="desc" data-i18n="school_curriculum_desc">اختر مسار الأدمن العام لتظهر كتبه تلقائيًا، أو اختر بدون مسار وارفع كتب المدرسة بالأسفل.</p>
+        <div class="actions">
+          <select id="schoolCurriculumPathSelect" class="text-input"></select>
+          <button class="primary" id="schoolSaveCurriculumBtn" data-i18n="save_curriculum_path">حفظ المسار</button>
+        </div>
+        <div id="schoolCurriculumStatus" class="desc"></div>
+      </div>
 
       <div id="schoolLibraryList"></div>
       <p class="desc hidden" id="schoolLibraryEmptyState" data-i18n="school_library_empty">ما فيه كتب مضافة للمدرسة بعد.</p>
@@ -4748,6 +4778,15 @@ const I18N = {
     admin_free_access_start: 'تبدأ في (اختياري)',
     admin_free_access_end: 'تنتهي في (اختياري)',
     admin_free_access_save: 'حفظ الإعداد',
+    admin_curriculum_heading: '📚 مسارات الكتب المدرسية',
+    admin_curriculum_desc: 'أنشئ مسارًا وارفع كتبه مرة واحدة لتظهر تلقائيًا لكل مدرسة تختاره.',
+    curriculum_name_placeholder: 'اسم المسار مثل: المنهج السعودي',
+    create_curriculum_path: 'إنشاء المسار',
+    add_curriculum_book: 'إضافة كتاب للمسار',
+    choose_pdf: 'اختيار PDF',
+    add_book: 'إضافة الكتاب',
+    no_curriculum_paths: 'لا توجد مسارات بعد.',
+    delete_curriculum_path_confirm: 'حذف المسار سيزيل كتبه من كل المدارس المرتبطة به. متأكد؟',
     admin_free_access_active: '● المجانية مفعّلة الآن — جميع المستخدمين بلا حدود',
     admin_free_access_scheduled: '◷ المجانية مجدولة وليست فعّالة الآن',
     admin_free_access_inactive: 'المجانية غير مفعّلة',
@@ -4919,6 +4958,12 @@ const I18N = {
     school_library_add_heading: '➕ ضيف كتاب للمدرسة',
     school_library_all_classes: 'كل فصول المدرسة',
     btn_add_to_school_library: 'أضفه للمدرسة',
+    school_curriculum_heading: 'المسار الدراسي للمدرسة',
+    school_curriculum_desc: 'اختر مسار الأدمن العام لتظهر كتبه تلقائيًا، أو اختر بدون مسار وارفع كتب المدرسة بالأسفل.',
+    no_curriculum_path: 'بدون مسار — نرفع كتب المدرسة بأنفسنا',
+    save_curriculum_path: 'حفظ المسار',
+    curriculum_saved: 'تم حفظ مسار المدرسة ✓',
+    curriculum_book_badge: 'من مسار {name}',
     library_step_label: '📚 مكتبتي',
     ai_help_panel_title: '🤖 مساعد ذكيّ',
     btn_invite_friend: '📨 ادعُ صديق',
@@ -5745,6 +5790,15 @@ const I18N = {
     admin_free_access_start: 'Starts at (optional)',
     admin_free_access_end: 'Ends at (optional)',
     admin_free_access_save: 'Save setting',
+    admin_curriculum_heading: '📚 School Book Paths',
+    admin_curriculum_desc: 'Create a path and upload its books once so they appear automatically for every school that selects it.',
+    curriculum_name_placeholder: 'Path name, e.g. Saudi Curriculum',
+    create_curriculum_path: 'Create Path',
+    add_curriculum_book: 'Add a Book to the Path',
+    choose_pdf: 'Choose PDF',
+    add_book: 'Add Book',
+    no_curriculum_paths: 'No paths yet.',
+    delete_curriculum_path_confirm: 'Deleting this path removes its books from every linked school. Continue?',
     admin_free_access_active: '● Free access is active — all users are unlimited',
     admin_free_access_scheduled: '◷ Free access is scheduled and not active yet',
     admin_free_access_inactive: 'Free access is disabled',
@@ -5916,6 +5970,12 @@ const I18N = {
     school_library_add_heading: '➕ Add a book for the school',
     school_library_all_classes: 'All classes in the school',
     btn_add_to_school_library: 'Add to school',
+    school_curriculum_heading: 'School Curriculum Path',
+    school_curriculum_desc: "Select an admin-managed path to receive its books automatically, or choose no path and upload the school's own books below.",
+    no_curriculum_path: "No path — we'll upload the school's books",
+    save_curriculum_path: 'Save Path',
+    curriculum_saved: 'School path saved ✓',
+    curriculum_book_badge: 'From {name}',
     library_step_label: '📚 My Library',
     ai_help_panel_title: '🤖 Site Assistant',
     btn_invite_friend: '📨 Invite a Friend',
@@ -7697,12 +7757,12 @@ function renderLibraryManageList(books) {
     return;
   }
   hide('libraryEmptyState');
-  // كتب المدرسة (source: 'school') مو ملك الطالب - يقدر يقرأها بس، بدون
+  // كتب المدرسة والمسار المركزي مو ملك الطالب - يقدر يقرأها بس، بدون
   // تعديل اسم أو حذف (المدير/الإدارة يديرونها من قسم مكتبة المدرسة)
   container.innerHTML = books.map(b => `
     <div class="leaderboard-row">
-      <span class="name">${b.source === 'school' ? '🏫 ' : ''}${escapeHtml(b.title)}</span>
-      ${b.source === 'school' ? '' : `
+      <span class="name">${b.source === 'school' ? '🏫 ' : (b.source === 'curriculum' ? '📘 ' : '')}${escapeHtml(b.title)}</span>
+      ${b.source === 'school' || b.source === 'curriculum' ? '' : `
         <button class="ghost rename-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">✏️ ${t('btn_rename')}</button>
         <button class="ghost delete-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">🗑️ ${t('btn_delete')}</button>
       `}
@@ -7765,6 +7825,16 @@ document.getElementById('sidebarLibraryBtn').addEventListener('click', () => {
 async function loadSchoolLibrarySection() {
   clearError('schoolLibraryError');
   try {
+    const curriculumSelect = document.getElementById('schoolCurriculumPathSelect');
+    try {
+      const curriculum = await apiCall('GET', '/api/school/curriculum-path');
+      curriculumSelect.innerHTML = `<option value="">${t('no_curriculum_path')}</option>` +
+        curriculum.paths.map(p => `<option value="${p.id}">${escapeHtml(p.name)} (${p.book_count})</option>`).join('');
+      curriculumSelect.value = curriculum.selected_path_id || '';
+    } catch (_) {
+      curriculumSelect.innerHTML = `<option value="">${t('no_curriculum_path')}</option>`;
+    }
+
     const classesRes = await apiCall('GET', '/api/school/classes');
     const classSelect = document.getElementById('schoolLibraryClassSelect');
     classSelect.innerHTML = `<option value="">${t('school_library_all_classes')}</option>` +
@@ -7783,9 +7853,9 @@ function renderSchoolLibraryList(books) {
   empty.classList.toggle('hidden', books.length > 0);
   container.innerHTML = books.map(b => `
     <div class="leaderboard-row">
-      <span class="name">${escapeHtml(b.title)} <span class="desc" style="display:inline;">— ${b.class_name ? escapeHtml(b.class_name) : t('school_library_all_classes')}</span></span>
-      <button class="ghost rename-school-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">✏️ ${t('btn_rename')}</button>
-      <button class="ghost delete-school-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">🗑️ ${t('btn_delete')}</button>
+      <span class="name">${escapeHtml(b.title)} <span class="desc" style="display:inline;">— ${b.source === 'curriculum' ? t('curriculum_book_badge', { name: escapeHtml(b.path_name || '') }) : (b.class_name ? escapeHtml(b.class_name) : t('school_library_all_classes'))}</span></span>
+      ${b.source === 'curriculum' ? '' : `<button class="ghost rename-school-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">✏️ ${t('btn_rename')}</button>
+      <button class="ghost delete-school-book-btn" data-id="${b.id}" style="padding:6px 12px; font-size:12.5px;">🗑️ ${t('btn_delete')}</button>`}
     </div>
   `).join('');
 
@@ -7809,6 +7879,25 @@ function renderSchoolLibraryList(books) {
     });
   });
 }
+
+document.getElementById('schoolSaveCurriculumBtn').addEventListener('click', async () => {
+  const button = document.getElementById('schoolSaveCurriculumBtn');
+  const status = document.getElementById('schoolCurriculumStatus');
+  setLoading(button, true, t('save_curriculum_path'));
+  status.textContent = '';
+  try {
+    await apiCall('PUT', '/api/school/curriculum-path', {
+      path_id: document.getElementById('schoolCurriculumPathSelect').value || null,
+    });
+    status.textContent = t('curriculum_saved');
+    await loadSchoolLibrarySection();
+    await loadLibraryManageScreen();
+  } catch (e) {
+    showError('schoolLibraryError', e.message);
+  } finally {
+    setLoading(button, false, t('save_curriculum_path'));
+  }
+});
 
 const schoolLibraryDropzone = document.getElementById('schoolLibraryDropzone');
 const schoolLibraryFileInput = document.getElementById('schoolLibraryFileInput');
@@ -10034,6 +10123,7 @@ function exportQrBooklet(students) {
 // ---------- Admin: لوحة المدارس ----------
 async function loadAdminDashboard() {
   loadPlatformFreeAccess();
+  loadAdminCurriculumPaths();
   const tbody = document.getElementById('adminSchoolsTableBody');
   tbody.innerHTML = `<tr><td colspan="5">${t('loading')}</td></tr>`;
   try {
@@ -10103,6 +10193,113 @@ async function loadAdminDashboard() {
     tbody.innerHTML = `<tr><td colspan="5">${escapeHtml(e.message)}</td></tr>`;
   }
 }
+
+let adminCurriculumSelectedFile = null;
+
+async function loadAdminCurriculumPaths() {
+  const container = document.getElementById('adminCurriculumList');
+  const select = document.getElementById('adminCurriculumPathSelect');
+  if (!container || !select) return;
+  clearError('adminCurriculumError');
+  try {
+    const { paths } = await apiCall('GET', '/api/admin/curriculum-paths');
+    select.innerHTML = paths.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+    container.innerHTML = paths.length ? paths.map(path => `
+      <div class="card" style="padding:14px; margin:8px 0; box-shadow:none;">
+        <div class="leaderboard-row">
+          <strong>${escapeHtml(path.name)}</strong>
+          <button class="ghost delete-curriculum-path-btn" data-id="${path.id}" style="padding:5px 10px; color:#c0392b;">${t('btn_delete')}</button>
+        </div>
+        ${(path.books || []).map(book => `<div class="leaderboard-row"><span>📘 ${escapeHtml(book.title)}</span><button class="ghost delete-curriculum-book-btn" data-id="${book.id}" style="padding:4px 9px;">${t('btn_delete')}</button></div>`).join('')}
+      </div>
+    `).join('') : `<p class="desc">${t('no_curriculum_paths')}</p>`;
+
+    container.querySelectorAll('.delete-curriculum-path-btn').forEach(btn => btn.addEventListener('click', async () => {
+      if (!confirm(t('delete_curriculum_path_confirm'))) return;
+      try { await apiCall('DELETE', `/api/admin/curriculum-paths/${btn.dataset.id}`); await loadAdminCurriculumPaths(); }
+      catch (e) { showError('adminCurriculumError', e.message); }
+    }));
+    container.querySelectorAll('.delete-curriculum-book-btn').forEach(btn => btn.addEventListener('click', async () => {
+      if (!confirm(t('confirm_delete_book'))) return;
+      try { await apiCall('DELETE', `/api/admin/curriculum-books/${btn.dataset.id}`); await loadAdminCurriculumPaths(); }
+      catch (e) { showError('adminCurriculumError', e.message); }
+    }));
+    updateAdminCurriculumAddState();
+  } catch (e) {
+    container.innerHTML = '';
+    showError('adminCurriculumError', e.message);
+  }
+}
+
+document.getElementById('adminCreateCurriculumBtn').addEventListener('click', async () => {
+  const input = document.getElementById('adminCurriculumNameInput');
+  const name = input.value.trim();
+  if (!name) return;
+  try {
+    await apiCall('POST', '/api/admin/curriculum-paths', { name });
+    input.value = '';
+    await loadAdminCurriculumPaths();
+  } catch (e) { showError('adminCurriculumError', e.message); }
+});
+
+document.getElementById('adminCurriculumChooseFileBtn').addEventListener('click', () => {
+  document.getElementById('adminCurriculumFileInput').click();
+});
+document.getElementById('adminCurriculumFileInput').addEventListener('change', event => {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.type !== 'application/pdf') {
+    showError('adminCurriculumError', t('err_must_be_pdf'));
+    return;
+  }
+  adminCurriculumSelectedFile = file;
+  document.getElementById('adminCurriculumFileName').textContent = file.name;
+  const title = document.getElementById('adminCurriculumBookTitle');
+  if (!title.value.trim()) title.value = file.name.replace(/\.pdf$/i, '');
+  updateAdminCurriculumAddState();
+});
+document.getElementById('adminCurriculumBookTitle').addEventListener('input', updateAdminCurriculumAddState);
+document.getElementById('adminCurriculumPathSelect').addEventListener('change', updateAdminCurriculumAddState);
+
+function updateAdminCurriculumAddState() {
+  document.getElementById('adminAddCurriculumBookBtn').disabled = !(
+    adminCurriculumSelectedFile &&
+    document.getElementById('adminCurriculumPathSelect').value &&
+    document.getElementById('adminCurriculumBookTitle').value.trim()
+  );
+}
+
+document.getElementById('adminAddCurriculumBookBtn').addEventListener('click', async () => {
+  const button = document.getElementById('adminAddCurriculumBookBtn');
+  if (!adminCurriculumSelectedFile) return;
+  setLoading(button, true, t('add_book'));
+  clearError('adminCurriculumError');
+  try {
+    const formData = new FormData();
+    formData.append('file', adminCurriculumSelectedFile);
+    formData.append('context', 'library');
+    const uploadRes = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: formData });
+    const uploadData = await uploadRes.json();
+    if (!uploadRes.ok) throw new Error(uploadData.error || t('err_upload_failed'));
+    const extractRes = await fetch(`${API_BASE}/api/extract`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename: uploadData.filename }),
+    });
+    const extractData = await extractRes.json();
+    if (!extractRes.ok) throw new Error(extractData.error || t('err_extract_failed'));
+    const pathId = document.getElementById('adminCurriculumPathSelect').value;
+    await apiCall('POST', `/api/admin/curriculum-paths/${pathId}/books`, {
+      title: document.getElementById('adminCurriculumBookTitle').value.trim(),
+      extracted_text: extractData.text,
+    });
+    adminCurriculumSelectedFile = null;
+    document.getElementById('adminCurriculumFileInput').value = '';
+    document.getElementById('adminCurriculumFileName').textContent = '';
+    document.getElementById('adminCurriculumBookTitle').value = '';
+    await loadAdminCurriculumPaths();
+  } catch (e) { showError('adminCurriculumError', e.message); }
+  finally { setLoading(button, false, t('add_book')); updateAdminCurriculumAddState(); }
+});
 
 function isoToLocalInput(value) {
   if (!value) return '';

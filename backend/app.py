@@ -1350,6 +1350,36 @@ def ping_active():
 # ---------- مكتبة الكتب الشخصية (حسابات مسجّلة بس) ----------
 # نخزّن النص المستخرج بس، مو الملف نفسه - التطبيق أصلًا ما يحتاج الـ PDF
 # بعد استخراج نصه، وهذا يغنينا عن إعداد تخزين ملفات منفصل بالكامل
+def _school_curriculum_path_id(school_id):
+    """يرجع المسار المختار للمدرسة. يبقى آمنًا قبل تشغيل migration 024."""
+    if not school_id:
+        return None
+    try:
+        rows = (
+            supabase_admin.table("schools").select("curriculum_path_id")
+            .eq("id", school_id).limit(1).execute()
+        ).data
+        return rows[0].get("curriculum_path_id") if rows else None
+    except Exception:
+        return None
+
+
+def _curriculum_books_for_school(school_id, include_text=False):
+    path_id = _school_curriculum_path_id(school_id)
+    if not path_id:
+        return []
+    fields = "id, title, created_at, path_id"
+    if include_text:
+        fields += ", extracted_text"
+    try:
+        return (
+            supabase_admin.table("curriculum_path_books").select(fields)
+            .eq("path_id", path_id).order("created_at", desc=True).execute()
+        ).data
+    except Exception:
+        return []
+
+
 @app.route("/api/library", methods=["GET"])
 @require_auth
 def list_library_books():
@@ -1397,8 +1427,19 @@ def list_library_books():
                     .execute()
                 ).data
                 visible = [b for b in school_books if b["class_id"] is None or b["class_id"] in my_class_ids]
+        elif profile.get("role") in ("school_admin", "school_administration") and profile.get("school_id"):
+            visible = (
+                supabase_admin.table("school_library_books")
+                .select("id, title, created_at, class_id")
+                .eq("school_id", profile["school_id"]).execute()
+            ).data
 
         books += [{"id": b["id"], "title": b["title"], "created_at": b["created_at"], "source": "school"} for b in visible]
+        if profile.get("school_id") and profile.get("role") in ("school_admin", "school_administration", "teacher", "student"):
+            books += [
+                {"id": b["id"], "title": b["title"], "created_at": b["created_at"], "source": "curriculum"}
+                for b in _curriculum_books_for_school(profile["school_id"])
+            ]
         books.sort(key=lambda b: b["created_at"], reverse=True)
 
         return jsonify({"books": books}), 200
@@ -1428,7 +1469,7 @@ def get_library_book(book_id):
             .eq("user_id", request.user_id).limit(1).execute()
         ).data
         profile = profile_rows[0] if profile_rows else {}
-        if profile.get("role") in ("student", "teacher") and profile.get("school_id"):
+        if profile.get("role") in ("student", "teacher", "school_admin", "school_administration") and profile.get("school_id"):
             school_res = (
                 supabase_admin.table("school_library_books")
                 .select("title, extracted_text, class_id, school_id")
@@ -1441,11 +1482,28 @@ def get_library_book(book_id):
                 same_school = b["school_id"] == profile["school_id"]
                 if profile["role"] == "student":
                     targeted = b["class_id"] is None or b["class_id"] == profile.get("class_id")
-                else:
+                elif profile["role"] == "teacher":
                     my_class_ids = _teacher_class_ids(request.user_id)
                     targeted = bool(my_class_ids) and (b["class_id"] is None or b["class_id"] in my_class_ids)
+                else:
+                    targeted = True
                 if same_school and targeted:
                     return jsonify({"title": b["title"], "extracted_text": b["extracted_text"]}), 200
+
+        # كتاب مركزي من المسار الذي اختارته مدرسة المستخدم.
+        if profile.get("school_id") and profile.get("role") in ("school_admin", "school_administration", "teacher", "student"):
+            path_id = _school_curriculum_path_id(profile["school_id"])
+            if path_id:
+                try:
+                    central = (
+                        supabase_admin.table("curriculum_path_books")
+                        .select("title, extracted_text, path_id")
+                        .eq("id", book_id).eq("path_id", path_id).limit(1).execute()
+                    ).data
+                except Exception:
+                    central = []
+                if central:
+                    return jsonify({"title": central[0]["title"], "extracted_text": central[0]["extracted_text"]}), 200
 
         return jsonify({"error": "الكتاب مو موجود"}), 404
     except Exception as e:
@@ -1503,6 +1561,22 @@ def list_school_library_books():
     }
     for b in books:
         b["class_name"] = class_names.get(b["class_id"]) if b["class_id"] else None
+        b["source"] = "school"
+
+    path_id = _school_curriculum_path_id(request.profile["school_id"])
+    if path_id:
+        try:
+            path_rows = supabase_admin.table("curriculum_paths").select("name").eq("id", path_id).limit(1).execute().data
+            path_name = path_rows[0]["name"] if path_rows else None
+            for b in _curriculum_books_for_school(request.profile["school_id"]):
+                books.append({
+                    "id": b["id"], "title": b["title"], "class_id": None,
+                    "class_name": None, "created_at": b["created_at"],
+                    "source": "curriculum", "path_name": path_name,
+                })
+        except Exception:
+            pass
+    books.sort(key=lambda b: b["created_at"], reverse=True)
     return jsonify({"books": books}), 200
 
 
@@ -3159,6 +3233,149 @@ def admin_platform_access():
     except Exception as e:
         return jsonify({"error": f"تعذّر حفظ إعداد المجانية: {e}"}), 500
     return jsonify(_platform_access_state()), 200
+
+
+# ---------- مسارات الكتب المركزية (الأدمن العام) ----------
+def _admin_curriculum_paths_payload():
+    paths = (
+        supabase_admin.table("curriculum_paths")
+        .select("id, name, is_active, created_at, updated_at")
+        .order("created_at", desc=True).execute()
+    ).data
+    books = (
+        supabase_admin.table("curriculum_path_books")
+        .select("id, path_id, title, created_at, updated_at")
+        .order("created_at", desc=True).execute()
+    ).data
+    grouped = {}
+    for book in books:
+        grouped.setdefault(book["path_id"], []).append(book)
+    for path in paths:
+        path["books"] = grouped.get(path["id"], [])
+    return paths
+
+
+@app.route("/api/admin/curriculum-paths", methods=["GET", "POST"])
+@require_role("admin")
+def admin_curriculum_paths():
+    if request.method == "GET":
+        try:
+            return jsonify({"paths": _admin_curriculum_paths_payload()}), 200
+        except Exception as e:
+            return jsonify({"error": f"تعذّر جلب المسارات: {e}"}), 500
+
+    name = ((request.get_json(silent=True) or {}).get("name") or "").strip()
+    if not name:
+        return jsonify({"error": "لازم تكتب اسم المسار"}), 400
+    try:
+        row = (
+            supabase_admin.table("curriculum_paths")
+            .insert({"name": name, "created_by": request.user_id}).execute()
+        ).data[0]
+        row["books"] = []
+        return jsonify(row), 200
+    except Exception as e:
+        return jsonify({"error": f"تعذّر إنشاء المسار: {e}"}), 500
+
+
+@app.route("/api/admin/curriculum-paths/<path_id>", methods=["PATCH", "DELETE"])
+@require_role("admin")
+def admin_curriculum_path(path_id):
+    if request.method == "DELETE":
+        res = supabase_admin.table("curriculum_paths").delete().eq("id", path_id).execute()
+        if not res.data:
+            return jsonify({"error": "المسار غير موجود"}), 404
+        return jsonify({"ok": True}), 200
+
+    data = request.get_json(silent=True) or {}
+    patch = {"updated_at": datetime.now(timezone.utc).isoformat()}
+    if "name" in data:
+        name = (data.get("name") or "").strip()
+        if not name:
+            return jsonify({"error": "اسم المسار مطلوب"}), 400
+        patch["name"] = name
+    if "is_active" in data:
+        if not isinstance(data["is_active"], bool):
+            return jsonify({"error": "حالة المسار غير صحيحة"}), 400
+        patch["is_active"] = data["is_active"]
+    res = supabase_admin.table("curriculum_paths").update(patch).eq("id", path_id).execute()
+    if not res.data:
+        return jsonify({"error": "المسار غير موجود"}), 404
+    return jsonify(res.data[0]), 200
+
+
+@app.route("/api/admin/curriculum-paths/<path_id>/books", methods=["POST"])
+@require_role("admin")
+def admin_create_curriculum_book(path_id):
+    data = request.get_json(silent=True) or {}
+    title = (data.get("title") or "").strip()
+    extracted_text = data.get("extracted_text") or ""
+    if not title or not extracted_text:
+        return jsonify({"error": "لازم عنوان ونص مستخرج"}), 400
+    exists = supabase_admin.table("curriculum_paths").select("id").eq("id", path_id).limit(1).execute().data
+    if not exists:
+        return jsonify({"error": "المسار غير موجود"}), 404
+    row = (
+        supabase_admin.table("curriculum_path_books")
+        .insert({
+            "path_id": path_id, "title": title, "extracted_text": extracted_text,
+            "added_by": request.user_id,
+        }).execute()
+    ).data[0]
+    return jsonify(row), 200
+
+
+@app.route("/api/admin/curriculum-books/<book_id>", methods=["PATCH", "DELETE"])
+@require_role("admin")
+def admin_curriculum_book(book_id):
+    if request.method == "DELETE":
+        res = supabase_admin.table("curriculum_path_books").delete().eq("id", book_id).execute()
+        if not res.data:
+            return jsonify({"error": "الكتاب غير موجود"}), 404
+        return jsonify({"ok": True}), 200
+    title = ((request.get_json(silent=True) or {}).get("title") or "").strip()
+    if not title:
+        return jsonify({"error": "عنوان الكتاب مطلوب"}), 400
+    res = (
+        supabase_admin.table("curriculum_path_books")
+        .update({"title": title, "updated_at": datetime.now(timezone.utc).isoformat()})
+        .eq("id", book_id).execute()
+    )
+    if not res.data:
+        return jsonify({"error": "الكتاب غير موجود"}), 404
+    return jsonify(res.data[0]), 200
+
+
+# مدير المدرسة يختار مسارًا جاهزًا؛ رفع كتبه الخاصة يبقى عبر /api/school/library.
+@app.route("/api/school/curriculum-path", methods=["GET", "PUT"])
+@require_role("school_admin", "school_administration")
+def school_curriculum_path():
+    school_id = request.profile["school_id"]
+    if request.method == "GET":
+        selected_id = _school_curriculum_path_id(school_id)
+        paths = (
+            supabase_admin.table("curriculum_paths").select("id, name, is_active")
+            .order("name").execute()
+        ).data
+        visible_paths = [p for p in paths if p.get("is_active") or p["id"] == selected_id]
+        counts = {}
+        for row in supabase_admin.table("curriculum_path_books").select("path_id").execute().data:
+            counts[row["path_id"]] = counts.get(row["path_id"], 0) + 1
+        for path in visible_paths:
+            path["book_count"] = counts.get(path["id"], 0)
+        return jsonify({"selected_path_id": selected_id, "paths": visible_paths}), 200
+
+    data = request.get_json(silent=True) or {}
+    path_id = data.get("path_id") or None
+    if path_id:
+        valid = (
+            supabase_admin.table("curriculum_paths").select("id")
+            .eq("id", path_id).eq("is_active", True).limit(1).execute()
+        ).data
+        if not valid:
+            return jsonify({"error": "المسار غير موجود أو غير مفعّل"}), 400
+    supabase_admin.table("schools").update({"curriculum_path_id": path_id}).eq("id", school_id).execute()
+    return jsonify({"selected_path_id": path_id}), 200
 
 
 @app.route("/api/admin/schools", methods=["POST"])

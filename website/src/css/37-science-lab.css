@@ -108,7 +108,7 @@
      ويطلع اسمه ووظيفته تحت ---------- */
   .sl-body-img-wrap {
     position: relative; overflow: hidden; border-radius: 16px; margin-top: 12px;
-    background: #10151d; direction: ltr;
+    background: #fff; direction: ltr;
   }
   .sl-body-img {
     display: block; width: 100%; height: auto;

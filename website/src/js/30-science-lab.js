@@ -857,7 +857,7 @@ function slRenderHumanBodyScene3D(containerEl) {
 const SL_BODY_IMAGES = {
   human: {
     // صورة تشريح بشري حقيقية - ملكية عامة (CC0) من ويكيميديا كومنز
-    url: 'https://upload.wikimedia.org/wikipedia/commons/e/e3/Internal_organs.svg',
+    url: '/assets/biology/human.png',
     credit: null,
     hotspots: [
       { part: 'brain', x: 48.6, y: 16.4 },
@@ -878,7 +878,7 @@ const SL_BODY_IMAGES = {
   // كلب كمرجع عام لباقي الثدييات، أفعى للزواحف، سمكة للأسماك
   dog: {
     // كلب - رخصة CC BY-SA 4.0 من ويكيميديا كومنز
-    url: 'https://upload.wikimedia.org/wikipedia/commons/c/c5/Dog_Internal_Anatomy.svg',
+    url: '/assets/biology/dog.png',
     credit: 'sl_body_credit_dog',
     hotspots: [
       { part: 'brain', x: 16.7, y: 9.2 },
@@ -925,7 +925,7 @@ const SL_BODY_IMAGES = {
   cat: {
     // قطة - رخصة CC BY-SA 3.0 من ويكيميديا كومنز (لا يوجد تشريح مخصص
     // للأسد فعليًا بأي مصدر حر، والقطة أقرب قريب حقيقي له - نفس الفصيلة)
-    url: 'https://upload.wikimedia.org/wikipedia/commons/5/5a/Scheme_cat_anatomy.svg',
+    url: '/assets/biology/cat.png',
     credit: 'sl_body_credit_cat',
     hotspots: [
       { part: 'brain', x: 27.9, y: 25.5 },
@@ -941,7 +941,7 @@ const SL_BODY_IMAGES = {
   reptile: {
     // أفعى - رخصة CC BY-SA 3.0 من ويكيميديا كومنز (ما فيه دماغ ظاهر
     // بهذا الرسم التشريحي، عادي - الزواحف تختلف كثير عن بعض)
-    url: 'https://upload.wikimedia.org/wikipedia/commons/4/4d/Snake-anatomy.svg',
+    url: '/assets/biology/reptile.png',
     credit: 'sl_body_credit_reptile',
     hotspots: [
       { part: 'heart', x: 50, y: 15 },
@@ -956,7 +956,7 @@ const SL_BODY_IMAGES = {
   fish: {
     // سمكة - رخصة CC BY-SA 3.0 من ويكيميديا كومنز (ما فيها رئتين ولا
     // دماغ ظاهر بالرسم - الأسماك تتنفس بالخياشيم مو رئتين)
-    url: 'https://upload.wikimedia.org/wikipedia/commons/b/b0/Fish-anatomy.svg',
+    url: '/assets/biology/fish.png',
     credit: 'sl_body_credit_fish',
     hotspots: [
       { part: 'heart', x: 28.9, y: 58.8 },
@@ -970,7 +970,7 @@ const SL_BODY_IMAGES = {
   whale: {
     // حوت أوركا حقيقي - رخصة CC BY-SA 3.0 من ويكيميديا كومنز (تشريح
     // كامل وواضح يغطي كل الأعضاء المتتبّعة، أفضل صورة لقيتها بالجلسة)
-    url: 'https://upload.wikimedia.org/wikipedia/commons/8/88/Orca_internal_anatomy.svg',
+    url: '/assets/biology/whale.png',
     credit: 'sl_body_credit_whale',
     hotspots: [
       { part: 'brain', x: 14, y: 51.7 },
@@ -986,7 +986,7 @@ const SL_BODY_IMAGES = {
   turtle: {
     // سلحفاة حقيقية - رخصة GFDL/CC BY-SA من ويكيميديا كومنز (ما فيها
     // كليتين ولا دماغ ظاهرين بهذا الرسم بالذات، عادي - باقي الأعضاء حقيقية)
-    url: 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Scheme_turtle_anatomy-numbers.svg',
+    url: '/assets/biology/turtle.png',
     credit: 'sl_body_credit_turtle',
     hotspots: [
       { part: 'lungs', x: 74, y: 37.9 },
@@ -1001,7 +1001,7 @@ const SL_BODY_IMAGES = {
     // رسم تشريحي حقيقي لضفدع من كتاب علمي (1907) - ملكية عامة (انتهت
     // حقوقه لقدمه). رسم لأنثى ضفدع مركّز على جهاز التكاثر، فما فيه
     // معدة ولا أمعاء ولا جلد واضحين بس الأعضاء الأربعة الأساسية موجودة
-    url: 'https://upload.wikimedia.org/wikipedia/commons/0/0e/The_biology_of_the_frog_%28Page_75%2C_Fig._10%29_BHL7720765.jpg',
+    url: '/assets/biology/frog.jpg',
     credit: 'sl_body_credit_frog',
     hotspots: [
       { part: 'heart', x: 44.9, y: 6.7 },
@@ -1015,7 +1015,7 @@ const SL_BODY_IMAGES = {
     // الجهاز الهضمي لبطة برية حقيقية - رخصة CC BY-SA 3.0 من ويكيميديا
     // كومنز. ما لقيت أي صورة تشريح حرة لقلب/رئتين طائر، فبس المعدة
     // (القونصة) والأمعاء متوفرة - أفضل من صورة كلب لطائر بأي حال
-    url: 'https://upload.wikimedia.org/wikipedia/commons/1/1c/Gastrointestinal_track_of_the_Mallard-Uklad_pokarmowy_krzyzowki.svg',
+    url: '/assets/biology/bird.png',
     credit: 'sl_body_credit_bird',
     hotspots: [
       { part: 'stomach', x: 48.5, y: 75 },
@@ -1093,8 +1093,8 @@ function slOpenBioDetail(kind, animalId) {
     SL.sessionLog.push(`${t('sl_log_animal_prefix')}: ${t(a.nameKey)}`);
     content.innerHTML = `
       <div class="sl-bio-detail-header"><span class="sl-bio-detail-icon">${a.icon}</span><h3>${t(a.nameKey)}</h3></div>
-      <ul class="sl-bio-fact-list">${a.factsKeys.map(k => `<li>${t(k)}</li>`).join('')}</ul>
       <div id="slAnimalPartsWrap"></div>
+      <ul class="sl-bio-fact-list">${a.factsKeys.map(k => `<li>${t(k)}</li>`).join('')}</ul>
     `;
     const bodyKey = SL_ANIMAL_BODY_KEY[animalId] || 'dog';
     slRenderBodyScene(content.querySelector('#slAnimalPartsWrap'), bodyKey, SL_BODY_PARTS.animal_generic);

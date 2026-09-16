@@ -5813,6 +5813,10 @@ PAYMENT_GATEWAY_WEBHOOK_SECRET = os.getenv("PAYMENT_GATEWAY_WEBHOOK_SECRET")
 # المفتاح السري، بدون كلمة سر) بدل الثقة بمحتوى الـ webhook مباشرة
 MOYASAR_PUBLISHABLE_KEY = os.getenv("MOYASAR_PUBLISHABLE_KEY")
 MOYASAR_SECRET_KEY = os.getenv("MOYASAR_SECRET_KEY")
+# الرمز الذي يرسله ميسر داخل حقل secret_token بكل Webhook. يختلف عن مفتاح
+# API السري، ولا يُعرض للمتصفح أبدًا. نتحقق منه قبل استخدام أي بيانات من
+# الإشعار، ثم نعيد التحقق من الدفعة نفسها مباشرة مع ميسر أدناه.
+MOYASAR_WEBHOOK_SECRET = os.getenv("MOYASAR_WEBHOOK_SECRET")
 
 
 @app.route("/api/subscription/plans", methods=["GET"])
@@ -6015,10 +6019,16 @@ def subscription_webhook_moyasar():
     مباشرة (أي طرف يقدر يرسل POST مزيّف لهذا الرابط العام) - بدلها نستخدم
     معرّف الدفعة بس عشان نستعلم عن حالتها الحقيقية مباشرة من ميسر بمفتاحنا
     السري (Basic Auth)، ونتحقق كمان إن المبلغ يطابق الطلب المعلّق فعليًا."""
-    if not MOYASAR_SECRET_KEY:
+    if not MOYASAR_SECRET_KEY or not MOYASAR_WEBHOOK_SECRET:
         return jsonify({"error": "ميسر غير مُهيّأ بالسيرفر"}), 500
 
     payload = request.get_json(silent=True) or {}
+    provided_secret = payload.get("secret_token")
+    if not isinstance(provided_secret, str) or not secrets.compare_digest(
+        provided_secret, MOYASAR_WEBHOOK_SECRET
+    ):
+        return jsonify({"error": "إشعار ميسر غير مصرح"}), 403
+
     payment_id = (payload.get("data") or {}).get("id") or payload.get("id")
     if not payment_id:
         return jsonify({"error": "لا يوجد معرف دفعة بالإشعار"}), 400

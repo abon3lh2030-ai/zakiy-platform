@@ -28,6 +28,19 @@ class _Supabase:
         return _SettingsQuery(self.row)
 
 
+class _CheckoutSupabase:
+    def __init__(self, profile):
+        self.profile = profile
+        self.order_insert_attempted = False
+
+    def table(self, name):
+        if name == "profiles":
+            return _SettingsQuery(self.profile)
+        if name == "subscription_orders":
+            self.order_insert_attempted = True
+        raise AssertionError(name)
+
+
 class PlatformAccessTests(unittest.TestCase):
     def setUp(self):
         self.now = datetime(2026, 9, 6, 12, tzinfo=timezone.utc)
@@ -70,6 +83,39 @@ class PlatformAccessTests(unittest.TestCase):
         self.assertEqual(resolved["tier"], "plus")
         self.assertTrue(resolved["unlimited"])
         self.assertFalse(resolved["subscription_unlimited"])
+
+    def test_active_paid_or_school_account_cannot_start_checkout(self):
+        with patch.object(app, "_platform_access_state", return_value={"free_access_active": False}):
+            self.assertFalse(app._can_start_subscription_checkout({"subscription_tier": "plus"}))
+            self.assertFalse(app._can_start_subscription_checkout({"role": "student"}))
+
+    def test_checkout_endpoint_rejects_active_subscription_before_creating_order(self):
+        database = _CheckoutSupabase({"subscription_tier": "plus"})
+        with (
+            app.app.test_request_context(
+                "/api/subscription/checkout",
+                method="POST",
+                json={"plan": "pro", "period": "monthly"},
+            ),
+            patch.object(app, "supabase_admin", database),
+        ):
+            app.request.user_id = "subscribed-user"
+            _response, status = app.subscription_checkout.__wrapped__()
+
+        self.assertEqual(status, 409)
+        self.assertFalse(database.order_insert_attempted)
+
+    def test_expired_subscription_can_start_checkout_again(self):
+        profile = {
+            "subscription_tier": "pro",
+            "subscription_expires_at": (datetime.now(timezone.utc) - timedelta(seconds=1)).isoformat(),
+        }
+        with patch.object(app, "_platform_access_state", return_value={"free_access_active": False}):
+            self.assertTrue(app._can_start_subscription_checkout(profile))
+
+    def test_platform_free_period_does_not_block_a_free_user_from_subscribing(self):
+        with patch.object(app, "_platform_access_state", return_value={"free_access_active": True}):
+            self.assertTrue(app._can_start_subscription_checkout({"subscription_tier": "free"}))
 
 
 if __name__ == "__main__":

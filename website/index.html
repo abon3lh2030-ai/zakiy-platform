@@ -1634,7 +1634,7 @@
      ويطلع اسمه ووظيفته تحت ---------- */
   .sl-body-img-wrap {
     position: relative; overflow: hidden; border-radius: 16px; margin-top: 12px;
-    background: #10151d; direction: ltr;
+    background: #fff; direction: ltr;
   }
   .sl-body-img {
     display: block; width: 100%; height: auto;
@@ -1848,6 +1848,28 @@
   <section class="card hidden" id="step-admin-dashboard">
     <span class="step-label" data-i18n="admin_dash_label">🛠️ لوحة الإدارة العامة</span>
     <h2 data-i18n="admin_dash_heading">المدارس المشتركة</h2>
+
+    <div class="card" style="margin:18px 0; padding:20px; box-shadow:none;">
+      <h3 class="sub-heading" style="margin-top:0;" data-i18n="admin_free_access_heading">🎁 المجانية العامة للمنصة</h3>
+      <p class="desc" data-i18n="admin_free_access_desc">عند تفعيلها تُلغى كل الحدود في الموقع وiOS وAndroid، مع بقاء الاشتراك متاحًا من الإعدادات.</p>
+      <div class="actions" style="align-items:end; flex-wrap:wrap;">
+        <label style="display:flex; align-items:center; gap:8px; min-height:46px;">
+          <input type="checkbox" id="platformFreeAccessEnabled" style="width:20px;height:20px;">
+          <span data-i18n="admin_free_access_enabled">تفعيل المجانية</span>
+        </label>
+        <label style="display:grid; gap:6px;">
+          <span data-i18n="admin_free_access_start">تبدأ في (اختياري)</span>
+          <input type="datetime-local" id="platformFreeAccessStart" class="text-input">
+        </label>
+        <label style="display:grid; gap:6px;">
+          <span data-i18n="admin_free_access_end">تنتهي في (اختياري)</span>
+          <input type="datetime-local" id="platformFreeAccessEnd" class="text-input">
+        </label>
+        <button class="primary" id="savePlatformFreeAccessBtn" data-i18n="admin_free_access_save">حفظ الإعداد</button>
+      </div>
+      <div id="platformFreeAccessStatus" class="desc" style="margin-top:12px;"></div>
+      <div id="platformFreeAccessError"></div>
+    </div>
 
     <h3 class="sub-heading" data-i18n="admin_add_school_heading">➕ إضافة مدرسة جديدة</h3>
     <div class="actions" style="flex-wrap:wrap;">
@@ -4203,6 +4225,15 @@ const I18N = {
     // ---- لوحة الأدمن العام ----
     admin_dash_label: '🛠️ لوحة الإدارة العامة',
     admin_dash_heading: 'المدارس المشتركة',
+    admin_free_access_heading: '🎁 المجانية العامة للمنصة',
+    admin_free_access_desc: 'عند تفعيلها تُلغى كل الحدود في الموقع وiOS وAndroid، مع بقاء الاشتراك متاحًا من الإعدادات.',
+    admin_free_access_enabled: 'تفعيل المجانية',
+    admin_free_access_start: 'تبدأ في (اختياري)',
+    admin_free_access_end: 'تنتهي في (اختياري)',
+    admin_free_access_save: 'حفظ الإعداد',
+    admin_free_access_active: '● المجانية مفعّلة الآن — جميع المستخدمين بلا حدود',
+    admin_free_access_scheduled: '◷ المجانية مجدولة وليست فعّالة الآن',
+    admin_free_access_inactive: 'المجانية غير مفعّلة',
     admin_add_school_heading: '➕ إضافة مدرسة جديدة',
     admin_schools_list_heading: '🏫 كل المدارس',
     admin_no_schools: 'ما فيه مدارس بعد',
@@ -4417,6 +4448,7 @@ const I18N = {
     payment_processing_msg: '⏳ جاري تفعيل اشتراكك...',
     payment_success_msg: '✅ تم الدفع بنجاح! اشتراكك مفعّل الآن',
     payment_delayed_msg: 'الدفع قيد المراجعة - بيتفعّل اشتراكك خلال دقائق',
+    payment_active_subscription_msg: 'اشتراكك فعال بالفعل، ولا يمكن فتح دفع جديد حتى ينتهي.',
     settings_private_profile: '🔒 بروفايل خاص بالكامل',
     settings_private_profile_desc: 'لو فعّلته، محد يقدر يشوف بروفايلك غير اسمك',
     settings_show_performance: '📊 إظهار الأداء بالبروفايل',
@@ -5188,6 +5220,15 @@ const I18N = {
     // ---- Platform admin dashboard ----
     admin_dash_label: '🛠️ Platform Admin',
     admin_dash_heading: 'Subscribed Schools',
+    admin_free_access_heading: '🎁 Platform-wide free access',
+    admin_free_access_desc: 'When enabled, all limits are removed on web, iOS, and Android while subscriptions remain available in Settings.',
+    admin_free_access_enabled: 'Enable free access',
+    admin_free_access_start: 'Starts at (optional)',
+    admin_free_access_end: 'Ends at (optional)',
+    admin_free_access_save: 'Save setting',
+    admin_free_access_active: '● Free access is active — all users are unlimited',
+    admin_free_access_scheduled: '◷ Free access is scheduled and not active yet',
+    admin_free_access_inactive: 'Free access is disabled',
     admin_add_school_heading: '➕ Add a New School',
     admin_schools_list_heading: '🏫 All Schools',
     admin_no_schools: 'No schools yet',
@@ -5402,6 +5443,7 @@ const I18N = {
     payment_processing_msg: '⏳ Activating your subscription...',
     payment_success_msg: '✅ Payment successful! Your subscription is now active',
     payment_delayed_msg: 'Payment is under review - your subscription will activate within minutes',
+    payment_active_subscription_msg: 'Your subscription is already active. A new payment cannot be opened until it expires.',
     settings_private_profile: '🔒 Fully Private Profile',
     settings_private_profile_desc: 'If enabled, no one can see your profile except your name',
     settings_show_performance: '📊 Show Performance on Profile',
@@ -5724,7 +5766,6 @@ function hide(id) {
   document.getElementById(id).classList.add('hidden');
   if (id === 'sidebar') document.body.classList.remove('with-sidebar');
 }
-
 // ---------- زر الرجوع العام (يظهر بكل مكان إلا الواجهة الرئيسية وتسجيل
 // الدخول والاختبار) - نحفظ "لقطة" لكل الشاشات الظاهرة وقت كل تنقل رئيسي،
 // وزر الرجوع يرجّع آخر لقطة محفوظة بالضبط بدل ما يخمّن شاشة وحدة ثابتة
@@ -6852,6 +6893,10 @@ let subscriptionPeriod = 'monthly';
 let moyasarPublishableKey = null;
 const SUBSCRIPTION_PLAN_ORDER = ['free', 'plus', 'pro', 'ultimate'];
 
+function hasActivePaidSubscription() {
+  return Boolean(subscriptionMeCache?.tier && subscriptionMeCache.tier !== 'free');
+}
+
 async function loadSubscriptionSection() {
   const section = document.getElementById('settingsSubscriptionSection');
   if (!currentUserId || currentUserRole) { section.classList.add('hidden'); return; }
@@ -6884,6 +6929,7 @@ function renderSubscriptionPlans() {
     daysEl.classList.add('hidden');
   }
   const grid = document.getElementById('subscriptionPlansGrid');
+  const checkoutLocked = currentTier !== 'free';
   grid.innerHTML = SUBSCRIPTION_PLAN_ORDER.map(key => {
     const plan = subscriptionPlansCache[key];
     if (!plan) return '';
@@ -6897,7 +6943,7 @@ function renderSubscriptionPlans() {
         <div class="plan-features">${renderPlanFeatures(plan)}</div>
         ${isCurrent
           ? `<div class="plan-current-badge">${t('current_plan_badge')}</div>`
-          : (key === 'free' ? '' : `<button class="primary" data-subscribe-plan="${key}" style="width:100%;">${t('btn_subscribe')}</button>`)}
+          : (key === 'free' || checkoutLocked ? '' : `<button class="primary" data-subscribe-plan="${key}" style="width:100%;">${t('btn_subscribe')}</button>`)}
       </div>
     `;
   }).join('');
@@ -6938,6 +6984,10 @@ let pendingSubscriptionOrder = null;
 
 async function startCheckout(plan) {
   const msg = document.getElementById('subscriptionMsg');
+  if (hasActivePaidSubscription()) {
+    msg.textContent = t('payment_active_subscription_msg');
+    return;
+  }
   msg.textContent = t('loading');
   try {
     const order = await apiCall('POST', '/api/subscription/checkout', { plan, period: subscriptionPeriod });
@@ -6954,6 +7004,10 @@ async function startCheckout(plan) {
 const PENDING_ORDER_STORAGE_KEY = 'zakiy_pending_subscription_order';
 
 function openPaymentModal(order) {
+  if (hasActivePaidSubscription()) {
+    document.getElementById('subscriptionMsg').textContent = t('payment_active_subscription_msg');
+    return;
+  }
   if (!moyasarPublishableKey) {
     document.getElementById('subscriptionMsg').textContent = t('payment_not_ready_msg');
     return;
@@ -6996,7 +7050,7 @@ document.getElementById('paymentModalCloseBtn').addEventListener('click', closeP
 
 // يستأنف متابعة طلب معلّق بعد ما المستخدم يرجع لصفحتنا من تدفّق دفع أعاد
 // تحميل الصفحة كاملة (Apple Pay/3D Secure) - يُستدعى بعد كل نجاح دخول
-function resumePendingSubscriptionCheck() {
+async function resumePendingSubscriptionCheck() {
   const raw = localStorage.getItem(PENDING_ORDER_STORAGE_KEY);
   if (!raw) return;
   // ننظّف أي معطيات رجّعها ميسر بالرابط (id/status/message) عشان يبقى نظيف
@@ -7005,6 +7059,22 @@ function resumePendingSubscriptionCheck() {
   }
   let order;
   try { order = JSON.parse(raw); } catch (e) { localStorage.removeItem(PENDING_ORDER_STORAGE_KEY); return; }
+  // نفشل بشكل مغلق: لا نظهر أي نافذة دفع/متابعة قبل التأكد سيرفريًا أن
+  // الحساب ما زال مجانيًا. لو كان اشتراكه فعالًا ننظف الطلب القديم نهائيًا.
+  try {
+    subscriptionMeCache = await apiCall('GET', '/api/subscription/me');
+  } catch (e) {
+    return;
+  }
+  if (hasActivePaidSubscription()) {
+    pendingSubscriptionOrder = null;
+    localStorage.removeItem(PENDING_ORDER_STORAGE_KEY);
+    hide('paymentModalOverlay');
+    showSettingsScreen();
+    document.getElementById('subscriptionMsg').textContent = t('payment_active_subscription_msg');
+    renderSubscriptionPlans();
+    return;
+  }
   showSettingsScreen();
   pendingSubscriptionOrder = order;
   show('paymentModalOverlay');
@@ -7076,7 +7146,6 @@ document.getElementById('settingsSavePhoneBtn').addEventListener('click', async 
   currentUserPhone = phone;
   document.getElementById('settingsPhoneMsg').innerHTML = `<div class="desc">✅ ${t('phone_saved')}</div>`;
 });
-
 // ---------- مكتبة الكتب الشخصية ----------
 async function fetchLibraryBooks() {
   const res = await fetch(`${API_BASE}/api/library`, {
@@ -9431,6 +9500,7 @@ function exportQrBooklet(students) {
 
 // ---------- Admin: لوحة المدارس ----------
 async function loadAdminDashboard() {
+  loadPlatformFreeAccess();
   const tbody = document.getElementById('adminSchoolsTableBody');
   tbody.innerHTML = `<tr><td colspan="5">${t('loading')}</td></tr>`;
   try {
@@ -9500,6 +9570,50 @@ async function loadAdminDashboard() {
     tbody.innerHTML = `<tr><td colspan="5">${escapeHtml(e.message)}</td></tr>`;
   }
 }
+
+function isoToLocalInput(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
+
+async function loadPlatformFreeAccess() {
+  const status = document.getElementById('platformFreeAccessStatus');
+  if (!status) return;
+  try {
+    const data = await apiCall('GET', '/api/admin/platform-access');
+    document.getElementById('platformFreeAccessEnabled').checked = !!data.free_access_enabled;
+    document.getElementById('platformFreeAccessStart').value = isoToLocalInput(data.free_access_starts_at);
+    document.getElementById('platformFreeAccessEnd').value = isoToLocalInput(data.free_access_ends_at);
+    status.textContent = data.free_access_active ? t('admin_free_access_active') : (data.free_access_enabled ? t('admin_free_access_scheduled') : t('admin_free_access_inactive'));
+    status.style.color = data.free_access_active ? 'var(--teal)' : '';
+  } catch (e) {
+    status.textContent = '';
+    showError('platformFreeAccessError', e.message);
+  }
+}
+
+document.getElementById('savePlatformFreeAccessBtn').addEventListener('click', async () => {
+  clearError('platformFreeAccessError');
+  const button = document.getElementById('savePlatformFreeAccessBtn');
+  const startValue = document.getElementById('platformFreeAccessStart').value;
+  const endValue = document.getElementById('platformFreeAccessEnd').value;
+  const payload = {
+    free_access_enabled: document.getElementById('platformFreeAccessEnabled').checked,
+    free_access_starts_at: startValue ? new Date(startValue).toISOString() : null,
+    free_access_ends_at: endValue ? new Date(endValue).toISOString() : null,
+  };
+  button.disabled = true;
+  try {
+    await apiCall('PUT', '/api/admin/platform-access', payload);
+    await loadPlatformFreeAccess();
+  } catch (e) {
+    showError('platformFreeAccessError', e.message);
+  } finally {
+    button.disabled = false;
+  }
+});
 document.getElementById('createSchoolBtn').addEventListener('click', async () => {
   clearError('createSchoolError');
   const name = document.getElementById('newSchoolName').value.trim();
@@ -9519,7 +9633,6 @@ document.getElementById('createSchoolBtn').addEventListener('click', async () =>
     showError('createSchoolError', e.message);
   }
 });
-
 // ---------- School Admin / School Administration: لوحة المدرسة ----------
 let schoolClassesCache = [];
 
@@ -15089,7 +15202,7 @@ function slRenderHumanBodyScene3D(containerEl) {
 const SL_BODY_IMAGES = {
   human: {
     // صورة تشريح بشري حقيقية - ملكية عامة (CC0) من ويكيميديا كومنز
-    url: 'https://upload.wikimedia.org/wikipedia/commons/e/e3/Internal_organs.svg',
+    url: '/assets/biology/human.png',
     credit: null,
     hotspots: [
       { part: 'brain', x: 48.6, y: 16.4 },
@@ -15110,7 +15223,7 @@ const SL_BODY_IMAGES = {
   // كلب كمرجع عام لباقي الثدييات، أفعى للزواحف، سمكة للأسماك
   dog: {
     // كلب - رخصة CC BY-SA 4.0 من ويكيميديا كومنز
-    url: 'https://upload.wikimedia.org/wikipedia/commons/c/c5/Dog_Internal_Anatomy.svg',
+    url: '/assets/biology/dog.png',
     credit: 'sl_body_credit_dog',
     hotspots: [
       { part: 'brain', x: 16.7, y: 9.2 },
@@ -15157,7 +15270,7 @@ const SL_BODY_IMAGES = {
   cat: {
     // قطة - رخصة CC BY-SA 3.0 من ويكيميديا كومنز (لا يوجد تشريح مخصص
     // للأسد فعليًا بأي مصدر حر، والقطة أقرب قريب حقيقي له - نفس الفصيلة)
-    url: 'https://upload.wikimedia.org/wikipedia/commons/5/5a/Scheme_cat_anatomy.svg',
+    url: '/assets/biology/cat.png',
     credit: 'sl_body_credit_cat',
     hotspots: [
       { part: 'brain', x: 27.9, y: 25.5 },
@@ -15173,7 +15286,7 @@ const SL_BODY_IMAGES = {
   reptile: {
     // أفعى - رخصة CC BY-SA 3.0 من ويكيميديا كومنز (ما فيه دماغ ظاهر
     // بهذا الرسم التشريحي، عادي - الزواحف تختلف كثير عن بعض)
-    url: 'https://upload.wikimedia.org/wikipedia/commons/4/4d/Snake-anatomy.svg',
+    url: '/assets/biology/reptile.png',
     credit: 'sl_body_credit_reptile',
     hotspots: [
       { part: 'heart', x: 50, y: 15 },
@@ -15188,7 +15301,7 @@ const SL_BODY_IMAGES = {
   fish: {
     // سمكة - رخصة CC BY-SA 3.0 من ويكيميديا كومنز (ما فيها رئتين ولا
     // دماغ ظاهر بالرسم - الأسماك تتنفس بالخياشيم مو رئتين)
-    url: 'https://upload.wikimedia.org/wikipedia/commons/b/b0/Fish-anatomy.svg',
+    url: '/assets/biology/fish.png',
     credit: 'sl_body_credit_fish',
     hotspots: [
       { part: 'heart', x: 28.9, y: 58.8 },
@@ -15202,7 +15315,7 @@ const SL_BODY_IMAGES = {
   whale: {
     // حوت أوركا حقيقي - رخصة CC BY-SA 3.0 من ويكيميديا كومنز (تشريح
     // كامل وواضح يغطي كل الأعضاء المتتبّعة، أفضل صورة لقيتها بالجلسة)
-    url: 'https://upload.wikimedia.org/wikipedia/commons/8/88/Orca_internal_anatomy.svg',
+    url: '/assets/biology/whale.png',
     credit: 'sl_body_credit_whale',
     hotspots: [
       { part: 'brain', x: 14, y: 51.7 },
@@ -15218,7 +15331,7 @@ const SL_BODY_IMAGES = {
   turtle: {
     // سلحفاة حقيقية - رخصة GFDL/CC BY-SA من ويكيميديا كومنز (ما فيها
     // كليتين ولا دماغ ظاهرين بهذا الرسم بالذات، عادي - باقي الأعضاء حقيقية)
-    url: 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Scheme_turtle_anatomy-numbers.svg',
+    url: '/assets/biology/turtle.png',
     credit: 'sl_body_credit_turtle',
     hotspots: [
       { part: 'lungs', x: 74, y: 37.9 },
@@ -15233,7 +15346,7 @@ const SL_BODY_IMAGES = {
     // رسم تشريحي حقيقي لضفدع من كتاب علمي (1907) - ملكية عامة (انتهت
     // حقوقه لقدمه). رسم لأنثى ضفدع مركّز على جهاز التكاثر، فما فيه
     // معدة ولا أمعاء ولا جلد واضحين بس الأعضاء الأربعة الأساسية موجودة
-    url: 'https://upload.wikimedia.org/wikipedia/commons/0/0e/The_biology_of_the_frog_%28Page_75%2C_Fig._10%29_BHL7720765.jpg',
+    url: '/assets/biology/frog.jpg',
     credit: 'sl_body_credit_frog',
     hotspots: [
       { part: 'heart', x: 44.9, y: 6.7 },
@@ -15247,7 +15360,7 @@ const SL_BODY_IMAGES = {
     // الجهاز الهضمي لبطة برية حقيقية - رخصة CC BY-SA 3.0 من ويكيميديا
     // كومنز. ما لقيت أي صورة تشريح حرة لقلب/رئتين طائر، فبس المعدة
     // (القونصة) والأمعاء متوفرة - أفضل من صورة كلب لطائر بأي حال
-    url: 'https://upload.wikimedia.org/wikipedia/commons/1/1c/Gastrointestinal_track_of_the_Mallard-Uklad_pokarmowy_krzyzowki.svg',
+    url: '/assets/biology/bird.png',
     credit: 'sl_body_credit_bird',
     hotspots: [
       { part: 'stomach', x: 48.5, y: 75 },
@@ -15325,8 +15438,8 @@ function slOpenBioDetail(kind, animalId) {
     SL.sessionLog.push(`${t('sl_log_animal_prefix')}: ${t(a.nameKey)}`);
     content.innerHTML = `
       <div class="sl-bio-detail-header"><span class="sl-bio-detail-icon">${a.icon}</span><h3>${t(a.nameKey)}</h3></div>
-      <ul class="sl-bio-fact-list">${a.factsKeys.map(k => `<li>${t(k)}</li>`).join('')}</ul>
       <div id="slAnimalPartsWrap"></div>
+      <ul class="sl-bio-fact-list">${a.factsKeys.map(k => `<li>${t(k)}</li>`).join('')}</ul>
     `;
     const bodyKey = SL_ANIMAL_BODY_KEY[animalId] || 'dog';
     slRenderBodyScene(content.querySelector('#slAnimalPartsWrap'), bodyKey, SL_BODY_PARTS.animal_generic);

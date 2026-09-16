@@ -2706,6 +2706,7 @@ const I18N = {
     payment_processing_msg: '⏳ جاري تفعيل اشتراكك...',
     payment_success_msg: '✅ تم الدفع بنجاح! اشتراكك مفعّل الآن',
     payment_delayed_msg: 'الدفع قيد المراجعة - بيتفعّل اشتراكك خلال دقائق',
+    payment_active_subscription_msg: 'اشتراكك فعال بالفعل، ولا يمكن فتح دفع جديد حتى ينتهي.',
     settings_private_profile: '🔒 بروفايل خاص بالكامل',
     settings_private_profile_desc: 'لو فعّلته، محد يقدر يشوف بروفايلك غير اسمك',
     settings_show_performance: '📊 إظهار الأداء بالبروفايل',
@@ -3200,6 +3201,7 @@ const I18N = {
     payment_processing_msg: '⏳ Activating your subscription...',
     payment_success_msg: '✅ Payment successful! Your subscription is now active',
     payment_delayed_msg: 'Payment is under review - your subscription will activate within minutes',
+    payment_active_subscription_msg: 'Your subscription is already active. A new payment cannot be opened until it expires.',
     settings_private_profile: '🔒 Fully Private Profile',
     settings_private_profile_desc: 'If enabled, no one can see your profile except your name',
     settings_show_performance: '📊 Show Performance on Profile',
@@ -4284,6 +4286,10 @@ let subscriptionPeriod = 'monthly';
 let moyasarPublishableKey = null;
 const SUBSCRIPTION_PLAN_ORDER = ['free', 'plus', 'pro', 'ultimate'];
 
+function hasActivePaidSubscription() {
+  return Boolean(subscriptionMeCache?.tier && subscriptionMeCache.tier !== 'free');
+}
+
 async function loadSubscriptionSection() {
   const section = document.getElementById('settingsSubscriptionSection');
   if (!currentUserId || currentUserRole) { section.classList.add('hidden'); return; }
@@ -4316,6 +4322,7 @@ function renderSubscriptionPlans() {
     daysEl.classList.add('hidden');
   }
   const grid = document.getElementById('subscriptionPlansGrid');
+  const checkoutLocked = currentTier !== 'free';
   grid.innerHTML = SUBSCRIPTION_PLAN_ORDER.map(key => {
     const plan = subscriptionPlansCache[key];
     if (!plan) return '';
@@ -4329,7 +4336,7 @@ function renderSubscriptionPlans() {
         <div class="plan-features">${renderPlanFeatures(plan)}</div>
         ${isCurrent
           ? `<div class="plan-current-badge">${t('current_plan_badge')}</div>`
-          : (key === 'free' ? '' : `<button class="primary" data-subscribe-plan="${key}" style="width:100%;">${t('btn_subscribe')}</button>`)}
+          : (key === 'free' || checkoutLocked ? '' : `<button class="primary" data-subscribe-plan="${key}" style="width:100%;">${t('btn_subscribe')}</button>`)}
       </div>
     `;
   }).join('');
@@ -4370,6 +4377,10 @@ let pendingSubscriptionOrder = null;
 
 async function startCheckout(plan) {
   const msg = document.getElementById('subscriptionMsg');
+  if (hasActivePaidSubscription()) {
+    msg.textContent = t('payment_active_subscription_msg');
+    return;
+  }
   msg.textContent = t('loading');
   try {
     const order = await apiCall('POST', '/api/subscription/checkout', { plan, period: subscriptionPeriod });
@@ -4386,6 +4397,10 @@ async function startCheckout(plan) {
 const PENDING_ORDER_STORAGE_KEY = 'zakiy_pending_subscription_order';
 
 function openPaymentModal(order) {
+  if (hasActivePaidSubscription()) {
+    document.getElementById('subscriptionMsg').textContent = t('payment_active_subscription_msg');
+    return;
+  }
   if (!moyasarPublishableKey) {
     document.getElementById('subscriptionMsg').textContent = t('payment_not_ready_msg');
     return;
@@ -4428,7 +4443,7 @@ document.getElementById('paymentModalCloseBtn').addEventListener('click', closeP
 
 // يستأنف متابعة طلب معلّق بعد ما المستخدم يرجع لصفحتنا من تدفّق دفع أعاد
 // تحميل الصفحة كاملة (Apple Pay/3D Secure) - يُستدعى بعد كل نجاح دخول
-function resumePendingSubscriptionCheck() {
+async function resumePendingSubscriptionCheck() {
   const raw = localStorage.getItem(PENDING_ORDER_STORAGE_KEY);
   if (!raw) return;
   // ننظّف أي معطيات رجّعها ميسر بالرابط (id/status/message) عشان يبقى نظيف
@@ -4437,6 +4452,22 @@ function resumePendingSubscriptionCheck() {
   }
   let order;
   try { order = JSON.parse(raw); } catch (e) { localStorage.removeItem(PENDING_ORDER_STORAGE_KEY); return; }
+  // نفشل بشكل مغلق: لا نظهر أي نافذة دفع/متابعة قبل التأكد سيرفريًا أن
+  // الحساب ما زال مجانيًا. لو كان اشتراكه فعالًا ننظف الطلب القديم نهائيًا.
+  try {
+    subscriptionMeCache = await apiCall('GET', '/api/subscription/me');
+  } catch (e) {
+    return;
+  }
+  if (hasActivePaidSubscription()) {
+    pendingSubscriptionOrder = null;
+    localStorage.removeItem(PENDING_ORDER_STORAGE_KEY);
+    hide('paymentModalOverlay');
+    showSettingsScreen();
+    document.getElementById('subscriptionMsg').textContent = t('payment_active_subscription_msg');
+    renderSubscriptionPlans();
+    return;
+  }
   showSettingsScreen();
   pendingSubscriptionOrder = order;
   show('paymentModalOverlay');

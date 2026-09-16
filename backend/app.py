@@ -5863,6 +5863,16 @@ def _resolve_subscription(profile):
     }
 
 
+def _can_start_subscription_checkout(profile):
+    """يسمح بالدفع فقط للحساب الفردي الذي لا يملك اشتراكًا فعالًا.
+
+    نعتمد الباقة المحسوبة بدل القيمة الخام حتى يستطيع صاحب الاشتراك المنتهي
+    الاشتراك من جديد. المجانية العامة لا تغيّر tier إلى باقة مدفوعة، لذلك
+    يبقى الحساب المجاني قادرًا على الاشتراك خلالها كما هو مطلوب.
+    """
+    return _resolve_subscription(profile).get("tier") == "free"
+
+
 # مفاتيح حدود اليوم بجدول SUBSCRIPTION_PLANS اللي يقابل كل نوع إجراء محدود -
 # مطابق تمامًا لـ LimitedAction بتطبيق iOS (بدون librarySave - ذاك سقف تخزين
 # كلي يُفحص مباشرة بعدد صفوف جدول library، مو حد يومي بـ usage_events)
@@ -5963,6 +5973,17 @@ def subscription_checkout():
         return jsonify({"error": "باقة غير صالحة"}), 400
     if period not in ("monthly", "annual"):
         return jsonify({"error": "دورة فوترة غير صالحة (monthly أو annual)"}), 400
+
+    profile_rows = (
+        supabase_admin.table("profiles")
+        .select("role, subscription_tier, subscription_expires_at")
+        .eq("user_id", request.user_id)
+        .limit(1)
+        .execute()
+    ).data
+    profile = profile_rows[0] if profile_rows else {}
+    if not _can_start_subscription_checkout(profile):
+        return jsonify({"error": "لديك اشتراك فعال بالفعل، لا يمكن فتح صفحة دفع جديدة"}), 409
 
     amount = SUBSCRIPTION_PLANS[plan]["price_monthly" if period == "monthly" else "price_annual"]
     order = (

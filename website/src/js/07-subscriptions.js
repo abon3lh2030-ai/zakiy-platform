@@ -7,6 +7,10 @@ let subscriptionPeriod = 'monthly';
 let moyasarPublishableKey = null;
 const SUBSCRIPTION_PLAN_ORDER = ['free', 'plus', 'pro', 'ultimate'];
 
+function hasActivePaidSubscription() {
+  return Boolean(subscriptionMeCache?.tier && subscriptionMeCache.tier !== 'free');
+}
+
 async function loadSubscriptionSection() {
   const section = document.getElementById('settingsSubscriptionSection');
   if (!currentUserId || currentUserRole) { section.classList.add('hidden'); return; }
@@ -39,6 +43,7 @@ function renderSubscriptionPlans() {
     daysEl.classList.add('hidden');
   }
   const grid = document.getElementById('subscriptionPlansGrid');
+  const checkoutLocked = currentTier !== 'free';
   grid.innerHTML = SUBSCRIPTION_PLAN_ORDER.map(key => {
     const plan = subscriptionPlansCache[key];
     if (!plan) return '';
@@ -52,7 +57,7 @@ function renderSubscriptionPlans() {
         <div class="plan-features">${renderPlanFeatures(plan)}</div>
         ${isCurrent
           ? `<div class="plan-current-badge">${t('current_plan_badge')}</div>`
-          : (key === 'free' ? '' : `<button class="primary" data-subscribe-plan="${key}" style="width:100%;">${t('btn_subscribe')}</button>`)}
+          : (key === 'free' || checkoutLocked ? '' : `<button class="primary" data-subscribe-plan="${key}" style="width:100%;">${t('btn_subscribe')}</button>`)}
       </div>
     `;
   }).join('');
@@ -93,6 +98,10 @@ let pendingSubscriptionOrder = null;
 
 async function startCheckout(plan) {
   const msg = document.getElementById('subscriptionMsg');
+  if (hasActivePaidSubscription()) {
+    msg.textContent = t('payment_active_subscription_msg');
+    return;
+  }
   msg.textContent = t('loading');
   try {
     const order = await apiCall('POST', '/api/subscription/checkout', { plan, period: subscriptionPeriod });
@@ -109,6 +118,10 @@ async function startCheckout(plan) {
 const PENDING_ORDER_STORAGE_KEY = 'zakiy_pending_subscription_order';
 
 function openPaymentModal(order) {
+  if (hasActivePaidSubscription()) {
+    document.getElementById('subscriptionMsg').textContent = t('payment_active_subscription_msg');
+    return;
+  }
   if (!moyasarPublishableKey) {
     document.getElementById('subscriptionMsg').textContent = t('payment_not_ready_msg');
     return;
@@ -151,7 +164,7 @@ document.getElementById('paymentModalCloseBtn').addEventListener('click', closeP
 
 // يستأنف متابعة طلب معلّق بعد ما المستخدم يرجع لصفحتنا من تدفّق دفع أعاد
 // تحميل الصفحة كاملة (Apple Pay/3D Secure) - يُستدعى بعد كل نجاح دخول
-function resumePendingSubscriptionCheck() {
+async function resumePendingSubscriptionCheck() {
   const raw = localStorage.getItem(PENDING_ORDER_STORAGE_KEY);
   if (!raw) return;
   // ننظّف أي معطيات رجّعها ميسر بالرابط (id/status/message) عشان يبقى نظيف
@@ -160,6 +173,22 @@ function resumePendingSubscriptionCheck() {
   }
   let order;
   try { order = JSON.parse(raw); } catch (e) { localStorage.removeItem(PENDING_ORDER_STORAGE_KEY); return; }
+  // نفشل بشكل مغلق: لا نظهر أي نافذة دفع/متابعة قبل التأكد سيرفريًا أن
+  // الحساب ما زال مجانيًا. لو كان اشتراكه فعالًا ننظف الطلب القديم نهائيًا.
+  try {
+    subscriptionMeCache = await apiCall('GET', '/api/subscription/me');
+  } catch (e) {
+    return;
+  }
+  if (hasActivePaidSubscription()) {
+    pendingSubscriptionOrder = null;
+    localStorage.removeItem(PENDING_ORDER_STORAGE_KEY);
+    hide('paymentModalOverlay');
+    showSettingsScreen();
+    document.getElementById('subscriptionMsg').textContent = t('payment_active_subscription_msg');
+    renderSubscriptionPlans();
+    return;
+  }
   showSettingsScreen();
   pendingSubscriptionOrder = order;
   show('paymentModalOverlay');
@@ -231,4 +260,3 @@ document.getElementById('settingsSavePhoneBtn').addEventListener('click', async 
   currentUserPhone = phone;
   document.getElementById('settingsPhoneMsg').innerHTML = `<div class="desc">✅ ${t('phone_saved')}</div>`;
 });
-

@@ -11,6 +11,7 @@ from functools import wraps
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 import csv
+import hashlib
 import io
 import json
 import os
@@ -20,6 +21,7 @@ import requests
 import secrets
 import string
 import time
+import uuid
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 import fitz  # PyMuPDF - أسرع وأثبت بكثير من pypdf باستخراج نص من ملفات كبيرة/معقّدة
@@ -5817,6 +5819,89 @@ MOYASAR_SECRET_KEY = os.getenv("MOYASAR_SECRET_KEY")
 # API السري، ولا يُعرض للمتصفح أبدًا. نتحقق منه قبل استخدام أي بيانات من
 # الإشعار، ثم نعيد التحقق من الدفعة نفسها مباشرة مع ميسر أدناه.
 MOYASAR_WEBHOOK_SECRET = os.getenv("MOYASAR_WEBHOOK_SECRET")
+PUBLIC_APP_URL = os.getenv("PUBLIC_APP_URL", "https://zakiy.tech").rstrip("/")
+
+TRIAL_DAYS = 3
+TRIAL_OFFER_HOURS = 48
+TRIAL_OFFER_COOLDOWN_DAYS = 21
+RENEWAL_MAX_RETRIES = 3
+
+
+def _subscription_period_end(start, period):
+    """دورات المنصة الحالية ثابتة: 30 يومًا للشهري و365 يومًا للسنوي."""
+    return start + timedelta(days=30 if period == "monthly" else 365)
+
+
+def _subscription_price(plan, period):
+    return SUBSCRIPTION_PLANS[plan]["price_monthly" if period == "monthly" else "price_annual"]
+
+
+def _billing_row(user_id):
+    """يرجع سجل فوترة الويب، ويفشل بهدوء قبل تطبيق migration 024."""
+    try:
+        rows = (
+            supabase_admin.table("web_subscription_billing").select("*")
+            .eq("user_id", user_id).limit(1).execute().data
+        )
+        return rows[0] if rows else None
+    except Exception:
+        return None
+
+
+def _safe_billing_details(row):
+    if not row:
+        return None
+    return {
+        "status": row.get("status"),
+        "auto_renew": bool(row.get("auto_renew")),
+        "current_period_end": row.get("current_period_end"),
+        "trial_ends_at": row.get("trial_ends_at"),
+        "is_trial": row.get("status") == "trialing",
+        "payment_brand": row.get("payment_brand"),
+        "payment_last_four": row.get("payment_last_four"),
+    }
+
+
+def _extract_moyasar_token(payment):
+    source = payment.get("source") or {}
+    token = source.get("token")
+    return token if isinstance(token, str) and token.startswith("token_") else None
+
+
+def _store_web_payment_method(user_id, token, source=None, **extra):
+    source = source or {}
+    values = {
+        "user_id": user_id,
+        "moyasar_token": token,
+        "payment_brand": source.get("company") or source.get("brand"),
+        "payment_last_four": source.get("number") or source.get("last_four"),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        **extra,
+    }
+    # ميسر يرجع غالبًا آخر 4 أرقام فقط، لكن نضمن ألا نخزن أكثر منها لو تغيّر الرد.
+    if values.get("payment_last_four"):
+        values["payment_last_four"] = str(values["payment_last_four"])[-4:]
+    supabase_admin.table("web_subscription_billing").upsert(values, on_conflict="user_id").execute()
+
+
+def _get_moyasar_payment(payment_id):
+    response = requests.get(
+        f"https://api.moyasar.com/v1/payments/{payment_id}",
+        auth=(MOYASAR_SECRET_KEY, ""), timeout=15,
+    )
+    if response.status_code != 200:
+        raise RuntimeError("تعذّر التحقق من الدفعة لدى ميسر")
+    return response.json()
+
+
+def _get_moyasar_token(token_id):
+    response = requests.get(
+        f"https://api.moyasar.com/v1/tokens/{token_id}",
+        auth=(MOYASAR_SECRET_KEY, ""), timeout=15,
+    )
+    if response.status_code != 200:
+        raise RuntimeError("تعذّر التحقق من البطاقة لدى ميسر")
+    return response.json()
 
 
 @app.route("/api/subscription/plans", methods=["GET"])
@@ -5833,6 +5918,7 @@ def _resolve_subscription(profile):
     if profile.get("role"):
         return {
             "tier": "school", "period": None, "expires_at": None,
+            "source": "school",
             "unlimited": True, "subscription_unlimited": True,
             "platform_free_access_active": platform_free,
         }
@@ -5856,6 +5942,7 @@ def _resolve_subscription(profile):
         "tier": tier,
         "period": profile.get("subscription_period"),
         "expires_at": expires_at,
+        "source": profile.get("subscription_source"),
         "unlimited": subscription_unlimited or platform_free,
         "subscription_unlimited": subscription_unlimited,
         "platform_free_access_active": platform_free,
@@ -5945,7 +6032,7 @@ def _check_and_record_daily_action(user_id, action):
 def subscription_me():
     rows = (
         supabase_admin.table("profiles")
-        .select("role, subscription_tier, subscription_period, subscription_expires_at")
+        .select("role, subscription_tier, subscription_period, subscription_expires_at, subscription_source")
         .eq("user_id", request.user_id)
         .limit(1)
         .execute()
@@ -5956,7 +6043,12 @@ def subscription_me():
     # موجود بـ SUBSCRIPTION_PLANS فعلًا، لازم نتحقق من unlimited صراحة وإلا
     # يرجع للمجاني بالغلط ويعرض حدود خاطئة بشاشة الإعدادات لحساب بلا حدود
     plan_key = "owner" if resolved.get("unlimited") else (resolved["tier"] if resolved["tier"] in SUBSCRIPTION_PLANS else "free")
-    return jsonify({**resolved, "limits": SUBSCRIPTION_PLANS[plan_key]}), 200
+    billing = _billing_row(request.user_id) if not profile.get("role") else None
+    return jsonify({
+        **resolved,
+        "limits": SUBSCRIPTION_PLANS[plan_key],
+        "billing": _safe_billing_details(billing),
+    }), 200
 
 
 @app.route("/api/subscription/checkout", methods=["POST"])
@@ -5985,23 +6077,80 @@ def subscription_checkout():
     if not _can_start_subscription_checkout(profile):
         return jsonify({"error": "لديك اشتراك فعال بالفعل، لا يمكن فتح صفحة دفع جديدة"}), 409
 
-    amount = SUBSCRIPTION_PLANS[plan]["price_monthly" if period == "monthly" else "price_annual"]
+    amount = _subscription_price(plan, period)
     order = (
         supabase_admin.table("subscription_orders")
         .insert({"user_id": request.user_id, "plan": plan, "period": period, "amount": amount, "currency": "SAR"})
         .execute()
         .data[0]
     )
-    return jsonify({"order_id": order["id"], "plan": plan, "period": period, "amount": amount, "currency": "SAR"}), 200
+    return jsonify({
+        "order_id": order["id"], "plan": plan, "period": period,
+        "amount": amount, "currency": "SAR", "auto_renew": True,
+    }), 200
 
 
-def _activate_subscription_order(order, gateway_reference=None):
+@app.route("/api/subscription/orders/<order_id>/payment-method", methods=["POST"])
+@require_auth
+def subscription_save_payment_method(order_id):
+    """يحفظ token الذي أنشأه ميسر قبل تحويل 3DS. لا نستقبل بيانات البطاقة
+    نفسها، ونتحقق من الدفعة مباشرة مع ميسر ومن ملكية الطلب للمستخدم."""
+    if not MOYASAR_SECRET_KEY:
+        return jsonify({"error": "ميسر غير مُهيّأ بالسيرفر"}), 500
+    data = request.get_json(silent=True) or {}
+    payment_id = data.get("payment_id")
+    if not payment_id:
+        return jsonify({"error": "معرف الدفعة مطلوب"}), 400
+    rows = (
+        supabase_admin.table("subscription_orders").select("*")
+        .eq("id", order_id).eq("user_id", request.user_id).limit(1).execute().data
+    )
+    if not rows:
+        return jsonify({"error": "الطلب غير موجود"}), 404
+    try:
+        payment = _get_moyasar_payment(payment_id)
+    except (requests.RequestException, RuntimeError):
+        return jsonify({"error": "تعذّر التحقق من الدفعة لدى ميسر"}), 502
+    if (payment.get("metadata") or {}).get("order_id") != order_id:
+        return jsonify({"error": "الدفعة لا تخص هذا الطلب"}), 400
+    token = _extract_moyasar_token(payment)
+    if not token:
+        return jsonify({"error": "لم تُحفظ البطاقة للتجديد التلقائي"}), 409
+    _store_web_payment_method(
+        request.user_id, token, payment.get("source"),
+        plan=rows[0]["plan"], period=rows[0]["period"], status="pending",
+    )
+    return jsonify({"ok": True}), 200
+
+
+def _activate_subscription_order(order, gateway_reference=None, payment=None):
     """يفعّل اشتراك المستخدم بعد تأكيد دفع ناجح لطلب معلّق - منطق مشترك بين
     مسار التأكيد اليدوي العام ومسار تأكيد ميسر التلقائي، عشان يبقى بمكان وحد."""
-    days = 30 if order["period"] == "monthly" else 365
-    expires_at = (datetime.now(timezone.utc) + timedelta(days=days)).isoformat()
+    now = datetime.now(timezone.utc)
+    expires_at = _subscription_period_end(now, order["period"]).isoformat()
+    token = _extract_moyasar_token(payment or {})
+    existing = _billing_row(order["user_id"]) or {}
+    token = token or existing.get("moyasar_token")
+    billing_values = {
+        "user_id": order["user_id"], "plan": order["plan"], "period": order["period"],
+        "status": "active", "auto_renew": bool(token), "current_period_end": expires_at,
+        "next_charge_at": expires_at if token else None, "retry_count": 0,
+        "last_charge_at": now.isoformat(), "updated_at": now.isoformat(),
+    }
+    if token:
+        source = (payment or {}).get("source") or {}
+        billing_values.update({
+            "moyasar_token": token,
+            "payment_brand": source.get("company") or source.get("brand") or existing.get("payment_brand"),
+            "payment_last_four": str(source.get("number") or source.get("last_four") or existing.get("payment_last_four") or "")[-4:] or None,
+        })
+    supabase_admin.table("web_subscription_billing").upsert(
+        billing_values, on_conflict="user_id"
+    ).execute()
+    # نعلّم الطلب مدفوعًا بعد نجاح حفظ إعدادات التجديد، حتى يستطيع webhook
+    # إعادة المحاولة بأمان لو لم تكن migration مطبقة لحظة أول إشعار.
     supabase_admin.table("subscription_orders").update(
-        {"status": "paid", "paid_at": datetime.now(timezone.utc).isoformat(), "gateway_reference": gateway_reference}
+        {"status": "paid", "paid_at": now.isoformat(), "gateway_reference": gateway_reference}
     ).eq("id", order["id"]).execute()
     supabase_admin.table("profiles").update(
         {
@@ -6055,21 +6204,21 @@ def subscription_webhook_moyasar():
         return jsonify({"error": "لا يوجد معرف دفعة بالإشعار"}), 400
 
     try:
-        resp = requests.get(
-            f"https://api.moyasar.com/v1/payments/{payment_id}",
-            auth=(MOYASAR_SECRET_KEY, ""),
-            timeout=15,
-        )
+        payment = _get_moyasar_payment(payment_id)
     except requests.RequestException:
         return jsonify({"error": "تعذّر الاتصال بميسر"}), 502
-    if resp.status_code != 200:
+    except RuntimeError:
         return jsonify({"error": "تعذّر التحقق من الدفعة لدى ميسر"}), 502
-    payment = resp.json()
 
     if payment.get("status") != "paid":
         return jsonify({"ok": True, "ignored": True}), 200
 
-    order_id = (payment.get("metadata") or {}).get("order_id")
+    metadata = payment.get("metadata") or {}
+    renewal_attempt_id = metadata.get("renewal_attempt_id")
+    if renewal_attempt_id:
+        return _confirm_moyasar_renewal(renewal_attempt_id, payment)
+
+    order_id = metadata.get("order_id")
     if not order_id:
         return jsonify({"error": "لا يوجد رقم طلب بالبيانات الوصفية"}), 400
 
@@ -6078,6 +6227,9 @@ def subscription_webhook_moyasar():
         return jsonify({"error": "الطلب غير موجود"}), 404
     order = rows[0]
     if order["status"] == "paid":
+        billing = _billing_row(order["user_id"])
+        if not billing and _extract_moyasar_token(payment):
+            _activate_subscription_order(order, gateway_reference=payment_id, payment=payment)
         return jsonify({"ok": True, "already_confirmed": True}), 200
 
     # المبلغ المدفوع فعليًا (بالهللة) لازم يطابق مبلغ الطلب - يمنع أي تلاعب
@@ -6086,8 +6238,191 @@ def subscription_webhook_moyasar():
     if payment.get("amount") != expected_halalas or payment.get("currency") != "SAR":
         return jsonify({"error": "المبلغ المدفوع لا يطابق الطلب"}), 400
 
-    _activate_subscription_order(order, gateway_reference=payment_id)
+    _activate_subscription_order(order, gateway_reference=payment_id, payment=payment)
     return jsonify({"ok": True}), 200
+
+
+def _trial_offer_payload(row, now=None):
+    now = now or datetime.now(timezone.utc)
+    try:
+        ends_at = _parse_utc_datetime((row or {}).get("trial_offer_ends_at"))
+    except (TypeError, ValueError):
+        ends_at = None
+    active = bool(ends_at and ends_at > now and not row.get("trial_used"))
+    return {
+        "available": active,
+        "days": TRIAL_DAYS,
+        "offer_ends_at": ends_at.isoformat() if active else None,
+    }
+
+
+def _eligible_trial_profile(user_id):
+    rows = (
+        supabase_admin.table("profiles")
+        .select("role, subscription_tier, subscription_expires_at")
+        .eq("user_id", user_id).limit(1).execute().data
+    )
+    profile = rows[0] if rows else {}
+    return not profile.get("role") and _can_start_subscription_checkout(profile)
+
+
+@app.route("/api/subscription/trial-offer", methods=["POST"])
+@require_auth
+def subscription_trial_offer():
+    """يعرض التجربة باعتدال: الإعدادات لا تنشئ عرضًا جديدًا، paywall ينشئه
+    عند نية استخدام ميزة مدفوعة، وpassive يظهر بنسبة ثابتة صغيرة يوميًا."""
+    context = (request.get_json(silent=True) or {}).get("context", "settings")
+    if context not in ("settings", "paywall", "passive") or not _eligible_trial_profile(request.user_id):
+        return jsonify({"available": False, "days": TRIAL_DAYS}), 200
+    now = datetime.now(timezone.utc)
+    row = _billing_row(request.user_id) or {}
+    active = _trial_offer_payload(row, now)
+    if active["available"]:
+        return jsonify(active), 200
+    if row.get("trial_used"):
+        return jsonify({"available": False, "days": TRIAL_DAYS}), 200
+    try:
+        next_at = _parse_utc_datetime(row.get("trial_offer_next_at"))
+    except (TypeError, ValueError):
+        next_at = None
+    if next_at and next_at > now:
+        return jsonify({"available": False, "days": TRIAL_DAYS}), 200
+    should_offer = context == "paywall"
+    if context == "passive":
+        day_key = f"{request.user_id}:{now.date().isoformat()}".encode()
+        should_offer = int(hashlib.sha256(day_key).hexdigest()[:8], 16) % 4 == 0
+    if not should_offer:
+        return jsonify({"available": False, "days": TRIAL_DAYS}), 200
+    ends_at = now + timedelta(hours=TRIAL_OFFER_HOURS)
+    values = {
+        "user_id": request.user_id,
+        "trial_offer_starts_at": now.isoformat(),
+        "trial_offer_ends_at": ends_at.isoformat(),
+        "trial_offer_last_shown_at": now.isoformat(),
+        "trial_offer_next_at": (now + timedelta(days=TRIAL_OFFER_COOLDOWN_DAYS)).isoformat(),
+        "trial_offer_impressions": int(row.get("trial_offer_impressions") or 0) + 1,
+        "updated_at": now.isoformat(),
+    }
+    supabase_admin.table("web_subscription_billing").upsert(values, on_conflict="user_id").execute()
+    return jsonify({"available": True, "days": TRIAL_DAYS, "offer_ends_at": ends_at.isoformat()}), 200
+
+
+def _validate_trial_choice(data):
+    plan, period = data.get("plan"), data.get("period")
+    if plan not in SUBSCRIPTION_PLANS or plan in ("free", "owner"):
+        return None, None, "باقة غير صالحة"
+    if period not in ("monthly", "annual"):
+        return None, None, "دورة فوترة غير صالحة"
+    return plan, period, None
+
+
+@app.route("/api/subscription/trial/prepare", methods=["POST"])
+@require_auth
+def subscription_trial_prepare():
+    data = request.get_json(silent=True) or {}
+    plan, period, error = _validate_trial_choice(data)
+    if error:
+        return jsonify({"error": error}), 400
+    row = _billing_row(request.user_id) or {}
+    if not _eligible_trial_profile(request.user_id) or not _trial_offer_payload(row)["available"]:
+        return jsonify({"error": "عرض التجربة غير متاح لهذا الحساب حاليًا"}), 403
+    now = datetime.now(timezone.utc)
+    trial_end = now + timedelta(days=TRIAL_DAYS)
+    return jsonify({
+        "plan": plan, "period": period, "amount": _subscription_price(plan, period),
+        "currency": "SAR", "trial_ends_at": trial_end.isoformat(),
+        "callback_url": f"{PUBLIC_APP_URL}/?subscription_trial=return",
+    }), 200
+
+
+@app.route("/api/subscription/trial/attach-token", methods=["POST"])
+@require_auth
+def subscription_trial_attach_token():
+    data = request.get_json(silent=True) or {}
+    plan, period, error = _validate_trial_choice(data)
+    token_id = data.get("token_id")
+    if error or not isinstance(token_id, str) or not token_id.startswith("token_"):
+        return jsonify({"error": error or "رمز البطاقة غير صالح"}), 400
+    row = _billing_row(request.user_id) or {}
+    if not _eligible_trial_profile(request.user_id) or not _trial_offer_payload(row)["available"]:
+        return jsonify({"error": "عرض التجربة غير متاح لهذا الحساب حاليًا"}), 403
+    try:
+        token = _get_moyasar_token(token_id)
+    except (requests.RequestException, RuntimeError):
+        return jsonify({"error": "تعذّر التحقق من البطاقة لدى ميسر"}), 502
+    if token.get("status") not in ("initiated", "active"):
+        return jsonify({"error": "لم يكتمل توثيق البطاقة"}), 409
+    source = token.get("creditcard") or token.get("source") or token
+    _store_web_payment_method(
+        request.user_id, token_id, source,
+        pending_trial_token=token_id, pending_trial_plan=plan,
+        pending_trial_period=period, status="pending",
+    )
+    return jsonify({"ok": True, "status": token.get("status"), "verification_url": token.get("verification_url")}), 200
+
+
+@app.route("/api/subscription/trial/confirm", methods=["POST"])
+@require_auth
+def subscription_trial_confirm():
+    row = _billing_row(request.user_id) or {}
+    token_id = row.get("pending_trial_token")
+    plan, period = row.get("pending_trial_plan"), row.get("pending_trial_period")
+    if row.get("trial_used"):
+        return jsonify({"error": "تم استخدام التجربة المجانية سابقًا"}), 409
+    if not _trial_offer_payload(row)["available"]:
+        return jsonify({"error": "انتهت صلاحية عرض التجربة"}), 403
+    if not token_id or plan not in SUBSCRIPTION_PLANS or period not in ("monthly", "annual"):
+        return jsonify({"error": "لا توجد تجربة معلقة"}), 404
+    try:
+        token = _get_moyasar_token(token_id)
+    except (requests.RequestException, RuntimeError):
+        return jsonify({"error": "تعذّر التحقق من البطاقة لدى ميسر"}), 502
+    if token.get("status") != "active":
+        return jsonify({"error": "توثيق البطاقة لم يكتمل بعد"}), 409
+    now = datetime.now(timezone.utc)
+    trial_end = now + timedelta(days=TRIAL_DAYS)
+    source = token.get("creditcard") or token.get("source") or token
+    _store_web_payment_method(
+        request.user_id, token_id, source,
+        plan=plan, period=period, status="trialing", auto_renew=True,
+        trial_used=True, trial_started_at=now.isoformat(), trial_ends_at=trial_end.isoformat(),
+        current_period_end=trial_end.isoformat(), next_charge_at=trial_end.isoformat(),
+        pending_trial_token=None, pending_trial_plan=None, pending_trial_period=None,
+    )
+    supabase_admin.table("profiles").update({
+        "subscription_tier": plan, "subscription_period": period,
+        "subscription_expires_at": trial_end.isoformat(), "subscription_source": "web_trial",
+    }).eq("user_id", request.user_id).execute()
+    return jsonify({"ok": True, "tier": plan, "period": period, "trial_ends_at": trial_end.isoformat()}), 200
+
+
+@app.route("/api/subscription/auto-renew", methods=["POST"])
+@require_auth
+def subscription_auto_renew():
+    enabled = (request.get_json(silent=True) or {}).get("enabled")
+    if not isinstance(enabled, bool):
+        return jsonify({"error": "قيمة enabled مطلوبة"}), 400
+    row = _billing_row(request.user_id)
+    if not row or not row.get("current_period_end"):
+        return jsonify({"error": "لا يوجد اشتراك ويب فعال"}), 404
+    try:
+        period_end = _parse_utc_datetime(row["current_period_end"])
+    except (TypeError, ValueError):
+        return jsonify({"error": "تاريخ الاشتراك غير صالح"}), 409
+    if period_end <= datetime.now(timezone.utc):
+        return jsonify({"error": "انتهى الاشتراك ولا يمكن إعادة تفعيل التجديد"}), 409
+    if enabled and not row.get("moyasar_token"):
+        return jsonify({"error": "لا توجد بطاقة محفوظة للتجديد التلقائي"}), 409
+    if enabled:
+        status = "trialing" if row.get("trial_ends_at") and _parse_utc_datetime(row["trial_ends_at"]) > datetime.now(timezone.utc) else "active"
+    else:
+        status = "cancel_at_period_end"
+    supabase_admin.table("web_subscription_billing").update({
+        "auto_renew": enabled, "status": status,
+        "next_charge_at": period_end.isoformat() if enabled else None,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }).eq("user_id", request.user_id).execute()
+    return jsonify({"ok": True, "auto_renew": enabled, "active_until": period_end.isoformat()}), 200
 
 
 @app.route("/api/subscription/apple/verify", methods=["POST"])
@@ -6135,11 +6470,18 @@ def subscription_google_verify():
 @app.route("/api/subscription/cancel", methods=["POST"])
 @require_auth
 def subscription_cancel():
-    """إلغاء فوري يرجع للباقة المجانية على طول - نسخة مبسّطة لأول إصدار."""
-    supabase_admin.table("profiles").update(
-        {"subscription_tier": "free", "subscription_period": None, "subscription_expires_at": None, "subscription_source": None}
-    ).eq("user_id", request.user_id).execute()
-    return jsonify({"ok": True}), 200
+    """توافق مع العملاء القديمة: الإلغاء يوقف التجديد فقط ولا يسحب المدة الحالية."""
+    row = _billing_row(request.user_id)
+    if not row or not row.get("current_period_end"):
+        return jsonify({"error": "لا يوجد اشتراك ويب فعال"}), 404
+    period_end = _parse_utc_datetime(row["current_period_end"])
+    if period_end <= datetime.now(timezone.utc):
+        return jsonify({"error": "انتهى الاشتراك بالفعل"}), 409
+    supabase_admin.table("web_subscription_billing").update({
+        "auto_renew": False, "status": "cancel_at_period_end",
+        "next_charge_at": None, "updated_at": datetime.now(timezone.utc).isoformat(),
+    }).eq("user_id", request.user_id).execute()
+    return jsonify({"ok": True, "auto_renew": False, "active_until": period_end.isoformat()}), 200
 
 
 # ---------- حلقة خلفية: تذكير قبل الحصة بنص ساعة ----------
@@ -6210,9 +6552,157 @@ def schedule_reminder_loop():
         socketio.sleep(60)
 
 
+def _complete_renewal_attempt(attempt, payment):
+    if attempt.get("status") == "paid":
+        return True
+    expected_halalas = round(float(attempt["amount"]) * 100)
+    if payment.get("status") != "paid" or payment.get("amount") != expected_halalas or payment.get("currency") != "SAR":
+        return False
+    due_at = _parse_utc_datetime(attempt["due_at"])
+    new_end = _subscription_period_end(due_at, attempt["period"])
+    now = datetime.now(timezone.utc)
+    supabase_admin.table("subscription_renewal_attempts").update({
+        "status": "paid", "gateway_reference": payment.get("id"),
+        "completed_at": now.isoformat(), "failure_reason": None,
+    }).eq("id", attempt["id"]).execute()
+    supabase_admin.table("web_subscription_billing").update({
+        "status": "active", "auto_renew": True, "current_period_end": new_end.isoformat(),
+        "next_charge_at": new_end.isoformat(), "next_retry_at": None, "retry_count": 0,
+        "last_charge_at": now.isoformat(), "trial_ends_at": None, "updated_at": now.isoformat(),
+    }).eq("user_id", attempt["user_id"]).execute()
+    supabase_admin.table("profiles").update({
+        "subscription_tier": attempt["plan"], "subscription_period": attempt["period"],
+        "subscription_expires_at": new_end.isoformat(), "subscription_source": "web",
+    }).eq("user_id", attempt["user_id"]).execute()
+    _create_notification(
+        attempt["user_id"], "subscription_renewed", "✅ تم تجديد اشتراكك",
+        f"تجدد اشتراك {SUBSCRIPTION_PLANS[attempt['plan']]['name_ar']} تلقائيًا حتى {new_end.date().isoformat()}",
+    )
+    return True
+
+
+def _confirm_moyasar_renewal(attempt_id, payment):
+    rows = (
+        supabase_admin.table("subscription_renewal_attempts").select("*")
+        .eq("id", attempt_id).limit(1).execute().data
+    )
+    if not rows:
+        return jsonify({"error": "محاولة التجديد غير موجودة"}), 404
+    if rows[0].get("status") == "paid":
+        return jsonify({"ok": True, "already_confirmed": True}), 200
+    if not _complete_renewal_attempt(rows[0], payment):
+        return jsonify({"error": "بيانات دفعة التجديد غير مطابقة"}), 400
+    return jsonify({"ok": True}), 200
+
+
+def _record_renewal_failure(billing, attempt, reason, uncertain=False):
+    now = datetime.now(timezone.utc)
+    if uncertain:
+        # لو انقطع الاتصال بعد إرسال الطلب لا ننشئ معرّف خصم جديد؛ نعيد نفس
+        # given_id لاحقًا ليعيد ميسر نفس النتيجة بلا احتمال خصم مزدوج.
+        supabase_admin.table("subscription_renewal_attempts").update({
+            "status": "pending", "failure_reason": str(reason)[:500],
+        }).eq("id", attempt["id"]).execute()
+        supabase_admin.table("web_subscription_billing").update({
+            "status": "past_due", "next_retry_at": (now + timedelta(hours=1)).isoformat(),
+            "updated_at": now.isoformat(),
+        }).eq("user_id", billing["user_id"]).execute()
+        return
+    retry_count = int(billing.get("retry_count") or 0) + 1
+    exhausted = retry_count >= RENEWAL_MAX_RETRIES
+    supabase_admin.table("subscription_renewal_attempts").update({
+        "status": "failed", "failure_reason": str(reason)[:500],
+    }).eq("id", attempt["id"]).execute()
+    supabase_admin.table("web_subscription_billing").update({
+        "status": "cancelled" if exhausted else "past_due",
+        "auto_renew": not exhausted,
+        "retry_count": retry_count,
+        "next_retry_at": None if exhausted else (now + timedelta(hours=24)).isoformat(),
+        "updated_at": now.isoformat(),
+    }).eq("user_id", billing["user_id"]).execute()
+    _create_notification(
+        billing["user_id"], "subscription_payment_failed", "تعذّر تجديد اشتراكك",
+        "راجع بطاقتك ثم أعد المحاولة من الإعدادات." if not exhausted else "توقّف التجديد بعد ثلاث محاولات، ويمكنك الاشتراك مجددًا من الإعدادات.",
+    )
+
+
+def _renew_web_subscription(billing, now=None):
+    now = now or datetime.now(timezone.utc)
+    due_at = _parse_utc_datetime(billing.get("next_charge_at") or billing.get("current_period_end"))
+    if not due_at or due_at > now or not billing.get("auto_renew") or not billing.get("moyasar_token"):
+        return False
+    retry_at = _parse_utc_datetime(billing.get("next_retry_at"))
+    if retry_at and retry_at > now:
+        return False
+    attempt_number = int(billing.get("retry_count") or 0) + 1
+    attempts = (
+        supabase_admin.table("subscription_renewal_attempts").select("*")
+        .eq("user_id", billing["user_id"]).eq("due_at", due_at.isoformat())
+        .eq("attempt_number", attempt_number).limit(1).execute().data
+    )
+    if attempts and attempts[0].get("status") == "paid":
+        return True
+    if attempts:
+        attempt = attempts[0]
+        supabase_admin.table("subscription_renewal_attempts").update({"status": "pending"}).eq("id", attempt["id"]).execute()
+    else:
+        attempt = {
+            "id": str(uuid.uuid4()), "user_id": billing["user_id"], "plan": billing["plan"],
+            "period": billing["period"], "due_at": due_at.isoformat(),
+            "attempt_number": attempt_number,
+            "amount": _subscription_price(billing["plan"], billing["period"]), "currency": "SAR",
+            "status": "pending",
+        }
+        try:
+            supabase_admin.table("subscription_renewal_attempts").insert(attempt).execute()
+        except Exception:
+            # عامل آخر سبقنا لنفس الدورة/رقم المحاولة؛ القيد الفريد يمنع الخصم المكرر.
+            return False
+    try:
+        response = requests.post(
+            "https://api.moyasar.com/v1/payments",
+            # إنشاء الدفعات عند ميسر يستخدم المفتاح القابل للنشر، بينما
+            # الاستعلام والتحقق من النتيجة فقط يستخدم المفتاح السري.
+            auth=(MOYASAR_PUBLISHABLE_KEY, ""), timeout=20,
+            data={
+                "given_id": attempt["id"], "amount": round(float(attempt["amount"]) * 100),
+                "currency": "SAR", "description": f"تجديد اشتراك ذكيّ - {billing['plan']}",
+                "callback_url": PUBLIC_APP_URL,
+                "source[type]": "token", "source[token]": billing["moyasar_token"],
+                "metadata[renewal_attempt_id]": attempt["id"],
+            },
+        )
+        payment = response.json() if response.content else {}
+        if response.status_code in (200, 201) and _complete_renewal_attempt(attempt, payment):
+            return True
+        reason = payment.get("message") or f"Moyasar HTTP {response.status_code}"
+        # initiated/authorized أو خطأ 5xx قد يعني أن ميسر استلم الطلب وما
+        # زالت النتيجة غير نهائية؛ نعيد نفس given_id بدل إنشاء خصم جديد.
+        uncertain = payment.get("status") in ("initiated", "authorized") or response.status_code >= 500
+        _record_renewal_failure(billing, attempt, reason, uncertain=uncertain)
+    except requests.RequestException as exc:
+        _record_renewal_failure(billing, attempt, exc, uncertain=True)
+    return False
+
+
+def _check_due_web_renewals_once(now=None):
+    if not MOYASAR_PUBLISHABLE_KEY:
+        return
+    now = now or datetime.now(timezone.utc)
+    try:
+        rows = supabase_admin.table("web_subscription_billing").select("*").eq("auto_renew", True).execute().data
+    except Exception:
+        return
+    for row in rows:
+        try:
+            _renew_web_subscription(row, now)
+        except Exception:
+            # تعطل حساب واحد لا يمنع تجديد بقية الحسابات.
+            continue
+
+
 def _check_expired_subscriptions_once():
     """يفحص الحسابات الفردية (role فاضي) اللي انتهت صلاحية اشتراكها المدفوع
-    فعليًا - يرجّعها للباقة المجانية بقاعدة البيانات نفسها (مو بس بالعرض
     اللحظي اللي يسويه _resolve_subscription وقت الطلب) ويرسل تنبيه وحد
     يوضّح السبب. إعادة الضبط لـ subscription_tier='free' نفسها تمنع تكرار
     نفس التنبيه بالمرات الجاية (الاستعلام ما يعيد التقاطه بعدها)."""
@@ -6227,9 +6717,19 @@ def _check_expired_subscriptions_once():
     ).data
     for row in rows:
         plan_name = SUBSCRIPTION_PLANS.get(row.get("subscription_tier"), {}).get("name_ar", "المدفوعة")
+        billing = _billing_row(row["user_id"])
+        if billing and billing.get("auto_renew"):
+            # عامل التجديد يعالج الدفعة/إعادة المحاولة. انتهاء الملف لا يمسح
+            # سجل الفوترة أو البطاقة المحفوظة.
+            continue
         supabase_admin.table("profiles").update(
-            {"subscription_tier": "free", "subscription_period": None, "subscription_expires_at": None}
+            {"subscription_tier": "free", "subscription_period": None, "subscription_expires_at": None, "subscription_source": None}
         ).eq("user_id", row["user_id"]).execute()
+        if billing:
+            supabase_admin.table("web_subscription_billing").update({
+                "status": "cancelled", "auto_renew": False, "next_charge_at": None,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }).eq("user_id", row["user_id"]).execute()
         _create_notification(
             row["user_id"], "subscription_expired", "⌛ انتهت صلاحية اشتراكك",
             f"انتهت باقة {plan_name} ورجع حسابك للباقة المجانية - جدّد اشتراكك من الإعدادات عشان تكمل بنفس المميزات",
@@ -6240,6 +6740,7 @@ def subscription_expiry_loop():
     while True:
         try:
             if supabase_admin is not None:
+                _check_due_web_renewals_once()
                 _check_expired_subscriptions_once()
         except Exception:
             pass

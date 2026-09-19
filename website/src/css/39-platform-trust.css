@@ -1,0 +1,54 @@
+  /* ---------- بيانات السجل التجاري والتوثيق الرسمي ---------- */
+  .platform-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .platform-cr-link {
+    position: fixed;
+    right: 164px;
+    left: auto;
+    bottom: 18px;
+    z-index: 850;
+    min-height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 13px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--ink);
+    text-decoration: none;
+    box-shadow: 0 8px 24px rgba(27, 42, 74, 0.16);
+    transition: border-color .2s, transform .12s;
+  }
+
+  .platform-cr-link:hover,
+  .platform-cr-link:focus-visible {
+    border-color: var(--teal);
+    transform: translateY(-1px);
+    outline: none;
+  }
+
+  .platform-cr-number {
+    color: var(--teal);
+    font-family: 'IBM Plex Sans Arabic', sans-serif;
+    font-size: 14px;
+    letter-spacing: .35px;
+  }
+
+  .sbc-verify-seal {
+    display: none !important;
+  }
+
+  @media (max-width: 420px) {
+    .platform-cr-link {
+      right: 12px;
+      left: auto;
+      bottom: 76px;
+    }
+  }

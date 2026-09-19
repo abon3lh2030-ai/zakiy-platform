@@ -4,7 +4,35 @@
     <div class="payment-modal-box">
       <button class="payment-modal-close" id="paymentModalCloseBtn">✕</button>
       <h3 data-i18n="payment_modal_heading">إتمام الدفع</h3>
+      <p class="payment-recurring-disclosure" id="paymentRecurringDisclosure"></p>
       <div class="mysr-form" id="moyasarFormContainer"></div>
       <div id="paymentModalMsg"></div>
     </div>
+  </div>
+
+  <div class="payment-modal-overlay hidden" id="trialModalOverlay">
+    <div class="payment-modal-box trial-modal-box">
+      <button class="payment-modal-close" id="trialModalCloseBtn">✕</button>
+      <h3>تجربة مجانية لمدة 3 أيام</h3>
+      <div id="trialDisclosure" class="trial-disclosure"></div>
+      <form id="trialCardForm" autocomplete="on">
+        <label>الاسم على البطاقة<input id="trialCardName" autocomplete="cc-name" required></label>
+        <label>رقم البطاقة<input id="trialCardNumber" inputmode="numeric" autocomplete="cc-number" maxlength="19" required></label>
+        <div class="trial-card-row">
+          <label>الشهر<input id="trialCardMonth" inputmode="numeric" autocomplete="cc-exp-month" maxlength="2" required></label>
+          <label>السنة<input id="trialCardYear" inputmode="numeric" autocomplete="cc-exp-year" maxlength="4" required></label>
+          <label>رمز CVC<input id="trialCardCvc" type="password" inputmode="numeric" autocomplete="cc-csc" maxlength="4" required></label>
+        </div>
+        <label class="trial-consent"><input type="checkbox" id="trialConsent" required> أفهم أن التجربة 3 أيام، وبعدها يُخصم سعر الباقة المختارة ويبدأ التجديد التلقائي ما لم ألغِ قبل انتهائها.</label>
+        <button type="submit" class="primary" id="trialStartBtn">إضافة البطاقة وبدء التجربة</button>
+      </form>
+      <div id="trialModalMsg"></div>
+    </div>
+  </div>
+
+  <div id="trialNudge" class="trial-nudge hidden">
+    <button type="button" class="trial-nudge-close" id="trialNudgeCloseBtn">✕</button>
+    <strong>🎁 قد تكون مؤهلًا لتجربة 3 أيام</strong>
+    <span>اختر باقتك وجرّبها قبل الخصم.</span>
+    <button type="button" class="ghost" id="trialNudgeOpenBtn">عرض التفاصيل</button>
   </div>

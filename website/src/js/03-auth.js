@@ -217,6 +217,7 @@ function onAuthSuccess(session) {
   // (مثلاً Apple Pay أو 3D Secure يحتاجون تحويل كامل)، نكمل متابعة تفعيل
   // الاشتراك المعلّق من جديد بعد إعادة تحميل الصفحة
   resumePendingSubscriptionCheck();
+  if (!currentUserRole && typeof maybeOfferTrialPassively === 'function') maybeOfferTrialPassively();
 }
 
 // Supabase يجدد access_token تلقائيًا بالخلفية - نتابع آخر نسخة عشان الطلبات
@@ -353,4 +354,3 @@ document.getElementById('guestLoginPromptBtn').addEventListener('click', () => {
   show('login-form');
   updateGlobalBackButton();
 });
-

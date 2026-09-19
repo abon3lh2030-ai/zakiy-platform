@@ -463,6 +463,52 @@
     margin-top: 40px;
   }
 
+  /* ---------- بيانات السجل التجاري والتوثيق الرسمي ---------- */
+  .platform-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .platform-cr-link {
+    position: fixed;
+    right: 164px;
+    left: auto;
+    bottom: 18px;
+    z-index: 850;
+    min-height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 13px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--ink);
+    text-decoration: none;
+    box-shadow: 0 8px 24px rgba(27, 42, 74, 0.16);
+  }
+  .platform-cr-link { transition: border-color .2s, transform .12s; }
+  .platform-cr-link:hover,
+  .platform-cr-link:focus-visible {
+    border-color: var(--teal);
+    transform: translateY(-1px);
+    outline: none;
+  }
+  .platform-cr-number {
+    color: var(--teal);
+    font-family: 'IBM Plex Sans Arabic', sans-serif;
+    font-size: 14px;
+    letter-spacing: .35px;
+  }
+  .sbc-verify-seal {
+    display: none !important;
+  }
+  @media (max-width: 420px) {
+    .platform-cr-link { right: 12px; left: auto; bottom: 76px; }
+  }
+
   /* ---------- زر رجوع عام (ملاصق يمين السايد بار دائمًا) ---------- */
   .global-back-btn {
     position: fixed;
@@ -4196,7 +4242,15 @@
     <div id="hostStartQuizError"></div>
   </section>
 
-  <footer data-i18n="footer_text">ذكيّ — منصة دراسية بمساعدة الذكاء الاصطناعي</footer>
+  <footer class="platform-footer">
+    <div data-i18n="footer_text">ذكيّ — منصة دراسية بمساعدة الذكاء الاصطناعي</div>
+    <a class="platform-cr-link" href="/assets/documents/commercial-registration-certificate.pdf" target="_blank" rel="noopener noreferrer" aria-label="عرض شهادة السجل التجاري رقم 7055047331">
+      <span data-i18n="commercial_registration_label">السجل التجاري</span>
+      <strong class="platform-cr-number" dir="ltr">7055047331</strong>
+    </a>
+    <div class="sbc-verify-seal" data-token="OCtHWE9LU05FZS9DVmE3ZGE0ZG9mdz09" data-position="bottom-right"></div>
+  </footer>
+  <script src="https://eauthenticate.saudibusiness.gov.sa/EAuthSealApi/seal.js" async></script>
 
 </div>
 <!-- مؤقت بومودورو: يظهر بالوضع الفردي بس -->
@@ -4484,6 +4538,7 @@ const I18N = {
     ph_quiz_duration: 'مدة الاختبار (دقائق)',
     btn_start_quiz_all: '🚀 ابدأ الاختبار للجميع',
     footer_text: 'ذكيّ — منصة دراسية بمساعدة الذكاء الاصطناعي',
+    commercial_registration_label: 'السجل التجاري',
     pomodoro_title: '🍅 بومودورو',
     pomodoro_phase_focus: '🧠 مذاكرة',
     pomodoro_phase_break: '☕ راحة',
@@ -5505,6 +5560,7 @@ const I18N = {
     ph_quiz_duration: 'Quiz duration (minutes)',
     btn_start_quiz_all: '🚀 Start Quiz for Everyone',
     footer_text: 'Zakiy — an AI-powered study platform',
+    commercial_registration_label: 'Commercial Registration',
     pomodoro_title: '🍅 Pomodoro',
     pomodoro_phase_focus: '🧠 Focus',
     pomodoro_phase_break: '☕ Break',

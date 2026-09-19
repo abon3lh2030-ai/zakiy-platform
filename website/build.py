@@ -32,6 +32,7 @@ CSS_ORDER = [
     "25-qr-modal", "26-friends-archive", "27-lang-buttons", "28-privacy-toggle",
     "29-profile", "30-subscription", "31-notes", "32-assignments",
     "33-ai-assistant", "34-quizzes", "35-madrasati", "36-robotics-lab", "37-science-lab",
+    "38-recurring-subscription", "39-platform-trust",
 ]
 
 JS_ORDER = [

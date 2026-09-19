@@ -69,7 +69,10 @@ document.getElementById('hostCreateBtn').addEventListener('click', async () => {
       body: JSON.stringify({ room_type: roomKind }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || t('err_create_room_failed'));
+    if (!res.ok) {
+      if (res.status === 402) offerTrialAtPaywall();
+      throw new Error(data.error || t('err_create_room_failed'));
+    }
 
     myName = name;
     joinErrorTarget = 'roomCreateError';
@@ -324,4 +327,3 @@ socket.on('force_muted', () => {
   forceMuteVoiceForExam();
   alert(t('force_muted_alert'));
 });
-

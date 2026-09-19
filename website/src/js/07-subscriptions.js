@@ -1,14 +1,22 @@
-// ---------- الاشتراكات ----------
-// حساب مؤسسي (role موجود) وصوله محكوم بعضوية مدرسته - القسم يُخفى له بالكامل،
-// مطابق لنفس قاعدة UsageLimiter.owner المطبّقة بتطبيق iOS
+// ---------- الاشتراكات المتجددة وتجربة 3 أيام ----------
 let subscriptionPlansCache = null;
 let subscriptionMeCache = null;
+let subscriptionTrialOfferCache = null;
 let subscriptionPeriod = 'monthly';
 let moyasarPublishableKey = null;
+let pendingSubscriptionOrder = null;
+let pendingTrialChoice = null;
 const SUBSCRIPTION_PLAN_ORDER = ['free', 'plus', 'pro', 'ultimate'];
+const PENDING_ORDER_STORAGE_KEY = 'zakiy_pending_subscription_order';
+const PENDING_TRIAL_STORAGE_KEY = 'zakiy_pending_subscription_trial';
 
 function hasActivePaidSubscription() {
   return Boolean(subscriptionMeCache?.tier && subscriptionMeCache.tier !== 'free');
+}
+
+function formatSubscriptionDate(value) {
+  if (!value) return '';
+  return new Date(value).toLocaleDateString(currentLang === 'ar' ? 'ar-SA' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
 async function loadSubscriptionSection() {
@@ -17,17 +25,47 @@ async function loadSubscriptionSection() {
   section.classList.remove('hidden');
   document.getElementById('subscriptionMsg').textContent = '';
   try {
-    const [plansData, meData] = await Promise.all([
+    const [plansData, meData, trialData] = await Promise.all([
       apiCall('GET', '/api/subscription/plans'),
       apiCall('GET', '/api/subscription/me'),
+      apiCall('POST', '/api/subscription/trial-offer', { context: 'settings' }),
     ]);
     subscriptionPlansCache = plansData.plans;
     moyasarPublishableKey = plansData.moyasar_publishable_key;
     subscriptionMeCache = meData;
+    subscriptionTrialOfferCache = trialData;
     renderSubscriptionPlans();
   } catch (e) {
     document.getElementById('subscriptionCurrentPlan').textContent = e.message;
   }
+}
+
+function renderBillingPanel() {
+  const panel = document.getElementById('subscriptionBillingPanel');
+  const billing = subscriptionMeCache?.billing;
+  if (!billing || !hasActivePaidSubscription()) { panel.classList.add('hidden'); panel.innerHTML = ''; return; }
+  const endDate = formatSubscriptionDate(billing.current_period_end || subscriptionMeCache.expires_at);
+  const stateText = billing.auto_renew ? t('auto_renew_on') : t('auto_renew_off');
+  const cardText = billing.payment_last_four ? ` • ${billing.payment_brand || ''} •••• ${billing.payment_last_four}` : '';
+  panel.innerHTML = `
+    <strong>${billing.is_trial ? t('trial_badge') : stateText}</strong>${cardText}
+    <div>${billing.auto_renew
+      ? `موعد ${billing.is_trial ? 'أول خصم' : 'التجديد القادم'}: ${endDate}`
+      : `اشتراكك يظل شغالًا حتى ${endDate} ولن يُخصم مبلغ جديد.`}</div>
+    <div class="subscription-billing-actions">
+      <button class="${billing.auto_renew ? 'danger' : 'primary'}" id="toggleAutoRenewBtn">${billing.auto_renew ? t('btn_cancel_auto_renew') : t('btn_resume_auto_renew')}</button>
+    </div>`;
+  panel.classList.remove('hidden');
+  document.getElementById('toggleAutoRenewBtn').addEventListener('click', () => setAutoRenew(!billing.auto_renew));
+}
+
+function renderTrialOffer() {
+  const el = document.getElementById('subscriptionTrialOffer');
+  if (!subscriptionTrialOfferCache?.available || hasActivePaidSubscription()) {
+    el.classList.add('hidden'); el.innerHTML = ''; return;
+  }
+  el.innerHTML = `<strong>${t('trial_offer_title')}</strong><div>اختر الباقة والمدة بالأسفل. لن يُحصّل سعر الباقة الآن، وبعد 3 أيام يبدأ الخصم والتجديد التلقائي ما لم تلغِ قبل نهاية التجربة.</div>`;
+  el.classList.remove('hidden');
 }
 
 function renderSubscriptionPlans() {
@@ -36,12 +74,10 @@ function renderSubscriptionPlans() {
   document.getElementById('subscriptionCurrentPlan').textContent = t('current_plan_label', { plan: t(`plan_${currentTier}`) });
   const daysEl = document.getElementById('subscriptionDaysRemaining');
   const daysRemaining = subscriptionMeCache?.days_remaining;
-  if (daysRemaining) {
-    daysEl.textContent = t('days_remaining_label', { n: daysRemaining });
-    daysEl.classList.remove('hidden');
-  } else {
-    daysEl.classList.add('hidden');
-  }
+  if (daysRemaining) { daysEl.textContent = t('days_remaining_label', { n: daysRemaining }); daysEl.classList.remove('hidden'); }
+  else daysEl.classList.add('hidden');
+  renderBillingPanel();
+  renderTrialOffer();
   const grid = document.getElementById('subscriptionPlansGrid');
   const checkoutLocked = currentTier !== 'free';
   grid.innerHTML = SUBSCRIPTION_PLAN_ORDER.map(key => {
@@ -50,20 +86,18 @@ function renderSubscriptionPlans() {
     const price = subscriptionPeriod === 'monthly' ? plan.price_monthly : plan.price_annual;
     const periodLabel = subscriptionPeriod === 'monthly' ? t('period_monthly') : t('period_annual');
     const isCurrent = key === currentTier;
-    return `
-      <div class="plan-card ${isCurrent ? 'current-plan' : ''}">
-        <div class="plan-name">${t(`plan_${key}`)}</div>
-        <div class="plan-price">${price > 0 ? `${price} ${t('sar_label')}<small> / ${periodLabel}</small>` : t('free_label')}</div>
-        <div class="plan-features">${renderPlanFeatures(plan)}</div>
-        ${isCurrent
-          ? `<div class="plan-current-badge">${t('current_plan_badge')}</div>`
-          : (key === 'free' || checkoutLocked ? '' : `<button class="primary" data-subscribe-plan="${key}" style="width:100%;">${t('btn_subscribe')}</button>`)}
-      </div>
-    `;
+    const buyButtons = key === 'free' || checkoutLocked ? '' : `
+      <button class="primary" data-subscribe-plan="${key}" style="width:100%;">${t('btn_subscribe')}</button>
+      ${subscriptionTrialOfferCache?.available ? `<button class="ghost plan-trial-btn" data-trial-plan="${key}">${t('btn_start_trial')}</button>` : ''}`;
+    return `<div class="plan-card ${isCurrent ? 'current-plan' : ''}">
+      <div class="plan-name">${t(`plan_${key}`)}</div>
+      <div class="plan-price">${price > 0 ? `${price} ${t('sar_label')}<small> / ${periodLabel}</small>` : t('free_label')}</div>
+      <div class="plan-features">${renderPlanFeatures(plan)}</div>
+      ${isCurrent ? `<div class="plan-current-badge">${t('current_plan_badge')}</div>` : buyButtons}
+    </div>`;
   }).join('');
-  grid.querySelectorAll('[data-subscribe-plan]').forEach(btn => {
-    btn.addEventListener('click', () => startCheckout(btn.dataset.subscribePlan));
-  });
+  grid.querySelectorAll('[data-subscribe-plan]').forEach(btn => btn.addEventListener('click', () => startCheckout(btn.dataset.subscribePlan)));
+  grid.querySelectorAll('[data-trial-plan]').forEach(btn => btn.addEventListener('click', () => openTrialModal(btn.dataset.trialPlan)));
 }
 
 function renderPlanFeatures(plan) {
@@ -88,14 +122,6 @@ document.querySelectorAll('.sub-period-btn').forEach(btn => {
   });
 });
 
-// ينشئ طلب اشتراك معلّق بالباك إند ثم يفتح نموذج دفع ميسر المدمج (بطاقة/
-// مدى/Apple Pay). الدفعة نفسها تُنشأ من طرف Moyasar.js بالمتصفح مباشرة
-// بالمفتاح العلني بس (بيانات البطاقة ما تلمس سيرفرنا) - وتفعيل الاشتراك
-// الفعلي يصير عبر ويبهوك ميسر (/api/subscription/webhook/moyasar) بعد ما
-// يتأكد الباك إند من نجاح الدفع مباشرة مع ميسر، مو من هذا الكود، عشان محد
-// يقدر يزوّر "نجح الدفع" من طرف المتصفح.
-let pendingSubscriptionOrder = null;
-
 async function startCheckout(plan) {
   const msg = document.getElementById('subscriptionMsg');
   if (hasActivePaidSubscription()) {
@@ -112,11 +138,6 @@ async function startCheckout(plan) {
   }
 }
 
-// نحفظ الطلب المعلّق بـ localStorage (مو متغيّر جافاسكربت بس) لأن Moyasar.js
-// يتطلب callback_url صالح ويقدر يعيد تحميل الصفحة كاملة (Apple Pay/3D Secure)
-// - فلازم نقدر نكمل متابعة التفعيل حتى بعد إعادة تحميل تفقد فيها كل متغيّرات الذاكرة
-const PENDING_ORDER_STORAGE_KEY = 'zakiy_pending_subscription_order';
-
 function openPaymentModal(order) {
   if (hasActivePaidSubscription()) {
     document.getElementById('subscriptionMsg').textContent = t('payment_active_subscription_msg');
@@ -130,6 +151,10 @@ function openPaymentModal(order) {
   localStorage.setItem(PENDING_ORDER_STORAGE_KEY, JSON.stringify(order));
   document.getElementById('moyasarFormContainer').innerHTML = '';
   document.getElementById('paymentModalMsg').textContent = '';
+  document.getElementById('paymentRecurringDisclosure').textContent = t('payment_recurring_disclosure', {
+    amount: order.amount,
+    period: order.period === 'monthly' ? 'شهر' : 'سنة',
+  });
   show('paymentModalOverlay');
 
   Moyasar.init({
@@ -141,14 +166,20 @@ function openPaymentModal(order) {
     callback_url: window.location.origin + window.location.pathname,
     methods: ['creditcard', 'applepay'],
     metadata: { order_id: order.order_id },
+    credit_card: { save_card: true },
     apple_pay: {
       country: 'SA',
       label: 'ذكيّ',
       validate_merchant_url: 'https://api.moyasar.com/v1/applepay/initiate',
+      save_card: true,
     },
-    on_completed: function () {
-      // الدفع بدأ ونجح من طرف المتصفح - التفعيل الفعلي ينتظر ويبهوك ميسر
+    on_completed: async function (payment) {
       document.getElementById('paymentModalMsg').textContent = t('payment_processing_msg');
+      try {
+        await apiCall('POST', `/api/subscription/orders/${order.order_id}/payment-method`, { payment_id: payment.id });
+      } catch (e) {
+        document.getElementById('paymentModalMsg').textContent = `${t('payment_processing_msg')} — ${e.message}`;
+      }
       pollSubscriptionActivation();
     },
   });
@@ -165,6 +196,7 @@ document.getElementById('paymentModalCloseBtn').addEventListener('click', closeP
 // يستأنف متابعة طلب معلّق بعد ما المستخدم يرجع لصفحتنا من تدفّق دفع أعاد
 // تحميل الصفحة كاملة (Apple Pay/3D Secure) - يُستدعى بعد كل نجاح دخول
 async function resumePendingSubscriptionCheck() {
+  await resumePendingTrialCheck();
   const raw = localStorage.getItem(PENDING_ORDER_STORAGE_KEY);
   if (!raw) return;
   // ننظّف أي معطيات رجّعها ميسر بالرابط (id/status/message) عشان يبقى نظيف
@@ -223,6 +255,122 @@ async function pollSubscriptionActivation(attempt = 0) {
   } catch (e) { /* تجاهل، نحاول مرة ثانية */ }
   pollSubscriptionActivation(attempt + 1);
 }
+
+async function setAutoRenew(enabled) {
+  const billing = subscriptionMeCache?.billing;
+  const until = formatSubscriptionDate(billing?.current_period_end || subscriptionMeCache?.expires_at);
+  if (!enabled && !confirm(`هل أنت متأكد من إلغاء التجديد التلقائي؟ سيبقى اشتراكك شغالًا حتى ${until} ولن يُلغى الآن.`)) return;
+  const msg = document.getElementById('subscriptionMsg');
+  msg.textContent = t('loading');
+  try {
+    await apiCall('POST', '/api/subscription/auto-renew', { enabled });
+    subscriptionMeCache = await apiCall('GET', '/api/subscription/me');
+    msg.textContent = enabled ? '✅ تم تفعيل التجديد التلقائي من جديد.' : `✅ توقف التجديد. اشتراكك مستمر حتى ${until}.`;
+    renderSubscriptionPlans();
+  } catch (e) { msg.textContent = e.message; }
+}
+
+async function openTrialModal(plan) {
+  if (!moyasarPublishableKey) { document.getElementById('subscriptionMsg').textContent = t('payment_not_ready_msg'); return; }
+  try {
+    pendingTrialChoice = await apiCall('POST', '/api/subscription/trial/prepare', { plan, period: subscriptionPeriod });
+    const periodLabel = subscriptionPeriod === 'monthly' ? 'شهريًا' : 'سنويًا';
+    document.getElementById('trialDisclosure').innerHTML = `لن يُحصّل سعر الباقة الآن. تبدأ تجربة <b>3 أيام</b>، ثم في ${formatSubscriptionDate(pendingTrialChoice.trial_ends_at)} يُخصم <b>${pendingTrialChoice.amount} ريال ${periodLabel}</b> ويبدأ التجديد التلقائي. تقدر تلغي قبلها بلا خصم. قد يظهر تفويض مؤقت بقيمة ريال واحد من البنك للتحقق من البطاقة ثم يُفك تلقائيًا؛ ليس رسومًا للمنصة.`;
+    document.getElementById('trialModalMsg').textContent = '';
+    document.getElementById('trialConsent').checked = false;
+    show('trialModalOverlay');
+  } catch (e) { document.getElementById('subscriptionMsg').textContent = e.message; }
+}
+
+function closeTrialModal() { hide('trialModalOverlay'); pendingTrialChoice = null; }
+document.getElementById('trialModalCloseBtn').addEventListener('click', closeTrialModal);
+
+document.getElementById('trialCardNumber').addEventListener('input', e => {
+  e.target.value = e.target.value.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim();
+});
+
+document.getElementById('trialCardForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!pendingTrialChoice || !document.getElementById('trialConsent').checked) return;
+  const button = document.getElementById('trialStartBtn');
+  const msg = document.getElementById('trialModalMsg');
+  button.disabled = true; msg.textContent = 'جاري توثيق البطاقة بأمان عبر ميسر...';
+  const fields = new URLSearchParams({
+    name: document.getElementById('trialCardName').value.trim(),
+    number: document.getElementById('trialCardNumber').value.replace(/\D/g, ''),
+    month: document.getElementById('trialCardMonth').value.trim(),
+    year: document.getElementById('trialCardYear').value.trim().slice(-2),
+    cvc: document.getElementById('trialCardCvc').value.trim(),
+    callback_url: pendingTrialChoice.callback_url,
+  });
+  try {
+    const response = await fetch('https://api.moyasar.com/v1/tokens', {
+      method: 'POST',
+      headers: { 'Authorization': `Basic ${btoa(`${moyasarPublishableKey}:`)}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: fields.toString(),
+    });
+    const token = await response.json().catch(() => ({}));
+    if (!response.ok || !token.id) throw new Error(token.message || 'تعذر توثيق البطاقة');
+    const pending = { token_id: token.id, plan: pendingTrialChoice.plan, period: pendingTrialChoice.period };
+    localStorage.setItem(PENDING_TRIAL_STORAGE_KEY, JSON.stringify(pending));
+    const attached = await apiCall('POST', '/api/subscription/trial/attach-token', pending);
+    if (attached.status === 'active') {
+      await confirmPendingTrial();
+    } else if (attached.verification_url || token.verification_url) {
+      location.href = attached.verification_url || token.verification_url;
+    } else throw new Error('لم يصل رابط توثيق البطاقة من ميسر');
+  } catch (error) {
+    msg.textContent = error.message;
+    button.disabled = false;
+  }
+});
+
+async function confirmPendingTrial(attempt = 0) {
+  try {
+    await apiCall('POST', '/api/subscription/trial/confirm', {});
+    localStorage.removeItem(PENDING_TRIAL_STORAGE_KEY);
+    hide('trialModalOverlay');
+    subscriptionMeCache = await apiCall('GET', '/api/subscription/me');
+    showSettingsScreen();
+    document.getElementById('subscriptionMsg').textContent = '✅ بدأت تجربتك المجانية. لن يُخصم سعر الباقة إلا بعد 3 أيام ما لم تلغِ التجديد.';
+    renderSubscriptionPlans();
+    return true;
+  } catch (e) {
+    if (attempt < 11 && /توثيق|يكتمل|معلق/.test(e.message)) {
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      return confirmPendingTrial(attempt + 1);
+    }
+    const msg = document.getElementById('trialModalMsg');
+    if (msg) msg.textContent = e.message;
+    return false;
+  }
+}
+
+async function resumePendingTrialCheck() {
+  if (!localStorage.getItem(PENDING_TRIAL_STORAGE_KEY)) return;
+  if (window.location.search.includes('subscription_trial')) history.replaceState(null, '', window.location.pathname);
+  await confirmPendingTrial();
+}
+
+async function showTrialNudge(context) {
+  if (!currentAccessToken || currentUserRole || sessionStorage.getItem('zakiy_trial_nudge_dismissed')) return;
+  try {
+    const offer = await apiCall('POST', '/api/subscription/trial-offer', { context });
+    if (!offer.available) return;
+    subscriptionTrialOfferCache = offer;
+    show('trialNudge');
+  } catch (_) { /* العرض اختياري ولا يعطل الميزة الأصلية */ }
+}
+
+function offerTrialAtPaywall() { showTrialNudge('paywall'); }
+function maybeOfferTrialPassively() { setTimeout(() => showTrialNudge('passive'), 8000); }
+document.getElementById('trialNudgeCloseBtn').addEventListener('click', () => {
+  hide('trialNudge'); sessionStorage.setItem('zakiy_trial_nudge_dismissed', '1');
+});
+document.getElementById('trialNudgeOpenBtn').addEventListener('click', () => {
+  hide('trialNudge'); showSettingsScreen();
+  setTimeout(() => document.getElementById('settingsSubscriptionSection').scrollIntoView({ behavior: 'smooth' }), 50);
+});
 
 document.getElementById('settingsSaveNameBtn').addEventListener('click', async () => {
   const newName = document.getElementById('settingsUsernameInput').value.trim();

@@ -53,7 +53,10 @@ async function apiCall(method, path, body) {
   }
   const res = await fetch(`${API_BASE}${path}`, opts);
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || t('err_unexpected'));
+  if (!res.ok) {
+    if (res.status === 402 && typeof offerTrialAtPaywall === 'function') offerTrialAtPaywall();
+    throw new Error(data.error || t('err_unexpected'));
+  }
   return data;
 }
 
@@ -189,4 +192,3 @@ function exportQrBooklet(students) {
     });
   });
 }
-

@@ -52,9 +52,15 @@ uploadBtn.addEventListener('click', async () => {
     // (انفحص وقت إنشاء الغرفة نفسها)
     if (appMode === 'solo' && !currentRoomCode) formData.append('context', 'solo');
 
-    const uploadRes = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: formData });
+    const uploadRes = await fetch(`${API_BASE}/api/upload`, {
+      method: 'POST', body: formData,
+      headers: currentAccessToken ? { 'Authorization': `Bearer ${currentAccessToken}` } : {},
+    });
     const uploadData = await uploadRes.json();
-    if (!uploadRes.ok) throw new Error(uploadData.error || t('err_upload_failed'));
+    if (!uploadRes.ok) {
+      if (uploadRes.status === 402) offerTrialAtPaywall();
+      throw new Error(uploadData.error || t('err_upload_failed'));
+    }
 
     uploadedFilename = uploadData.filename;
 
@@ -348,4 +354,3 @@ document.getElementById('checkBtn').addEventListener('click', finishQuiz);
 
 // ---------- Restart ----------
 document.getElementById('restartBtn').addEventListener('click', () => location.reload());
-

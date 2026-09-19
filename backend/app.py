@@ -74,6 +74,46 @@ supabase_admin: Client | None = None
 if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
     supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
+# نحدّث آخر نشاط مرة كل خمس دقائق لكل مستخدم بدل كتابة صف جديد مع كل طلب API.
+# هذا الكاش محلي لكل worker؛ حتى مع عدة workers يبقى الحمل قليلًا والرقم أدق
+# بكثير من الاعتماد على آخر تسجيل دخول فقط.
+_activity_touch_cache = {}
+
+
+def _touch_user_activity(user_id, now=None):
+    if not supabase_admin or not user_id:
+        return
+    now = now or datetime.now(timezone.utc)
+    last_touch = _activity_touch_cache.get(user_id)
+    if last_touch and (now - last_touch).total_seconds() < 300:
+        return
+    try:
+        supabase_admin.table("profiles").update({"last_active_at": now.isoformat()}).eq(
+            "user_id", user_id
+        ).execute()
+        _activity_touch_cache[user_id] = now
+    except Exception:
+        # الهجرة 025 قد لا تكون مطبقة بعد؛ النشاط لا يعطّل طلب المستخدم الأساسي.
+        pass
+
+
+def _track_platform_event(user_id, event_name, plan=None, period=None, source=None, metadata=None):
+    """يسجل حدثًا تحليليًا بدون أن يؤثر فشل التحليلات على الدفع أو الاشتراك."""
+    if not supabase_admin:
+        return
+    row = {
+        "user_id": user_id,
+        "event_name": event_name,
+        "plan": plan,
+        "period": period,
+        "source": source,
+        "metadata": metadata or {},
+    }
+    try:
+        supabase_admin.table("platform_analytics_events").insert(row).execute()
+    except Exception:
+        pass
+
 
 def _parse_utc_datetime(value):
     """يحوّل ISO-8601 لتاريخ واعٍ بالمنطقة الزمنية، أو None للقيمة الفارغة."""
@@ -151,6 +191,7 @@ def require_auth(f):
             if not user_response or not user_response.user:
                 raise ValueError("invalid token")
             request.user_id = user_response.user.id
+            _touch_user_activity(request.user_id)
         except Exception:
             return jsonify({"error": "جلسة غير صالحة، سجل الدخول من جديد"}), 401
 
@@ -3237,6 +3278,322 @@ def admin_platform_access():
     return jsonify(_platform_access_state()), 200
 
 
+# ---------- تحليلات أداء المنصة والاشتراكات (الأدمن العام) ----------
+_ADMIN_ANALYTICS_PERIODS = {
+    "today": timedelta(days=1),
+    "7d": timedelta(days=7),
+    "30d": timedelta(days=30),
+    "3m": timedelta(days=90),
+    "1y": timedelta(days=365),
+}
+
+
+def _analytics_date(value):
+    try:
+        return _parse_utc_datetime(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _fetch_all_rows(table_name, columns="*", page_size=1000):
+    """يجلب كل الصفوف على صفحات بدل سقف PostgREST الافتراضي (1000 صف)."""
+    rows, offset = [], 0
+    while True:
+        page = (
+            supabase_admin.table(table_name).select(columns)
+            .range(offset, offset + page_size - 1).execute().data
+        ) or []
+        rows.extend(page)
+        if len(page) < page_size:
+            break
+        offset += page_size
+    return rows
+
+
+def _list_all_auth_users(page_size=1000):
+    users, page = [], 1
+    while True:
+        batch = supabase_admin.auth.admin.list_users(page=page, per_page=page_size) or []
+        users.extend(batch)
+        if len(batch) < page_size:
+            break
+        page += 1
+    return users
+
+
+def _analytics_bucket(dt, period):
+    if period == "today":
+        return dt.strftime("%Y-%m-%dT%H:00:00Z")
+    if period in ("7d", "30d", "3m"):
+        return dt.strftime("%Y-%m-%d")
+    return dt.strftime("%Y-%m")
+
+
+def _analytics_series(items, date_key, value_key, period, start_at, end_at, cumulative=False):
+    totals = Counter()
+    for item in items:
+        dt = _analytics_date(item.get(date_key))
+        if not dt or dt < start_at or dt > end_at:
+            continue
+        value = item.get(value_key, 1) if value_key else 1
+        try:
+            value = float(value or 0)
+        except (TypeError, ValueError):
+            value = 0
+        totals[_analytics_bucket(dt, period)] += value
+
+    points = []
+    cursor = start_at.replace(minute=0, second=0, microsecond=0) if period == "today" else start_at.replace(hour=0, minute=0, second=0, microsecond=0)
+    running = 0
+    while cursor <= end_at:
+        key = _analytics_bucket(cursor, period)
+        value = totals.get(key, 0)
+        running = running + value if cumulative else value
+        if not points or points[-1]["key"] != key:
+            points.append({"key": key, "value": round(running, 2)})
+        if period == "today":
+            cursor += timedelta(hours=1)
+        elif period in ("7d", "30d", "3m"):
+            cursor += timedelta(days=1)
+        else:
+            cursor = (cursor.replace(day=28) + timedelta(days=4)).replace(day=1)
+    return points
+
+
+@app.route("/api/admin/analytics", methods=["GET"])
+@require_role("admin")
+def admin_platform_analytics():
+    period = request.args.get("period", "30d")
+    if period not in (*_ADMIN_ANALYTICS_PERIODS.keys(), "all"):
+        return jsonify({"error": "فترة الإحصائيات غير صالحة"}), 400
+
+    now = datetime.now(timezone.utc)
+    try:
+        auth_users = _list_all_auth_users()
+        profiles = _fetch_all_rows(
+            "profiles",
+            "user_id,username,full_name,role,subscription_tier,subscription_period,subscription_expires_at,subscription_source,last_active_at",
+        )
+        orders = _fetch_all_rows(
+            "subscription_orders", "id,user_id,plan,period,amount,currency,status,created_at,paid_at"
+        )
+        billings = _fetch_all_rows(
+            "web_subscription_billing",
+            "user_id,plan,period,status,auto_renew,current_period_end,trial_used,trial_started_at,trial_ends_at,trial_offer_last_shown_at,trial_offer_impressions,last_charge_at,created_at,updated_at",
+        )
+        renewals = _fetch_all_rows(
+            "subscription_renewal_attempts",
+            "id,user_id,plan,period,amount,currency,status,created_at,completed_at,failure_reason",
+        )
+        events = _fetch_all_rows(
+            "platform_analytics_events", "id,user_id,event_name,plan,period,source,metadata,created_at"
+        )
+    except Exception as exc:
+        return jsonify({
+            "error": "تعذّر تحميل التحليلات. تأكد من تطبيق migration 025_admin_analytics.sql.",
+            "details": str(exc),
+        }), 500
+
+    def user_attr(user, name):
+        return getattr(user, name, None) or (user.get(name) if isinstance(user, dict) else None)
+
+    user_created = [
+        {"user_id": str(user_attr(u, "id") or ""), "created_at": user_attr(u, "created_at"),
+         "last_sign_in_at": user_attr(u, "last_sign_in_at"), "email": user_attr(u, "email")}
+        for u in auth_users
+    ]
+    dated_users = [_analytics_date(u["created_at"]) for u in user_created]
+    dated_users = [d for d in dated_users if d]
+    if period == "all":
+        start_at = min(dated_users) if dated_users else now - timedelta(days=365)
+    else:
+        start_at = now - _ADMIN_ANALYTICS_PERIODS[period]
+
+    profile_by_user = {str(p.get("user_id")): p for p in profiles}
+    auth_by_user = {str(u.get("user_id")): u for u in user_created}
+
+    def in_range(value, start=start_at, end=now):
+        dt = _analytics_date(value)
+        return bool(dt and start <= dt <= end)
+
+    def last_activity(user):
+        profile_dt = _analytics_date((profile_by_user.get(user["user_id"]) or {}).get("last_active_at"))
+        sign_in_dt = _analytics_date(user.get("last_sign_in_at"))
+        return max([d for d in (profile_dt, sign_in_dt) if d], default=None)
+
+    activity_dates = [last_activity(u) for u in user_created]
+    active_now = sum(bool(d and d >= now - timedelta(minutes=15)) for d in activity_dates)
+    active_today = sum(bool(d and d >= now - timedelta(days=1)) for d in activity_dates)
+    active_7d = sum(bool(d and d >= now - timedelta(days=7)) for d in activity_dates)
+    active_30d = sum(bool(d and d >= now - timedelta(days=30)) for d in activity_dates)
+
+    def is_personal(p):
+        return not p.get("role")
+
+    def is_current_subscriber(p):
+        tier = p.get("subscription_tier") or "free"
+        expiry = _analytics_date(p.get("subscription_expires_at"))
+        return is_personal(p) and tier not in ("free", "owner") and bool(expiry and expiry > now)
+
+    subscribers = [p for p in profiles if is_current_subscriber(p)]
+    current_trials = [
+        b for b in billings
+        if b.get("status") == "trialing" and (_analytics_date(b.get("trial_ends_at")) or now) > now
+    ]
+    cancelled_renewal = [
+        b for b in billings
+        if b.get("status") == "cancel_at_period_end" or (
+            not b.get("auto_renew") and b.get("status") in ("active", "trialing")
+        )
+    ]
+    expired = [
+        b for b in billings
+        if b.get("status") == "cancelled" or (
+            _analytics_date(b.get("current_period_end")) and
+            _analytics_date(b.get("current_period_end")) <= now and not b.get("auto_renew")
+        )
+    ]
+
+    paid_orders = [o for o in orders if o.get("status") == "paid" and o.get("paid_at")]
+    paid_renewals = [r for r in renewals if r.get("status") == "paid" and r.get("completed_at")]
+    total_revenue = sum(float(x.get("amount") or 0) for x in paid_orders + paid_renewals)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    month_revenue = sum(
+        float(x.get("amount") or 0) for x in paid_orders if in_range(x.get("paid_at"), month_start, now)
+    ) + sum(
+        float(x.get("amount") or 0) for x in paid_renewals if in_range(x.get("completed_at"), month_start, now)
+    )
+    period_orders = [o for o in paid_orders if in_range(o.get("paid_at"))]
+    period_renewals = [r for r in paid_renewals if in_range(r.get("completed_at"))]
+    period_revenue = sum(float(x.get("amount") or 0) for x in period_orders + period_renewals)
+    payer_ids = {str(x.get("user_id")) for x in paid_orders + paid_renewals}
+
+    non_order_activations = [
+        e for e in events
+        if e.get("event_name") == "subscription_activated"
+        and e.get("source") in ("apple", "google", "web_trial") and in_range(e.get("created_at"))
+    ]
+    new_subscription_users = {str(o.get("user_id")) for o in period_orders}
+    new_subscription_users.update(str(e.get("user_id")) for e in non_order_activations)
+
+    plan_counts = Counter(p.get("subscription_tier") for p in subscribers)
+    period_counts = Counter(p.get("subscription_period") or "unknown" for p in subscribers)
+    trial_starts = Counter(
+        b.get("plan") for b in billings if b.get("trial_started_at") and in_range(b.get("trial_started_at"))
+    )
+    trial_conversions = Counter(
+        e.get("plan") for e in events
+        if e.get("event_name") == "subscription_activated"
+        and (e.get("metadata") or {}).get("from_trial") and in_range(e.get("created_at"))
+    )
+    subscriber_total = len(subscribers)
+    plan_breakdown = []
+    for plan in ("plus", "pro", "ultimate"):
+        count = plan_counts.get(plan, 0)
+        plan_breakdown.append({
+            "plan": plan,
+            "subscribers": count,
+            "share": round((count / subscriber_total * 100) if subscriber_total else 0, 1),
+            "trial_starts": trial_starts.get(plan, 0),
+            "trial_conversions": trial_conversions.get(plan, 0),
+        })
+
+    event_users = {}
+    for event_name in ("trial_offer_viewed", "payment_method_added", "trial_started"):
+        event_users[event_name] = {
+            str(e.get("user_id")) for e in events
+            if e.get("event_name") == event_name and in_range(e.get("created_at")) and e.get("user_id")
+        }
+    # أعلى القمع هو المستخدمون الذين ظهر لهم نشاط داخل الفترة (وكل المستخدمين
+    # عند اختيار "كل الوقت") حتى تبقى المقارنة مع أحداث التجربة منطقية.
+    funnel_users = {
+        u["user_id"] for u in user_created
+        if period == "all" or (last_activity(u) and last_activity(u) >= start_at)
+    }
+    converted_trial_users = {
+        str(e.get("user_id")) for e in events
+        if e.get("event_name") == "subscription_activated"
+        and (e.get("metadata") or {}).get("from_trial") and in_range(e.get("created_at"))
+    }
+
+    registrations = [{"created_at": u.get("created_at")} for u in user_created]
+    activations = [{"created_at": o.get("paid_at")} for o in paid_orders]
+    activations += [{"created_at": e.get("created_at")} for e in events if e.get("event_name") == "subscription_activated" and e.get("source") in ("apple", "google", "web_trial")]
+    revenue_rows = [{"at": o.get("paid_at"), "amount": o.get("amount")} for o in paid_orders]
+    revenue_rows += [{"at": r.get("completed_at"), "amount": r.get("amount")} for r in paid_renewals]
+    cancellation_rows = [e for e in events if e.get("event_name") == "auto_renew_cancelled"]
+
+    recent = []
+    for o in paid_orders:
+        recent.append({
+            "id": o.get("id"), "user_id": str(o.get("user_id")), "plan": o.get("plan"),
+            "period": o.get("period"), "status": "paid", "amount": float(o.get("amount") or 0),
+            "currency": o.get("currency") or "SAR", "date": o.get("paid_at"), "kind": "new_subscription",
+        })
+    for r in renewals:
+        recent.append({
+            "id": r.get("id"), "user_id": str(r.get("user_id")), "plan": r.get("plan"),
+            "period": r.get("period"), "status": r.get("status"), "amount": float(r.get("amount") or 0),
+            "currency": r.get("currency") or "SAR", "date": r.get("completed_at") or r.get("created_at"),
+            "kind": "renewal",
+        })
+    for e in events:
+        if e.get("event_name") not in ("trial_started", "auto_renew_cancelled"):
+            continue
+        recent.append({
+            "id": e.get("id"), "user_id": str(e.get("user_id")), "plan": e.get("plan"),
+            "period": e.get("period"), "status": e.get("event_name"), "amount": None,
+            "currency": "SAR", "date": e.get("created_at"), "kind": e.get("event_name"),
+        })
+    recent.sort(key=lambda x: x.get("date") or "", reverse=True)
+    for item in recent[:25]:
+        profile = profile_by_user.get(item["user_id"]) or {}
+        auth = auth_by_user.get(item["user_id"]) or {}
+        item["user"] = profile.get("full_name") or profile.get("username") or auth.get("email") or item["user_id"][:8]
+
+    most_plan = max(plan_counts, key=plan_counts.get) if plan_counts else None
+    most_period = max(period_counts, key=period_counts.get) if period_counts else None
+    return jsonify({
+        "period": period,
+        "range": {"start": start_at.isoformat(), "end": now.isoformat()},
+        "metrics": {
+            "total_users": len(user_created), "new_users": sum(in_range(u.get("created_at")) for u in user_created),
+            "active_now": active_now, "active_today": active_today, "active_7d": active_7d,
+            "active_30d": active_30d, "current_subscribers": subscriber_total,
+            "current_trials": len(current_trials), "new_subscriptions": len(new_subscription_users),
+            "cancelled_renewal": len(cancelled_renewal), "expired_subscriptions": len(expired),
+            "total_revenue": round(total_revenue, 2), "month_revenue": round(month_revenue, 2),
+            "period_revenue": round(period_revenue, 2),
+            "average_revenue_per_payer": round(total_revenue / len(payer_ids), 2) if payer_ids else 0,
+        },
+        "plans": {
+            "most_popular_plan": most_plan, "most_popular_period": most_period,
+            "breakdown": plan_breakdown,
+            "period_breakdown": [
+                {"period": key, "subscribers": value,
+                 "share": round((value / subscriber_total * 100) if subscriber_total else 0, 1)}
+                for key, value in period_counts.items()
+            ],
+        },
+        "funnel": [
+            {"stage": "users", "count": len(funnel_users)},
+            {"stage": "trial_viewed", "count": len(event_users["trial_offer_viewed"])},
+            {"stage": "card_added", "count": len(event_users["payment_method_added"])},
+            {"stage": "trial_started", "count": len(event_users["trial_started"])},
+            {"stage": "converted", "count": len(converted_trial_users)},
+        ],
+        "charts": {
+            "user_growth": _analytics_series(registrations, "created_at", None, period, start_at, now, cumulative=True),
+            "subscriber_growth": _analytics_series(activations, "created_at", None, period, start_at, now, cumulative=True),
+            "revenue": _analytics_series(revenue_rows, "at", "amount", period, start_at, now),
+            "new_subscriptions": _analytics_series(activations, "created_at", None, period, start_at, now),
+            "cancellations": _analytics_series(cancellation_rows, "created_at", None, period, start_at, now),
+        },
+        "recent_operations": recent[:25],
+        "generated_at": now.isoformat(),
+    }), 200
+
+
 # ---------- مسارات الكتب المركزية (الأدمن العام) ----------
 def _admin_curriculum_paths_payload():
     paths = (
@@ -6160,6 +6517,10 @@ def _activate_subscription_order(order, gateway_reference=None, payment=None):
             "subscription_source": "web",
         }
     ).eq("user_id", order["user_id"]).execute()
+    _track_platform_event(
+        order["user_id"], "subscription_activated", order["plan"], order["period"], "web",
+        {"order_id": order.get("id"), "amount": float(order.get("amount") or 0), "from_trial": False},
+    )
     return expires_at
 
 
@@ -6278,6 +6639,7 @@ def subscription_trial_offer():
     row = _billing_row(request.user_id) or {}
     active = _trial_offer_payload(row, now)
     if active["available"]:
+        _track_platform_event(request.user_id, "trial_offer_viewed", source=context)
         return jsonify(active), 200
     if row.get("trial_used"):
         return jsonify({"available": False, "days": TRIAL_DAYS}), 200
@@ -6304,6 +6666,7 @@ def subscription_trial_offer():
         "updated_at": now.isoformat(),
     }
     supabase_admin.table("web_subscription_billing").upsert(values, on_conflict="user_id").execute()
+    _track_platform_event(request.user_id, "trial_offer_viewed", source=context)
     return jsonify({"available": True, "days": TRIAL_DAYS, "offer_ends_at": ends_at.isoformat()}), 200
 
 
@@ -6358,6 +6721,7 @@ def subscription_trial_attach_token():
         pending_trial_token=token_id, pending_trial_plan=plan,
         pending_trial_period=period, status="pending",
     )
+    _track_platform_event(request.user_id, "payment_method_added", plan, period, "web_trial")
     return jsonify({"ok": True, "status": token.get("status"), "verification_url": token.get("verification_url")}), 200
 
 
@@ -6393,6 +6757,7 @@ def subscription_trial_confirm():
         "subscription_tier": plan, "subscription_period": period,
         "subscription_expires_at": trial_end.isoformat(), "subscription_source": "web_trial",
     }).eq("user_id", request.user_id).execute()
+    _track_platform_event(request.user_id, "trial_started", plan, period, "web_trial")
     return jsonify({"ok": True, "tier": plan, "period": period, "trial_ends_at": trial_end.isoformat()}), 200
 
 
@@ -6422,6 +6787,10 @@ def subscription_auto_renew():
         "next_charge_at": period_end.isoformat() if enabled else None,
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }).eq("user_id", request.user_id).execute()
+    _track_platform_event(
+        request.user_id, "auto_renew_resumed" if enabled else "auto_renew_cancelled",
+        row.get("plan"), row.get("period"), "web",
+    )
     return jsonify({"ok": True, "auto_renew": enabled, "active_until": period_end.isoformat()}), 200
 
 
@@ -6444,6 +6813,7 @@ def subscription_apple_verify():
     supabase_admin.table("profiles").update(
         {"subscription_tier": plan, "subscription_period": period, "subscription_expires_at": expires_at, "subscription_source": "apple"}
     ).eq("user_id", request.user_id).execute()
+    _track_platform_event(request.user_id, "subscription_activated", plan, period, "apple", {"product_id": product_id})
     return jsonify({"tier": plan, "period": period, "expires_at": expires_at}), 200
 
 
@@ -6464,6 +6834,7 @@ def subscription_google_verify():
     supabase_admin.table("profiles").update(
         {"subscription_tier": plan, "subscription_period": period, "subscription_expires_at": expires_at, "subscription_source": "google"}
     ).eq("user_id", request.user_id).execute()
+    _track_platform_event(request.user_id, "subscription_activated", plan, period, "google", {"product_id": product_id})
     return jsonify({"tier": plan, "period": period, "expires_at": expires_at}), 200
 
 
@@ -6481,6 +6852,9 @@ def subscription_cancel():
         "auto_renew": False, "status": "cancel_at_period_end",
         "next_charge_at": None, "updated_at": datetime.now(timezone.utc).isoformat(),
     }).eq("user_id", request.user_id).execute()
+    _track_platform_event(
+        request.user_id, "auto_renew_cancelled", row.get("plan"), row.get("period"), "web"
+    )
     return jsonify({"ok": True, "auto_renew": False, "active_until": period_end.isoformat()}), 200
 
 
@@ -6561,6 +6935,8 @@ def _complete_renewal_attempt(attempt, payment):
     due_at = _parse_utc_datetime(attempt["due_at"])
     new_end = _subscription_period_end(due_at, attempt["period"])
     now = datetime.now(timezone.utc)
+    billing_before = _billing_row(attempt["user_id"]) or {}
+    converted_from_trial = billing_before.get("status") == "trialing" or bool(billing_before.get("trial_ends_at"))
     supabase_admin.table("subscription_renewal_attempts").update({
         "status": "paid", "gateway_reference": payment.get("id"),
         "completed_at": now.isoformat(), "failure_reason": None,
@@ -6578,6 +6954,11 @@ def _complete_renewal_attempt(attempt, payment):
         attempt["user_id"], "subscription_renewed", "✅ تم تجديد اشتراكك",
         f"تجدد اشتراك {SUBSCRIPTION_PLANS[attempt['plan']]['name_ar']} تلقائيًا حتى {new_end.date().isoformat()}",
     )
+    if converted_from_trial:
+        _track_platform_event(
+            attempt["user_id"], "subscription_activated", attempt["plan"], attempt["period"], "web_trial",
+            {"renewal_attempt_id": attempt.get("id"), "amount": float(attempt.get("amount") or 0), "from_trial": True},
+        )
     return True
 
 

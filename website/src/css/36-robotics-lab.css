@@ -1,7 +1,7 @@
   /* ============================================================
      معمل الروبوتات - محاكي دوائر أردوينو
      ============================================================ */
-  .wrap.wrap-wide { max-width: 98vw; transition: max-width .15s; }
+  .wrap.wrap-wide { width:100%; max-width:calc(100vw - var(--sidebar-width)); transition:max-width .15s; }
 
   .rl-toolbar {
     display: flex; flex-wrap: wrap; align-items: center; gap: 10px;

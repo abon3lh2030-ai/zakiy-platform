@@ -73,6 +73,8 @@ function routeByRole(role) {
   hide('paymentModalOverlay'); // نفس المبدأ - نافذة الدفع ما تضل عالقة لو المستخدم غادر الإعدادات بدون ما يسكّرها صراحة
   hide('login-form'); hide('signup-form'); hide('step-force-password-change');
   show('sidebar');
+  const wrapEl = document.querySelector('.wrap');
+  if (wrapEl) wrapEl.classList.toggle('wrap-wide', role === 'admin');
   const screenId = INSTITUTIONAL_DASHBOARD_SCREENS[role];
   if (!screenId) {
     show('mode-select');

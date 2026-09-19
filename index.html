@@ -1970,7 +1970,20 @@
   .zlab-report-vars { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
   .zlab-report-vars div { background:var(--paper-dim); border-radius:10px; padding:10px; font-size:12px; }
   .zlab-toast { position:fixed; left:24px; bottom:24px; z-index:1000; background:var(--zlab-deep); color:#fff; border-radius:12px; padding:11px 15px; box-shadow:0 10px 30px rgba(0,0,0,.25); animation:zlabIn .25s ease; }
-  @media (max-width:1100px) { .zlab-workbench { grid-template-columns:220px 1fr; } .zlab-ai { grid-column:1/-1; min-height:0; max-height:none; } .zlab-ai-feed { max-height:220px; } }
+  /* تحديد متعدد للحسابات والمدارس — يظهر شريط الأدوات فقط بعد أول تحديد. */
+.bulk-selection-toolbar { display:flex; align-items:center; justify-content:space-between; gap:14px; margin:12px 0; padding:11px 14px; border:1px solid rgba(46,91,219,.22); border-radius:14px; background:rgba(46,91,219,.07); }
+.bulk-selection-toolbar > strong { color:var(--ink); font-size:14px; }
+.bulk-selection-toolbar > div { display:flex; gap:8px; flex-wrap:wrap; }
+.bulk-selection-toolbar button { padding:8px 12px; }
+.bulk-selection-toolbar .bulk-danger { color:#b8382b; border-color:rgba(184,56,43,.42); }
+.bulk-select-cell { width:1%; white-space:nowrap; text-align:center; }
+.bulk-select-cell input[type="checkbox"] { width:18px; height:18px; accent-color:#2e5bdb; cursor:pointer; vertical-align:middle; }
+.bulk-check-label { display:inline-flex; align-items:center; gap:7px; cursor:pointer; color:var(--ink-soft); font-size:12px; }
+.bulk-action-failures { margin:12px 0 0; color:#b8382b; font-weight:700; }
+.bulk-password-result .data-table-wrap { margin-top:10px; max-height:300px; overflow:auto; }
+[data-theme="dark"] .bulk-selection-toolbar { background:rgba(84,126,230,.13); border-color:rgba(116,151,238,.3); }
+
+@media (max-width:1100px) { .zlab-workbench { grid-template-columns:220px 1fr; } .zlab-ai { grid-column:1/-1; min-height:0; max-height:none; } .zlab-ai-feed { max-height:220px; } }
   @media (max-width:760px) {
     #step-science-lab { padding:14px; }
     .zlab-topbar { align-items:flex-start; flex-wrap:wrap; }
@@ -2091,6 +2104,7 @@
   .admin-insight-strip { grid-template-columns:1fr; }
   .admin-insight-strip > div { border-inline-end:0; border-bottom:1px solid var(--line); }
   .admin-donut-wrap { flex-direction:column; }
+  .bulk-selection-toolbar { align-items:stretch; flex-direction:column; }
 }
 @media (max-width:430px) { .admin-metrics-grid { grid-template-columns:1fr; } }
 /* ROOT-SYNC: ADMIN-ANALYTICS END */
@@ -2334,7 +2348,12 @@
         <div class="actions" style="flex-wrap:wrap;"><input type="text" id="newSchoolName" class="text-input" placeholder="اسم المدرسة" data-i18n-ph="ph_school_name"><input type="email" id="newSchoolAdminEmail" class="text-input" placeholder="إيميل مدير المدرسة" data-i18n-ph="ph_school_admin_email"><input type="number" id="newSchoolMaxAccounts" class="text-input" placeholder="الحد الأقصى للحسابات" data-i18n-ph="ph_max_accounts" min="0" style="max-width:160px;"><button class="primary" id="createSchoolBtn" data-i18n="btn_create_school">إنشاء المدرسة</button></div>
         <div id="createSchoolError"></div><div id="createSchoolResult" class="credential-reveal hidden"></div>
         <h3 class="sub-heading" data-i18n="admin_schools_list_heading">🏫 كل المدارس</h3>
-        <div class="data-table-wrap"><table class="data-table"><thead><tr><th data-i18n="th_school_name">المدرسة</th><th data-i18n="th_admin_email">إيميل المدير</th><th data-i18n="th_accounts_usage">الحسابات</th><th data-i18n="th_status">الحالة</th><th data-i18n="th_actions">إجراء</th></tr></thead><tbody id="adminSchoolsTableBody"></tbody></table></div>
+        <div class="bulk-selection-toolbar hidden" id="adminSchoolsBulkToolbar">
+          <strong id="adminSchoolsSelectedCount"></strong>
+          <div><button class="ghost" id="adminSchoolsBulkResetBtn" data-i18n="btn_bulk_reset_passwords">🔑 كلمات سر جديدة للمحدد</button><button class="ghost bulk-danger" id="adminSchoolsBulkDeleteBtn" data-i18n="btn_bulk_delete">🗑️ حذف المحدد</button></div>
+        </div>
+        <div id="adminSchoolsBulkResult" class="credential-reveal hidden"></div>
+        <div class="data-table-wrap"><table class="data-table"><thead><tr><th class="bulk-select-cell"><label class="bulk-check-label"><input type="checkbox" id="adminSchoolsSelectAll"><span data-i18n="select_all">تحديد الكل</span></label></th><th data-i18n="th_school_name">المدرسة</th><th data-i18n="th_admin_email">إيميل المدير</th><th data-i18n="th_accounts_usage">الحسابات</th><th data-i18n="th_status">الحالة</th><th data-i18n="th_actions">إجراء</th></tr></thead><tbody id="adminSchoolsTableBody"></tbody></table></div>
       </div>
     </details>
   </section>
@@ -2369,9 +2388,11 @@
       </div>
       <div id="addTeacherError"></div>
       <div id="addTeacherResult" class="credential-reveal hidden"></div>
+      <div class="bulk-selection-toolbar hidden" id="schoolTeachersBulkToolbar"><strong id="schoolTeachersSelectedCount"></strong><div><button class="ghost" id="schoolTeachersBulkResetBtn" data-i18n="btn_bulk_reset_passwords">🔑 كلمات سر جديدة للمحدد</button><button class="ghost bulk-danger" id="schoolTeachersBulkDeleteBtn" data-i18n="btn_bulk_delete">🗑️ حذف المحدد</button></div></div>
       <div class="data-table-wrap">
         <table class="data-table">
           <thead><tr>
+            <th class="bulk-select-cell"><label class="bulk-check-label"><input type="checkbox" id="schoolTeachersSelectAll"><span data-i18n="select_all">تحديد الكل</span></label></th>
             <th data-i18n="th_name">الاسم</th>
             <th data-i18n="th_classes">الفصول</th>
             <th data-i18n="th_student_count">عدد الطلاب</th>
@@ -2394,9 +2415,11 @@
       </div>
       <div id="addAdministrationError"></div>
       <div id="addAdministrationResult" class="credential-reveal hidden"></div>
+      <div class="bulk-selection-toolbar hidden" id="schoolAdministrationBulkToolbar"><strong id="schoolAdministrationSelectedCount"></strong><div><button class="ghost" id="schoolAdministrationBulkResetBtn" data-i18n="btn_bulk_reset_passwords">🔑 كلمات سر جديدة للمحدد</button><button class="ghost bulk-danger" id="schoolAdministrationBulkDeleteBtn" data-i18n="btn_bulk_delete">🗑️ حذف المحدد</button></div></div>
       <div class="data-table-wrap">
         <table class="data-table">
           <thead><tr>
+            <th class="bulk-select-cell"><label class="bulk-check-label"><input type="checkbox" id="schoolAdministrationSelectAll"><span data-i18n="select_all">تحديد الكل</span></label></th>
             <th data-i18n="th_name">الاسم</th>
             <th data-i18n="th_last_login">آخر دخول</th>
             <th data-i18n="th_actions">إجراء</th>
@@ -2415,9 +2438,11 @@
     </div>
 
     <div id="schoolTab-students" class="school-tab-panel hidden">
+      <div class="bulk-selection-toolbar hidden" id="schoolStudentsBulkToolbar"><strong id="schoolStudentsSelectedCount"></strong><div><button class="ghost" id="schoolStudentsBulkResetBtn" data-i18n="btn_bulk_reset_passwords">🔑 كلمات سر جديدة للمحدد</button><button class="ghost bulk-danger" id="schoolStudentsBulkDeleteBtn" data-i18n="btn_bulk_delete">🗑️ حذف المحدد</button></div></div>
       <div class="data-table-wrap">
         <table class="data-table">
           <thead><tr>
+            <th class="bulk-select-cell"><label class="bulk-check-label"><input type="checkbox" id="schoolStudentsSelectAll"><span data-i18n="select_all">تحديد الكل</span></label></th>
             <th data-i18n="th_full_name">الاسم الكامل</th>
             <th data-i18n="th_username">اسم المستخدم</th>
             <th data-i18n="th_class_name">الفصل</th>
@@ -4844,6 +4869,20 @@ const I18N = {
     err_schedule_time_required: 'لازم وقت بداية ونهاية الحصة',
     err_names_required: 'لازم تكتب اسم طالب وحد على الأقل',
     confirm_delete_account: 'متأكد تبي تحذف هذا الحساب؟ ما يرجع بعدها',
+    select_all: 'تحديد الكل',
+    selected_count: 'تم تحديد {count}',
+    select_account: 'تحديد حساب {name}',
+    select_school: 'تحديد مدرسة {name}',
+    th_account: 'الحساب',
+    btn_bulk_reset_passwords: '🔑 كلمات سر جديدة للمحدد',
+    btn_bulk_delete: '🗑️ حذف المحدد',
+    confirm_bulk_reset_passwords: 'سيتم إنشاء كلمات سر جديدة لـ {count} حساب وإلغاء كلمات السر القديمة. هل تريد المتابعة؟',
+    confirm_bulk_delete_accounts: 'سيتم حذف {count} حساب محدد نهائيًا ولا يمكن استعادتها. هل تريد المتابعة؟',
+    confirm_bulk_reset_school_passwords: 'سيتم إنشاء كلمات سر جديدة لمديري {count} مدرسة وإلغاء كلمات السر القديمة. هل تريد المتابعة؟',
+    confirm_bulk_delete_schools: 'سيتم حذف {count} مدرسة محددة وكل حساباتها نهائيًا. لا يمكن التراجع. هل تريد المتابعة؟',
+    bulk_passwords_shown_once: '✅ كلمات السر الجديدة — تظهر هذه المرة فقط، احفظها الآن.',
+    bulk_failed_count: 'تعذّر تنفيذ الإجراء على {count} عنصر',
+    bulk_partial_failure: 'تم بنجاح على {success} عنصر، وتعذّر على {failed} عنصر.',
     confirm_delete_class: 'متأكد تبي تحذف هذا الفصل؟',
     status_active: 'مفعّلة',
     status_inactive: 'موقوفة',
@@ -5891,6 +5930,20 @@ const I18N = {
     err_schedule_time_required: 'Start and end time are required',
     err_names_required: 'Enter at least one student name',
     confirm_delete_account: "Delete this account? This can't be undone",
+    select_all: 'Select all',
+    selected_count: '{count} selected',
+    select_account: 'Select {name} account',
+    select_school: 'Select {name} school',
+    th_account: 'Account',
+    btn_bulk_reset_passwords: '🔑 New passwords for selected',
+    btn_bulk_delete: '🗑️ Delete selected',
+    confirm_bulk_reset_passwords: 'Generate new passwords for {count} accounts and invalidate their old passwords?',
+    confirm_bulk_delete_accounts: "Permanently delete the {count} selected accounts? This can't be undone.",
+    confirm_bulk_reset_school_passwords: "Generate new passwords for the admins of {count} schools and invalidate their old passwords?",
+    confirm_bulk_delete_schools: "Permanently delete the {count} selected schools and all their accounts? This can't be undone.",
+    bulk_passwords_shown_once: '✅ New passwords — shown only this time. Save them now.',
+    bulk_failed_count: 'The action failed for {count} item(s)',
+    bulk_partial_failure: 'Completed for {success} item(s); failed for {failed}.',
     confirm_delete_class: 'Delete this class?',
     status_active: 'Active',
     status_inactive: 'Inactive',
@@ -10748,20 +10801,67 @@ document.querySelectorAll('[data-admin-period]').forEach(button => button.addEve
 }));
 
 // ---------- Admin: إدارة المدارس ----------
+function wireAdminSchoolBulkActions(tbody) {
+  const selectAll = document.getElementById('adminSchoolsSelectAll');
+  const toolbar = document.getElementById('adminSchoolsBulkToolbar');
+  const count = document.getElementById('adminSchoolsSelectedCount');
+  const resultBox = document.getElementById('adminSchoolsBulkResult');
+  const boxes = () => [...tbody.querySelectorAll('.admin-school-select')];
+  const selected = () => boxes().filter(box => box.checked).map(box => box.value);
+  const update = () => {
+    const all = boxes();
+    const ids = selected();
+    selectAll.checked = !!all.length && ids.length === all.length;
+    selectAll.indeterminate = ids.length > 0 && ids.length < all.length;
+    toolbar.classList.toggle('hidden', ids.length === 0);
+    count.textContent = t('selected_count', { count: ids.length });
+  };
+  selectAll.checked = false;
+  selectAll.indeterminate = false;
+  selectAll.onchange = () => { boxes().forEach(box => { box.checked = selectAll.checked; }); update(); };
+  boxes().forEach(box => box.addEventListener('change', update));
+  document.getElementById('adminSchoolsBulkResetBtn').onclick = async () => {
+    const schoolIds = selected();
+    if (!schoolIds.length || !confirm(t('confirm_bulk_reset_school_passwords', { count: schoolIds.length }))) return;
+    try {
+      const data = await apiCall('POST', '/api/admin/schools/bulk-actions', { action: 'reset_passwords', school_ids: schoolIds });
+      await loadAdminDashboard();
+      const rows = data.succeeded || [];
+      resultBox.innerHTML = `${rows.length ? `<strong>${t('bulk_passwords_shown_once')}</strong><div class="data-table-wrap"><table class="data-table"><thead><tr><th>${t('th_school_name')}</th><th>${t('th_admin_email')}</th><th>${t('th_password')}</th></tr></thead><tbody>${rows.map(row => `<tr><td>${escapeHtml(row.name || '—')}</td><td>${escapeHtml(row.email || '—')}</td><td><code>${escapeHtml(row.password)}</code></td></tr>`).join('')}</tbody></table></div>` : ''}${data.failed?.length ? `<p class="bulk-action-failures">${t('bulk_failed_count', { count: data.failed.length })}: ${data.failed.map(row => escapeHtml(row.error)).join('، ')}</p>` : ''}`;
+      resultBox.classList.remove('hidden');
+      resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } catch (e) { alert(e.message); }
+  };
+  document.getElementById('adminSchoolsBulkDeleteBtn').onclick = async () => {
+    const schoolIds = selected();
+    if (!schoolIds.length || !confirm(t('confirm_bulk_delete_schools', { count: schoolIds.length }))) return;
+    try {
+      const data = await apiCall('POST', '/api/admin/schools/bulk-actions', { action: 'delete', school_ids: schoolIds });
+      if (data.failed?.length) alert(t('bulk_partial_failure', { success: data.succeeded.length, failed: data.failed.length }));
+      await loadAdminDashboard();
+    } catch (e) { alert(e.message); }
+  };
+  update();
+}
+
 async function loadAdminDashboard() {
   loadPlatformFreeAccess();
   loadAdminAnalytics();
   const tbody = document.getElementById('adminSchoolsTableBody');
-  tbody.innerHTML = `<tr><td colspan="5">${t('loading')}</td></tr>`;
+  document.getElementById('adminSchoolsBulkToolbar')?.classList.add('hidden');
+  const selectAll = document.getElementById('adminSchoolsSelectAll');
+  if (selectAll) { selectAll.checked = false; selectAll.indeterminate = false; }
+  tbody.innerHTML = `<tr><td colspan="6">${t('loading')}</td></tr>`;
   try {
     const data = await apiCall('GET', '/api/admin/schools');
-    if (!data.schools.length) { tbody.innerHTML = `<tr><td colspan="5">${t('admin_no_schools')}</td></tr>`; return; }
+    if (!data.schools.length) { tbody.innerHTML = `<tr><td colspan="6">${t('admin_no_schools')}</td></tr>`; return; }
     tbody.innerHTML = data.schools.map(s => {
       const overLimitBadge = s.over_limit_since
         ? `<br><span style="color:#c0392b; font-size:12px; font-weight:700;">${s.over_limit_expired ? `⏰ ${t('admin_over_limit_expired_badge')}` : `⚠️ ${t('admin_over_limit_badge')}`}</span>`
         : '';
       return `
       <tr>
+        <td class="bulk-select-cell"><input type="checkbox" class="admin-school-select" value="${s.id}" aria-label="${t('select_school', { name: escapeHtml(s.name) })}"></td>
         <td>${escapeHtml(s.name)}</td>
         <td>${escapeHtml(s.admin_email || '—')}</td>
         <td>${s.accounts_used} / ${s.max_accounts}${overLimitBadge}</td>
@@ -10816,8 +10916,9 @@ async function loadAdminDashboard() {
         } catch (e) { alert(e.message); }
       });
     });
+    wireAdminSchoolBulkActions(tbody);
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="5">${escapeHtml(e.message)}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6">${escapeHtml(e.message)}</td></tr>`;
   }
 }
 
@@ -10883,9 +10984,62 @@ document.getElementById('createSchoolBtn').addEventListener('click', async () =>
     showError('createSchoolError', e.message);
   }
 });
-
 // ---------- School Admin / School Administration: لوحة المدرسة ----------
 let schoolClassesCache = [];
+
+function renderBulkPasswordResults(resultBox, rows, failures = []) {
+  if (!resultBox) return;
+  const successHtml = rows.length ? `<div class="bulk-password-result"><strong>${t('bulk_passwords_shown_once')}</strong><div class="data-table-wrap"><table class="data-table"><thead><tr><th>${t('th_account')}</th><th>${t('th_password')}</th></tr></thead><tbody>${rows.map(row => `<tr><td>${escapeHtml(row.identifier || row.email || row.name || '—')}</td><td><code>${escapeHtml(row.password)}</code></td></tr>`).join('')}</tbody></table></div></div>` : '';
+  const failureHtml = failures.length ? `<p class="bulk-action-failures">${t('bulk_failed_count', { count: failures.length })}: ${failures.map(row => escapeHtml(row.error)).join('، ')}</p>` : '';
+  resultBox.innerHTML = successHtml + failureHtml;
+  resultBox.classList.remove('hidden');
+  resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function wireBulkAccountSelection({ tbody, checkboxClass, selectAllId, toolbarId, countId, resetId, deleteId, resultBox, reload, allowDelete = true }) {
+  const selectAll = document.getElementById(selectAllId);
+  const toolbar = document.getElementById(toolbarId);
+  const count = document.getElementById(countId);
+  const resetButton = document.getElementById(resetId);
+  const deleteButton = document.getElementById(deleteId);
+  if (!selectAll || !toolbar) return;
+  const boxes = () => [...tbody.querySelectorAll(`.${checkboxClass}`)];
+  const selected = () => boxes().filter(box => box.checked).map(box => box.value);
+  const update = () => {
+    const all = boxes();
+    const ids = selected();
+    selectAll.checked = !!all.length && ids.length === all.length;
+    selectAll.indeterminate = ids.length > 0 && ids.length < all.length;
+    toolbar.classList.toggle('hidden', ids.length === 0);
+    count.textContent = t('selected_count', { count: ids.length });
+  };
+  selectAll.checked = false;
+  selectAll.indeterminate = false;
+  selectAll.onchange = () => { boxes().forEach(box => { box.checked = selectAll.checked; }); update(); };
+  boxes().forEach(box => box.addEventListener('change', update));
+  toolbar.classList.add('hidden');
+  deleteButton.classList.toggle('hidden', !allowDelete);
+  resetButton.onclick = async () => {
+    const userIds = selected();
+    if (!userIds.length || !confirm(t('confirm_bulk_reset_passwords', { count: userIds.length }))) return;
+    try {
+      const data = await apiCall('POST', '/api/school/accounts/bulk-actions', { action: 'reset_passwords', user_ids: userIds });
+      await reload();
+      renderBulkPasswordResults(resultBox, data.succeeded || [], data.failed || []);
+    } catch (e) { alert(e.message); }
+  };
+  deleteButton.onclick = async () => {
+    const userIds = selected();
+    if (!userIds.length || !confirm(t('confirm_bulk_delete_accounts', { count: userIds.length }))) return;
+    try {
+      const data = await apiCall('POST', '/api/school/accounts/bulk-actions', { action: 'delete', user_ids: userIds });
+      if (data.failed?.length) alert(t('bulk_partial_failure', { success: data.succeeded.length, failed: data.failed.length }));
+      await reload();
+      loadSchoolInfo();
+    } catch (e) { alert(e.message); }
+  };
+  update();
+}
 
 document.querySelectorAll('#step-school-dashboard .role-tab').forEach(tabBtn => {
   tabBtn.addEventListener('click', () => {
@@ -10924,24 +11078,30 @@ document.getElementById('deleteAllAccountsBtn').addEventListener('click', async 
 
 async function loadSchoolAdministration() {
   const tbody = document.getElementById('schoolAdministrationTableBody');
-  tbody.innerHTML = `<tr><td colspan="3">${t('loading')}</td></tr>`;
+  const canManageAdministration = currentUserRole === 'school_admin';
+  const administrationSelectAll = document.getElementById('schoolAdministrationSelectAll');
+  administrationSelectAll.disabled = !canManageAdministration;
+  administrationSelectAll.closest('label').classList.toggle('hidden', !canManageAdministration);
+  document.getElementById('schoolAdministrationBulkToolbar')?.classList.add('hidden');
+  tbody.innerHTML = `<tr><td colspan="4">${t('loading')}</td></tr>`;
   try {
     const data = await apiCall('GET', '/api/school/administration');
-    if (!data.administration.length) { tbody.innerHTML = `<tr><td colspan="3">${t('school_no_admin_staff')}</td></tr>`; return; }
+    if (!data.administration.length) { tbody.innerHTML = `<tr><td colspan="4">${t('school_no_admin_staff')}</td></tr>`; return; }
     tbody.innerHTML = data.administration.map(a => `
       <tr>
+        <td class="bulk-select-cell">${canManageAdministration ? `<input type="checkbox" class="school-administration-select" value="${a.user_id}" aria-label="${t('select_account', { name: escapeHtml(a.username) })}">` : '—'}</td>
         <td>${escapeHtml(a.username)}</td>
         <td>${a.last_login ? new Date(a.last_login).toLocaleString(currentLang === 'ar' ? 'ar' : 'en') : t('never_logged_in')}</td>
         <td>
-          <button class="ghost" data-reset-account-pw="${a.user_id}" style="padding:4px 10px;">${t('btn_reset_password')}</button>
-          ${currentUserRole === 'school_admin' ? `<button class="ghost" data-delete-account="${a.user_id}" style="padding:4px 10px; color:#c0392b;">${t('btn_delete')}</button>` : ''}
+          ${canManageAdministration ? `<button class="ghost" data-reset-account-pw="${a.user_id}" style="padding:4px 10px;">${t('btn_reset_password')}</button><button class="ghost" data-delete-account="${a.user_id}" style="padding:4px 10px; color:#c0392b;">${t('btn_delete')}</button>` : '—'}
         </td>
       </tr>
     `).join('');
     wireDeleteAccountButtons(tbody, loadSchoolAdministration);
     wireResetPasswordButtons(tbody, document.getElementById('schoolAdministrationResult'));
+    if (canManageAdministration) wireBulkAccountSelection({ tbody, checkboxClass: 'school-administration-select', selectAllId: 'schoolAdministrationSelectAll', toolbarId: 'schoolAdministrationBulkToolbar', countId: 'schoolAdministrationSelectedCount', resetId: 'schoolAdministrationBulkResetBtn', deleteId: 'schoolAdministrationBulkDeleteBtn', resultBox: document.getElementById('schoolAdministrationResult'), reload: loadSchoolAdministration });
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="3">${escapeHtml(e.message)}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4">${escapeHtml(e.message)}</td></tr>`;
   }
 }
 
@@ -10988,12 +11148,14 @@ async function loadSchoolInfo() {
 
 async function loadSchoolTeachers() {
   const tbody = document.getElementById('schoolTeachersTableBody');
-  tbody.innerHTML = `<tr><td colspan="5">${t('loading')}</td></tr>`;
+  document.getElementById('schoolTeachersBulkToolbar')?.classList.add('hidden');
+  tbody.innerHTML = `<tr><td colspan="6">${t('loading')}</td></tr>`;
   try {
     const data = await apiCall('GET', '/api/school/teachers');
-    if (!data.teachers.length) { tbody.innerHTML = `<tr><td colspan="5">${t('school_no_teachers')}</td></tr>`; return; }
+    if (!data.teachers.length) { tbody.innerHTML = `<tr><td colspan="6">${t('school_no_teachers')}</td></tr>`; return; }
     tbody.innerHTML = data.teachers.map(tch => `
       <tr>
+        <td class="bulk-select-cell"><input type="checkbox" class="school-teacher-select" value="${tch.user_id}" aria-label="${t('select_account', { name: escapeHtml(tch.username) })}"></td>
         <td>${escapeHtml(tch.username)}</td>
         <td>${tch.classes.map(c => `${escapeHtml(c.name)} (${escapeHtml(c.subject)})`).join('، ') || '—'}</td>
         <td>${tch.student_count}</td>
@@ -11006,8 +11168,9 @@ async function loadSchoolTeachers() {
     `).join('');
     wireDeleteAccountButtons(tbody, loadSchoolTeachers);
     wireResetPasswordButtons(tbody, document.getElementById('schoolTeachersResult'));
+    wireBulkAccountSelection({ tbody, checkboxClass: 'school-teacher-select', selectAllId: 'schoolTeachersSelectAll', toolbarId: 'schoolTeachersBulkToolbar', countId: 'schoolTeachersSelectedCount', resetId: 'schoolTeachersBulkResetBtn', deleteId: 'schoolTeachersBulkDeleteBtn', resultBox: document.getElementById('schoolTeachersResult'), reload: loadSchoolTeachers });
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="5">${escapeHtml(e.message)}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6">${escapeHtml(e.message)}</td></tr>`;
   }
 }
 function wireDeleteAccountButtons(container, onDone) {
@@ -11184,7 +11347,8 @@ document.getElementById('addClassBtn').addEventListener('click', async () => {
 // مع زر إعادة تعيين كلمة سر لكل طالب لحاله
 async function loadSchoolStudents() {
   const tbody = document.getElementById('schoolStudentsTableBody');
-  tbody.innerHTML = `<tr><td colspan="4">${t('loading')}</td></tr>`;
+  document.getElementById('schoolStudentsBulkToolbar')?.classList.add('hidden');
+  tbody.innerHTML = `<tr><td colspan="5">${t('loading')}</td></tr>`;
   document.getElementById('schoolStudentsResult').classList.add('hidden');
   try {
     const [studentsData, classesData] = await Promise.all([
@@ -11193,9 +11357,10 @@ async function loadSchoolStudents() {
     ]);
     const classNames = {};
     classesData.classes.forEach(c => { classNames[c.id] = c.name; });
-    if (!studentsData.students.length) { tbody.innerHTML = `<tr><td colspan="4">${t('no_students_in_school')}</td></tr>`; return; }
+    if (!studentsData.students.length) { tbody.innerHTML = `<tr><td colspan="5">${t('no_students_in_school')}</td></tr>`; return; }
     tbody.innerHTML = studentsData.students.map(s => `
       <tr>
+        <td class="bulk-select-cell"><input type="checkbox" class="school-student-select" value="${s.user_id}" aria-label="${t('select_account', { name: escapeHtml(s.full_name || s.username) })}"></td>
         <td>${escapeHtml(s.full_name || '—')}</td>
         <td>${escapeHtml(s.username)}</td>
         <td>${escapeHtml(classNames[s.class_id] || '—')}</td>
@@ -11207,8 +11372,9 @@ async function loadSchoolStudents() {
     `).join('');
     wireResetPasswordButtons(tbody, document.getElementById('schoolStudentsResult'));
     wireDeleteAccountButtons(tbody, loadSchoolStudents);
+    wireBulkAccountSelection({ tbody, checkboxClass: 'school-student-select', selectAllId: 'schoolStudentsSelectAll', toolbarId: 'schoolStudentsBulkToolbar', countId: 'schoolStudentsSelectedCount', resetId: 'schoolStudentsBulkResetBtn', deleteId: 'schoolStudentsBulkDeleteBtn', resultBox: document.getElementById('schoolStudentsResult'), reload: loadSchoolStudents });
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="4">${escapeHtml(e.message)}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5">${escapeHtml(e.message)}</td></tr>`;
   }
 }
 
@@ -11365,7 +11531,6 @@ async function loadSchoolAttendance() {
   }
 }
 document.getElementById('attendanceClassFilter').addEventListener('change', loadSchoolAttendance);
-
 // ---------- Teacher: لوحة المعلم ----------
 let teacherClassesCache = [];
 

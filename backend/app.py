@@ -3842,6 +3842,12 @@ def admin_delete_school(school_id):
     الفصول/الجدول/الحضور/صفوف profiles عبر cascade المُعرّف بالهجرة)، وبعدها
     بس نحذف حسابات Auth - نفس ترتيب حذف الحساب الفردي (profiles أول) لأن
     حذف Auth وصف profiles لسا موجود يفشل بخطأ قيد مفتاح خارجي."""
+    _delete_school_with_accounts(school_id)
+    return jsonify({"ok": True}), 200
+
+
+def _delete_school_with_accounts(school_id):
+    """ينفّذ حذف المدرسة بنفس الترتيب الآمن، ويُستخدم للفردي والجماعي."""
     user_ids = [
         r["user_id"]
         for r in supabase_admin.table("profiles").select("user_id").eq("school_id", school_id).execute().data
@@ -3852,7 +3858,6 @@ def admin_delete_school(school_id):
             supabase_admin.auth.admin.delete_user(uid)
         except Exception:
             pass
-    return jsonify({"ok": True}), 200
 
 
 @app.route("/api/admin/schools/<school_id>/reset-admin-password", methods=["POST"])
@@ -3861,6 +3866,13 @@ def admin_reset_school_password(school_id):
     """ما نقدر نعرض كلمة السر الأصلية (ما تُخزّن نص صريح أبدًا - أمان)، فبدلها
     نولّد كلمة سر جديدة لحساب مدير المدرسة ونرجعها مرة وحدة، ونجبره يغيّرها
     أول ما يسجل دخول - يخدم نفس الغرض (تقدر تعطيه بيانات دخول صالحة بأي وقت)."""
+    result, error, status = _reset_school_admin_password(school_id)
+    if error:
+        return jsonify({"error": error}), status
+    return jsonify(result), 200
+
+
+def _reset_school_admin_password(school_id):
     admin_row = (
         supabase_admin.table("profiles")
         .select("user_id, username")
@@ -3870,21 +3882,73 @@ def admin_reset_school_password(school_id):
         .execute()
     ).data
     if not admin_row:
-        return jsonify({"error": "ما فيه حساب مدير لهذي المدرسة"}), 404
+        return None, "ما فيه حساب مدير لهذي المدرسة", 404
 
     admin_uid = admin_row[0]["user_id"]
     new_password = generate_strong_password()
     try:
         supabase_admin.auth.admin.update_user_by_id(admin_uid, {"password": new_password})
     except Exception as e:
-        return jsonify({"error": f"تعذّر تحديث كلمة السر: {e}"}), 400
+        return None, f"تعذّر تحديث كلمة السر: {e}", 400
     supabase_admin.table("profiles").update({"must_change_password": True}).eq("user_id", admin_uid).execute()
 
     try:
         email = supabase_admin.auth.admin.get_user_by_id(admin_uid).user.email
     except Exception:
         email = None
-    return jsonify({"email": email, "password": new_password}), 200
+    return {"email": email, "password": new_password}, None, 200
+
+
+def _bulk_ids(data, key, maximum=100):
+    """قائمة معرّفات فريدة ومحدودة حتى ما يتحول الإجراء الجماعي لطلب ضخم."""
+    values = data.get(key)
+    if not isinstance(values, list):
+        return None, "قائمة العناصر المحددة غير صالحة"
+    unique = []
+    for value in values:
+        clean = str(value or "").strip()
+        if clean and clean not in unique:
+            unique.append(clean)
+    if not unique:
+        return None, "حدد عنصرًا واحدًا على الأقل"
+    if len(unique) > maximum:
+        return None, f"الحد الأقصى للإجراء الواحد {maximum} عنصر"
+    return unique, None
+
+
+@app.route("/api/admin/schools/bulk-actions", methods=["POST"])
+@require_role("admin")
+def admin_bulk_school_actions():
+    """حذف مدارس محددة أو إصدار كلمات جديدة لمديريها مع نتيجة لكل مدرسة."""
+    data = request.get_json(silent=True) or {}
+    school_ids, error = _bulk_ids(data, "school_ids")
+    if error:
+        return jsonify({"error": error}), 400
+    action = data.get("action")
+    if action not in ("delete", "reset_passwords"):
+        return jsonify({"error": "الإجراء الجماعي غير معروف"}), 400
+
+    school_rows = supabase_admin.table("schools").select("id, name").in_("id", school_ids).execute().data
+    schools = {row["id"]: row for row in school_rows}
+    succeeded, failed = [], []
+    for school_id in school_ids:
+        school = schools.get(school_id)
+        if not school:
+            failed.append({"id": school_id, "error": "المدرسة غير موجودة"})
+            continue
+        try:
+            if action == "delete":
+                _delete_school_with_accounts(school_id)
+                succeeded.append({"id": school_id, "name": school.get("name")})
+            else:
+                result, reset_error, _ = _reset_school_admin_password(school_id)
+                if reset_error:
+                    failed.append({"id": school_id, "name": school.get("name"), "error": reset_error})
+                else:
+                    succeeded.append({"id": school_id, "name": school.get("name"), **result})
+        except Exception as exc:
+            failed.append({"id": school_id, "name": school.get("name"), "error": str(exc)})
+    return jsonify({"ok": not failed, "succeeded": succeeded, "failed": failed}), 200
 
 
 # ---------- School Admin + School Administration ----------
@@ -4140,15 +4204,20 @@ def school_delete_account(user_id):
         return jsonify({"error": "الحساب مو تابع لمدرستك"}), 404
     if request.profile["role"] == "school_administration" and target["role"] in ("school_admin", "school_administration"):
         return jsonify({"error": "ما عندك صلاحية تحذف هذا الحساب"}), 403
+    if user_id == request.user_id:
+        return jsonify({"error": "ما تقدر تحذف حسابك الحالي"}), 403
+    _delete_school_account(user_id)
+    return jsonify({"ok": True}), 200
+
+
+def _delete_school_account(user_id):
     # profiles.user_id مربوط بمفتاح خارجي لـ auth.users بدون cascade - لازم نمسح
-    # صف profiles أول، وإلا حذف حساب Auth يفشل ("Database error deleting user")
-    # لأن الصف لسا يشير له
+    # صف profiles أول، وإلا حذف حساب Auth يفشل ("Database error deleting user").
     supabase_admin.table("profiles").delete().eq("user_id", user_id).execute()
     try:
         supabase_admin.auth.admin.delete_user(user_id)
     except Exception:
         pass
-    return jsonify({"ok": True}), 200
 
 
 @app.route("/api/school/accounts/delete-all", methods=["POST"])
@@ -4188,11 +4257,20 @@ def school_reset_account_password(user_id):
     if request.profile["role"] == "school_administration" and target["role"] in ("school_admin", "school_administration"):
         return jsonify({"error": "ما عندك صلاحية لهذا الحساب"}), 403
 
+    result, error = _reset_school_account_password(user_id, target)
+    if error:
+        return jsonify({"error": error}), 400
+    return jsonify(result), 200
+
+
+def _reset_school_account_password(user_id, target):
+    """ينفّذ إعادة التعيين ويعيد بيانات العرض لمرة واحدة للفردي والجماعي."""
+
     new_password = generate_strong_password()
     try:
         supabase_admin.auth.admin.update_user_by_id(user_id, {"password": new_password})
     except Exception as e:
-        return jsonify({"error": f"تعذّر تحديث كلمة السر: {e}"}), 400
+        return None, f"تعذّر تحديث كلمة السر: {e}"
     supabase_admin.table("profiles").update({"must_change_password": True}).eq("user_id", user_id).execute()
 
     identifier = target.get("username") or ""
@@ -4201,7 +4279,46 @@ def school_reset_account_password(user_id):
             identifier = supabase_admin.auth.admin.get_user_by_id(user_id).user.email or identifier
         except Exception:
             pass
-    return jsonify({"identifier": identifier, "password": new_password}), 200
+    return {"id": user_id, "identifier": identifier, "password": new_password}, None
+
+
+@app.route("/api/school/accounts/bulk-actions", methods=["POST"])
+@require_role("school_admin", "school_administration")
+def school_bulk_account_actions():
+    """إجراء محدد على عدة حسابات، مع فحص المدرسة والصلاحية لكل حساب منفرد."""
+    data = request.get_json(silent=True) or {}
+    user_ids, error = _bulk_ids(data, "user_ids")
+    if error:
+        return jsonify({"error": error}), 400
+    action = data.get("action")
+    if action not in ("delete", "reset_passwords"):
+        return jsonify({"error": "الإجراء الجماعي غير معروف"}), 400
+
+    succeeded, failed = [], []
+    for user_id in user_ids:
+        target = _school_scoped_profile(user_id)
+        if not target:
+            failed.append({"id": user_id, "error": "الحساب مو تابع لمدرستك"})
+            continue
+        if user_id == request.user_id:
+            failed.append({"id": user_id, "error": "ما تقدر تنفّذ الإجراء على حسابك الحالي"})
+            continue
+        if request.profile["role"] == "school_administration" and target["role"] in ("school_admin", "school_administration"):
+            failed.append({"id": user_id, "error": "ما عندك صلاحية لهذا الحساب"})
+            continue
+        try:
+            if action == "delete":
+                _delete_school_account(user_id)
+                succeeded.append({"id": user_id, "identifier": target.get("username") or target.get("full_name") or user_id})
+            else:
+                result, reset_error = _reset_school_account_password(user_id, target)
+                if reset_error:
+                    failed.append({"id": user_id, "error": reset_error})
+                else:
+                    succeeded.append(result)
+        except Exception as exc:
+            failed.append({"id": user_id, "error": str(exc)})
+    return jsonify({"ok": not failed, "succeeded": succeeded, "failed": failed}), 200
 
 
 @app.route("/api/school/profile/<user_id>", methods=["GET"])

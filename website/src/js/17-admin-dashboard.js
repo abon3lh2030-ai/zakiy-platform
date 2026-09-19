@@ -159,20 +159,67 @@ document.querySelectorAll('[data-admin-period]').forEach(button => button.addEve
 }));
 
 // ---------- Admin: إدارة المدارس ----------
+function wireAdminSchoolBulkActions(tbody) {
+  const selectAll = document.getElementById('adminSchoolsSelectAll');
+  const toolbar = document.getElementById('adminSchoolsBulkToolbar');
+  const count = document.getElementById('adminSchoolsSelectedCount');
+  const resultBox = document.getElementById('adminSchoolsBulkResult');
+  const boxes = () => [...tbody.querySelectorAll('.admin-school-select')];
+  const selected = () => boxes().filter(box => box.checked).map(box => box.value);
+  const update = () => {
+    const all = boxes();
+    const ids = selected();
+    selectAll.checked = !!all.length && ids.length === all.length;
+    selectAll.indeterminate = ids.length > 0 && ids.length < all.length;
+    toolbar.classList.toggle('hidden', ids.length === 0);
+    count.textContent = t('selected_count', { count: ids.length });
+  };
+  selectAll.checked = false;
+  selectAll.indeterminate = false;
+  selectAll.onchange = () => { boxes().forEach(box => { box.checked = selectAll.checked; }); update(); };
+  boxes().forEach(box => box.addEventListener('change', update));
+  document.getElementById('adminSchoolsBulkResetBtn').onclick = async () => {
+    const schoolIds = selected();
+    if (!schoolIds.length || !confirm(t('confirm_bulk_reset_school_passwords', { count: schoolIds.length }))) return;
+    try {
+      const data = await apiCall('POST', '/api/admin/schools/bulk-actions', { action: 'reset_passwords', school_ids: schoolIds });
+      await loadAdminDashboard();
+      const rows = data.succeeded || [];
+      resultBox.innerHTML = `${rows.length ? `<strong>${t('bulk_passwords_shown_once')}</strong><div class="data-table-wrap"><table class="data-table"><thead><tr><th>${t('th_school_name')}</th><th>${t('th_admin_email')}</th><th>${t('th_password')}</th></tr></thead><tbody>${rows.map(row => `<tr><td>${escapeHtml(row.name || '—')}</td><td>${escapeHtml(row.email || '—')}</td><td><code>${escapeHtml(row.password)}</code></td></tr>`).join('')}</tbody></table></div>` : ''}${data.failed?.length ? `<p class="bulk-action-failures">${t('bulk_failed_count', { count: data.failed.length })}: ${data.failed.map(row => escapeHtml(row.error)).join('، ')}</p>` : ''}`;
+      resultBox.classList.remove('hidden');
+      resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } catch (e) { alert(e.message); }
+  };
+  document.getElementById('adminSchoolsBulkDeleteBtn').onclick = async () => {
+    const schoolIds = selected();
+    if (!schoolIds.length || !confirm(t('confirm_bulk_delete_schools', { count: schoolIds.length }))) return;
+    try {
+      const data = await apiCall('POST', '/api/admin/schools/bulk-actions', { action: 'delete', school_ids: schoolIds });
+      if (data.failed?.length) alert(t('bulk_partial_failure', { success: data.succeeded.length, failed: data.failed.length }));
+      await loadAdminDashboard();
+    } catch (e) { alert(e.message); }
+  };
+  update();
+}
+
 async function loadAdminDashboard() {
   loadPlatformFreeAccess();
   loadAdminAnalytics();
   const tbody = document.getElementById('adminSchoolsTableBody');
-  tbody.innerHTML = `<tr><td colspan="5">${t('loading')}</td></tr>`;
+  document.getElementById('adminSchoolsBulkToolbar')?.classList.add('hidden');
+  const selectAll = document.getElementById('adminSchoolsSelectAll');
+  if (selectAll) { selectAll.checked = false; selectAll.indeterminate = false; }
+  tbody.innerHTML = `<tr><td colspan="6">${t('loading')}</td></tr>`;
   try {
     const data = await apiCall('GET', '/api/admin/schools');
-    if (!data.schools.length) { tbody.innerHTML = `<tr><td colspan="5">${t('admin_no_schools')}</td></tr>`; return; }
+    if (!data.schools.length) { tbody.innerHTML = `<tr><td colspan="6">${t('admin_no_schools')}</td></tr>`; return; }
     tbody.innerHTML = data.schools.map(s => {
       const overLimitBadge = s.over_limit_since
         ? `<br><span style="color:#c0392b; font-size:12px; font-weight:700;">${s.over_limit_expired ? `⏰ ${t('admin_over_limit_expired_badge')}` : `⚠️ ${t('admin_over_limit_badge')}`}</span>`
         : '';
       return `
       <tr>
+        <td class="bulk-select-cell"><input type="checkbox" class="admin-school-select" value="${s.id}" aria-label="${t('select_school', { name: escapeHtml(s.name) })}"></td>
         <td>${escapeHtml(s.name)}</td>
         <td>${escapeHtml(s.admin_email || '—')}</td>
         <td>${s.accounts_used} / ${s.max_accounts}${overLimitBadge}</td>
@@ -227,8 +274,9 @@ async function loadAdminDashboard() {
         } catch (e) { alert(e.message); }
       });
     });
+    wireAdminSchoolBulkActions(tbody);
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="5">${escapeHtml(e.message)}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6">${escapeHtml(e.message)}</td></tr>`;
   }
 }
 

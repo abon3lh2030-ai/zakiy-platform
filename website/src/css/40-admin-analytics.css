@@ -80,6 +80,19 @@
 [data-theme="dark"] .admin-metric-card.primary { background:linear-gradient(145deg,#15306a,#244aa1); }
 [data-theme="dark"] .admin-analytics-error { background:#3c2020; color:#ffb8b8; border-color:#704040; }
 
+/* تحديد متعدد للحسابات والمدارس — يظهر شريط الأدوات فقط بعد أول تحديد. */
+.bulk-selection-toolbar { display:flex; align-items:center; justify-content:space-between; gap:14px; margin:12px 0; padding:11px 14px; border:1px solid rgba(46,91,219,.22); border-radius:14px; background:rgba(46,91,219,.07); }
+.bulk-selection-toolbar > strong { color:var(--ink); font-size:14px; }
+.bulk-selection-toolbar > div { display:flex; gap:8px; flex-wrap:wrap; }
+.bulk-selection-toolbar button { padding:8px 12px; }
+.bulk-selection-toolbar .bulk-danger { color:#b8382b; border-color:rgba(184,56,43,.42); }
+.bulk-select-cell { width:1%; white-space:nowrap; text-align:center; }
+.bulk-select-cell input[type="checkbox"] { width:18px; height:18px; accent-color:#2e5bdb; cursor:pointer; vertical-align:middle; }
+.bulk-check-label { display:inline-flex; align-items:center; gap:7px; cursor:pointer; color:var(--ink-soft); font-size:12px; }
+.bulk-action-failures { margin:12px 0 0; color:#b8382b; font-weight:700; }
+.bulk-password-result .data-table-wrap { margin-top:10px; max-height:300px; overflow:auto; }
+[data-theme="dark"] .bulk-selection-toolbar { background:rgba(84,126,230,.13); border-color:rgba(116,151,238,.3); }
+
 @media (max-width:1100px) { .admin-metrics-grid { grid-template-columns:repeat(3,1fr); } }
 @media (max-width:760px) {
   .admin-analytics-page { padding:18px !important; }
@@ -90,5 +103,6 @@
   .admin-insight-strip { grid-template-columns:1fr; }
   .admin-insight-strip > div { border-inline-end:0; border-bottom:1px solid var(--line); }
   .admin-donut-wrap { flex-direction:column; }
+  .bulk-selection-toolbar { align-items:stretch; flex-direction:column; }
 }
 @media (max-width:430px) { .admin-metrics-grid { grid-template-columns:1fr; } }

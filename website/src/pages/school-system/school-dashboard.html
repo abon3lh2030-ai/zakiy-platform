@@ -28,9 +28,11 @@
       </div>
       <div id="addTeacherError"></div>
       <div id="addTeacherResult" class="credential-reveal hidden"></div>
+      <div class="bulk-selection-toolbar hidden" id="schoolTeachersBulkToolbar"><strong id="schoolTeachersSelectedCount"></strong><div><button class="ghost" id="schoolTeachersBulkResetBtn" data-i18n="btn_bulk_reset_passwords">🔑 كلمات سر جديدة للمحدد</button><button class="ghost bulk-danger" id="schoolTeachersBulkDeleteBtn" data-i18n="btn_bulk_delete">🗑️ حذف المحدد</button></div></div>
       <div class="data-table-wrap">
         <table class="data-table">
           <thead><tr>
+            <th class="bulk-select-cell"><label class="bulk-check-label"><input type="checkbox" id="schoolTeachersSelectAll"><span data-i18n="select_all">تحديد الكل</span></label></th>
             <th data-i18n="th_name">الاسم</th>
             <th data-i18n="th_classes">الفصول</th>
             <th data-i18n="th_student_count">عدد الطلاب</th>
@@ -53,9 +55,11 @@
       </div>
       <div id="addAdministrationError"></div>
       <div id="addAdministrationResult" class="credential-reveal hidden"></div>
+      <div class="bulk-selection-toolbar hidden" id="schoolAdministrationBulkToolbar"><strong id="schoolAdministrationSelectedCount"></strong><div><button class="ghost" id="schoolAdministrationBulkResetBtn" data-i18n="btn_bulk_reset_passwords">🔑 كلمات سر جديدة للمحدد</button><button class="ghost bulk-danger" id="schoolAdministrationBulkDeleteBtn" data-i18n="btn_bulk_delete">🗑️ حذف المحدد</button></div></div>
       <div class="data-table-wrap">
         <table class="data-table">
           <thead><tr>
+            <th class="bulk-select-cell"><label class="bulk-check-label"><input type="checkbox" id="schoolAdministrationSelectAll"><span data-i18n="select_all">تحديد الكل</span></label></th>
             <th data-i18n="th_name">الاسم</th>
             <th data-i18n="th_last_login">آخر دخول</th>
             <th data-i18n="th_actions">إجراء</th>
@@ -74,9 +78,11 @@
     </div>
 
     <div id="schoolTab-students" class="school-tab-panel hidden">
+      <div class="bulk-selection-toolbar hidden" id="schoolStudentsBulkToolbar"><strong id="schoolStudentsSelectedCount"></strong><div><button class="ghost" id="schoolStudentsBulkResetBtn" data-i18n="btn_bulk_reset_passwords">🔑 كلمات سر جديدة للمحدد</button><button class="ghost bulk-danger" id="schoolStudentsBulkDeleteBtn" data-i18n="btn_bulk_delete">🗑️ حذف المحدد</button></div></div>
       <div class="data-table-wrap">
         <table class="data-table">
           <thead><tr>
+            <th class="bulk-select-cell"><label class="bulk-check-label"><input type="checkbox" id="schoolStudentsSelectAll"><span data-i18n="select_all">تحديد الكل</span></label></th>
             <th data-i18n="th_full_name">الاسم الكامل</th>
             <th data-i18n="th_username">اسم المستخدم</th>
             <th data-i18n="th_class_name">الفصل</th>

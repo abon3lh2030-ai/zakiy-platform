@@ -101,15 +101,20 @@ function renderSubscriptionPlans() {
 }
 
 function renderPlanFeatures(plan) {
-  const unl = t('unlimited_label');
-  const full = t('full_label');
+  const feature = (value, limitedKey, unlimitedKey) => (
+    value === null || value === undefined
+      ? t(unlimitedKey)
+      : t(limitedKey, { n: value })
+  );
   return [
-    t('feat_library', { n: plan.library_limit }),
-    t('feat_solo', { n: plan.solo_daily ?? unl }),
-    t('feat_group', { n: plan.group_daily ?? unl }),
-    t('feat_lesson', { n: plan.lesson_daily ?? unl }),
-    t('feat_archive', { n: plan.archive_limit ?? full }),
-    t('feat_performance', { n: plan.performance_limit ?? full }),
+    feature(plan.library_limit, 'feat_library_limited', 'feat_library_unlimited'),
+    feature(plan.solo_daily, 'feat_solo_limited', 'feat_solo_unlimited'),
+    feature(plan.group_daily, 'feat_group_limited', 'feat_group_unlimited'),
+    plan.lesson_daily === 0
+      ? t('feat_lesson_none')
+      : feature(plan.lesson_daily, 'feat_lesson_limited', 'feat_lesson_unlimited'),
+    feature(plan.archive_limit, 'feat_archive_limited', 'feat_archive_unlimited'),
+    feature(plan.performance_limit, 'feat_performance_limited', 'feat_performance_unlimited'),
   ].join('<br>');
 }
 

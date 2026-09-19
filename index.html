@@ -5094,13 +5094,20 @@ const I18N = {
     current_plan_label: 'باقتك الحالية: {plan}',
     days_remaining_label: '⏳ باقي {n} يوم على انتهاء اشتراكك',
     current_plan_badge: '✅ باقتك الحالية',
-    sar_label: 'ريال', free_label: 'مجانًا', unlimited_label: 'بلا حدود', full_label: 'كامل',
-    feat_library: '📚 {n} كتاب بالمكتبة',
-    feat_solo: '🎯 {n} جلسة فردية يوميًا',
-    feat_group: '👥 {n} جلسة جماعية يوميًا',
-    feat_lesson: '🖍️ {n} درس مباشر يوميًا',
-    feat_archive: '📂 آخر {n} جلسة بالأرشيف',
-    feat_performance: '📊 آخر {n} اختبار بالأداء',
+    sar_label: 'ريال', free_label: 'مجانًا',
+    feat_library_limited: '📚 الحد الأقصى للكتب في المكتبة: {n}',
+    feat_library_unlimited: '📚 كتب غير محدودة في المكتبة',
+    feat_solo_limited: '🎯 الجلسات الفردية يوميًا: {n}',
+    feat_solo_unlimited: '🎯 جلسات فردية غير محدودة يوميًا',
+    feat_group_limited: '👥 الجلسات الجماعية يوميًا: {n}',
+    feat_group_unlimited: '👥 جلسات جماعية غير محدودة يوميًا',
+    feat_lesson_none: '🖍️ لا تشمل دروسًا مباشرة',
+    feat_lesson_limited: '🖍️ الدروس المباشرة يوميًا: {n}',
+    feat_lesson_unlimited: '🖍️ دروس مباشرة غير محدودة يوميًا',
+    feat_archive_limited: '📂 الجلسات المحفوظة في الأرشيف: {n}',
+    feat_archive_unlimited: '📂 حفظ جميع الجلسات في الأرشيف',
+    feat_performance_limited: '📊 نتائج الاختبارات المحفوظة في الأداء: {n}',
+    feat_performance_unlimited: '📊 سجل أداء كامل لجميع الاختبارات',
     btn_subscribe: 'اشترك',
     btn_start_trial: 'جرّب 3 أيام مجانًا',
     auto_renew_on: 'التجديد التلقائي مفعّل',
@@ -6116,13 +6123,20 @@ const I18N = {
     current_plan_label: 'Your current plan: {plan}',
     days_remaining_label: '⏳ {n} days left until your subscription ends',
     current_plan_badge: '✅ Your current plan',
-    sar_label: 'SAR', free_label: 'Free', unlimited_label: 'Unlimited', full_label: 'Full',
-    feat_library: '📚 {n} library books',
-    feat_solo: '🎯 {n} solo sessions/day',
-    feat_group: '👥 {n} group sessions/day',
-    feat_lesson: '🖍️ {n} live lessons/day',
-    feat_archive: '📂 Last {n} archived sessions',
-    feat_performance: '📊 Last {n} performance results',
+    sar_label: 'SAR', free_label: 'Free',
+    feat_library_limited: '📚 Maximum books in your library: {n}',
+    feat_library_unlimited: '📚 Unlimited books in your library',
+    feat_solo_limited: '🎯 Solo sessions per day: {n}',
+    feat_solo_unlimited: '🎯 Unlimited solo sessions per day',
+    feat_group_limited: '👥 Group sessions per day: {n}',
+    feat_group_unlimited: '👥 Unlimited group sessions per day',
+    feat_lesson_none: '🖍️ Live lessons are not included',
+    feat_lesson_limited: '🖍️ Live lessons per day: {n}',
+    feat_lesson_unlimited: '🖍️ Unlimited live lessons per day',
+    feat_archive_limited: '📂 Sessions saved in your archive: {n}',
+    feat_archive_unlimited: '📂 All sessions saved in your archive',
+    feat_performance_limited: '📊 Quiz results saved in performance: {n}',
+    feat_performance_unlimited: '📊 Complete performance history for all quizzes',
     btn_subscribe: 'Subscribe',
     btn_start_trial: 'Try 3 days free',
     auto_renew_on: 'Auto-renewal is on',
@@ -7724,15 +7738,20 @@ function renderSubscriptionPlans() {
 }
 
 function renderPlanFeatures(plan) {
-  const unl = t('unlimited_label');
-  const full = t('full_label');
+  const feature = (value, limitedKey, unlimitedKey) => (
+    value === null || value === undefined
+      ? t(unlimitedKey)
+      : t(limitedKey, { n: value })
+  );
   return [
-    t('feat_library', { n: plan.library_limit }),
-    t('feat_solo', { n: plan.solo_daily ?? unl }),
-    t('feat_group', { n: plan.group_daily ?? unl }),
-    t('feat_lesson', { n: plan.lesson_daily ?? unl }),
-    t('feat_archive', { n: plan.archive_limit ?? full }),
-    t('feat_performance', { n: plan.performance_limit ?? full }),
+    feature(plan.library_limit, 'feat_library_limited', 'feat_library_unlimited'),
+    feature(plan.solo_daily, 'feat_solo_limited', 'feat_solo_unlimited'),
+    feature(plan.group_daily, 'feat_group_limited', 'feat_group_unlimited'),
+    plan.lesson_daily === 0
+      ? t('feat_lesson_none')
+      : feature(plan.lesson_daily, 'feat_lesson_limited', 'feat_lesson_unlimited'),
+    feature(plan.archive_limit, 'feat_archive_limited', 'feat_archive_unlimited'),
+    feature(plan.performance_limit, 'feat_performance_limited', 'feat_performance_unlimited'),
   ].join('<br>');
 }
 

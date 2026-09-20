@@ -8341,7 +8341,9 @@ function openPaymentModal(order) {
     credit_card: { save_card: true },
     apple_pay: {
       country: 'SA',
-      label: 'ذكيّ',
+      // ميسر يرسل label كـ display_name عند إنشاء جلسة Apple Pay، وهذا
+      // الحقل يقبل ASCII فقط؛ الاسم العربي يجعل نافذة الدفع تُغلق فورًا.
+      label: 'Zakiy',
       validate_merchant_url: 'https://api.moyasar.com/v1/applepay/initiate',
       save_card: true,
     },

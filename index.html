@@ -2011,10 +2011,12 @@
   .trial-modal-box input:not([type="checkbox"]){width:100%;margin-top:6px;padding:11px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);font-family:inherit}
   .trial-card-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.trial-consent{display:flex!important;align-items:flex-start;gap:8px;font-weight:500!important}.trial-consent input{margin-top:5px;flex:0 0 auto}
   #trialStartBtn{width:100%;margin-top:8px}#trialModalMsg{margin-top:12px;font-size:13px;color:var(--ink-soft)}
-  .trial-nudge{position:fixed;left:18px;bottom:18px;z-index:45;width:min(360px,calc(100vw - 36px));display:grid;gap:7px;padding:16px;background:var(--surface);color:var(--ink);border:1px solid var(--teal);border-radius:14px;box-shadow:0 12px 34px rgba(0,0,0,.18)}
-  .trial-nudge-close{position:absolute;left:7px;top:7px;border:0;background:transparent;color:var(--ink-soft);cursor:pointer}
-  @media(max-width:560px){.trial-card-row{grid-template-columns:1fr 1fr}}
-
+  .trial-nudge{position:fixed;left:18px;bottom:20px;z-index:70;width:min(330px,calc(100vw - 36px));display:grid;grid-template-columns:42px minmax(0,1fr);gap:5px 12px;padding:16px;background:color-mix(in srgb,var(--surface) 96%,var(--teal));color:var(--ink);border:1px solid color-mix(in srgb,var(--teal) 70%,var(--line));border-radius:16px;box-shadow:0 16px 44px rgba(15,39,71,.2);backdrop-filter:blur(12px)}
+  .with-sidebar .trial-nudge{left:calc(var(--sidebar-width) + 18px)}
+  .trial-nudge-icon{grid-row:1/3;display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:color-mix(in srgb,var(--teal) 14%,var(--surface));font-size:22px}
+  .trial-nudge-copy{min-width:0;display:grid;gap:3px;padding-inline-end:20px}.trial-nudge-copy strong{font-size:14px;line-height:1.5}.trial-nudge-copy span{color:var(--ink-soft);font-size:12px;line-height:1.6}.trial-nudge #trialNudgeOpenBtn{grid-column:1/-1;width:100%;margin-top:7px}
+  .trial-nudge-close{position:absolute;inset-inline-end:8px;top:8px;width:28px;height:28px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--ink-soft);cursor:pointer}.trial-nudge-close:hover{background:var(--paper-dim);color:var(--ink)}
+  @media(max-width:560px){.trial-card-row{grid-template-columns:1fr 1fr}.trial-nudge{left:10px;right:10px;bottom:12px;width:auto;max-width:none}.with-sidebar .trial-nudge{left:calc(var(--sidebar-width) + 10px)}}
 /* ROOT-SYNC: ADMIN-ANALYTICS START */
 /* لوحة تحليلات الأدمن العام */
 .admin-analytics-page { --admin-blue:#2856d9; padding: 28px !important; overflow: hidden; }
@@ -4195,10 +4197,13 @@
   </div>
 
   <div id="trialNudge" class="trial-nudge hidden">
-    <button type="button" class="trial-nudge-close" id="trialNudgeCloseBtn">✕</button>
-    <strong>🎁 قد تكون مؤهلًا لتجربة 3 أيام</strong>
-    <span>اختر باقتك وجرّبها قبل الخصم.</span>
-    <button type="button" class="ghost" id="trialNudgeOpenBtn">عرض التفاصيل</button>
+    <button type="button" class="trial-nudge-close" id="trialNudgeCloseBtn" aria-label="إغلاق">✕</button>
+    <span class="trial-nudge-icon" aria-hidden="true">🎁</span>
+    <span class="trial-nudge-copy">
+      <strong data-i18n="trial_offer_title">تجربة مجانية لمدة 3 أيام متاحة لك</strong>
+      <span data-i18n="trial_nudge_desc">اختر باقتك وجرّبها قبل أول خصم.</span>
+    </span>
+    <button type="button" class="primary" id="trialNudgeOpenBtn" data-i18n="trial_nudge_action">عرض الباقات</button>
   </div>
 
   <!-- صفحة البروفايل - بروفايلك أو بروفايل شخص ثاني (عبر بحث/QR)، حسب إعدادات الخصوصية -->
@@ -5479,6 +5484,8 @@ const I18N = {
     btn_resume_auto_renew: 'إعادة تفعيل التجديد',
     trial_badge: 'أنت في التجربة المجانية',
     trial_offer_title: '🎁 تجربة مجانية لمدة 3 أيام متاحة لك',
+    trial_nudge_desc: 'اختر باقتك وجرّبها قبل أول خصم.',
+    trial_nudge_action: 'عرض الباقات',
     payment_modal_heading: 'إتمام الدفع',
     payment_recurring_disclosure: 'سيُخصم {amount} ريال الآن، ثم يتجدد الاشتراك تلقائيًا بنفس السعر كل {period}. تقدر توقف التجديد بأي وقت مع بقاء اشتراكك حتى نهاية المدة.',
     payment_not_ready_msg: 'الدفع غير متاح حاليًا، حاول لاحقًا',
@@ -6590,6 +6597,8 @@ const I18N = {
     btn_resume_auto_renew: 'Resume auto-renewal',
     trial_badge: 'You are on the free trial',
     trial_offer_title: '🎁 A 3-day free trial is available',
+    trial_nudge_desc: 'Choose a plan and try it before the first charge.',
+    trial_nudge_action: 'View plans',
     payment_modal_heading: 'Complete Payment',
     payment_recurring_disclosure: '{amount} SAR will be charged now, then your subscription renews automatically at the same price every {period}. You can stop renewal anytime and keep access until the end date.',
     payment_not_ready_msg: 'Payment is unavailable right now, please try again later',
@@ -7546,7 +7555,7 @@ function showPerformanceDashboard() { showAccountScreen('step-performance'); }
 function showLibraryScreen() { showAccountScreen('step-library'); }
 function showArchiveScreen() { showAccountScreen('step-archive'); }
 function showFriendsScreen() { showAccountScreen('step-friends'); }
-function showSettingsScreen() { showAccountScreen('step-settings'); loadSubscriptionSection(); }
+function showSettingsScreen() { hide('trialNudge'); showAccountScreen('step-settings'); loadSubscriptionSection(); }
 function showProfileScreen() { showAccountScreen('step-profile'); }
 function showNotesScreen() { showAccountScreen('step-notes'); loadNotesScreen(); }
 function showAssignmentsScreen() { showAccountScreen('step-assignments'); loadAssignmentsScreen(); }
@@ -8528,6 +8537,7 @@ async function resumePendingTrialCheck() {
 
 async function showTrialNudge(context) {
   if (!currentAccessToken || currentUserRole || sessionStorage.getItem('zakiy_trial_nudge_dismissed')) return;
+  if (!document.getElementById('step-settings').classList.contains('hidden')) return;
   try {
     const offer = await apiCall('POST', '/api/subscription/trial-offer', { context });
     if (!offer.available) return;

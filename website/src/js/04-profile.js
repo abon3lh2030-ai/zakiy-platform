@@ -17,7 +17,7 @@ function showPerformanceDashboard() { showAccountScreen('step-performance'); }
 function showLibraryScreen() { showAccountScreen('step-library'); }
 function showArchiveScreen() { showAccountScreen('step-archive'); }
 function showFriendsScreen() { showAccountScreen('step-friends'); }
-function showSettingsScreen() { showAccountScreen('step-settings'); loadSubscriptionSection(); }
+function showSettingsScreen() { hide('trialNudge'); showAccountScreen('step-settings'); loadSubscriptionSection(); }
 function showProfileScreen() { showAccountScreen('step-profile'); }
 function showNotesScreen() { showAccountScreen('step-notes'); loadNotesScreen(); }
 function showAssignmentsScreen() { showAccountScreen('step-assignments'); loadAssignmentsScreen(); }
@@ -297,4 +297,3 @@ function renderArchive(sessions) {
   hide('archiveEmptyState');
   document.getElementById('archiveList').innerHTML = sessions.map(archiveSessionCardHtml).join('');
 }
-

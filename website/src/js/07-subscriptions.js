@@ -362,6 +362,7 @@ async function resumePendingTrialCheck() {
 
 async function showTrialNudge(context) {
   if (!currentAccessToken || currentUserRole || sessionStorage.getItem('zakiy_trial_nudge_dismissed')) return;
+  if (!document.getElementById('step-settings').classList.contains('hidden')) return;
   try {
     const offer = await apiCall('POST', '/api/subscription/trial-offer', { context });
     if (!offer.available) return;

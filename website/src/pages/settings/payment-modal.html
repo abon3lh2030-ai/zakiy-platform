@@ -31,8 +31,11 @@
   </div>
 
   <div id="trialNudge" class="trial-nudge hidden">
-    <button type="button" class="trial-nudge-close" id="trialNudgeCloseBtn">✕</button>
-    <strong>🎁 قد تكون مؤهلًا لتجربة 3 أيام</strong>
-    <span>اختر باقتك وجرّبها قبل الخصم.</span>
-    <button type="button" class="ghost" id="trialNudgeOpenBtn">عرض التفاصيل</button>
+    <button type="button" class="trial-nudge-close" id="trialNudgeCloseBtn" aria-label="إغلاق">✕</button>
+    <span class="trial-nudge-icon" aria-hidden="true">🎁</span>
+    <span class="trial-nudge-copy">
+      <strong data-i18n="trial_offer_title">تجربة مجانية لمدة 3 أيام متاحة لك</strong>
+      <span data-i18n="trial_nudge_desc">اختر باقتك وجرّبها قبل أول خصم.</span>
+    </span>
+    <button type="button" class="primary" id="trialNudgeOpenBtn" data-i18n="trial_nudge_action">عرض الباقات</button>
   </div>

@@ -277,6 +277,10 @@ document.getElementById('passwordResetBackBtn').addEventListener('click', () => 
   hide('step-password-reset-request');
   show('login-form');
 });
+function passwordResetRedirectUrl() {
+  const isLocal = ['localhost', '127.0.0.1'].includes(location.hostname);
+  return isLocal ? `${location.origin}${location.pathname}` : 'https://zakiy.tech/';
+}
 document.getElementById('passwordResetSendBtn').addEventListener('click', async () => {
   const btn = document.getElementById('passwordResetSendBtn');
   const email = document.getElementById('passwordResetEmail').value.trim().toLowerCase();
@@ -300,7 +304,7 @@ document.getElementById('passwordResetSendBtn').addEventListener('click', async 
       return;
     }
     const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-      redirectTo: `${location.origin}${location.pathname}`,
+      redirectTo: passwordResetRedirectUrl(),
     });
     if (error) throw error;
     document.getElementById('passwordResetRequestMsg').innerHTML = `<div class="success-msg">✅ ${t('password_reset_email_sent')}</div>`;

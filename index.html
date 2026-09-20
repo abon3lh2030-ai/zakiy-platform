@@ -2167,6 +2167,7 @@
   @media (max-width:900px) { .school-documents-layout{grid-template-columns:1fr}.school-folders-panel{position:static}.school-folders-list{display:flex;overflow-x:auto;padding-bottom:4px}.school-folder-row{min-width:180px} }
   @media (max-width:620px) { .school-documents-hero,.school-documents-toolbar,.school-document-upload-actions{align-items:stretch;flex-direction:column}.school-documents-summary{white-space:normal}.school-document-upload-actions select,.school-documents-toolbar input{max-width:none;width:100%}.school-documents-grid{grid-template-columns:1fr} }
 </style>
+<link rel="stylesheet" href="website/src/css/42-handwriting.css">
 </head>
 <body class="with-sidebar">
 <script>
@@ -3305,6 +3306,7 @@
       <div id="aiChatError2"></div>
       <div class="ai-chat-inputbar">
         <button class="ai-book-btn" id="aiBookBtn" title="لخّص كتاب" data-i18n-title="ai_book_btn_title">📚</button>
+        <button class="ai-book-btn" id="aiHandwritingBtn" title="التعرّف على خط اليد" data-i18n-title="handwriting_title">✍️</button>
         <input type="text" id="aiConversationInput" class="text-input" placeholder="اكتب رسالتك..." data-i18n-ph="ph_ai_message">
         <button class="primary" id="aiConversationSendBtn" data-i18n="btn_send">إرسال</button>
       </div>
@@ -4258,6 +4260,7 @@
     <p class="desc" data-i18n="mode_select_desc">اختر طريقة المذاكرة عشان نبدأ</p>
     <div class="actions">
       <button class="primary" id="modeSoloBtn" data-i18n="mode_solo">🧑‍🎓 مذاكرة فردية</button>
+      <button class="primary" id="modeHandwritingBtn" data-i18n="handwriting_feature">✍️ التعرّف على خط اليد</button>
       <button class="primary" id="modeRoomBtn" data-i18n="mode_room">👥 غرفة جماعية</button>
       <button class="primary" id="modeClassroomBtn" data-i18n="mode_classroom">🖍️ درس مباشر</button>
     </div>
@@ -4369,6 +4372,7 @@
         <button class="classroom-color-swatch" data-color="#FFC93C" style="background:#FFC93C;"></button>
         <button class="ghost" id="classroomEraserBtn" style="padding:6px 12px;" data-i18n="btn_eraser">🧽 ممحاة</button>
         <button class="ghost" id="classroomTextBtn" style="padding:6px 12px;" data-i18n="btn_text_tool">🔤 نص</button>
+        <button class="ghost" id="classroomHandwritingBtn" style="padding:6px 12px;" data-i18n="handwriting_board_btn">✍️ صورة إلى السبورة</button>
         <button class="ghost" id="classroomMoveBtn" style="padding:6px 12px;" data-i18n="btn_move_tool">↔️ تحريك</button>
         <button class="ghost" id="classroomShrinkBtn" style="padding:6px 10px;" disabled>🔤➖</button>
         <button class="ghost" id="classroomGrowBtn" style="padding:6px 10px;" disabled>🔤➕</button>
@@ -4423,6 +4427,7 @@
 
       <div class="actions">
         <button class="primary" id="uploadBtn" disabled data-i18n="btn_upload_process">رفع ومعالجة الملف</button>
+        <button class="ghost" id="soloHandwritingBtn" data-i18n="handwriting_solo_btn">✍️ ذاكر من صورة أو خط يد</button>
       </div>
       <button class="link-btn hidden" id="switchToLibraryBtn" data-i18n="btn_switch_library">📚 أو اختر من مكتبتك</button>
     </div>
@@ -4561,6 +4566,25 @@
     <h3 data-i18n="invite_friend_modal_title">ادعُ صديق للجلسة</h3>
     <div id="inviteFriendList" style="text-align:right; margin-top:10px;"></div>
     <p class="desc hidden" id="inviteFriendEmpty" data-i18n="invite_friend_no_friends">ما ضفت أصدقاء بعد</p>
+  </div>
+</div>
+
+<div class="handwriting-overlay hidden" id="handwritingOverlay" role="dialog" aria-modal="true" aria-labelledby="handwritingHeading">
+  <div class="handwriting-modal">
+    <button class="handwriting-close" id="handwritingCloseBtn" aria-label="إغلاق">×</button>
+    <span class="step-label" data-i18n="handwriting_label">✍️ تعرّف ذكي على خط اليد</span>
+    <h2 id="handwritingHeading" data-i18n="handwriting_heading">حوّل الصورة إلى نص قابل للتعديل</h2>
+    <p class="desc" data-i18n="handwriting_desc">ارفع صورة ملاحظاتك أو PDF، وراجع النص قبل استخدامه.</p>
+    <label class="handwriting-dropzone" for="handwritingFileInput">
+      <span class="handwriting-upload-icon">🖼️</span><strong data-i18n="handwriting_pick_file">اختر صورة أو ملف PDF</strong>
+      <small data-i18n="handwriting_file_types">PNG، JPG، WEBP، HEIC أو PDF — حتى 15MB</small>
+      <input type="file" id="handwritingFileInput" accept="image/png,image/jpeg,image/webp,image/heic,image/heif,image/gif,image/bmp,image/tiff,application/pdf">
+    </label>
+    <div class="handwriting-file-row hidden" id="handwritingFileRow"><span id="handwritingFileName"></span><button class="link-btn" id="handwritingChangeFileBtn" data-i18n="handwriting_change_file">تغيير الملف</button></div>
+    <div class="handwriting-progress hidden" id="handwritingProgress"><span class="spinner"></span><span data-i18n="handwriting_reading">ذكيّ يقرأ النص الآن...</span></div>
+    <div class="handwriting-result hidden" id="handwritingResultWrap"><label for="handwritingResult" data-i18n="handwriting_review">راجع النص وعدّله إذا احتجت</label><textarea id="handwritingResult" class="text-input" rows="10"></textarea></div>
+    <div id="handwritingError"></div>
+    <div class="actions handwriting-actions"><button class="primary" id="handwritingUseBtn" disabled data-i18n="handwriting_use">استخدم النص</button><button class="ghost" id="handwritingCopyBtn" disabled data-i18n="handwriting_copy">نسخ النص</button></div>
   </div>
 </div>
 
@@ -4973,6 +4997,15 @@ const I18N = {
     ai_source_upload: 'ارفع ملف',
     ai_summarize_btn: 'لخّص هذا الملف',
     ai_summarize_label: 'لخّص',
+    handwriting_title: 'التعرّف على خط اليد', handwriting_label: '✍️ تعرّف ذكي على خط اليد',
+    handwriting_heading: 'حوّل الصورة إلى نص قابل للتعديل', handwriting_desc: 'ارفع صورة ملاحظاتك أو ملف PDF، وراجع النص قبل استخدامه.',
+    handwriting_pick_file: 'اختر صورة أو ملف PDF', handwriting_file_types: 'PNG، JPG، WEBP، HEIC أو PDF — حتى 15MB',
+    handwriting_change_file: 'تغيير الملف', handwriting_reading: 'ذكيّ يقرأ النص الآن...', handwriting_review: 'راجع النص وعدّله إذا احتجت',
+    handwriting_use: 'استخدم النص', handwriting_copy: 'نسخ النص', handwriting_failed: 'تعذّر التعرّف على النص',
+    handwriting_solo_btn: '✍️ ذاكر من صورة أو خط يد', handwriting_board_btn: '✍️ صورة إلى السبورة',
+    handwriting_feature: '✍️ التعرّف على خط اليد',
+    handwriting_chat_context: 'هذا نص استخرجه ذكيّ من صورة أو خط يد. استخدمه للإجابة عن طلبي ومساعدتي:',
+    handwriting_from_file: 'نص مستخرج من', handwriting_default_title: 'ملاحظات مكتوبة', copied: 'تم النسخ',
     nav_messages: 'الرسائل',
     messages_label: '💬 الرسائل',
     messages_heading: 'الرسائل والتنبيهات',
@@ -5432,6 +5465,8 @@ const I18N = {
     feat_lesson_none: '🖍️ لا تشمل دروسًا مباشرة',
     feat_lesson_limited: '🖍️ الدروس المباشرة يوميًا: {n}',
     feat_lesson_unlimited: '🖍️ دروس مباشرة غير محدودة يوميًا',
+    feat_ai_assistant_limited: '🤖 رسائل المساعد الذكي يوميًا: {n}',
+    feat_ai_assistant_unlimited: '🤖 رسائل المساعد الذكي بلا حدود',
     feat_archive_limited: '📂 الجلسات المحفوظة في الأرشيف: {n}',
     feat_archive_unlimited: '📂 حفظ جميع الجلسات في الأرشيف',
     feat_performance_limited: '📊 نتائج الاختبارات المحفوظة في الأداء: {n}',
@@ -6073,6 +6108,15 @@ const I18N = {
     ai_source_upload: 'Upload a file',
     ai_summarize_btn: 'Summarize this file',
     ai_summarize_label: 'Summarize',
+    handwriting_title: 'Handwriting recognition', handwriting_label: '✍️ Smart handwriting recognition',
+    handwriting_heading: 'Turn an image into editable text', handwriting_desc: 'Upload a photo of your notes or a PDF, then review the text before using it.',
+    handwriting_pick_file: 'Choose an image or PDF', handwriting_file_types: 'PNG, JPG, WEBP, HEIC, or PDF — up to 15MB',
+    handwriting_change_file: 'Change file', handwriting_reading: 'Zakiy is reading the text...', handwriting_review: 'Review and edit the text if needed',
+    handwriting_use: 'Use text', handwriting_copy: 'Copy text', handwriting_failed: 'Could not recognize the text',
+    handwriting_solo_btn: '✍️ Study from an image or handwriting', handwriting_board_btn: '✍️ Image to whiteboard',
+    handwriting_feature: '✍️ Handwriting recognition',
+    handwriting_chat_context: 'Zakiy extracted this text from an image or handwriting. Use it to help with my request:',
+    handwriting_from_file: 'Text extracted from', handwriting_default_title: 'Handwritten notes', copied: 'Copied',
     nav_messages: 'Messages',
     messages_label: '💬 Messages',
     messages_heading: 'Messages & Notifications',
@@ -6532,6 +6576,8 @@ const I18N = {
     feat_lesson_none: '🖍️ Live lessons are not included',
     feat_lesson_limited: '🖍️ Live lessons per day: {n}',
     feat_lesson_unlimited: '🖍️ Unlimited live lessons per day',
+    feat_ai_assistant_limited: '🤖 AI Assistant messages per day: {n}',
+    feat_ai_assistant_unlimited: '🤖 Unlimited AI Assistant messages',
     feat_archive_limited: '📂 Sessions saved in your archive: {n}',
     feat_archive_unlimited: '📂 All sessions saved in your archive',
     feat_performance_limited: '📊 Quiz results saved in performance: {n}',
@@ -7320,6 +7366,10 @@ document.getElementById('passwordResetBackBtn').addEventListener('click', () => 
   hide('step-password-reset-request');
   show('login-form');
 });
+function passwordResetRedirectUrl() {
+  const isLocal = ['localhost', '127.0.0.1'].includes(location.hostname);
+  return isLocal ? `${location.origin}${location.pathname}` : 'https://zakiy.tech/';
+}
 document.getElementById('passwordResetSendBtn').addEventListener('click', async () => {
   const btn = document.getElementById('passwordResetSendBtn');
   const email = document.getElementById('passwordResetEmail').value.trim().toLowerCase();
@@ -7339,7 +7389,7 @@ document.getElementById('passwordResetSendBtn').addEventListener('click', async 
       return;
     }
     const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-      redirectTo: `${location.origin}${location.pathname}`,
+      redirectTo: passwordResetRedirectUrl(),
     });
     if (error) throw error;
     document.getElementById('passwordResetRequestMsg').innerHTML = `<div class="success-msg">✅ ${t('password_reset_email_sent')}</div>`;
@@ -8229,6 +8279,7 @@ function renderPlanFeatures(plan) {
     plan.lesson_daily === 0
       ? t('feat_lesson_none')
       : feature(plan.lesson_daily, 'feat_lesson_limited', 'feat_lesson_unlimited'),
+    feature(plan.ai_assistant_daily, 'feat_ai_assistant_limited', 'feat_ai_assistant_unlimited'),
     feature(plan.archive_limit, 'feat_archive_limited', 'feat_archive_unlimited'),
     feature(plan.performance_limit, 'feat_performance_limited', 'feat_performance_unlimited'),
   ].join('<br>');
@@ -18061,5 +18112,6 @@ if (new URLSearchParams(window.location.search).get('showcase') === 'lab') {
 }
 </script>
 <script src="website/src/js/31-school-documents.js"></script>
+<script src="website/src/js/32-handwriting.js"></script>
 </body>
 </html>

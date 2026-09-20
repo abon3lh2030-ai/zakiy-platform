@@ -1,0 +1,25 @@
+<div class="handwriting-overlay hidden" id="handwritingOverlay" role="dialog" aria-modal="true" aria-labelledby="handwritingHeading">
+  <div class="handwriting-modal">
+    <button class="handwriting-close" id="handwritingCloseBtn" aria-label="إغلاق">×</button>
+    <span class="step-label" data-i18n="handwriting_label">✍️ تعرّف ذكي على خط اليد</span>
+    <h2 id="handwritingHeading" data-i18n="handwriting_heading">حوّل الصورة إلى نص قابل للتعديل</h2>
+    <p class="desc" data-i18n="handwriting_desc">ارفع صورة ملاحظاتك أو PDF، وراجع النص قبل استخدامه.</p>
+    <label class="handwriting-dropzone" for="handwritingFileInput">
+      <span class="handwriting-upload-icon">🖼️</span>
+      <strong data-i18n="handwriting_pick_file">اختر صورة أو ملف PDF</strong>
+      <small data-i18n="handwriting_file_types">PNG، JPG، WEBP، HEIC أو PDF — حتى 15MB</small>
+      <input type="file" id="handwritingFileInput" accept="image/png,image/jpeg,image/webp,image/heic,image/heif,image/gif,image/bmp,image/tiff,application/pdf">
+    </label>
+    <div class="handwriting-file-row hidden" id="handwritingFileRow"><span id="handwritingFileName"></span><button class="link-btn" id="handwritingChangeFileBtn" data-i18n="handwriting_change_file">تغيير الملف</button></div>
+    <div class="handwriting-progress hidden" id="handwritingProgress"><span class="spinner"></span><span data-i18n="handwriting_reading">ذكيّ يقرأ النص الآن...</span></div>
+    <div class="handwriting-result hidden" id="handwritingResultWrap">
+      <label for="handwritingResult" data-i18n="handwriting_review">راجع النص وعدّله إذا احتجت</label>
+      <textarea id="handwritingResult" class="text-input" rows="10"></textarea>
+    </div>
+    <div id="handwritingError"></div>
+    <div class="actions handwriting-actions">
+      <button class="primary" id="handwritingUseBtn" disabled data-i18n="handwriting_use">استخدم النص</button>
+      <button class="ghost" id="handwritingCopyBtn" disabled data-i18n="handwriting_copy">نسخ النص</button>
+    </div>
+  </div>
+</div>

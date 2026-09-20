@@ -32,7 +32,7 @@ CSS_ORDER = [
     "25-qr-modal", "26-friends-archive", "27-lang-buttons", "28-privacy-toggle",
     "29-profile", "30-subscription", "31-notes", "32-assignments",
     "33-ai-assistant", "34-quizzes", "35-madrasati", "36-robotics-lab", "37-science-lab",
-    "38-recurring-subscription", "39-platform-trust", "40-admin-analytics", "41-school-documents",
+    "38-recurring-subscription", "39-platform-trust", "40-admin-analytics", "41-school-documents", "42-handwriting",
 ]
 
 JS_ORDER = [
@@ -43,7 +43,7 @@ JS_ORDER = [
     "17-admin-dashboard", "18-school-admin-dashboard", "19-teacher-dashboard",
     "20-student-schedule", "21-messages", "22-broadcast-attendance",
     "23-notes", "24-assignments", "25-ai-assistant", "26-quizzes", "27-gradesheet", "28-madrasati",
-    "29-robotics-lab", "30-science-lab", "31-school-documents",
+    "29-robotics-lab", "30-science-lab", "31-school-documents", "32-handwriting",
 ]
 
 

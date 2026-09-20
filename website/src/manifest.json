@@ -238,5 +238,9 @@
   {
     "type": "file",
     "path": "pages/partials/invite-friend-modal.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/partials/handwriting-modal.html"
   }
 ]

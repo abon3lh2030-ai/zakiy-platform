@@ -113,6 +113,7 @@ function renderPlanFeatures(plan) {
     plan.lesson_daily === 0
       ? t('feat_lesson_none')
       : feature(plan.lesson_daily, 'feat_lesson_limited', 'feat_lesson_unlimited'),
+    feature(plan.ai_assistant_daily, 'feat_ai_assistant_limited', 'feat_ai_assistant_unlimited'),
     feature(plan.archive_limit, 'feat_archive_limited', 'feat_archive_unlimited'),
     feature(plan.performance_limit, 'feat_performance_limited', 'feat_performance_unlimited'),
   ].join('<br>');

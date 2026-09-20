@@ -10,6 +10,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 from functools import wraps
 from collections import Counter
 from datetime import datetime, timedelta, timezone
+import base64
 import csv
 import hashlib
 import io
@@ -323,6 +324,75 @@ def extract_text():
         return jsonify({"text": text}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# ---------- التعرّف الذكي على النص المطبوع وخط اليد ----------
+HANDWRITING_MAX_BYTES = 15 * 1024 * 1024
+HANDWRITING_MIME_TYPES = {
+    "image/png", "image/jpeg", "image/webp", "image/heic", "image/heif",
+    "image/gif", "image/bmp", "image/tiff", "application/pdf",
+}
+
+
+@app.route("/api/handwriting/recognize", methods=["POST"])
+@require_auth
+def recognize_handwriting():
+    """يقرأ صورة/‏PDF بالذكاء الاصطناعي ويحافظ على النص كما كُتب قدر الإمكان.
+
+    النتيجة تبقى قابلة للتعديل في العميل قبل إرسالها للمحادثة أو وضعها على
+    السبورة؛ ما نخزّن الملف، ونرفض الأنواع والأحجام غير الآمنة مبكرًا.
+    """
+    uploaded = request.files.get("file")
+    if not uploaded or not uploaded.filename:
+        return jsonify({"error": "اختر صورة أو ملف PDF أولًا"}), 400
+    mime_type = (uploaded.mimetype or "").lower().split(";", 1)[0]
+    if mime_type == "image/jpg":
+        mime_type = "image/jpeg"
+    if mime_type not in HANDWRITING_MIME_TYPES:
+        return jsonify({"error": "يدعم التعرف صور PNG وJPG وWEBP وHEIC وملفات PDF"}), 400
+    file_bytes = uploaded.read(HANDWRITING_MAX_BYTES + 1)
+    if not file_bytes:
+        return jsonify({"error": "الملف فاضي"}), 400
+    if len(file_bytes) > HANDWRITING_MAX_BYTES:
+        return jsonify({"error": "حجم الملف أكبر من 15 ميجابايت"}), 413
+
+    if request.form.get("context") == "solo":
+        allowed, reject_msg = _check_and_record_daily_action(request.user_id, "solo_session")
+        if not allowed:
+            return jsonify({"error": reject_msg}), 402
+
+    lang = (request.form.get("lang") or "ar").strip().lower()
+    prompt = (
+        "استخرج كل النص الظاهر في هذا الملف بدقة، بما فيه النص المكتوب بخط اليد. "
+        "حافظ على ترتيب السطور والفقرات والرموز والأرقام والمعادلات قدر الإمكان. "
+        "لا تلخص، لا تشرح، ولا تضف أي كلام غير موجود. إذا كانت كلمة غير مقروءة "
+        "اكتب [غير واضح]. أعد النص المستخرج فقط بدون Markdown."
+        f"{lang_directive(lang)}"
+    )
+    content_type = "document" if mime_type == "application/pdf" else "image"
+    try:
+        interaction = create_interaction(
+            model=GEMINI_MODEL,
+            input=[
+                {"type": "text", "text": prompt},
+                {
+                    "type": content_type,
+                    "mime_type": mime_type,
+                    "data": base64.b64encode(file_bytes).decode("ascii"),
+                },
+            ],
+            generation_config={"max_output_tokens": 5000, "thinking_level": "minimal"},
+        )
+        text = (interaction.output_text or "").strip()
+        if not text:
+            return jsonify({"error": "ما قدرنا نقرأ نص واضح من الملف"}), 422
+        return jsonify({
+            "text": text,
+            "file_name": secure_filename(uploaded.filename) or "handwriting",
+            "mime_type": mime_type,
+        }), 200
+    except Exception as exc:
+        return jsonify({"error": f"تعذّر التعرّف على النص: {exc}"}), 500
 
 
 # ---------- دعم تعدد اللغات لردود الذكاء الاصطناعي ----------
@@ -1187,6 +1257,10 @@ def send_ai_message(conversation_id):
         prompt_message = display_message
     if not display_message:
         return jsonify({"error": "لازم ترسل رسالة"}), 400
+
+    allowed, reject_msg = _check_and_record_daily_action(request.user_id, "ai_assistant_message")
+    if not allowed:
+        return jsonify({"error": reject_msg}), 402
 
     try:
         if convo.get("last_interaction_id"):
@@ -6455,25 +6529,25 @@ SUBSCRIPTION_PLANS = {
     "free": {
         "name_ar": "المجاني", "name_en": "Free",
         "price_monthly": 0, "price_annual": 0,
-        "library_limit": 5, "solo_daily": 3, "group_daily": 1, "lesson_daily": 0,
+        "library_limit": 5, "solo_daily": 3, "group_daily": 1, "lesson_daily": 0, "ai_assistant_daily": 10,
         "archive_limit": 8, "performance_limit": 5,
     },
     "plus": {
         "name_ar": "بلس", "name_en": "Plus",
         "price_monthly": 19.99, "price_annual": 99.99,
-        "library_limit": 20, "solo_daily": 5, "group_daily": 3, "lesson_daily": 1,
+        "library_limit": 20, "solo_daily": 5, "group_daily": 3, "lesson_daily": 1, "ai_assistant_daily": 25,
         "archive_limit": 15, "performance_limit": 8,
     },
     "pro": {
         "name_ar": "برو", "name_en": "Pro",
         "price_monthly": 39.99, "price_annual": 199.99,
-        "library_limit": 30, "solo_daily": 10, "group_daily": 5, "lesson_daily": 3,
+        "library_limit": 30, "solo_daily": 10, "group_daily": 5, "lesson_daily": 3, "ai_assistant_daily": 40,
         "archive_limit": 30, "performance_limit": 15,
     },
     "ultimate": {
         "name_ar": "ألتميت", "name_en": "Ultimate",
         "price_monthly": 59.99, "price_annual": 299.99,
-        "library_limit": 50, "solo_daily": None, "group_daily": None, "lesson_daily": 8,
+        "library_limit": 50, "solo_daily": None, "group_daily": None, "lesson_daily": 8, "ai_assistant_daily": None,
         "archive_limit": None, "performance_limit": None,
     },
     # باقة داخلية بس (ما تُباع) - لصاحب المنصة نفسه، بلا حدود على كل شي.
@@ -6484,7 +6558,7 @@ SUBSCRIPTION_PLANS = {
     "owner": {
         "name_ar": "مالك التطبيق", "name_en": "App Owner",
         "price_monthly": 0, "price_annual": 0,
-        "library_limit": None, "solo_daily": None, "group_daily": None, "lesson_daily": None,
+        "library_limit": None, "solo_daily": None, "group_daily": None, "lesson_daily": None, "ai_assistant_daily": None,
         "archive_limit": None, "performance_limit": None,
     },
 }
@@ -6669,7 +6743,10 @@ def _can_start_subscription_checkout(profile):
 # مفاتيح حدود اليوم بجدول SUBSCRIPTION_PLANS اللي يقابل كل نوع إجراء محدود -
 # مطابق تمامًا لـ LimitedAction بتطبيق iOS (بدون librarySave - ذاك سقف تخزين
 # كلي يُفحص مباشرة بعدد صفوف جدول library، مو حد يومي بـ usage_events)
-_DAILY_LIMIT_KEYS = {"solo_session": "solo_daily", "group_room": "group_daily", "live_lesson": "lesson_daily"}
+_DAILY_LIMIT_KEYS = {
+    "solo_session": "solo_daily", "group_room": "group_daily",
+    "live_lesson": "lesson_daily", "ai_assistant_message": "ai_assistant_daily",
+}
 
 
 def _resolved_plan_for_user(user_id):

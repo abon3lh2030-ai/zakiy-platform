@@ -1,5 +1,8 @@
 <aside class="sidebar" id="sidebar">
-  <div class="sidebar-logo">ذكيّ</div>
+  <div class="sidebar-mobile-head">
+    <div class="sidebar-logo">ذكيّ</div>
+    <button type="button" class="mobile-sidebar-close" id="mobileSidebarCloseBtn" aria-label="إغلاق القائمة">✕</button>
+  </div>
   <nav class="sidebar-nav">
     <button class="sidebar-btn" id="homeBtn"><span class="sidebar-icon">🏠</span><span class="label" data-i18n="nav_home">الرئيسية</span></button>
     <button class="sidebar-btn" id="messagesBtn"><span class="sidebar-icon">💬</span><span class="label" data-i18n="nav_messages">الرسائل</span><span class="unread-badge hidden" id="messagesUnreadBadge">0</span></button>
@@ -25,3 +28,21 @@
     <button class="sidebar-btn" id="darkModeToggleBtn"><span class="sidebar-icon" id="darkModeIcon">🌙</span><span class="label" id="darkModeLabel" data-i18n="nav_dark_mode">الوضع الليلي</span></button>
   </div>
 </aside>
+<div class="mobile-nav-backdrop" id="mobileNavBackdrop" aria-hidden="true"></div>
+<nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="التنقل الرئيسي">
+  <button type="button" class="mobile-nav-btn is-active" data-mobile-target="homeBtn">
+    <span class="mobile-nav-icon">🏠</span><small data-i18n="nav_home">الرئيسية</small>
+  </button>
+  <button type="button" class="mobile-nav-btn" data-mobile-target="sidebarLibraryBtn">
+    <span class="mobile-nav-icon">📚</span><small data-i18n="nav_library">مكتبتي</small>
+  </button>
+  <button type="button" class="mobile-nav-btn mobile-nav-primary" data-mobile-target="sidebarAiHelpBtn">
+    <span class="mobile-nav-icon">✦</span><small data-i18n="nav_ai_short">ذكيّ</small>
+  </button>
+  <button type="button" class="mobile-nav-btn" data-mobile-target="messagesBtn">
+    <span class="mobile-nav-icon">💬</span><small data-i18n="nav_messages">الرسائل</small><span class="mobile-nav-badge hidden" id="mobileMessagesUnreadBadge">0</span>
+  </button>
+  <button type="button" class="mobile-nav-btn" id="mobileMoreBtn">
+    <span class="mobile-nav-icon">☰</span><small data-i18n="nav_more">المزيد</small>
+  </button>
+</nav>

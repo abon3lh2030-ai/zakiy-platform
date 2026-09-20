@@ -2,7 +2,9 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#FAF9F5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14181F" media="(prefers-color-scheme: dark)">
 <title>ذكيّ — منصة المذاكرة الذكية</title>
 
 <!-- SEO: وصف ووسوم أساسية عشان يظهر بنتائج قوقل وقت البحث عن "منصة ذكي" -->
@@ -2003,6 +2005,442 @@
 .handwriting-result textarea{width:100%;resize:vertical;line-height:1.8}
 .handwriting-actions{margin-top:14px}
 @media(max-width:600px){.handwriting-overlay{padding:8px}.handwriting-modal{padding:22px 16px;border-radius:18px}.handwriting-actions>*{width:100%}}
+/* ========================================================================== */
+/* واجهة ذكيّ للجوال — طبقة مستقلة لا تغيّر تصميم الديسكتوب                 */
+/* ========================================================================== */
+.mobile-bottom-nav,
+.mobile-nav-backdrop,
+.mobile-sidebar-close { display: none; }
+
+@media (max-width: 720px) {
+  :root {
+    --mobile-nav-height: 72px;
+    --mobile-gutter: 14px;
+    --mobile-radius: 20px;
+  }
+
+  html { width: 100%; overflow-x: hidden; }
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+    background-size: 100% 38px;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body.mobile-nav-open { overflow: hidden; }
+  body.with-sidebar {
+    padding-left: 0 !important;
+    padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom));
+  }
+
+  /* مساحة التطبيق */
+  .wrap,
+  .wrap.wrap-wide {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 14px var(--mobile-gutter) calc(34px + env(safe-area-inset-bottom)) !important;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 300;
+    min-height: 58px;
+    margin: -14px calc(var(--mobile-gutter) * -1) 22px !important;
+    padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+    gap: 12px;
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+    background: color-mix(in srgb, var(--paper) 88%, transparent);
+    box-shadow: 0 5px 18px rgba(27, 42, 74, .06);
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+  }
+  header .logo { font-size: 23px; flex: 0 0 auto; }
+  header .badge {
+    min-width: 0;
+    max-width: min(66vw, 245px);
+    padding: 6px 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11.5px;
+  }
+
+  .hero { margin: 6px 2px 28px !important; text-align: start; }
+  .hero h1 {
+    margin-bottom: 12px;
+    font-size: clamp(29px, 8.7vw, 38px) !important;
+    line-height: 1.28 !important;
+    letter-spacing: -.5px;
+    overflow-wrap: anywhere;
+  }
+  .hero p { max-width: none; font-size: 15px !important; line-height: 1.8; }
+  /* في الشاشات الداخلية نترك المساحة للمهمة نفسها بدل تكرار مقدمة الرئيسية. */
+  body:has(.global-back-btn:not(.hidden)) .hero { display: none; }
+
+  /* البطاقات والنماذج */
+  .card {
+    width: 100%;
+    min-width: 0;
+    margin-bottom: 16px !important;
+    padding: 20px 16px !important;
+    border-radius: var(--mobile-radius) !important;
+    box-shadow: 0 10px 34px rgba(27, 42, 74, .07) !important;
+    overflow: hidden;
+  }
+  .card h2 { font-size: 20px !important; line-height: 1.5; }
+  .card h3 { line-height: 1.5; }
+  .card .desc { font-size: 13.5px; line-height: 1.75; }
+  .step-label { margin-bottom: 14px; }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea,
+  .text-input {
+    max-width: 100%;
+    min-height: 46px;
+    font-size: 16px !important;
+    border-radius: 12px !important;
+  }
+  textarea { line-height: 1.7; }
+  button,
+  [role="button"],
+  a.button { touch-action: manipulation; }
+  button.primary,
+  button.ghost,
+  .btn-primary,
+  .btn-secondary {
+    min-height: 46px;
+    border-radius: 13px !important;
+  }
+  #mode-select .actions,
+  #room-mode-select .actions,
+  #login-form .actions,
+  #signup-form .actions {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+  #mode-select .actions > *,
+  #room-mode-select .actions > * { width: 100%; }
+
+  .data-table-wrap,
+  .table-wrap {
+    max-width: 100%;
+    overflow-x: auto !important;
+    border-radius: 14px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .data-table-wrap table,
+  .table-wrap table { min-width: 650px; }
+  .role-tabs,
+  .admin-tabs,
+  .settings-tabs {
+    max-width: 100%;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .role-tabs::-webkit-scrollbar,
+  .admin-tabs::-webkit-scrollbar,
+  .settings-tabs::-webkit-scrollbar { display: none; }
+
+  /* القائمة الكاملة تصير درجًا جانبيًا واضحًا بدل شريط أيقونات ضيق */
+  .sidebar {
+    display: flex;
+    top: 0;
+    right: 0;
+    left: auto;
+    bottom: 0;
+    width: min(86vw, 330px) !important;
+    padding: calc(15px + env(safe-area-inset-top)) 14px calc(18px + env(safe-area-inset-bottom)) !important;
+    border-right: 0;
+    border-left: 1px solid var(--line);
+    z-index: 1300;
+    transform: translateX(106%);
+    visibility: hidden;
+    opacity: 0;
+    transition: transform .24s ease, opacity .2s ease, visibility .24s;
+    box-shadow: -24px 0 50px rgba(17, 31, 55, .2);
+    overscroll-behavior: contain;
+  }
+  [dir="ltr"] .sidebar {
+    right: auto;
+    left: 0;
+    border-left: 0;
+    border-right: 1px solid var(--line);
+    transform: translateX(-106%);
+    box-shadow: 24px 0 50px rgba(17, 31, 55, .2);
+  }
+  .sidebar.mobile-open {
+    transform: translateX(0);
+    visibility: visible;
+    opacity: 1;
+  }
+  .sidebar-mobile-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 46px;
+    margin-bottom: 12px;
+    padding: 0 6px;
+  }
+  .sidebar-logo {
+    margin: 0 !important;
+    font-size: 23px !important;
+    text-align: start;
+  }
+  .sidebar-logo::first-letter { font-size: inherit !important; }
+  .mobile-sidebar-close {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 13px;
+    background: var(--paper-dim);
+    color: var(--ink);
+    font: inherit;
+    cursor: pointer;
+  }
+  .sidebar-nav { gap: 4px; }
+  .sidebar-btn {
+    justify-content: flex-start !important;
+    min-height: 46px;
+    padding: 10px 12px !important;
+    border-radius: 13px;
+    font-size: 14px;
+    text-align: start;
+  }
+  .sidebar-btn .label { display: inline !important; }
+  .sidebar-btn .sidebar-icon {
+    width: 25px;
+    font-size: 18px;
+    text-align: center;
+    flex: 0 0 25px;
+  }
+  .sidebar-bottom {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+  .mobile-nav-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 1250;
+    background: rgba(13, 24, 43, .48);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .2s ease, visibility .2s;
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+  }
+  body.mobile-nav-open .mobile-nav-backdrop { opacity: 1; visibility: visible; }
+
+  /* شريط تنقل سفلي شبيه بالتطبيقات الأصلية */
+  body.with-sidebar .mobile-bottom-nav { display: grid; }
+  .mobile-bottom-nav {
+    position: fixed;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1100;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    height: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom));
+    padding: 7px 7px calc(7px + env(safe-area-inset-bottom));
+    border-top: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+    background: color-mix(in srgb, var(--surface) 94%, transparent);
+    box-shadow: 0 -10px 32px rgba(17, 31, 55, .12);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+  }
+  .mobile-nav-btn {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-width: 0;
+    padding: 3px 2px;
+    border: 0;
+    border-radius: 14px;
+    background: transparent;
+    color: var(--ink-soft);
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .mobile-nav-btn small {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+  .mobile-nav-icon { font-size: 19px; line-height: 1.35; }
+  .mobile-nav-btn.is-active { color: var(--teal); background: var(--teal-dim); }
+  .mobile-nav-primary .mobile-nav-icon {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 30px;
+    border-radius: 11px;
+    background: var(--emphasis-bg);
+    color: var(--emphasis-text);
+    font-size: 17px;
+    box-shadow: 0 5px 14px rgba(27, 42, 74, .2);
+  }
+  .mobile-nav-primary.is-active .mobile-nav-icon { background: var(--teal); }
+  .mobile-nav-badge {
+    position: absolute;
+    top: 2px;
+    inset-inline-start: calc(50% + 7px);
+    display: grid;
+    place-items: center;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    border: 2px solid var(--surface);
+    border-radius: 99px;
+    background: var(--danger);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 800;
+  }
+
+  /* العناصر العائمة لا تغطي المحتوى أو شريط التنقل */
+  .global-back-btn {
+    top: calc(9px + env(safe-area-inset-top)) !important;
+    left: 12px !important;
+    width: 42px;
+    height: 42px;
+    padding: 0 !important;
+    border-radius: 13px !important;
+    font-size: 0 !important;
+    z-index: 950;
+  }
+  .global-back-btn::before { content: "←"; font-size: 20px; }
+  [dir="ltr"] .global-back-btn::before { content: "←"; }
+  .pomodoro-widget {
+    left: 12px !important;
+    right: auto !important;
+    bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 10px) !important;
+    width: min(220px, calc(100vw - 24px)) !important;
+  }
+  .trial-nudge,
+  .with-sidebar .trial-nudge {
+    right: 12px !important;
+    left: 12px !important;
+    bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 10px) !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+  .platform-footer { gap: 10px; padding-bottom: 4px; }
+  .platform-social-links { gap: 7px; }
+  .platform-social-links a { padding: 7px 10px; font-size: 12px; }
+  .platform-cr-link {
+    position: static !important;
+    width: fit-content;
+    max-width: 100%;
+    min-height: 42px;
+    margin: 0 auto;
+    padding: 8px 12px;
+    box-shadow: none;
+  }
+  /* سكربت التوثيق يضيف iframe عائمًا؛ ندمجه في نهاية الصفحة حتى لا يغطي التنقل. */
+  .sbc-seal-frame {
+    position: static !important;
+    display: block !important;
+    width: 121px !important;
+    height: 44px !important;
+    margin: 10px auto calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 10px) !important;
+  }
+
+  /* المودالات تظهر كورقة سفلية مريحة على الجوال */
+  .payment-modal-overlay,
+  .login-required-modal,
+  .handwriting-overlay,
+  .qr-modal {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+  .payment-modal-box,
+  .login-required-box,
+  .handwriting-modal,
+  .qr-modal-box {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: 91dvh !important;
+    margin: 0 !important;
+    padding: 24px 16px calc(20px + env(safe-area-inset-bottom)) !important;
+    border-radius: 24px 24px 0 0 !important;
+    overflow-y: auto;
+  }
+  .trial-card-row { grid-template-columns: 1fr !important; }
+
+  /* تخطيطات المحتوى الثقيلة */
+  .subscription-grid,
+  .plans-grid,
+  .stats-grid,
+  .profile-stats,
+  .school-documents-grid,
+  .admin-metrics-grid,
+  .admin-charts-grid,
+  .madrasati-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .admin-analytics-hero,
+  .school-documents-hero,
+  .school-documents-toolbar,
+  .school-document-upload-actions {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+  .school-documents-layout { grid-template-columns: 1fr !important; }
+  .school-folders-panel { position: static !important; }
+  .school-folders-list { display: flex; overflow-x: auto; padding-bottom: 5px; }
+  .school-folder-row { min-width: 180px; }
+
+  .sl-page,
+  .rl-page { min-width: 0; overflow: hidden; }
+  .sl-toolbar,
+  .rl-toolbar {
+    max-width: 100%;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .sl-scene-wrap,
+  .rl-canvas-wrap { max-width: 100%; min-height: 300px; }
+  .sl-bio-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+
+  .chat-layout,
+  .messages-layout,
+  .classroom-layout,
+  .ai-conversation-layout { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 380px) {
+  :root { --mobile-gutter: 11px; }
+  .card { padding: 18px 13px !important; }
+  .mobile-nav-btn small { font-size: 9.5px; }
+  .mobile-nav-icon { font-size: 18px; }
+  header .badge { max-width: 58vw; }
+  .sl-bio-grid { grid-template-columns: 1fr !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .mobile-nav-backdrop { transition: none !important; }
+}
 </style>
 </head>
 <body class="with-sidebar">
@@ -2026,7 +2464,10 @@
 </script>
 
 <aside class="sidebar" id="sidebar">
-  <div class="sidebar-logo">ذكيّ</div>
+  <div class="sidebar-mobile-head">
+    <div class="sidebar-logo">ذكيّ</div>
+    <button type="button" class="mobile-sidebar-close" id="mobileSidebarCloseBtn" aria-label="إغلاق القائمة">✕</button>
+  </div>
   <nav class="sidebar-nav">
     <button class="sidebar-btn" id="homeBtn"><span class="sidebar-icon">🏠</span><span class="label" data-i18n="nav_home">الرئيسية</span></button>
     <button class="sidebar-btn" id="messagesBtn"><span class="sidebar-icon">💬</span><span class="label" data-i18n="nav_messages">الرسائل</span><span class="unread-badge hidden" id="messagesUnreadBadge">0</span></button>
@@ -2052,6 +2493,24 @@
     <button class="sidebar-btn" id="darkModeToggleBtn"><span class="sidebar-icon" id="darkModeIcon">🌙</span><span class="label" id="darkModeLabel" data-i18n="nav_dark_mode">الوضع الليلي</span></button>
   </div>
 </aside>
+<div class="mobile-nav-backdrop" id="mobileNavBackdrop" aria-hidden="true"></div>
+<nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="التنقل الرئيسي">
+  <button type="button" class="mobile-nav-btn is-active" data-mobile-target="homeBtn">
+    <span class="mobile-nav-icon">🏠</span><small data-i18n="nav_home">الرئيسية</small>
+  </button>
+  <button type="button" class="mobile-nav-btn" data-mobile-target="sidebarLibraryBtn">
+    <span class="mobile-nav-icon">📚</span><small data-i18n="nav_library">مكتبتي</small>
+  </button>
+  <button type="button" class="mobile-nav-btn mobile-nav-primary" data-mobile-target="sidebarAiHelpBtn">
+    <span class="mobile-nav-icon">✦</span><small data-i18n="nav_ai_short">ذكيّ</small>
+  </button>
+  <button type="button" class="mobile-nav-btn" data-mobile-target="messagesBtn">
+    <span class="mobile-nav-icon">💬</span><small data-i18n="nav_messages">الرسائل</small><span class="mobile-nav-badge hidden" id="mobileMessagesUnreadBadge">0</span>
+  </button>
+  <button type="button" class="mobile-nav-btn" id="mobileMoreBtn">
+    <span class="mobile-nav-icon">☰</span><small data-i18n="nav_more">المزيد</small>
+  </button>
+</nav>
 
 <div class="login-required-modal hidden" id="loginRequiredModal">
   <div class="login-required-box">
@@ -4240,6 +4699,8 @@ const I18N = {
     nav_friends: 'الأصدقاء',
     nav_library: 'مكتبتي',
     nav_ai_help: 'مساعد ذكيّ',
+    nav_ai_short: 'ذكيّ',
+    nav_more: 'المزيد',
     nav_settings: 'الإعدادات',
     nav_login: 'تسجيل الدخول',
     nav_logout: 'تسجيل خروج',
@@ -5347,6 +5808,8 @@ const I18N = {
     nav_friends: 'Friends',
     nav_library: 'My Library',
     nav_ai_help: 'Site Assistant',
+    nav_ai_short: 'Zakiy',
+    nav_more: 'More',
     nav_settings: 'Settings',
     nav_login: 'Log In',
     nav_logout: 'Log Out',
@@ -17176,6 +17639,79 @@ document.getElementById('handwritingUseBtn').addEventListener('click', async () 
   updateGlobalBackButton();
   document.getElementById('step-text').scrollIntoView({ behavior: 'smooth' });
 });
+// واجهة الجوال: شريط تنقل سفلي وقائمة كاملة منزلقة، بدون تغيير تجربة الديسكتوب.
+(function setupMobileAppShell() {
+  const media = window.matchMedia('(max-width: 720px)');
+  const sidebar = document.getElementById('sidebar');
+  const moreButton = document.getElementById('mobileMoreBtn');
+  const closeButton = document.getElementById('mobileSidebarCloseBtn');
+  const backdrop = document.getElementById('mobileNavBackdrop');
+  const mobileButtons = Array.from(document.querySelectorAll('.mobile-nav-btn'));
+
+  if (!sidebar || !moreButton || !backdrop) return;
+
+  const closeDrawer = () => {
+    sidebar.classList.remove('mobile-open');
+    document.body.classList.remove('mobile-nav-open');
+    moreButton.classList.remove('is-active');
+    moreButton.setAttribute('aria-expanded', 'false');
+    backdrop.setAttribute('aria-hidden', 'true');
+  };
+
+  const openDrawer = () => {
+    if (!media.matches) return;
+    sidebar.classList.add('mobile-open');
+    document.body.classList.add('mobile-nav-open');
+    moreButton.classList.add('is-active');
+    moreButton.setAttribute('aria-expanded', 'true');
+    backdrop.setAttribute('aria-hidden', 'false');
+    closeButton?.focus({ preventScroll: true });
+  };
+
+  moreButton.setAttribute('aria-expanded', 'false');
+  moreButton.setAttribute('aria-controls', 'sidebar');
+  moreButton.addEventListener('click', () => sidebar.classList.contains('mobile-open') ? closeDrawer() : openDrawer());
+  closeButton?.addEventListener('click', closeDrawer);
+  backdrop.addEventListener('click', closeDrawer);
+
+  document.querySelectorAll('.sidebar-btn').forEach(button => {
+    button.addEventListener('click', () => {
+      if (media.matches) closeDrawer();
+    });
+  });
+
+  document.querySelectorAll('[data-mobile-target]').forEach(button => {
+    button.addEventListener('click', () => {
+      const target = document.getElementById(button.dataset.mobileTarget);
+      if (!target || target.classList.contains('hidden')) return;
+      closeDrawer();
+      target.click();
+      mobileButtons.forEach(item => item.classList.toggle('is-active', item === button));
+    });
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && sidebar.classList.contains('mobile-open')) closeDrawer();
+  });
+
+  const handleMediaChange = () => {
+    if (!media.matches) closeDrawer();
+  };
+  if (media.addEventListener) media.addEventListener('change', handleMediaChange);
+  else media.addListener(handleMediaChange);
+
+  // نفس عدّاد الرسائل في السايد بار يظهر في شريط الجوال كذلك.
+  const sourceBadge = document.getElementById('messagesUnreadBadge');
+  const mobileBadge = document.getElementById('mobileMessagesUnreadBadge');
+  if (sourceBadge && mobileBadge) {
+    const syncBadge = () => {
+      mobileBadge.textContent = sourceBadge.textContent;
+      mobileBadge.classList.toggle('hidden', sourceBadge.classList.contains('hidden') || sourceBadge.textContent.trim() === '0');
+    };
+    new MutationObserver(syncBadge).observe(sourceBadge, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    syncBadge();
+  }
+})();
 </script>
 </body>
 </html>

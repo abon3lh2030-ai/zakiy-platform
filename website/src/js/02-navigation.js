@@ -13,11 +13,11 @@ const TOP_LEVEL_SCREENS = [
   // لوحات نظام إدارة حسابات المدارس - step-force-password-change مو من ضمنها
   // عمدًا (بوابة صلبة، ما تدخل نظام الرجوع/التنقل العادي)
   'step-admin-dashboard', 'step-school-dashboard', 'step-teacher-dashboard', 'step-student-schedule',
-  'step-messages',
+  'step-messages', 'step-password-reset-request', 'step-password-reset-complete',
 ];
 // step-quiz-take زيها زي step-quiz (اختبار الفردي) - ما نبي زر رجوع يظهر
 // وقت اختبار عليه مؤقت شغّال، يقلل احتمال مغادرة غير مقصودة
-const BACK_BUTTON_HIDDEN_ON = ['mode-select', 'login-form', 'signup-form', 'step-quiz', 'step-quiz-take'];
+const BACK_BUTTON_HIDDEN_ON = ['mode-select', 'login-form', 'signup-form', 'step-password-reset-complete', 'step-quiz', 'step-quiz-take'];
 let navHistory = [];
 
 function currentVisibleTopLevelScreens() {
@@ -123,4 +123,3 @@ function goToJoinRoomWithCode(code) {
   document.getElementById('joinRoomCode').value = code.toUpperCase();
   updateGlobalBackButton();
 }
-

@@ -393,13 +393,25 @@ document.getElementById('settingsSaveNameBtn').addEventListener('click', async (
 });
 
 document.getElementById('settingsSavePasswordBtn').addEventListener('click', async () => {
+  const currentPassword = document.getElementById('settingsCurrentPassword').value;
   const pass1 = document.getElementById('settingsNewPassword').value;
   const pass2 = document.getElementById('settingsConfirmPassword').value;
   clearError('settingsPasswordMsg');
+  if (!currentPassword) { showError('settingsPasswordMsg', t('err_current_password_required')); return; }
   if (pass1.length < 6) { showError('settingsPasswordMsg', t('err_password_min')); return; }
   if (pass1 !== pass2) { showError('settingsPasswordMsg', t('err_password_mismatch')); return; }
+  const { data: verifyData, error: verifyError } = await supabaseClient.auth.signInWithPassword({
+    email: currentUserEmail,
+    password: currentPassword,
+  });
+  if (verifyError || !verifyData.session) {
+    showError('settingsPasswordMsg', t('err_current_password_wrong'));
+    return;
+  }
+  currentAccessToken = verifyData.session.access_token;
   const { error } = await supabaseClient.auth.updateUser({ password: pass1 });
   if (error) { showError('settingsPasswordMsg', error.message || t('err_unexpected')); return; }
+  document.getElementById('settingsCurrentPassword').value = '';
   document.getElementById('settingsNewPassword').value = '';
   document.getElementById('settingsConfirmPassword').value = '';
   document.getElementById('settingsPasswordMsg').innerHTML = `<div class="desc">✅ ${t('password_saved')}</div>`;

@@ -29,6 +29,14 @@
   },
   {
     "type": "file",
+    "path": "pages/auth/password-reset-request.html"
+  },
+  {
+    "type": "file",
+    "path": "pages/auth/password-reset-complete.html"
+  },
+  {
+    "type": "file",
     "path": "pages/auth/signup-form.html"
   },
   {

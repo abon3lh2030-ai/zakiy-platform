@@ -63,6 +63,7 @@ document.querySelectorAll('#step-school-dashboard .role-tab').forEach(tabBtn => 
     document.getElementById(`schoolTab-${tabBtn.dataset.tab}`).classList.remove('hidden');
     if (tabBtn.dataset.tab === 'attendance') loadSchoolAttendance();
     if (tabBtn.dataset.tab === 'students') loadSchoolStudents();
+    if (tabBtn.dataset.tab === 'documents') loadSchoolDocuments();
   });
 });
 

@@ -325,12 +325,24 @@
     font-weight: 800;
     color: var(--highlighter);
   }
+  .password-field { position:relative; display:flex; flex:1; min-width:180px; }
+  .password-field > .text-input { width:100%; padding-inline-end:48px !important; }
+  .password-toggle { position:absolute; inset-inline-end:7px; top:50%; transform:translateY(-50%); width:36px; height:36px; display:grid; place-items:center; border:0; border-radius:8px; background:transparent; color:var(--ink-soft); font-size:18px; cursor:pointer; }
+  .password-toggle:hover,.password-toggle:focus-visible { background:var(--paper); color:var(--ink); }
 
   /* ---------- Misc ---------- */
   .hidden { display: none !important; }
   .error-msg {
     color: var(--danger);
     background: var(--danger-soft);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+    margin-top: 14px;
+  }
+  .success-msg {
+    color: var(--teal);
+    background: var(--teal-dim);
     border-radius: 8px;
     padding: 12px 16px;
     font-size: 14px;
@@ -1733,6 +1745,11 @@
     gap: 12px;
   }
 
+  .platform-social-links { display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; }
+  .platform-social-links a { display:inline-flex; align-items:center; gap:7px; padding:8px 12px; border:1px solid var(--line); border-radius:999px; color:var(--ink); background:var(--surface); text-decoration:none; font-size:13px; font-weight:700; transition:transform .15s,border-color .15s,color .15s; }
+  .platform-social-links a:hover,.platform-social-links a:focus-visible { transform:translateY(-2px); border-color:var(--teal); color:var(--teal); outline:none; }
+  .platform-social-links svg { width:20px; height:20px; fill:currentColor; flex:0 0 auto; }
+
   .platform-cr-link {
     position: fixed;
     right: 164px;
@@ -1887,6 +1904,69 @@
   .bulk-selection-toolbar { align-items:stretch; flex-direction:column; }
 }
 @media (max-width:430px) { .admin-metrics-grid { grid-template-columns:1fr; } }
+/* ---------- مجلدات المدرسة المشتركة ---------- */
+.school-documents-hero { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:18px 20px; margin:16px 0; border:1px solid var(--line); border-radius:18px; background:linear-gradient(135deg,rgba(46,91,219,.09),rgba(26,169,135,.08)); }
+.school-documents-hero > div:first-child { display:flex; align-items:center; gap:13px; }
+.school-documents-hero > div:first-child > span { display:grid; place-items:center; width:46px; height:46px; border-radius:14px; background:var(--surface); font-size:23px; box-shadow:0 6px 18px rgba(26,47,86,.08); }
+.school-documents-hero h3,.school-documents-hero p { margin:0; }
+.school-documents-hero h3 { color:var(--ink); font-size:19px; }
+.school-documents-hero p { color:var(--ink-soft); font-size:12px; margin-top:4px; }
+.school-documents-summary { color:var(--ink-soft); font-size:12px; white-space:nowrap; }
+.school-documents-layout { display:grid; grid-template-columns:240px minmax(0,1fr); gap:16px; align-items:start; }
+.school-folders-panel,.school-document-upload-card { border:1px solid var(--line); border-radius:17px; background:var(--surface); }
+.school-folders-panel { padding:12px; position:sticky; top:20px; }
+.school-folder-create { display:grid; grid-template-columns:1fr auto; gap:7px; margin-bottom:12px; }
+.school-folder-create .text-input { min-width:0; padding:9px 10px; }
+.school-folder-create button { padding:8px 11px; }
+.school-folders-list { display:grid; gap:5px; }
+.school-folder-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:5px; align-items:center; border-radius:11px; }
+.school-folder-button { display:flex; align-items:center; gap:8px; width:100%; min-width:0; border:0; border-radius:11px; background:transparent; color:var(--ink-soft); padding:10px; text-align:start; cursor:pointer; font-family:inherit; }
+.school-folder-button span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.school-folder-button small { margin-inline-start:auto; padding:2px 7px; border-radius:999px; background:var(--paper-dim); color:var(--ink-soft); }
+.school-folder-row.active { background:rgba(46,91,219,.1); }
+.school-folder-row.active .school-folder-button { color:#2e5bdb; font-weight:800; }
+.school-folder-menu { display:flex; align-items:center; gap:1px; }
+.school-folder-menu button { border:0; background:transparent; color:var(--ink-soft); cursor:pointer; padding:6px; border-radius:8px; }
+.school-folder-menu button:hover { background:var(--paper-dim); }
+.school-documents-main { min-width:0; }
+.school-document-upload-card { padding:14px; margin-bottom:14px; }
+.school-document-drop { min-height:120px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; border:1.5px dashed rgba(46,91,219,.4); border-radius:14px; background:rgba(46,91,219,.035); color:var(--ink); cursor:pointer; text-align:center; padding:18px; }
+.school-document-drop > span { font-size:28px; }
+.school-document-drop small { color:var(--ink-soft); }
+.school-document-drop input { display:none; }
+.school-document-drop.has-file { border-color:var(--teal); background:var(--teal-dim); }
+.school-document-upload-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:10px; }
+.school-document-upload-actions select { max-width:240px; }
+.school-document-progress { height:7px; margin-top:10px; border-radius:999px; background:var(--paper-dim); overflow:hidden; }
+.school-document-progress div { height:100%; width:0; background:linear-gradient(90deg,#2e5bdb,var(--teal)); transition:width .25s; }
+.school-documents-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:16px 0 10px; }
+.school-documents-toolbar h3 { margin:0; color:var(--ink); font-size:17px; }
+.school-documents-toolbar input { max-width:300px; }
+.school-documents-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.school-document-card { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:12px; padding:13px; border:1px solid var(--line); border-radius:15px; background:var(--surface); }
+.school-document-icon { display:grid; place-items:center; width:42px; height:48px; border-radius:10px; background:var(--paper-dim); font-size:22px; }
+.school-document-info { min-width:0; }
+.school-document-info strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--ink); font-size:14px; }
+.school-document-info small { display:block; color:var(--ink-soft); font-size:11px; margin-top:4px; line-height:1.5; }
+.school-document-actions { display:flex; gap:4px; }
+.school-document-actions button { border:0; background:transparent; border-radius:8px; padding:7px; cursor:pointer; color:var(--ink-soft); }
+.school-document-actions button:hover { background:var(--paper-dim); color:var(--ink); }
+.school-document-actions .danger:hover { color:#b8382b; background:#fff0ed; }
+.school-documents-empty { grid-column:1/-1; padding:38px 18px; border:1px dashed var(--line); border-radius:16px; text-align:center; color:var(--ink-soft); }
+[data-theme="dark"] .school-document-actions .danger:hover { background:#3c2020; color:#ffaaa0; }
+
+@media (max-width:900px) {
+  .school-documents-layout { grid-template-columns:1fr; }
+  .school-folders-panel { position:static; }
+  .school-folders-list { display:flex; overflow-x:auto; padding-bottom:4px; }
+  .school-folder-row { min-width:180px; }
+}
+@media (max-width:620px) {
+  .school-documents-hero,.school-documents-toolbar,.school-document-upload-actions { align-items:stretch; flex-direction:column; }
+  .school-documents-summary { white-space:normal; }
+  .school-document-upload-actions select,.school-documents-toolbar input { max-width:none; width:100%; }
+  .school-documents-grid { grid-template-columns:1fr; }
+}
 </style>
 </head>
 <body class="with-sidebar">
@@ -1979,9 +2059,34 @@
     </div>
     <div id="loginError"></div>
     <div class="auth-switch">
+      <button class="link-btn hidden" id="forgotPasswordBtn" data-i18n="link_forgot_password">نسيت كلمة المرور؟</button>
       <button class="link-btn" id="goToSignupBtn" data-i18n="link_go_signup">🆕 ما عندك حساب؟ أنشئ واحد</button>
       <button class="link-btn" id="guestFromLoginBtn" data-i18n="link_continue_guest">➡️ استمر بدون حساب</button>
     </div>
+  </section>
+
+  <!-- طلب استعادة كلمة المرور — يظهر بعد فشل تسجيل الدخول فقط -->
+  <section class="card hidden auth-card" id="step-password-reset-request">
+    <span class="auth-logo">ذكيّ</span>
+    <h2 data-i18n="password_reset_request_heading">استعادة كلمة المرور</h2>
+    <p class="desc" data-i18n="password_reset_request_desc">اكتب بريد حسابك الشخصي وسنرسل لك رابطًا آمنًا لتعيين كلمة مرور جديدة.</p>
+    <div class="auth-fields"><input type="email" id="passwordResetEmail" class="text-input" autocomplete="email" placeholder="البريد الإلكتروني" data-i18n-ph="ph_email"></div>
+    <div class="auth-actions-stack"><button class="primary" id="passwordResetSendBtn" data-i18n="btn_send_reset_link">إرسال رابط الاستعادة</button></div>
+    <div id="passwordResetRequestMsg"></div>
+    <div class="auth-switch"><button class="link-btn" id="passwordResetBackBtn" data-i18n="link_back_to_login">الرجوع لتسجيل الدخول</button></div>
+  </section>
+
+  <!-- يصل لها المستخدم من رابط Supabase في البريد -->
+  <section class="card hidden auth-card" id="step-password-reset-complete">
+    <span class="auth-logo">ذكيّ</span>
+    <h2 data-i18n="password_reset_complete_heading">اختر كلمة مرور جديدة</h2>
+    <p class="desc" data-i18n="password_reset_complete_desc">اكتب كلمة المرور الجديدة ثم أكدها.</p>
+    <div class="auth-fields">
+      <input type="password" id="passwordResetNew" class="text-input" autocomplete="new-password" placeholder="كلمة مرور جديدة" data-i18n-ph="ph_new_password">
+      <input type="password" id="passwordResetConfirm" class="text-input" autocomplete="new-password" placeholder="أعد كتابتها" data-i18n-ph="ph_confirm_password">
+    </div>
+    <div class="auth-actions-stack"><button class="primary" id="passwordResetCompleteBtn" data-i18n="btn_save_new_password">حفظ كلمة المرور الجديدة</button></div>
+    <div id="passwordResetCompleteMsg"></div>
   </section>
 
   <section class="card hidden auth-card" id="signup-form">
@@ -2154,6 +2259,7 @@
     <div class="role-tabs">
       <button class="role-tab active" data-tab="teachers" data-i18n="tab_teachers">👨‍🏫 المعلمون</button>
       <button class="role-tab" data-tab="students" data-i18n="tab_students">👥 الطلاب</button>
+      <button class="role-tab" data-tab="documents" data-i18n="tab_school_documents">📁 مجلدات المدرسة</button>
       <button class="role-tab" data-tab="classes" data-i18n="tab_classes">🏷️ الفصول والجدول</button>
       <button class="role-tab" data-tab="bulk" data-i18n="tab_bulk_students">➕ إضافة طلاب</button>
       <button class="role-tab" data-tab="attendance" data-i18n="tab_attendance">📋 الحضور</button>
@@ -2231,6 +2337,43 @@
         </table>
       </div>
       <div id="schoolStudentsResult" class="credential-reveal hidden"></div>
+    </div>
+
+    <div id="schoolTab-documents" class="school-tab-panel hidden">
+      <div class="school-documents-hero">
+        <div><span>📁</span><div><h3 data-i18n="school_documents_heading">مجلدات المدرسة</h3><p data-i18n="school_documents_desc">مساحة مشتركة لمدير المدرسة وإدارتها لحفظ المستندات المهمة.</p></div></div>
+        <div class="school-documents-summary" id="schoolDocumentsSummary"></div>
+      </div>
+      <div id="schoolDocumentsError"></div>
+
+      <div class="school-documents-layout">
+        <aside class="school-folders-panel">
+          <div class="school-folder-create">
+            <input type="text" id="schoolFolderNameInput" class="text-input" maxlength="80" placeholder="اسم المجلد" data-i18n-ph="ph_school_folder_name">
+            <button class="primary" id="schoolFolderCreateBtn" data-i18n="btn_create_folder">إنشاء</button>
+          </div>
+          <div id="schoolFoldersList" class="school-folders-list"></div>
+        </aside>
+
+        <div class="school-documents-main">
+          <div class="school-document-upload-card">
+            <label class="school-document-drop" for="schoolDocumentFileInput">
+              <span>☁️</span><strong data-i18n="school_document_upload_title">ارفع مستندًا للمدرسة</strong><small data-i18n="school_document_upload_hint">PDF أو Word أو Excel أو PowerPoint أو صورة أو ZIP — حتى 20 MB</small>
+              <input type="file" id="schoolDocumentFileInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.png,.jpg,.jpeg,.webp,.zip">
+            </label>
+            <div class="school-document-upload-actions">
+              <select id="schoolDocumentFolderSelect" class="text-input"></select>
+              <button class="primary" id="schoolDocumentUploadBtn" data-i18n="btn_upload_school_document">رفع المستند</button>
+            </div>
+            <div class="school-document-progress hidden" id="schoolDocumentProgress"><div></div></div>
+          </div>
+          <div class="school-documents-toolbar">
+            <h3 id="schoolDocumentsCurrentFolder"></h3>
+            <input type="search" id="schoolDocumentsSearch" class="text-input" placeholder="ابحث في المستندات" data-i18n-ph="ph_search_school_documents">
+          </div>
+          <div id="schoolDocumentsList" class="school-documents-grid"></div>
+        </div>
+      </div>
     </div>
 
     <div id="schoolTab-classes" class="school-tab-panel hidden">
@@ -3484,6 +3627,7 @@
 
       <h3 class="sub-heading" style="margin-top:22px;" data-i18n="settings_password_heading">🔒 كلمة المرور</h3>
       <div class="actions">
+        <input type="password" id="settingsCurrentPassword" class="text-input" autocomplete="current-password" placeholder="كلمة المرور الحالية" data-i18n-ph="ph_current_password">
         <input type="password" id="settingsNewPassword" class="text-input" placeholder="كلمة مرور جديدة" data-i18n-ph="ph_new_password">
         <input type="password" id="settingsConfirmPassword" class="text-input" placeholder="أعد كتابتها" data-i18n-ph="ph_confirm_password">
         <button class="primary" id="settingsSavePasswordBtn" data-i18n="btn_save">حفظ</button>
@@ -3890,6 +4034,16 @@
 
   <footer class="platform-footer">
     <div data-i18n="footer_text">ذكيّ — منصة دراسية بمساعدة الذكاء الاصطناعي</div>
+    <nav class="platform-social-links" aria-label="حسابات ذكيّ في التواصل الاجتماعي">
+      <a href="https://www.tiktok.com/@zakiy.tech" target="_blank" rel="noopener noreferrer" aria-label="ذكيّ على تيك توك">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.7 2c.3 2.7 1.8 4.3 4.3 4.5v3.4c-1.6 0-3.1-.5-4.3-1.4v7.2a6.3 6.3 0 1 1-5.5-6.2v3.5a2.9 2.9 0 1 0 2.1 2.8V2h3.4Z"/></svg>
+        <span data-i18n="social_tiktok">تيك توك</span>
+      </a>
+      <a href="https://www.instagram.com/zakiy.platform/" target="_blank" rel="noopener noreferrer" aria-label="ذكيّ على إنستقرام">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M7.2 2h9.6A5.2 5.2 0 0 1 22 7.2v9.6a5.2 5.2 0 0 1-5.2 5.2H7.2A5.2 5.2 0 0 1 2 16.8V7.2A5.2 5.2 0 0 1 7.2 2Zm0 1.8a3.4 3.4 0 0 0-3.4 3.4v9.6a3.4 3.4 0 0 0 3.4 3.4h9.6a3.4 3.4 0 0 0 3.4-3.4V7.2a3.4 3.4 0 0 0-3.4-3.4H7.2Zm10.9 1.3a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6ZM12 7.1a4.9 4.9 0 1 1 0 9.8 4.9 4.9 0 0 1 0-9.8Zm0 1.8a3.1 3.1 0 1 0 0 6.2 3.1 3.1 0 0 0 0-6.2Z"/></svg>
+        <span data-i18n="social_instagram">إنستقرام</span>
+      </a>
+    </nav>
     <a class="platform-cr-link" href="/assets/documents/commercial-registration-certificate.pdf" target="_blank" rel="noopener noreferrer" aria-label="عرض شهادة السجل التجاري رقم 7055047331">
       <span data-i18n="commercial_registration_label">السجل التجاري</span>
       <strong class="platform-cr-number" dir="ltr">7055047331</strong>
@@ -4033,7 +4187,20 @@ const I18N = {
     login_desc: 'أدخل بياناتك للمتابعة، أو سوّي حساب يحفظ تقدمك',
     ph_email: 'الإيميل',
     ph_password: 'كلمة المرور',
+    show_password: 'إظهار كلمة المرور',
+    hide_password: 'إخفاء كلمة المرور',
     btn_enter: 'دخول',
+    link_forgot_password: 'نسيت كلمة المرور؟',
+    password_reset_request_heading: 'استعادة كلمة المرور',
+    password_reset_request_desc: 'اكتب بريد حسابك الشخصي وسنرسل لك رابطًا آمنًا لتعيين كلمة مرور جديدة.',
+    btn_send_reset_link: 'إرسال رابط الاستعادة',
+    link_back_to_login: 'الرجوع لتسجيل الدخول',
+    password_reset_complete_heading: 'اختر كلمة مرور جديدة',
+    password_reset_complete_desc: 'اكتب كلمة المرور الجديدة ثم أكدها.',
+    btn_save_new_password: 'حفظ كلمة المرور الجديدة',
+    password_reset_email_sent: 'إذا كان البريد مرتبطًا بحساب شخصي فسيصلك رابط الاستعادة. افحص الوارد والبريد غير المرغوب.',
+    password_reset_school_blocked: 'حسابات المدارس لا يمكنها الاستعادة عبر البريد. تواصل مع مدير المدرسة أو إدارتها لإصدار كلمة مرور جديدة.',
+    password_reset_saved: 'تم حفظ كلمة المرور الجديدة. يمكنك تسجيل الدخول الآن.',
     link_go_signup: '🆕 ما عندك حساب؟ أنشئ واحد',
     link_continue_guest: '➡️ استمر بدون حساب',
     signup_title: 'إنشاء حساب جديد',
@@ -4090,6 +4257,7 @@ const I18N = {
     btn_save: 'حفظ',
     btn_edit: '✏️ تعديل', btn_cancel: 'إلغاء',
     settings_password_heading: '🔒 كلمة المرور',
+    ph_current_password: 'كلمة المرور الحالية',
     ph_new_password: 'كلمة مرور جديدة',
     ph_confirm_password: 'أعد كتابتها',
     settings_phone_heading: '📱 رقم الجوال',
@@ -4181,6 +4349,8 @@ const I18N = {
     btn_start_quiz_all: '🚀 ابدأ الاختبار للجميع',
     footer_text: 'ذكيّ — منصة دراسية بمساعدة الذكاء الاصطناعي',
     commercial_registration_label: 'السجل التجاري',
+    social_tiktok: 'تيك توك',
+    social_instagram: 'إنستقرام',
     pomodoro_title: '🍅 بومودورو',
     pomodoro_phase_focus: '🧠 مذاكرة',
     pomodoro_phase_break: '☕ راحة',
@@ -4582,7 +4752,29 @@ const I18N = {
     err_invalid_number: 'رقم غير صحيح',
     admin_over_limit_badge: 'تجاوزت الحد - عليها مهلة ٢٤ ساعة',
     admin_over_limit_expired_badge: 'انتهت مهلة الـ٢٤ ساعة',
-    tab_teachers: '👨‍🏫 المعلمون', tab_classes: '🏷️ الفصول والجدول', tab_bulk_students: '➕ إضافة طلاب', tab_attendance: '📋 الحضور',
+    tab_teachers: '👨‍🏫 المعلمون', tab_school_documents: '📁 مجلدات المدرسة', tab_classes: '🏷️ الفصول والجدول', tab_bulk_students: '➕ إضافة طلاب', tab_attendance: '📋 الحضور',
+    school_documents_heading: 'مجلدات المدرسة',
+    school_documents_desc: 'مساحة مشتركة لمدير المدرسة وإدارتها لحفظ المستندات المهمة.',
+    school_documents_summary: '{files} مستند · {folders} مجلد · {size}',
+    school_documents_all: 'كل المستندات',
+    school_documents_unfiled: 'بدون مجلد',
+    school_documents_empty: 'ما فيه مستندات هنا بعد',
+    school_documents_no_search_results: 'ما لقينا مستندًا يطابق بحثك',
+    ph_school_folder_name: 'اسم المجلد',
+    btn_create_folder: 'إنشاء',
+    prompt_rename_school_folder: 'اكتب الاسم الجديد للمجلد:',
+    confirm_delete_school_folder: 'تحذف هذا المجلد؟ المستندات داخله ما تنحذف وراح تنتقل إلى «بدون مجلد».',
+    school_document_upload_title: 'ارفع مستندًا للمدرسة',
+    school_document_upload_hint: 'PDF أو Word أو Excel أو PowerPoint أو صورة أو ZIP — حتى 20 MB',
+    btn_upload_school_document: 'رفع المستند',
+    school_document_uploading: 'جاري الرفع…',
+    ph_search_school_documents: 'ابحث في المستندات',
+    school_document_uploaded_by: 'رفعه {name}',
+    btn_download: 'تنزيل',
+    confirm_delete_school_document: 'تحذف هذا المستند نهائيًا؟ ما راح يقدر باقي الإدارة يفتحونه بعدها.',
+    err_school_folder_name_required: 'اكتب اسم المجلد أول',
+    err_pick_school_document: 'اختر مستندًا أول',
+    err_school_document_too_large: 'حجم المستند أكبر من 20 ميجابايت',
     ph_teacher_name: 'اسم المعلم', ph_teacher_email: 'إيميل المعلم', btn_add_teacher: 'إضافة معلم',
     school_no_teachers: 'ما فيه معلمين مضافين بعد',
     school_teacher_created_msg: '✅ تم إضافة المعلم "{name}" - بيانات دخوله (تظهر مرة وحدة بس، احفظها الحين):',
@@ -4707,6 +4899,9 @@ const I18N = {
     err_unexpected_retry: 'صار خطأ غير متوقع، جرب مرة ثانية',
     page_title: 'ذكيّ — منصة المذاكرة الذكية',
     err_password_mismatch: 'كلمتا المرور غير متطابقتين',
+    err_valid_email_required: 'اكتب بريدًا إلكترونيًا صحيحًا',
+    err_current_password_required: 'اكتب كلمة المرور الحالية أولًا',
+    err_current_password_wrong: 'كلمة المرور الحالية غير صحيحة',
     name_saved: 'تم حفظ الاسم',
     password_saved: 'تم تغيير كلمة المرور',
     phone_saved: 'تم حفظ رقم الجوال',
@@ -5076,7 +5271,20 @@ const I18N = {
     login_desc: 'Enter your details to continue, or make an account to save your progress',
     ph_email: 'Email',
     ph_password: 'Password',
+    show_password: 'Show password',
+    hide_password: 'Hide password',
     btn_enter: 'Log In',
+    link_forgot_password: 'Forgot password?',
+    password_reset_request_heading: 'Reset your password',
+    password_reset_request_desc: 'Enter your personal account email and we will send you a secure reset link.',
+    btn_send_reset_link: 'Send reset link',
+    link_back_to_login: 'Back to login',
+    password_reset_complete_heading: 'Choose a new password',
+    password_reset_complete_desc: 'Enter the new password, then confirm it.',
+    btn_save_new_password: 'Save new password',
+    password_reset_email_sent: 'If this email belongs to a personal account, a reset link is on its way. Check your inbox and spam folder.',
+    password_reset_school_blocked: 'School accounts cannot reset passwords by email. Contact the school manager or administration for a new password.',
+    password_reset_saved: 'Your new password was saved. You can log in now.',
     link_go_signup: "🆕 Don't have an account? Create one",
     link_continue_guest: '➡️ Continue without an account',
     signup_title: 'Create a New Account',
@@ -5133,6 +5341,7 @@ const I18N = {
     btn_save: 'Save',
     btn_edit: '✏️ Edit', btn_cancel: 'Cancel',
     settings_password_heading: '🔒 Password',
+    ph_current_password: 'Current password',
     ph_new_password: 'New password',
     ph_confirm_password: 'Confirm it',
     settings_phone_heading: '📱 Phone Number',
@@ -5224,6 +5433,8 @@ const I18N = {
     btn_start_quiz_all: '🚀 Start Quiz for Everyone',
     footer_text: 'Zakiy — an AI-powered study platform',
     commercial_registration_label: 'Commercial Registration',
+    social_tiktok: 'TikTok',
+    social_instagram: 'Instagram',
     pomodoro_title: '🍅 Pomodoro',
     pomodoro_phase_focus: '🧠 Focus',
     pomodoro_phase_break: '☕ Break',
@@ -5625,7 +5836,29 @@ const I18N = {
     err_invalid_number: 'Invalid number',
     admin_over_limit_badge: 'Over limit - 24h grace period',
     admin_over_limit_expired_badge: 'Grace period expired',
-    tab_teachers: '👨‍🏫 Teachers', tab_classes: '🏷️ Classes & Schedule', tab_bulk_students: '➕ Add Students', tab_attendance: '📋 Attendance',
+    tab_teachers: '👨‍🏫 Teachers', tab_school_documents: '📁 School Files', tab_classes: '🏷️ Classes & Schedule', tab_bulk_students: '➕ Add Students', tab_attendance: '📋 Attendance',
+    school_documents_heading: 'School Folders',
+    school_documents_desc: 'A shared space for the school manager and administration to keep important documents.',
+    school_documents_summary: '{files} documents · {folders} folders · {size}',
+    school_documents_all: 'All documents',
+    school_documents_unfiled: 'No folder',
+    school_documents_empty: 'No documents here yet',
+    school_documents_no_search_results: 'No document matches your search',
+    ph_school_folder_name: 'Folder name',
+    btn_create_folder: 'Create',
+    prompt_rename_school_folder: 'Enter the new folder name:',
+    confirm_delete_school_folder: 'Delete this folder? Its documents will stay and move to “No folder”.',
+    school_document_upload_title: 'Upload a school document',
+    school_document_upload_hint: 'PDF, Word, Excel, PowerPoint, image, or ZIP — up to 20 MB',
+    btn_upload_school_document: 'Upload document',
+    school_document_uploading: 'Uploading…',
+    ph_search_school_documents: 'Search documents',
+    school_document_uploaded_by: 'Uploaded by {name}',
+    btn_download: 'Download',
+    confirm_delete_school_document: 'Permanently delete this document? The rest of the administration will no longer be able to open it.',
+    err_school_folder_name_required: 'Enter a folder name first',
+    err_pick_school_document: 'Choose a document first',
+    err_school_document_too_large: 'The document is larger than 20 MB',
     ph_teacher_name: "Teacher's name", ph_teacher_email: "Teacher's email", btn_add_teacher: 'Add Teacher',
     school_no_teachers: 'No teachers added yet',
     school_teacher_created_msg: '✅ Teacher "{name}" added - their login (shown once, save it now):',
@@ -5750,6 +5983,9 @@ const I18N = {
     err_unexpected_retry: 'An unexpected error occurred, try again',
     page_title: 'Zakiy — Smart Study Platform',
     err_password_mismatch: "The passwords don't match",
+    err_valid_email_required: 'Enter a valid email address',
+    err_current_password_required: 'Enter your current password first',
+    err_current_password_wrong: 'Your current password is incorrect',
     name_saved: 'Name saved',
     password_saved: 'Password changed',
     phone_saved: 'Phone number saved',
@@ -6122,8 +6358,46 @@ function applyLanguage() {
   document.querySelectorAll('[data-i18n]').forEach(el => { el.innerHTML = t(el.getAttribute('data-i18n')); });
   document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.getAttribute('data-i18n-ph')); });
   document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.getAttribute('data-i18n-title')); });
+  if (typeof updatePasswordToggleLabels === 'function') updatePasswordToggleLabels();
   updateLangButtonsActiveState();
   if (typeof updateDarkModeButtonLabel === 'function') updateDarkModeButtonLabel();
+}
+
+function updatePasswordToggleLabels() {
+  document.querySelectorAll('.password-toggle').forEach(button => {
+    const input = document.getElementById(button.dataset.passwordTarget);
+    if (!input) return;
+    const label = t(input.type === 'text' ? 'hide_password' : 'show_password');
+    button.setAttribute('aria-label', label);
+    button.title = label;
+    button.setAttribute('aria-pressed', input.type === 'text' ? 'true' : 'false');
+  });
+}
+
+function setupPasswordToggles() {
+  document.querySelectorAll('input[type="password"]').forEach(input => {
+    if (!input.id || input.parentElement?.classList.contains('password-field')) return;
+    const wrapper = document.createElement('span');
+    wrapper.className = 'password-field';
+    input.parentNode.insertBefore(wrapper, input);
+    wrapper.appendChild(input);
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'password-toggle';
+    button.dataset.passwordTarget = input.id;
+    button.textContent = '👁';
+    button.addEventListener('click', () => {
+      const selectionStart = input.selectionStart;
+      const selectionEnd = input.selectionEnd;
+      input.type = input.type === 'password' ? 'text' : 'password';
+      button.textContent = input.type === 'text' ? '🙈' : '👁';
+      updatePasswordToggleLabels();
+      input.focus();
+      if (selectionStart !== null && selectionEnd !== null) input.setSelectionRange(selectionStart, selectionEnd);
+    });
+    wrapper.appendChild(button);
+  });
+  updatePasswordToggleLabels();
 }
 
 document.querySelectorAll('.lang-choice-btn').forEach(btn => {
@@ -6137,6 +6411,7 @@ document.querySelectorAll('.lang-choice-btn').forEach(btn => {
   });
 });
 
+setupPasswordToggles();
 applyLanguage();
 
 function show(id) {
@@ -6162,11 +6437,11 @@ const TOP_LEVEL_SCREENS = [
   // لوحات نظام إدارة حسابات المدارس - step-force-password-change مو من ضمنها
   // عمدًا (بوابة صلبة، ما تدخل نظام الرجوع/التنقل العادي)
   'step-admin-dashboard', 'step-school-dashboard', 'step-teacher-dashboard', 'step-student-schedule',
-  'step-messages',
+  'step-messages', 'step-password-reset-request', 'step-password-reset-complete',
 ];
 // step-quiz-take زيها زي step-quiz (اختبار الفردي) - ما نبي زر رجوع يظهر
 // وقت اختبار عليه مؤقت شغّال، يقلل احتمال مغادرة غير مقصودة
-const BACK_BUTTON_HIDDEN_ON = ['mode-select', 'login-form', 'signup-form', 'step-quiz', 'step-quiz-take'];
+const BACK_BUTTON_HIDDEN_ON = ['mode-select', 'login-form', 'signup-form', 'step-password-reset-complete', 'step-quiz', 'step-quiz-take'];
 let navHistory = [];
 
 function currentVisibleTopLevelScreens() {
@@ -6272,7 +6547,6 @@ function goToJoinRoomWithCode(code) {
   document.getElementById('joinRoomCode').value = code.toUpperCase();
   updateGlobalBackButton();
 }
-
 // ---------- تعبئة تلقائية لحقلي الدخول من رابط QR "الحساب" (?login_user=&login_pass=)
 // المولّد من تصدير QR بلوحة المدرسة - نعبّي الحقلين بس (بدون تسجيل دخول
 // تلقائي)، الطالب يضغط "دخول" بنفسه بعد ما يشوف بياناته معبّاة جاهزة ----------
@@ -6289,6 +6563,7 @@ function goToJoinRoomWithCode(code) {
 // ---------- الحساب (اختياري) ----------
 function proceedToApp() {
   hide('login-form'); hide('signup-form'); hide('step-force-password-change');
+  hide('step-password-reset-request'); hide('step-password-reset-complete');
   show('sidebar');
   show('mode-select');
   navHistory = [];
@@ -6314,6 +6589,20 @@ function proceedToApp() {
       alert(t('addfriend_guest_alert'));
     }
   }
+}
+
+let passwordRecoveryActive = location.hash.includes('type=recovery');
+
+function showPasswordRecoveryForm(session) {
+  passwordRecoveryActive = true;
+  currentAccessToken = session.access_token;
+  currentUserEmail = session.user.email || '';
+  currentUserId = session.user.id;
+  TOP_LEVEL_SCREENS.forEach(hide);
+  hide('login-form'); hide('signup-form'); hide('step-force-password-change'); hide('sidebar');
+  navHistory = [];
+  show('step-password-reset-complete');
+  updateGlobalBackButton();
 }
 
 function refreshAccountUI() {
@@ -6502,8 +6791,13 @@ function onAuthSuccess(session) {
 // حدث الجلسة الجديدة تلقائيًا برضو! لو صاحب الحساب فعليًا تغيّر (user id
 // مختلف) نعيد تحميل الصفحة كاملة بدل ما نكمل بحالة قديمة (دور/توكن ما
 // يطابقون الحساب الفعلي الحين، يسبب أخطاء "ما عندك صلاحية" مربكة)
-supabaseClient.auth.onAuthStateChange((_event, session) => {
+supabaseClient.auth.onAuthStateChange((event, session) => {
+  if (event === 'PASSWORD_RECOVERY' && session) {
+    showPasswordRecoveryForm(session);
+    return;
+  }
   if (!session) return;
+  if (passwordRecoveryActive) return;
   if (currentUserId && session.user.id !== currentUserId) {
     location.reload();
     return;
@@ -6512,7 +6806,7 @@ supabaseClient.auth.onAuthStateChange((_event, session) => {
 });
 
 supabaseClient.auth.getSession().then(({ data }) => {
-  if (data.session) onAuthSuccess(data.session);
+  if (data.session && !passwordRecoveryActive) onAuthSuccess(data.session);
 });
 
 document.getElementById('goToSignupBtn').addEventListener('click', () => {
@@ -6520,6 +6814,70 @@ document.getElementById('goToSignupBtn').addEventListener('click', () => {
 });
 document.getElementById('goToLoginBtn').addEventListener('click', () => {
   hide('signup-form'); show('login-form');
+});
+document.getElementById('forgotPasswordBtn').addEventListener('click', () => {
+  clearError('passwordResetRequestMsg');
+  const identifier = document.getElementById('loginEmail').value.trim();
+  document.getElementById('passwordResetEmail').value = identifier.includes('@') ? identifier : '';
+  hide('login-form'); hide('signup-form');
+  show('step-password-reset-request');
+});
+document.getElementById('passwordResetBackBtn').addEventListener('click', () => {
+  hide('step-password-reset-request');
+  show('login-form');
+});
+document.getElementById('passwordResetSendBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('passwordResetSendBtn');
+  const email = document.getElementById('passwordResetEmail').value.trim().toLowerCase();
+  clearError('passwordResetRequestMsg');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showError('passwordResetRequestMsg', t('err_valid_email_required'));
+    return;
+  }
+  setLoading(btn, true, t('btn_send_reset_link'));
+  try {
+    const eligibilityRes = await fetch(`${API_BASE}/api/auth/password-reset/eligibility`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const eligibility = await eligibilityRes.json().catch(() => ({}));
+    if (!eligibilityRes.ok) {
+      showError('passwordResetRequestMsg', eligibility.institutional
+        ? t('password_reset_school_blocked')
+        : (eligibility.error || t('err_unexpected')));
+      return;
+    }
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+      redirectTo: `${location.origin}${location.pathname}`,
+    });
+    if (error) throw error;
+    document.getElementById('passwordResetRequestMsg').innerHTML = `<div class="success-msg">✅ ${t('password_reset_email_sent')}</div>`;
+  } catch (error) {
+    showError('passwordResetRequestMsg', error.message || t('err_unexpected'));
+  } finally {
+    setLoading(btn, false, t('btn_send_reset_link'));
+  }
+});
+document.getElementById('passwordResetCompleteBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('passwordResetCompleteBtn');
+  const pass1 = document.getElementById('passwordResetNew').value;
+  const pass2 = document.getElementById('passwordResetConfirm').value;
+  clearError('passwordResetCompleteMsg');
+  if (pass1.length < 6) { showError('passwordResetCompleteMsg', t('err_password_min')); return; }
+  if (pass1 !== pass2) { showError('passwordResetCompleteMsg', t('err_password_mismatch')); return; }
+  setLoading(btn, true, t('btn_save_new_password'));
+  const { error } = await supabaseClient.auth.updateUser({ password: pass1 });
+  if (error) {
+    showError('passwordResetCompleteMsg', error.message || t('err_unexpected'));
+    setLoading(btn, false, t('btn_save_new_password'));
+    return;
+  }
+  document.getElementById('passwordResetCompleteMsg').innerHTML = `<div class="success-msg">✅ ${t('password_reset_saved')}</div>`;
+  history.replaceState(null, '', location.pathname);
+  await supabaseClient.auth.signOut();
+  passwordRecoveryActive = false;
+  setTimeout(() => location.reload(), 900);
 });
 document.getElementById('guestFromLoginBtn').addEventListener('click', proceedToApp);
 document.getElementById('guestFromSignupBtn').addEventListener('click', proceedToApp);
@@ -6542,7 +6900,11 @@ document.getElementById('loginSubmitBtn').addEventListener('click', async () => 
         body: JSON.stringify({ identifier }),
       });
       const resolved = await res.json();
-      if (!res.ok || !resolved.email) { showError('loginError', t('err_wrong_credentials')); return; }
+      if (!res.ok || !resolved.email) {
+        showError('loginError', t('err_wrong_credentials'));
+        show('forgotPasswordBtn');
+        return;
+      }
       email = resolved.email;
     } catch {
       showError('loginError', t('err_unexpected')); return;
@@ -6550,7 +6912,11 @@ document.getElementById('loginSubmitBtn').addEventListener('click', async () => 
   }
 
   const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-  if (error) { showError('loginError', t('err_wrong_credentials')); return; }
+  if (error) {
+    showError('loginError', t('err_wrong_credentials'));
+    show('forgotPasswordBtn');
+    return;
+  }
   onAuthSuccess(data.session);
 });
 
@@ -7660,13 +8026,25 @@ document.getElementById('settingsSaveNameBtn').addEventListener('click', async (
 });
 
 document.getElementById('settingsSavePasswordBtn').addEventListener('click', async () => {
+  const currentPassword = document.getElementById('settingsCurrentPassword').value;
   const pass1 = document.getElementById('settingsNewPassword').value;
   const pass2 = document.getElementById('settingsConfirmPassword').value;
   clearError('settingsPasswordMsg');
+  if (!currentPassword) { showError('settingsPasswordMsg', t('err_current_password_required')); return; }
   if (pass1.length < 6) { showError('settingsPasswordMsg', t('err_password_min')); return; }
   if (pass1 !== pass2) { showError('settingsPasswordMsg', t('err_password_mismatch')); return; }
+  const { data: verifyData, error: verifyError } = await supabaseClient.auth.signInWithPassword({
+    email: currentUserEmail,
+    password: currentPassword,
+  });
+  if (verifyError || !verifyData.session) {
+    showError('settingsPasswordMsg', t('err_current_password_wrong'));
+    return;
+  }
+  currentAccessToken = verifyData.session.access_token;
   const { error } = await supabaseClient.auth.updateUser({ password: pass1 });
   if (error) { showError('settingsPasswordMsg', error.message || t('err_unexpected')); return; }
+  document.getElementById('settingsCurrentPassword').value = '';
   document.getElementById('settingsNewPassword').value = '';
   document.getElementById('settingsConfirmPassword').value = '';
   document.getElementById('settingsPasswordMsg').innerHTML = `<div class="desc">✅ ${t('password_saved')}</div>`;
@@ -10452,6 +10830,7 @@ document.querySelectorAll('#step-school-dashboard .role-tab').forEach(tabBtn => 
     document.getElementById(`schoolTab-${tabBtn.dataset.tab}`).classList.remove('hidden');
     if (tabBtn.dataset.tab === 'attendance') loadSchoolAttendance();
     if (tabBtn.dataset.tab === 'students') loadSchoolStudents();
+    if (tabBtn.dataset.tab === 'documents') loadSchoolDocuments();
   });
 });
 
@@ -16346,6 +16725,207 @@ function loadScienceLabScreen() {
     setTimeout(slOnSceneResize, 0);
   }
 }
+// ---------- مجلدات ومستندات المدرسة المشتركة ----------
+const schoolDocumentsState = { folders: [], documents: [], activeFolder: 'all', query: '' };
+
+function schoolDocumentFormatBytes(bytes) {
+  const value = Number(bytes || 0);
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 ** 2) return `${(value / 1024).toFixed(1)} KB`;
+  return `${(value / 1024 ** 2).toFixed(1)} MB`;
+}
+
+function schoolDocumentIcon(name) {
+  const extension = String(name || '').split('.').pop().toLowerCase();
+  if (extension === 'pdf') return '📕';
+  if (['doc', 'docx', 'txt'].includes(extension)) return '📘';
+  if (['xls', 'xlsx', 'csv'].includes(extension)) return '📊';
+  if (['ppt', 'pptx'].includes(extension)) return '📙';
+  if (['png', 'jpg', 'jpeg', 'webp'].includes(extension)) return '🖼️';
+  if (extension === 'zip') return '🗜️';
+  return '📄';
+}
+
+function schoolDocumentFolderName(folderId) {
+  if (!folderId) return t('school_documents_unfiled');
+  return schoolDocumentsState.folders.find(folder => folder.id === folderId)?.name || t('school_documents_unfiled');
+}
+
+function renderSchoolDocumentFolders() {
+  const list = document.getElementById('schoolFoldersList');
+  const unfiledCount = schoolDocumentsState.documents.filter(document => !document.folder_id).length;
+  const rows = [
+    { id: 'all', name: t('school_documents_all'), icon: '🗂️', count: schoolDocumentsState.documents.length, protected: true },
+    { id: 'unfiled', name: t('school_documents_unfiled'), icon: '📄', count: unfiledCount, protected: true },
+    ...schoolDocumentsState.folders.map(folder => ({ ...folder, icon: '📁', count: folder.documents_count || 0 })),
+  ];
+  list.innerHTML = rows.map(folder => `
+    <div class="school-folder-row ${schoolDocumentsState.activeFolder === folder.id ? 'active' : ''}">
+      <button class="school-folder-button" data-school-folder="${folder.id}"><b>${folder.icon}</b><span>${escapeHtml(folder.name)}</span><small>${folder.count}</small></button>
+      ${folder.protected ? '' : `<div class="school-folder-menu"><button title="${t('btn_rename')}" data-rename-school-folder="${folder.id}">✏️</button><button title="${t('btn_delete')}" data-delete-school-folder="${folder.id}">🗑️</button></div>`}
+    </div>`).join('');
+
+  list.querySelectorAll('[data-school-folder]').forEach(button => button.addEventListener('click', () => {
+    schoolDocumentsState.activeFolder = button.dataset.schoolFolder;
+    renderSchoolDocumentFolders();
+    renderSchoolDocuments();
+  }));
+  list.querySelectorAll('[data-rename-school-folder]').forEach(button => button.addEventListener('click', async () => {
+    const folder = schoolDocumentsState.folders.find(item => item.id === button.dataset.renameSchoolFolder);
+    const name = prompt(t('prompt_rename_school_folder'), folder?.name || '');
+    if (!name?.trim()) return;
+    try {
+      await apiCall('PATCH', `/api/school/document-folders/${button.dataset.renameSchoolFolder}`, { name: name.trim() });
+      await loadSchoolDocuments();
+    } catch (error) { showError('schoolDocumentsError', error.message); }
+  }));
+  list.querySelectorAll('[data-delete-school-folder]').forEach(button => button.addEventListener('click', async () => {
+    if (!confirm(t('confirm_delete_school_folder'))) return;
+    try {
+      await apiCall('DELETE', `/api/school/document-folders/${button.dataset.deleteSchoolFolder}`);
+      if (schoolDocumentsState.activeFolder === button.dataset.deleteSchoolFolder) schoolDocumentsState.activeFolder = 'unfiled';
+      await loadSchoolDocuments();
+    } catch (error) { showError('schoolDocumentsError', error.message); }
+  }));
+
+  const select = document.getElementById('schoolDocumentFolderSelect');
+  const previous = select.value;
+  select.innerHTML = `<option value="">${t('school_documents_unfiled')}</option>${schoolDocumentsState.folders.map(folder => `<option value="${folder.id}">${escapeHtml(folder.name)}</option>`).join('')}`;
+  if ([...select.options].some(option => option.value === previous)) select.value = previous;
+  else if (schoolDocumentsState.activeFolder !== 'all' && schoolDocumentsState.activeFolder !== 'unfiled') select.value = schoolDocumentsState.activeFolder;
+}
+
+function renderSchoolDocuments() {
+  const list = document.getElementById('schoolDocumentsList');
+  const query = schoolDocumentsState.query.trim().toLocaleLowerCase(currentLang === 'ar' ? 'ar' : 'en');
+  const filtered = schoolDocumentsState.documents.filter(document => {
+    const folderMatches = schoolDocumentsState.activeFolder === 'all'
+      || (schoolDocumentsState.activeFolder === 'unfiled' && !document.folder_id)
+      || document.folder_id === schoolDocumentsState.activeFolder;
+    const searchMatches = !query || String(document.file_name || '').toLocaleLowerCase().includes(query);
+    return folderMatches && searchMatches;
+  });
+  const heading = schoolDocumentsState.activeFolder === 'all'
+    ? t('school_documents_all')
+    : schoolDocumentsState.activeFolder === 'unfiled'
+      ? t('school_documents_unfiled')
+      : schoolDocumentFolderName(schoolDocumentsState.activeFolder);
+  document.getElementById('schoolDocumentsCurrentFolder').textContent = heading;
+  list.innerHTML = filtered.length ? filtered.map(document => `
+    <article class="school-document-card">
+      <span class="school-document-icon">${schoolDocumentIcon(document.file_name)}</span>
+      <div class="school-document-info"><strong title="${escapeHtml(document.file_name)}">${escapeHtml(document.file_name)}</strong><small>${escapeHtml(schoolDocumentFolderName(document.folder_id))} · ${schoolDocumentFormatBytes(document.size_bytes)}<br>${t('school_document_uploaded_by', { name: escapeHtml(document.uploaded_by_name || '—') })} · ${new Date(document.created_at).toLocaleString(currentLang === 'ar' ? 'ar-SA' : 'en-US')}</small></div>
+      <div class="school-document-actions"><button title="${t('btn_download')}" data-download-school-document="${document.id}">⬇️</button><button class="danger" title="${t('btn_delete')}" data-delete-school-document="${document.id}">🗑️</button></div>
+    </article>`).join('') : `<div class="school-documents-empty"><div style="font-size:34px;margin-bottom:8px;">📭</div><strong>${query ? t('school_documents_no_search_results') : t('school_documents_empty')}</strong></div>`;
+
+  list.querySelectorAll('[data-download-school-document]').forEach(button => button.addEventListener('click', async () => {
+    try {
+      const data = await apiCall('GET', `/api/school/documents/${button.dataset.downloadSchoolDocument}/download`);
+      const anchor = document.createElement('a');
+      anchor.href = data.url;
+      anchor.target = '_blank';
+      anchor.rel = 'noopener';
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+    } catch (error) { showError('schoolDocumentsError', error.message); }
+  }));
+  list.querySelectorAll('[data-delete-school-document]').forEach(button => button.addEventListener('click', async () => {
+    if (!confirm(t('confirm_delete_school_document'))) return;
+    try {
+      await apiCall('DELETE', `/api/school/documents/${button.dataset.deleteSchoolDocument}`);
+      await loadSchoolDocuments();
+    } catch (error) { showError('schoolDocumentsError', error.message); }
+  }));
+}
+
+async function loadSchoolDocuments() {
+  clearError('schoolDocumentsError');
+  document.getElementById('schoolDocumentsList').innerHTML = `<div class="school-documents-empty">${t('loading')}</div>`;
+  try {
+    const data = await apiCall('GET', '/api/school/documents');
+    schoolDocumentsState.folders = data.folders || [];
+    schoolDocumentsState.documents = data.documents || [];
+    document.getElementById('schoolDocumentsSummary').textContent = t('school_documents_summary', {
+      files: data.summary?.documents_count || 0,
+      folders: data.summary?.folders_count || 0,
+      size: schoolDocumentFormatBytes(data.summary?.total_bytes || 0),
+    });
+    renderSchoolDocumentFolders();
+    renderSchoolDocuments();
+  } catch (error) {
+    showError('schoolDocumentsError', error.message);
+    document.getElementById('schoolDocumentsList').innerHTML = '';
+  }
+}
+
+document.getElementById('schoolFolderCreateBtn').addEventListener('click', async () => {
+  const input = document.getElementById('schoolFolderNameInput');
+  if (!input.value.trim()) { showError('schoolDocumentsError', t('err_school_folder_name_required')); return; }
+  try {
+    const folder = await apiCall('POST', '/api/school/document-folders', { name: input.value.trim() });
+    input.value = '';
+    schoolDocumentsState.activeFolder = folder.id;
+    await loadSchoolDocuments();
+  } catch (error) { showError('schoolDocumentsError', error.message); }
+});
+
+document.getElementById('schoolFolderNameInput').addEventListener('keydown', event => {
+  if (event.key === 'Enter') document.getElementById('schoolFolderCreateBtn').click();
+});
+
+const schoolDocumentDrop = document.querySelector('.school-document-drop');
+const schoolDocumentFileInput = document.getElementById('schoolDocumentFileInput');
+function updateSchoolDocumentFileLabel() {
+  schoolDocumentDrop.classList.toggle('has-file', !!schoolDocumentFileInput.files.length);
+  schoolDocumentDrop.querySelector('strong').textContent = schoolDocumentFileInput.files[0]?.name || t('school_document_upload_title');
+}
+schoolDocumentFileInput.addEventListener('change', updateSchoolDocumentFileLabel);
+['dragenter', 'dragover'].forEach(type => schoolDocumentDrop.addEventListener(type, event => { event.preventDefault(); schoolDocumentDrop.classList.add('has-file'); }));
+['dragleave', 'drop'].forEach(type => schoolDocumentDrop.addEventListener(type, event => { event.preventDefault(); if (type === 'dragleave') updateSchoolDocumentFileLabel(); }));
+schoolDocumentDrop.addEventListener('drop', event => {
+  if (event.dataTransfer.files.length) {
+    schoolDocumentFileInput.files = event.dataTransfer.files;
+    updateSchoolDocumentFileLabel();
+  }
+});
+
+document.getElementById('schoolDocumentUploadBtn').addEventListener('click', async () => {
+  const file = schoolDocumentFileInput.files[0];
+  if (!file) { showError('schoolDocumentsError', t('err_pick_school_document')); return; }
+  if (file.size > 20 * 1024 * 1024) { showError('schoolDocumentsError', t('err_school_document_too_large')); return; }
+  clearError('schoolDocumentsError');
+  const button = document.getElementById('schoolDocumentUploadBtn');
+  const defaultText = t('btn_upload_school_document');
+  const progress = document.getElementById('schoolDocumentProgress');
+  const progressBar = progress.firstElementChild;
+  const body = new FormData();
+  body.append('file', file);
+  body.append('folder_id', document.getElementById('schoolDocumentFolderSelect').value);
+  button.disabled = true;
+  button.textContent = t('school_document_uploading');
+  progress.classList.remove('hidden');
+  progressBar.style.width = '45%';
+  try {
+    const response = await fetch(`${API_BASE}/api/school/documents/upload`, { method: 'POST', headers: { Authorization: `Bearer ${currentAccessToken}` }, body });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || t('err_upload_failed'));
+    progressBar.style.width = '100%';
+    schoolDocumentFileInput.value = '';
+    updateSchoolDocumentFileLabel();
+    await loadSchoolDocuments();
+  } catch (error) { showError('schoolDocumentsError', error.message); }
+  finally {
+    button.disabled = false;
+    button.textContent = defaultText;
+    setTimeout(() => { progress.classList.add('hidden'); progressBar.style.width = '0'; }, 350);
+  }
+});
+
+document.getElementById('schoolDocumentsSearch').addEventListener('input', event => {
+  schoolDocumentsState.query = event.target.value;
+  renderSchoolDocuments();
+});
 </script>
 </body>
 </html>

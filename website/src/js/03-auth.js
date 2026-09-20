@@ -14,6 +14,7 @@
 // ---------- الحساب (اختياري) ----------
 function proceedToApp() {
   hide('login-form'); hide('signup-form'); hide('step-force-password-change');
+  hide('step-password-reset-request'); hide('step-password-reset-complete');
   show('sidebar');
   show('mode-select');
   navHistory = [];
@@ -39,6 +40,20 @@ function proceedToApp() {
       alert(t('addfriend_guest_alert'));
     }
   }
+}
+
+let passwordRecoveryActive = location.hash.includes('type=recovery');
+
+function showPasswordRecoveryForm(session) {
+  passwordRecoveryActive = true;
+  currentAccessToken = session.access_token;
+  currentUserEmail = session.user.email || '';
+  currentUserId = session.user.id;
+  TOP_LEVEL_SCREENS.forEach(hide);
+  hide('login-form'); hide('signup-form'); hide('step-force-password-change'); hide('sidebar');
+  navHistory = [];
+  show('step-password-reset-complete');
+  updateGlobalBackButton();
 }
 
 function refreshAccountUI() {
@@ -227,8 +242,13 @@ function onAuthSuccess(session) {
 // حدث الجلسة الجديدة تلقائيًا برضو! لو صاحب الحساب فعليًا تغيّر (user id
 // مختلف) نعيد تحميل الصفحة كاملة بدل ما نكمل بحالة قديمة (دور/توكن ما
 // يطابقون الحساب الفعلي الحين، يسبب أخطاء "ما عندك صلاحية" مربكة)
-supabaseClient.auth.onAuthStateChange((_event, session) => {
+supabaseClient.auth.onAuthStateChange((event, session) => {
+  if (event === 'PASSWORD_RECOVERY' && session) {
+    showPasswordRecoveryForm(session);
+    return;
+  }
   if (!session) return;
+  if (passwordRecoveryActive) return;
   if (currentUserId && session.user.id !== currentUserId) {
     location.reload();
     return;
@@ -237,7 +257,7 @@ supabaseClient.auth.onAuthStateChange((_event, session) => {
 });
 
 supabaseClient.auth.getSession().then(({ data }) => {
-  if (data.session) onAuthSuccess(data.session);
+  if (data.session && !passwordRecoveryActive) onAuthSuccess(data.session);
 });
 
 document.getElementById('goToSignupBtn').addEventListener('click', () => {
@@ -245,6 +265,70 @@ document.getElementById('goToSignupBtn').addEventListener('click', () => {
 });
 document.getElementById('goToLoginBtn').addEventListener('click', () => {
   hide('signup-form'); show('login-form');
+});
+document.getElementById('forgotPasswordBtn').addEventListener('click', () => {
+  clearError('passwordResetRequestMsg');
+  const identifier = document.getElementById('loginEmail').value.trim();
+  document.getElementById('passwordResetEmail').value = identifier.includes('@') ? identifier : '';
+  hide('login-form'); hide('signup-form');
+  show('step-password-reset-request');
+});
+document.getElementById('passwordResetBackBtn').addEventListener('click', () => {
+  hide('step-password-reset-request');
+  show('login-form');
+});
+document.getElementById('passwordResetSendBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('passwordResetSendBtn');
+  const email = document.getElementById('passwordResetEmail').value.trim().toLowerCase();
+  clearError('passwordResetRequestMsg');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showError('passwordResetRequestMsg', t('err_valid_email_required'));
+    return;
+  }
+  setLoading(btn, true, t('btn_send_reset_link'));
+  try {
+    const eligibilityRes = await fetch(`${API_BASE}/api/auth/password-reset/eligibility`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const eligibility = await eligibilityRes.json().catch(() => ({}));
+    if (!eligibilityRes.ok) {
+      showError('passwordResetRequestMsg', eligibility.institutional
+        ? t('password_reset_school_blocked')
+        : (eligibility.error || t('err_unexpected')));
+      return;
+    }
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+      redirectTo: `${location.origin}${location.pathname}`,
+    });
+    if (error) throw error;
+    document.getElementById('passwordResetRequestMsg').innerHTML = `<div class="success-msg">✅ ${t('password_reset_email_sent')}</div>`;
+  } catch (error) {
+    showError('passwordResetRequestMsg', error.message || t('err_unexpected'));
+  } finally {
+    setLoading(btn, false, t('btn_send_reset_link'));
+  }
+});
+document.getElementById('passwordResetCompleteBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('passwordResetCompleteBtn');
+  const pass1 = document.getElementById('passwordResetNew').value;
+  const pass2 = document.getElementById('passwordResetConfirm').value;
+  clearError('passwordResetCompleteMsg');
+  if (pass1.length < 6) { showError('passwordResetCompleteMsg', t('err_password_min')); return; }
+  if (pass1 !== pass2) { showError('passwordResetCompleteMsg', t('err_password_mismatch')); return; }
+  setLoading(btn, true, t('btn_save_new_password'));
+  const { error } = await supabaseClient.auth.updateUser({ password: pass1 });
+  if (error) {
+    showError('passwordResetCompleteMsg', error.message || t('err_unexpected'));
+    setLoading(btn, false, t('btn_save_new_password'));
+    return;
+  }
+  document.getElementById('passwordResetCompleteMsg').innerHTML = `<div class="success-msg">✅ ${t('password_reset_saved')}</div>`;
+  history.replaceState(null, '', location.pathname);
+  await supabaseClient.auth.signOut();
+  passwordRecoveryActive = false;
+  setTimeout(() => location.reload(), 900);
 });
 document.getElementById('guestFromLoginBtn').addEventListener('click', proceedToApp);
 document.getElementById('guestFromSignupBtn').addEventListener('click', proceedToApp);
@@ -267,7 +351,11 @@ document.getElementById('loginSubmitBtn').addEventListener('click', async () => 
         body: JSON.stringify({ identifier }),
       });
       const resolved = await res.json();
-      if (!res.ok || !resolved.email) { showError('loginError', t('err_wrong_credentials')); return; }
+      if (!res.ok || !resolved.email) {
+        showError('loginError', t('err_wrong_credentials'));
+        show('forgotPasswordBtn');
+        return;
+      }
       email = resolved.email;
     } catch {
       showError('loginError', t('err_unexpected')); return;
@@ -275,7 +363,11 @@ document.getElementById('loginSubmitBtn').addEventListener('click', async () => 
   }
 
   const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-  if (error) { showError('loginError', t('err_wrong_credentials')); return; }
+  if (error) {
+    showError('loginError', t('err_wrong_credentials'));
+    show('forgotPasswordBtn');
+    return;
+  }
   onAuthSuccess(data.session);
 });
 

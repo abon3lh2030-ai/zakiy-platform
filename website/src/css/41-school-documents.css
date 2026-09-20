@@ -1,0 +1,63 @@
+/* ---------- مجلدات المدرسة المشتركة ---------- */
+.school-documents-hero { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:18px 20px; margin:16px 0; border:1px solid var(--line); border-radius:18px; background:linear-gradient(135deg,rgba(46,91,219,.09),rgba(26,169,135,.08)); }
+.school-documents-hero > div:first-child { display:flex; align-items:center; gap:13px; }
+.school-documents-hero > div:first-child > span { display:grid; place-items:center; width:46px; height:46px; border-radius:14px; background:var(--surface); font-size:23px; box-shadow:0 6px 18px rgba(26,47,86,.08); }
+.school-documents-hero h3,.school-documents-hero p { margin:0; }
+.school-documents-hero h3 { color:var(--ink); font-size:19px; }
+.school-documents-hero p { color:var(--ink-soft); font-size:12px; margin-top:4px; }
+.school-documents-summary { color:var(--ink-soft); font-size:12px; white-space:nowrap; }
+.school-documents-layout { display:grid; grid-template-columns:240px minmax(0,1fr); gap:16px; align-items:start; }
+.school-folders-panel,.school-document-upload-card { border:1px solid var(--line); border-radius:17px; background:var(--surface); }
+.school-folders-panel { padding:12px; position:sticky; top:20px; }
+.school-folder-create { display:grid; grid-template-columns:1fr auto; gap:7px; margin-bottom:12px; }
+.school-folder-create .text-input { min-width:0; padding:9px 10px; }
+.school-folder-create button { padding:8px 11px; }
+.school-folders-list { display:grid; gap:5px; }
+.school-folder-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:5px; align-items:center; border-radius:11px; }
+.school-folder-button { display:flex; align-items:center; gap:8px; width:100%; min-width:0; border:0; border-radius:11px; background:transparent; color:var(--ink-soft); padding:10px; text-align:start; cursor:pointer; font-family:inherit; }
+.school-folder-button span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.school-folder-button small { margin-inline-start:auto; padding:2px 7px; border-radius:999px; background:var(--paper-dim); color:var(--ink-soft); }
+.school-folder-row.active { background:rgba(46,91,219,.1); }
+.school-folder-row.active .school-folder-button { color:#2e5bdb; font-weight:800; }
+.school-folder-menu { display:flex; align-items:center; gap:1px; }
+.school-folder-menu button { border:0; background:transparent; color:var(--ink-soft); cursor:pointer; padding:6px; border-radius:8px; }
+.school-folder-menu button:hover { background:var(--paper-dim); }
+.school-documents-main { min-width:0; }
+.school-document-upload-card { padding:14px; margin-bottom:14px; }
+.school-document-drop { min-height:120px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; border:1.5px dashed rgba(46,91,219,.4); border-radius:14px; background:rgba(46,91,219,.035); color:var(--ink); cursor:pointer; text-align:center; padding:18px; }
+.school-document-drop > span { font-size:28px; }
+.school-document-drop small { color:var(--ink-soft); }
+.school-document-drop input { display:none; }
+.school-document-drop.has-file { border-color:var(--teal); background:var(--teal-dim); }
+.school-document-upload-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:10px; }
+.school-document-upload-actions select { max-width:240px; }
+.school-document-progress { height:7px; margin-top:10px; border-radius:999px; background:var(--paper-dim); overflow:hidden; }
+.school-document-progress div { height:100%; width:0; background:linear-gradient(90deg,#2e5bdb,var(--teal)); transition:width .25s; }
+.school-documents-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:16px 0 10px; }
+.school-documents-toolbar h3 { margin:0; color:var(--ink); font-size:17px; }
+.school-documents-toolbar input { max-width:300px; }
+.school-documents-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.school-document-card { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:12px; padding:13px; border:1px solid var(--line); border-radius:15px; background:var(--surface); }
+.school-document-icon { display:grid; place-items:center; width:42px; height:48px; border-radius:10px; background:var(--paper-dim); font-size:22px; }
+.school-document-info { min-width:0; }
+.school-document-info strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--ink); font-size:14px; }
+.school-document-info small { display:block; color:var(--ink-soft); font-size:11px; margin-top:4px; line-height:1.5; }
+.school-document-actions { display:flex; gap:4px; }
+.school-document-actions button { border:0; background:transparent; border-radius:8px; padding:7px; cursor:pointer; color:var(--ink-soft); }
+.school-document-actions button:hover { background:var(--paper-dim); color:var(--ink); }
+.school-document-actions .danger:hover { color:#b8382b; background:#fff0ed; }
+.school-documents-empty { grid-column:1/-1; padding:38px 18px; border:1px dashed var(--line); border-radius:16px; text-align:center; color:var(--ink-soft); }
+[data-theme="dark"] .school-document-actions .danger:hover { background:#3c2020; color:#ffaaa0; }
+
+@media (max-width:900px) {
+  .school-documents-layout { grid-template-columns:1fr; }
+  .school-folders-panel { position:static; }
+  .school-folders-list { display:flex; overflow-x:auto; padding-bottom:4px; }
+  .school-folder-row { min-width:180px; }
+}
+@media (max-width:620px) {
+  .school-documents-hero,.school-documents-toolbar,.school-document-upload-actions { align-items:stretch; flex-direction:column; }
+  .school-documents-summary { white-space:normal; }
+  .school-document-upload-actions select,.school-documents-toolbar input { max-width:none; width:100%; }
+  .school-documents-grid { grid-template-columns:1fr; }
+}

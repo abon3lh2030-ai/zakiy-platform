@@ -3244,6 +3244,40 @@ def resolve_login_identifier():
         return jsonify({"error": "بيانات الدخول غير صحيحة"}), 404
 
 
+@app.route("/api/auth/password-reset/eligibility", methods=["POST"])
+def password_reset_eligibility():
+    """يسمح بالاستعادة الذاتية للحسابات الشخصية فقط؛ المدرسية يديرها مديرها."""
+    if supabase_admin is None:
+        return jsonify({"error": "نظام الحسابات مو مفعّل حاليًا بالسيرفر"}), 503
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email):
+        return jsonify({"error": "اكتب بريدًا إلكترونيًا صحيحًا"}), 400
+    try:
+        matched_user = None
+        for user in _list_all_auth_users():
+            user_email = getattr(user, "email", None) or (user.get("email") if isinstance(user, dict) else None)
+            if str(user_email or "").strip().lower() == email:
+                matched_user = user
+                break
+        if matched_user:
+            user_id = getattr(matched_user, "id", None) or (matched_user.get("id") if isinstance(matched_user, dict) else None)
+            profiles = (
+                supabase_admin.table("profiles").select("role")
+                .eq("user_id", str(user_id)).limit(1).execute()
+            ).data
+            if profiles and profiles[0].get("role"):
+                return jsonify({
+                    "allowed": False,
+                    "institutional": True,
+                    "error": "حسابات المدارس ما تقدر تستعيد كلمة المرور بالبريد. تواصل مع مدير المدرسة أو إدارتها لإصدار كلمة مرور جديدة.",
+                }), 403
+        # ما نكشف هل البريد الشخصي موجود أو لا؛ Supabase يرسل رده العام المعتاد.
+        return jsonify({"allowed": True}), 200
+    except Exception as exc:
+        return jsonify({"error": f"تعذّر التحقق من الحساب: {exc}"}), 500
+
+
 # ---------- Admin (صاحب المنصة) ----------
 @app.route("/api/admin/platform-access", methods=["GET", "PUT"])
 @require_role("admin")
@@ -4330,6 +4364,204 @@ def school_view_profile(user_id):
     if not profile:
         return jsonify({"error": "المستخدم مو موجود"}), 404
     return jsonify(profile), 200
+
+
+# ---------- مجلدات ومستندات المدرسة المشتركة ----------
+SCHOOL_DOCUMENTS_BUCKET = "school-documents"
+SCHOOL_DOCUMENT_MAX_BYTES = 20 * 1024 * 1024
+SCHOOL_DOCUMENT_EXTENSIONS = {
+    "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
+    "txt", "csv", "png", "jpg", "jpeg", "webp", "zip",
+}
+
+
+def _school_document_folder(folder_id, school_id):
+    if not folder_id:
+        return None
+    rows = (
+        supabase_admin.table("school_document_folders").select("id, school_id, name")
+        .eq("id", folder_id).eq("school_id", school_id).limit(1).execute()
+    ).data
+    return rows[0] if rows else None
+
+
+def _school_document_row(document_id, school_id):
+    rows = (
+        supabase_admin.table("school_documents").select("*")
+        .eq("id", document_id).eq("school_id", school_id).limit(1).execute()
+    ).data
+    return rows[0] if rows else None
+
+
+@app.route("/api/school/document-folders", methods=["POST"])
+@require_role("school_admin", "school_administration")
+def school_create_document_folder():
+    data = request.get_json(silent=True) or {}
+    name = re.sub(r"\s+", " ", (data.get("name") or "").strip())[:80]
+    if not name:
+        return jsonify({"error": "لازم تكتب اسم المجلد"}), 400
+    try:
+        row = (
+            supabase_admin.table("school_document_folders").insert({
+                "school_id": request.profile["school_id"],
+                "name": name,
+                "created_by": request.user_id,
+            }).execute().data[0]
+        )
+        return jsonify(row), 200
+    except Exception as exc:
+        message = str(exc)
+        if "duplicate" in message.lower() or "unique" in message.lower():
+            return jsonify({"error": "يوجد مجلد بهذا الاسم بالفعل"}), 409
+        return jsonify({"error": f"تعذّر إنشاء المجلد: {message}"}), 400
+
+
+@app.route("/api/school/document-folders/<folder_id>", methods=["PATCH"])
+@require_role("school_admin", "school_administration")
+def school_rename_document_folder(folder_id):
+    school_id = request.profile["school_id"]
+    if not _school_document_folder(folder_id, school_id):
+        return jsonify({"error": "المجلد مو موجود بمدرستك"}), 404
+    data = request.get_json(silent=True) or {}
+    name = re.sub(r"\s+", " ", (data.get("name") or "").strip())[:80]
+    if not name:
+        return jsonify({"error": "لازم تكتب اسم المجلد"}), 400
+    try:
+        supabase_admin.table("school_document_folders").update({"name": name}).eq("id", folder_id).eq("school_id", school_id).execute()
+        return jsonify({"ok": True, "name": name}), 200
+    except Exception as exc:
+        return jsonify({"error": f"تعذّر تغيير اسم المجلد: {exc}"}), 400
+
+
+@app.route("/api/school/document-folders/<folder_id>", methods=["DELETE"])
+@require_role("school_admin", "school_administration")
+def school_delete_document_folder(folder_id):
+    school_id = request.profile["school_id"]
+    if not _school_document_folder(folder_id, school_id):
+        return jsonify({"error": "المجلد مو موجود بمدرستك"}), 404
+    # ON DELETE SET NULL: المستندات تبقى مشتركة وتنتقل تلقائيًا إلى «بدون مجلد».
+    supabase_admin.table("school_document_folders").delete().eq("id", folder_id).eq("school_id", school_id).execute()
+    return jsonify({"ok": True}), 200
+
+
+@app.route("/api/school/documents", methods=["GET"])
+@require_role("school_admin", "school_administration")
+def school_list_documents():
+    school_id = request.profile["school_id"]
+    folders = (
+        supabase_admin.table("school_document_folders").select("*")
+        .eq("school_id", school_id).order("created_at").execute()
+    ).data
+    documents = (
+        supabase_admin.table("school_documents").select("*")
+        .eq("school_id", school_id).order("created_at", desc=True).execute()
+    ).data
+    uploader_ids = list({row.get("uploaded_by") for row in documents if row.get("uploaded_by")})
+    uploaders = {}
+    if uploader_ids:
+        profiles = (
+            supabase_admin.table("profiles").select("user_id, username, full_name")
+            .in_("user_id", uploader_ids).execute()
+        ).data
+        uploaders = {
+            row["user_id"]: row.get("full_name") or row.get("username") or ""
+            for row in profiles
+        }
+    folder_counts = Counter(row.get("folder_id") for row in documents)
+    for folder in folders:
+        folder["documents_count"] = folder_counts.get(folder["id"], 0)
+    for document in documents:
+        document["uploaded_by_name"] = uploaders.get(document.get("uploaded_by")) or "—"
+    return jsonify({
+        "folders": folders,
+        "documents": documents,
+        "summary": {
+            "documents_count": len(documents),
+            "folders_count": len(folders),
+            "total_bytes": sum(int(row.get("size_bytes") or 0) for row in documents),
+        },
+    }), 200
+
+
+@app.route("/api/school/documents/upload", methods=["POST"])
+@require_role("school_admin", "school_administration")
+def school_upload_document():
+    if "file" not in request.files:
+        return jsonify({"error": "اختر مستندًا أول"}), 400
+    uploaded = request.files["file"]
+    original_name = os.path.basename((uploaded.filename or "").strip()).replace("\x00", "")[:180]
+    if not original_name:
+        return jsonify({"error": "اسم الملف غير صالح"}), 400
+    extension = original_name.rsplit(".", 1)[-1].lower() if "." in original_name else ""
+    if extension not in SCHOOL_DOCUMENT_EXTENSIONS:
+        return jsonify({"error": "نوع الملف غير مدعوم"}), 400
+
+    school_id = request.profile["school_id"]
+    folder_id = (request.form.get("folder_id") or "").strip() or None
+    if folder_id and not _school_document_folder(folder_id, school_id):
+        return jsonify({"error": "المجلد مو موجود بمدرستك"}), 404
+    file_bytes = uploaded.read(SCHOOL_DOCUMENT_MAX_BYTES + 1)
+    if not file_bytes:
+        return jsonify({"error": "الملف فاضي"}), 400
+    if len(file_bytes) > SCHOOL_DOCUMENT_MAX_BYTES:
+        return jsonify({"error": "حجم الملف أكبر من 20 ميجابايت"}), 413
+
+    storage_path = f"{school_id}/{uuid.uuid4().hex}.{extension}"
+    mime_type = (uploaded.mimetype or "application/octet-stream")[:120]
+    try:
+        supabase_admin.storage.from_(SCHOOL_DOCUMENTS_BUCKET).upload(
+            storage_path,
+            file_bytes,
+            file_options={"content-type": mime_type, "x-upsert": "false"},
+        )
+        row = (
+            supabase_admin.table("school_documents").insert({
+                "school_id": school_id,
+                "folder_id": folder_id,
+                "file_name": original_name,
+                "storage_path": storage_path,
+                "mime_type": mime_type,
+                "size_bytes": len(file_bytes),
+                "uploaded_by": request.user_id,
+            }).execute().data[0]
+        )
+        row["uploaded_by_name"] = request.profile.get("username") or ""
+        return jsonify(row), 200
+    except Exception as exc:
+        try:
+            supabase_admin.storage.from_(SCHOOL_DOCUMENTS_BUCKET).remove([storage_path])
+        except Exception:
+            pass
+        return jsonify({"error": f"تعذّر رفع المستند: {exc}"}), 400
+
+
+@app.route("/api/school/documents/<document_id>/download", methods=["GET"])
+@require_role("school_admin", "school_administration")
+def school_download_document(document_id):
+    document = _school_document_row(document_id, request.profile["school_id"])
+    if not document:
+        return jsonify({"error": "المستند مو موجود بمدرستك"}), 404
+    try:
+        signed = supabase_admin.storage.from_(SCHOOL_DOCUMENTS_BUCKET).create_signed_url(document["storage_path"], 600)
+        return jsonify({"url": signed["signedURL"], "file_name": document["file_name"]}), 200
+    except Exception as exc:
+        return jsonify({"error": f"تعذّر تجهيز رابط التنزيل: {exc}"}), 400
+
+
+@app.route("/api/school/documents/<document_id>", methods=["DELETE"])
+@require_role("school_admin", "school_administration")
+def school_delete_document(document_id):
+    school_id = request.profile["school_id"]
+    document = _school_document_row(document_id, school_id)
+    if not document:
+        return jsonify({"error": "المستند مو موجود بمدرستك"}), 404
+    try:
+        supabase_admin.storage.from_(SCHOOL_DOCUMENTS_BUCKET).remove([document["storage_path"]])
+    except Exception:
+        # لو الملف مفقود من التخزين أصلًا، نظّف صفه حتى ما يبقى رابط ميت بالواجهة.
+        pass
+    supabase_admin.table("school_documents").delete().eq("id", document_id).eq("school_id", school_id).execute()
+    return jsonify({"ok": True}), 200
 
 
 @app.route("/api/school/classes", methods=["POST"])

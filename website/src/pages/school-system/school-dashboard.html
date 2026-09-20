@@ -15,6 +15,7 @@
     <div class="role-tabs">
       <button class="role-tab active" data-tab="teachers" data-i18n="tab_teachers">👨‍🏫 المعلمون</button>
       <button class="role-tab" data-tab="students" data-i18n="tab_students">👥 الطلاب</button>
+      <button class="role-tab" data-tab="documents" data-i18n="tab_school_documents">📁 مجلدات المدرسة</button>
       <button class="role-tab" data-tab="classes" data-i18n="tab_classes">🏷️ الفصول والجدول</button>
       <button class="role-tab" data-tab="bulk" data-i18n="tab_bulk_students">➕ إضافة طلاب</button>
       <button class="role-tab" data-tab="attendance" data-i18n="tab_attendance">📋 الحضور</button>
@@ -92,6 +93,43 @@
         </table>
       </div>
       <div id="schoolStudentsResult" class="credential-reveal hidden"></div>
+    </div>
+
+    <div id="schoolTab-documents" class="school-tab-panel hidden">
+      <div class="school-documents-hero">
+        <div><span>📁</span><div><h3 data-i18n="school_documents_heading">مجلدات المدرسة</h3><p data-i18n="school_documents_desc">مساحة مشتركة لمدير المدرسة وإدارتها لحفظ المستندات المهمة.</p></div></div>
+        <div class="school-documents-summary" id="schoolDocumentsSummary"></div>
+      </div>
+      <div id="schoolDocumentsError"></div>
+
+      <div class="school-documents-layout">
+        <aside class="school-folders-panel">
+          <div class="school-folder-create">
+            <input type="text" id="schoolFolderNameInput" class="text-input" maxlength="80" placeholder="اسم المجلد" data-i18n-ph="ph_school_folder_name">
+            <button class="primary" id="schoolFolderCreateBtn" data-i18n="btn_create_folder">إنشاء</button>
+          </div>
+          <div id="schoolFoldersList" class="school-folders-list"></div>
+        </aside>
+
+        <div class="school-documents-main">
+          <div class="school-document-upload-card">
+            <label class="school-document-drop" for="schoolDocumentFileInput">
+              <span>☁️</span><strong data-i18n="school_document_upload_title">ارفع مستندًا للمدرسة</strong><small data-i18n="school_document_upload_hint">PDF أو Word أو Excel أو PowerPoint أو صورة أو ZIP — حتى 20 MB</small>
+              <input type="file" id="schoolDocumentFileInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.png,.jpg,.jpeg,.webp,.zip">
+            </label>
+            <div class="school-document-upload-actions">
+              <select id="schoolDocumentFolderSelect" class="text-input"></select>
+              <button class="primary" id="schoolDocumentUploadBtn" data-i18n="btn_upload_school_document">رفع المستند</button>
+            </div>
+            <div class="school-document-progress hidden" id="schoolDocumentProgress"><div></div></div>
+          </div>
+          <div class="school-documents-toolbar">
+            <h3 id="schoolDocumentsCurrentFolder"></h3>
+            <input type="search" id="schoolDocumentsSearch" class="text-input" placeholder="ابحث في المستندات" data-i18n-ph="ph_search_school_documents">
+          </div>
+          <div id="schoolDocumentsList" class="school-documents-grid"></div>
+        </div>
+      </div>
     </div>
 
     <div id="schoolTab-classes" class="school-tab-panel hidden">

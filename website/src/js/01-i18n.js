@@ -25,7 +25,20 @@ const I18N = {
     login_desc: 'أدخل بياناتك للمتابعة، أو سوّي حساب يحفظ تقدمك',
     ph_email: 'الإيميل',
     ph_password: 'كلمة المرور',
+    show_password: 'إظهار كلمة المرور',
+    hide_password: 'إخفاء كلمة المرور',
     btn_enter: 'دخول',
+    link_forgot_password: 'نسيت كلمة المرور؟',
+    password_reset_request_heading: 'استعادة كلمة المرور',
+    password_reset_request_desc: 'اكتب بريد حسابك الشخصي وسنرسل لك رابطًا آمنًا لتعيين كلمة مرور جديدة.',
+    btn_send_reset_link: 'إرسال رابط الاستعادة',
+    link_back_to_login: 'الرجوع لتسجيل الدخول',
+    password_reset_complete_heading: 'اختر كلمة مرور جديدة',
+    password_reset_complete_desc: 'اكتب كلمة المرور الجديدة ثم أكدها.',
+    btn_save_new_password: 'حفظ كلمة المرور الجديدة',
+    password_reset_email_sent: 'إذا كان البريد مرتبطًا بحساب شخصي فسيصلك رابط الاستعادة. افحص الوارد والبريد غير المرغوب.',
+    password_reset_school_blocked: 'حسابات المدارس لا يمكنها الاستعادة عبر البريد. تواصل مع مدير المدرسة أو إدارتها لإصدار كلمة مرور جديدة.',
+    password_reset_saved: 'تم حفظ كلمة المرور الجديدة. يمكنك تسجيل الدخول الآن.',
     link_go_signup: '🆕 ما عندك حساب؟ أنشئ واحد',
     link_continue_guest: '➡️ استمر بدون حساب',
     signup_title: 'إنشاء حساب جديد',
@@ -82,6 +95,7 @@ const I18N = {
     btn_save: 'حفظ',
     btn_edit: '✏️ تعديل', btn_cancel: 'إلغاء',
     settings_password_heading: '🔒 كلمة المرور',
+    ph_current_password: 'كلمة المرور الحالية',
     ph_new_password: 'كلمة مرور جديدة',
     ph_confirm_password: 'أعد كتابتها',
     settings_phone_heading: '📱 رقم الجوال',
@@ -173,6 +187,8 @@ const I18N = {
     btn_start_quiz_all: '🚀 ابدأ الاختبار للجميع',
     footer_text: 'ذكيّ — منصة دراسية بمساعدة الذكاء الاصطناعي',
     commercial_registration_label: 'السجل التجاري',
+    social_tiktok: 'تيك توك',
+    social_instagram: 'إنستقرام',
     pomodoro_title: '🍅 بومودورو',
     pomodoro_phase_focus: '🧠 مذاكرة',
     pomodoro_phase_break: '☕ راحة',
@@ -574,7 +590,29 @@ const I18N = {
     err_invalid_number: 'رقم غير صحيح',
     admin_over_limit_badge: 'تجاوزت الحد - عليها مهلة ٢٤ ساعة',
     admin_over_limit_expired_badge: 'انتهت مهلة الـ٢٤ ساعة',
-    tab_teachers: '👨‍🏫 المعلمون', tab_classes: '🏷️ الفصول والجدول', tab_bulk_students: '➕ إضافة طلاب', tab_attendance: '📋 الحضور',
+    tab_teachers: '👨‍🏫 المعلمون', tab_school_documents: '📁 مجلدات المدرسة', tab_classes: '🏷️ الفصول والجدول', tab_bulk_students: '➕ إضافة طلاب', tab_attendance: '📋 الحضور',
+    school_documents_heading: 'مجلدات المدرسة',
+    school_documents_desc: 'مساحة مشتركة لمدير المدرسة وإدارتها لحفظ المستندات المهمة.',
+    school_documents_summary: '{files} مستند · {folders} مجلد · {size}',
+    school_documents_all: 'كل المستندات',
+    school_documents_unfiled: 'بدون مجلد',
+    school_documents_empty: 'ما فيه مستندات هنا بعد',
+    school_documents_no_search_results: 'ما لقينا مستندًا يطابق بحثك',
+    ph_school_folder_name: 'اسم المجلد',
+    btn_create_folder: 'إنشاء',
+    prompt_rename_school_folder: 'اكتب الاسم الجديد للمجلد:',
+    confirm_delete_school_folder: 'تحذف هذا المجلد؟ المستندات داخله ما تنحذف وراح تنتقل إلى «بدون مجلد».',
+    school_document_upload_title: 'ارفع مستندًا للمدرسة',
+    school_document_upload_hint: 'PDF أو Word أو Excel أو PowerPoint أو صورة أو ZIP — حتى 20 MB',
+    btn_upload_school_document: 'رفع المستند',
+    school_document_uploading: 'جاري الرفع…',
+    ph_search_school_documents: 'ابحث في المستندات',
+    school_document_uploaded_by: 'رفعه {name}',
+    btn_download: 'تنزيل',
+    confirm_delete_school_document: 'تحذف هذا المستند نهائيًا؟ ما راح يقدر باقي الإدارة يفتحونه بعدها.',
+    err_school_folder_name_required: 'اكتب اسم المجلد أول',
+    err_pick_school_document: 'اختر مستندًا أول',
+    err_school_document_too_large: 'حجم المستند أكبر من 20 ميجابايت',
     ph_teacher_name: 'اسم المعلم', ph_teacher_email: 'إيميل المعلم', btn_add_teacher: 'إضافة معلم',
     school_no_teachers: 'ما فيه معلمين مضافين بعد',
     school_teacher_created_msg: '✅ تم إضافة المعلم "{name}" - بيانات دخوله (تظهر مرة وحدة بس، احفظها الحين):',
@@ -699,6 +737,9 @@ const I18N = {
     err_unexpected_retry: 'صار خطأ غير متوقع، جرب مرة ثانية',
     page_title: 'ذكيّ — منصة المذاكرة الذكية',
     err_password_mismatch: 'كلمتا المرور غير متطابقتين',
+    err_valid_email_required: 'اكتب بريدًا إلكترونيًا صحيحًا',
+    err_current_password_required: 'اكتب كلمة المرور الحالية أولًا',
+    err_current_password_wrong: 'كلمة المرور الحالية غير صحيحة',
     name_saved: 'تم حفظ الاسم',
     password_saved: 'تم تغيير كلمة المرور',
     phone_saved: 'تم حفظ رقم الجوال',
@@ -1068,7 +1109,20 @@ const I18N = {
     login_desc: 'Enter your details to continue, or make an account to save your progress',
     ph_email: 'Email',
     ph_password: 'Password',
+    show_password: 'Show password',
+    hide_password: 'Hide password',
     btn_enter: 'Log In',
+    link_forgot_password: 'Forgot password?',
+    password_reset_request_heading: 'Reset your password',
+    password_reset_request_desc: 'Enter your personal account email and we will send you a secure reset link.',
+    btn_send_reset_link: 'Send reset link',
+    link_back_to_login: 'Back to login',
+    password_reset_complete_heading: 'Choose a new password',
+    password_reset_complete_desc: 'Enter the new password, then confirm it.',
+    btn_save_new_password: 'Save new password',
+    password_reset_email_sent: 'If this email belongs to a personal account, a reset link is on its way. Check your inbox and spam folder.',
+    password_reset_school_blocked: 'School accounts cannot reset passwords by email. Contact the school manager or administration for a new password.',
+    password_reset_saved: 'Your new password was saved. You can log in now.',
     link_go_signup: "🆕 Don't have an account? Create one",
     link_continue_guest: '➡️ Continue without an account',
     signup_title: 'Create a New Account',
@@ -1125,6 +1179,7 @@ const I18N = {
     btn_save: 'Save',
     btn_edit: '✏️ Edit', btn_cancel: 'Cancel',
     settings_password_heading: '🔒 Password',
+    ph_current_password: 'Current password',
     ph_new_password: 'New password',
     ph_confirm_password: 'Confirm it',
     settings_phone_heading: '📱 Phone Number',
@@ -1216,6 +1271,8 @@ const I18N = {
     btn_start_quiz_all: '🚀 Start Quiz for Everyone',
     footer_text: 'Zakiy — an AI-powered study platform',
     commercial_registration_label: 'Commercial Registration',
+    social_tiktok: 'TikTok',
+    social_instagram: 'Instagram',
     pomodoro_title: '🍅 Pomodoro',
     pomodoro_phase_focus: '🧠 Focus',
     pomodoro_phase_break: '☕ Break',
@@ -1617,7 +1674,29 @@ const I18N = {
     err_invalid_number: 'Invalid number',
     admin_over_limit_badge: 'Over limit - 24h grace period',
     admin_over_limit_expired_badge: 'Grace period expired',
-    tab_teachers: '👨‍🏫 Teachers', tab_classes: '🏷️ Classes & Schedule', tab_bulk_students: '➕ Add Students', tab_attendance: '📋 Attendance',
+    tab_teachers: '👨‍🏫 Teachers', tab_school_documents: '📁 School Files', tab_classes: '🏷️ Classes & Schedule', tab_bulk_students: '➕ Add Students', tab_attendance: '📋 Attendance',
+    school_documents_heading: 'School Folders',
+    school_documents_desc: 'A shared space for the school manager and administration to keep important documents.',
+    school_documents_summary: '{files} documents · {folders} folders · {size}',
+    school_documents_all: 'All documents',
+    school_documents_unfiled: 'No folder',
+    school_documents_empty: 'No documents here yet',
+    school_documents_no_search_results: 'No document matches your search',
+    ph_school_folder_name: 'Folder name',
+    btn_create_folder: 'Create',
+    prompt_rename_school_folder: 'Enter the new folder name:',
+    confirm_delete_school_folder: 'Delete this folder? Its documents will stay and move to “No folder”.',
+    school_document_upload_title: 'Upload a school document',
+    school_document_upload_hint: 'PDF, Word, Excel, PowerPoint, image, or ZIP — up to 20 MB',
+    btn_upload_school_document: 'Upload document',
+    school_document_uploading: 'Uploading…',
+    ph_search_school_documents: 'Search documents',
+    school_document_uploaded_by: 'Uploaded by {name}',
+    btn_download: 'Download',
+    confirm_delete_school_document: 'Permanently delete this document? The rest of the administration will no longer be able to open it.',
+    err_school_folder_name_required: 'Enter a folder name first',
+    err_pick_school_document: 'Choose a document first',
+    err_school_document_too_large: 'The document is larger than 20 MB',
     ph_teacher_name: "Teacher's name", ph_teacher_email: "Teacher's email", btn_add_teacher: 'Add Teacher',
     school_no_teachers: 'No teachers added yet',
     school_teacher_created_msg: '✅ Teacher "{name}" added - their login (shown once, save it now):',
@@ -1742,6 +1821,9 @@ const I18N = {
     err_unexpected_retry: 'An unexpected error occurred, try again',
     page_title: 'Zakiy — Smart Study Platform',
     err_password_mismatch: "The passwords don't match",
+    err_valid_email_required: 'Enter a valid email address',
+    err_current_password_required: 'Enter your current password first',
+    err_current_password_wrong: 'Your current password is incorrect',
     name_saved: 'Name saved',
     password_saved: 'Password changed',
     phone_saved: 'Phone number saved',
@@ -2114,8 +2196,46 @@ function applyLanguage() {
   document.querySelectorAll('[data-i18n]').forEach(el => { el.innerHTML = t(el.getAttribute('data-i18n')); });
   document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.getAttribute('data-i18n-ph')); });
   document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.getAttribute('data-i18n-title')); });
+  if (typeof updatePasswordToggleLabels === 'function') updatePasswordToggleLabels();
   updateLangButtonsActiveState();
   if (typeof updateDarkModeButtonLabel === 'function') updateDarkModeButtonLabel();
+}
+
+function updatePasswordToggleLabels() {
+  document.querySelectorAll('.password-toggle').forEach(button => {
+    const input = document.getElementById(button.dataset.passwordTarget);
+    if (!input) return;
+    const label = t(input.type === 'text' ? 'hide_password' : 'show_password');
+    button.setAttribute('aria-label', label);
+    button.title = label;
+    button.setAttribute('aria-pressed', input.type === 'text' ? 'true' : 'false');
+  });
+}
+
+function setupPasswordToggles() {
+  document.querySelectorAll('input[type="password"]').forEach(input => {
+    if (!input.id || input.parentElement?.classList.contains('password-field')) return;
+    const wrapper = document.createElement('span');
+    wrapper.className = 'password-field';
+    input.parentNode.insertBefore(wrapper, input);
+    wrapper.appendChild(input);
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'password-toggle';
+    button.dataset.passwordTarget = input.id;
+    button.textContent = '👁';
+    button.addEventListener('click', () => {
+      const selectionStart = input.selectionStart;
+      const selectionEnd = input.selectionEnd;
+      input.type = input.type === 'password' ? 'text' : 'password';
+      button.textContent = input.type === 'text' ? '🙈' : '👁';
+      updatePasswordToggleLabels();
+      input.focus();
+      if (selectionStart !== null && selectionEnd !== null) input.setSelectionRange(selectionStart, selectionEnd);
+    });
+    wrapper.appendChild(button);
+  });
+  updatePasswordToggleLabels();
 }
 
 document.querySelectorAll('.lang-choice-btn').forEach(btn => {
@@ -2129,6 +2249,7 @@ document.querySelectorAll('.lang-choice-btn').forEach(btn => {
   });
 });
 
+setupPasswordToggles();
 applyLanguage();
 
 function show(id) {

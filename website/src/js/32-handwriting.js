@@ -28,7 +28,7 @@ handwritingOverlay.addEventListener('click', e => { if (e.target === handwriting
 document.getElementById('handwritingChangeFileBtn').addEventListener('click', () => handwritingInput.click());
 document.getElementById('aiHandwritingBtn').addEventListener('click', () => openHandwritingRecognizer('chat'));
 document.getElementById('soloHandwritingBtn').addEventListener('click', () => openHandwritingRecognizer('solo'));
-document.getElementById('modeHandwritingBtn').addEventListener('click', () => openHandwritingRecognizer('standalone'));
+document.getElementById('sidebarHandwritingBtn').addEventListener('click', () => openHandwritingRecognizer('standalone'));
 document.getElementById('classroomHandwritingBtn').addEventListener('click', () => openHandwritingRecognizer('board'));
 
 handwritingInput.addEventListener('change', async () => {

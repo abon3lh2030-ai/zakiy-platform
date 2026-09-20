@@ -2017,6 +2017,7 @@
     <button class="sidebar-btn" id="sidebarLibraryBtn"><span class="sidebar-icon">📚</span><span class="label" data-i18n="nav_library">مكتبتي</span></button>
     <button class="sidebar-btn hidden" id="notesBtn"><span class="sidebar-icon">📝</span><span class="label" data-i18n="nav_notes">ملاحظاتي</span></button>
     <button class="sidebar-btn" id="sidebarAiHelpBtn"><span class="sidebar-icon">🤖</span><span class="label" data-i18n="nav_ai_help">مساعد ذكيّ</span></button>
+    <button class="sidebar-btn" id="sidebarHandwritingBtn"><span class="sidebar-icon">✍️</span><span class="label" data-i18n="handwriting_title">التعرّف على خط اليد</span></button>
     <button class="sidebar-btn" id="madrasatiBtn"><span class="sidebar-icon">🎓</span><span class="label" data-i18n="nav_madrasati">مدرستي</span></button>
     <button class="sidebar-btn" id="roboticsLabBtn"><span class="sidebar-icon">🦾</span><span class="label" data-i18n="nav_robotics_lab">معمل الروبوتات</span></button>
     <button class="sidebar-btn" id="scienceLabBtn"><span class="sidebar-icon">🧪</span><span class="label" data-i18n="nav_science_lab">مختبر العلوم</span></button>
@@ -3813,7 +3814,6 @@
     <p class="desc" data-i18n="mode_select_desc">اختر طريقة المذاكرة عشان نبدأ</p>
     <div class="actions">
       <button class="primary" id="modeSoloBtn" data-i18n="mode_solo">🧑‍🎓 مذاكرة فردية</button>
-      <button class="primary" id="modeHandwritingBtn" data-i18n="handwriting_feature">✍️ التعرّف على خط اليد</button>
       <button class="primary" id="modeRoomBtn" data-i18n="mode_room">👥 غرفة جماعية</button>
       <button class="primary" id="modeClassroomBtn" data-i18n="mode_classroom">🖍️ درس مباشر</button>
     </div>
@@ -17052,7 +17052,7 @@ handwritingOverlay.addEventListener('click', e => { if (e.target === handwriting
 document.getElementById('handwritingChangeFileBtn').addEventListener('click', () => handwritingInput.click());
 document.getElementById('aiHandwritingBtn').addEventListener('click', () => openHandwritingRecognizer('chat'));
 document.getElementById('soloHandwritingBtn').addEventListener('click', () => openHandwritingRecognizer('solo'));
-document.getElementById('modeHandwritingBtn').addEventListener('click', () => openHandwritingRecognizer('standalone'));
+document.getElementById('sidebarHandwritingBtn').addEventListener('click', () => openHandwritingRecognizer('standalone'));
 document.getElementById('classroomHandwritingBtn').addEventListener('click', () => openHandwritingRecognizer('board'));
 
 handwritingInput.addEventListener('change', async () => {

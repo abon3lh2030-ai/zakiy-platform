@@ -3643,7 +3643,7 @@ def admin_platform_analytics():
             "user_id,username,full_name,role,subscription_tier,subscription_period,subscription_expires_at,subscription_source,last_active_at",
         )
         orders = _fetch_all_rows(
-            "subscription_orders", "id,user_id,plan,period,amount,currency,status,created_at,paid_at"
+            "subscription_orders", "id,user_id,plan,period,amount,base_amount,currency,status,discount_code,discount_percent,created_at,paid_at"
         )
         billings = _fetch_all_rows(
             "web_subscription_billing",
@@ -3796,7 +3796,9 @@ def admin_platform_analytics():
         recent.append({
             "id": o.get("id"), "user_id": str(o.get("user_id")), "plan": o.get("plan"),
             "period": o.get("period"), "status": "paid", "amount": float(o.get("amount") or 0),
-            "currency": o.get("currency") or "SAR", "date": o.get("paid_at"), "kind": "new_subscription",
+            "currency": o.get("currency") or "SAR", "date": o.get("paid_at"),
+            "kind": "discount_code" if o.get("discount_code") else "new_subscription",
+            "code": o.get("discount_code"), "discount_percent": o.get("discount_percent"),
         })
     for r in renewals:
         recent.append({
@@ -3806,12 +3808,16 @@ def admin_platform_analytics():
             "kind": "renewal",
         })
     for e in events:
-        if e.get("event_name") not in ("trial_started", "auto_renew_cancelled"):
+        is_redemption = e.get("event_name") == "subscription_activated" and e.get("source") == "redemption_code"
+        if not is_redemption and e.get("event_name") not in ("trial_started", "auto_renew_cancelled"):
             continue
+        metadata = e.get("metadata") or {}
         recent.append({
             "id": e.get("id"), "user_id": str(e.get("user_id")), "plan": e.get("plan"),
-            "period": e.get("period"), "status": e.get("event_name"), "amount": None,
-            "currency": "SAR", "date": e.get("created_at"), "kind": e.get("event_name"),
+            "period": e.get("period"), "status": "paid" if is_redemption else e.get("event_name"),
+            "amount": 0.0 if is_redemption else None, "currency": "SAR",
+            "date": e.get("created_at"), "kind": "redemption_code" if is_redemption else e.get("event_name"),
+            "code": metadata.get("code") if is_redemption else None,
         })
     recent.sort(key=lambda x: x.get("date") or "", reverse=True)
     for item in recent[:25]:
@@ -7024,13 +7030,70 @@ def _admin_plan_payload(data, key=None):
     return values
 
 
+def _subscription_code_usage_rows(redemptions, orders, profiles):
+    """يوحّد استخدام أكواد الاشتراك والخصم في سجل واضح للأدمن."""
+    profile_by_user = {str(row.get("user_id")): row for row in profiles}
+
+    def user_name(user_id):
+        profile = profile_by_user.get(str(user_id)) or {}
+        return profile.get("full_name") or profile.get("username") or str(user_id or "")[:8] or "—"
+
+    usages = []
+    for row in redemptions:
+        if not row.get("used_at") or not row.get("used_by"):
+            continue
+        usages.append({
+            "id": f"redemption:{row.get('code')}", "type": "redemption",
+            "code": row.get("code"), "user_id": str(row.get("used_by")),
+            "user": user_name(row.get("used_by")), "plan": row.get("plan_key"),
+            "period": row.get("period"), "amount": 0.0, "base_amount": None,
+            "discount_percent": 100, "currency": "SAR", "is_free": True,
+            "date": row.get("used_at"),
+        })
+    for row in orders:
+        if not row.get("discount_code") or row.get("status") != "paid":
+            continue
+        amount = float(row.get("amount") or 0)
+        usages.append({
+            "id": f"discount:{row.get('id')}", "type": "discount",
+            "code": row.get("discount_code"), "user_id": str(row.get("user_id")),
+            "user": user_name(row.get("user_id")), "plan": row.get("plan"),
+            "period": row.get("period"), "amount": amount,
+            "base_amount": float(row.get("base_amount") or 0),
+            "discount_percent": int(row.get("discount_percent") or 0),
+            "currency": row.get("currency") or "SAR", "is_free": amount <= 0,
+            "date": row.get("paid_at") or row.get("created_at"),
+        })
+    usages.sort(key=lambda row: row.get("date") or "", reverse=True)
+    return usages
+
+
 @app.route("/api/admin/subscription-management", methods=["GET"])
 @require_role("admin")
 def admin_subscription_management():
     plans = sorted(_subscription_catalog(include_inactive=True, refresh=True).values(), key=lambda item: item.get("sort_order", 100))
     redemptions = supabase_admin.table("subscription_redemption_codes").select("*").order("created_at", desc=True).limit(100).execute().data
     discounts = supabase_admin.table("subscription_discount_codes").select("*").order("created_at", desc=True).limit(100).execute().data
-    return jsonify({"plans": plans, "redemption_codes": redemptions, "discount_codes": discounts}), 200
+    orders = (
+        supabase_admin.table("subscription_orders")
+        .select("id,user_id,plan,period,amount,base_amount,currency,status,discount_code,discount_percent,created_at,paid_at")
+        .order("created_at", desc=True).limit(250).execute().data
+    )
+    user_ids = {
+        str(row.get("used_by")) for row in redemptions if row.get("used_by")
+    } | {
+        str(row.get("user_id")) for row in orders if row.get("discount_code") and row.get("user_id")
+    }
+    profiles = []
+    if user_ids:
+        profiles = (
+            supabase_admin.table("profiles").select("user_id,username,full_name")
+            .in_("user_id", list(user_ids)).execute().data
+        )
+    return jsonify({
+        "plans": plans, "redemption_codes": redemptions, "discount_codes": discounts,
+        "code_usages": _subscription_code_usage_rows(redemptions, orders, profiles)[:200],
+    }), 200
 
 
 @app.route("/api/admin/subscription-plans", methods=["POST"])

@@ -2725,6 +2725,7 @@
 .admin-plan-editor{margin-bottom:12px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--paper-dim)}.admin-plan-editor header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.admin-plan-editor header code{color:var(--ink-soft)}
 .admin-plan-form{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:9px;margin:12px 0}.admin-plan-form label{display:grid;gap:4px;color:var(--ink-soft);font-size:10px;font-weight:700}.admin-plan-form input{min-width:0;margin:0}.admin-plan-checks{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.admin-plan-checks label{display:flex;align-items:center;gap:5px;color:var(--ink);font-size:11px}
 .admin-code-create{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.admin-code-create select,.admin-code-create input{min-height:42px;padding:8px 11px;border:1px solid var(--line);border-radius:11px;background:var(--surface);color:var(--ink);font:inherit}.admin-discount-create input{flex:1;min-width:135px;margin:0}.admin-code-value{display:flex;align-items:center;justify-content:space-between;gap:12px}.admin-code-value code{font-size:20px;letter-spacing:.13em}.admin-code-state{font-size:11px;font-weight:800}.admin-code-state.available{color:var(--teal)}.admin-code-state.used,.admin-code-state.expired{color:var(--danger)}
+.admin-code-payment{display:inline-flex;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:800;white-space:nowrap}.admin-code-payment.free{background:var(--teal-dim);color:var(--teal)}.admin-code-payment.paid{background:var(--highlighter-soft);color:var(--ink)}
 @media(max-width:760px){.subscription-code-row{align-items:stretch;flex-direction:column}.admin-plan-form{grid-template-columns:1fr 1fr}.admin-code-value{align-items:flex-start;flex-direction:column}.admin-commerce-section{padding:13px}}
 @media(max-width:480px){.admin-plan-form{grid-template-columns:1fr}}
 </style>
@@ -3030,6 +3031,11 @@
           <div class="admin-code-create admin-discount-create"><input id="adminDiscountCode" class="text-input offer-code-input" maxlength="20" placeholder="اختياري: SAVE20"><input id="adminDiscountPercent" class="text-input" type="number" min="1" max="100" placeholder="النسبة %"><input id="adminDiscountExpiry" class="text-input" type="datetime-local"><input id="adminDiscountLimit" class="text-input" type="number" min="1" placeholder="حد الاستخدام"><button class="primary" id="adminCreateDiscountBtn" type="button" data-i18n="admin_publish_discount">نشر الكود</button></div>
           <div id="adminDiscountMsg"></div>
           <div class="data-table-wrap"><table class="data-table"><thead><tr><th data-i18n="th_code">الكود</th><th data-i18n="th_discount">الخصم</th><th data-i18n="th_usage">الاستخدام</th><th data-i18n="th_expiry">الصلاحية</th><th data-i18n="th_status">الحالة</th><th data-i18n="th_actions">إجراء</th></tr></thead><tbody id="adminDiscountCodesBody"></tbody></table></div>
+        </section>
+
+        <section class="admin-commerce-section">
+          <div class="admin-section-heading"><div><span>🧾</span><div><h3 data-i18n="admin_code_usage_heading">سجل استخدام الأكواد</h3><p data-i18n="admin_code_usage_desc">يعرض صاحب العملية والمبلغ الفعلي بعد الخصم، أو مجاني عند استخدام كود اشتراك.</p></div></div></div>
+          <div class="data-table-wrap"><table class="data-table"><thead><tr><th data-i18n="th_user">المستخدم</th><th data-i18n="th_operation">النوع</th><th data-i18n="th_code">الكود</th><th data-i18n="th_plan">الباقة</th><th data-i18n="th_period">المدة</th><th data-i18n="th_amount">المبلغ</th><th data-i18n="th_date">التاريخ</th></tr></thead><tbody id="adminCodeUsagesBody"></tbody></table></div>
         </section>
 
         <h3 class="sub-heading" data-i18n="admin_add_school_heading">➕ إضافة مدرسة جديدة</h3>
@@ -5720,7 +5726,7 @@ const I18N = {
     th_plan: 'الباقة', th_subscribers: 'المشتركون', th_share: 'النسبة', th_trial_starts: 'بدأوا تجربة', th_trial_converted: 'تحولوا لمدفوع', th_conversion: 'التحويل',
     admin_funnel_heading: 'مسار التحويل', admin_funnel_desc: 'من استخدام المنصة حتى التحول لاشتراك مدفوع.', funnel_users: 'المستخدمون بالفترة', funnel_viewed: 'شاهدوا عرض التجربة', funnel_card: 'أضافوا بطاقة', funnel_started: 'بدأوا التجربة', funnel_converted: 'تحولوا لمدفوع', funnel_period_users: 'قاعدة الفترة المحددة', from_previous: 'من السابق', from_total: 'من البداية',
     admin_recent_heading: 'آخر عمليات الاشتراك', admin_recent_desc: 'آخر الاشتراكات والتجديدات والتجارب وإيقاف التجديد.', th_user: 'المستخدم', th_operation: 'العملية', th_period: 'المدة', th_amount: 'المبلغ', th_date: 'التاريخ', admin_no_operations: 'لا توجد عمليات حتى الآن',
-    operation_new_subscription: 'اشتراك جديد', operation_renewal: 'تجديد', operation_trial: 'تجربة مجانية', operation_cancel_renewal: 'إيقاف التجديد', status_paid: 'مدفوع', status_pending: 'معلّق', status_failed: 'فشل', status_trial: 'تجربة', status_cancelled_renewal: 'أوقف التجديد',
+    operation_new_subscription: 'اشتراك جديد', operation_renewal: 'تجديد', operation_trial: 'تجربة مجانية', operation_cancel_renewal: 'إيقاف التجديد', operation_discount_code: 'اشتراك بكود خصم', operation_redemption_code: 'كود اشتراك مجاني', status_paid: 'مدفوع', status_pending: 'معلّق', status_failed: 'فشل', status_trial: 'تجربة', status_cancelled_renewal: 'أوقف التجديد',
     admin_platform_settings_heading: 'إعدادات المنصة والمدارس', admin_expand_hint: 'اضغط للفتح',
     admin_free_access_heading: '🎁 المجانية العامة للمنصة',
     admin_free_access_desc: 'عند تفعيلها تُلغى كل الحدود في الموقع وiOS وAndroid، مع بقاء الاشتراك متاحًا من الإعدادات.',
@@ -5957,6 +5963,7 @@ const I18N = {
     admin_catalog_heading: 'إدارة الباقات والأسعار', admin_catalog_desc: 'عدّل الأسعار والحدود، أو أضف باقة ويب جديدة.', admin_add_plan: '➕ إضافة باقة جديدة', admin_publish_plan: 'نشر الباقة',
     admin_redemption_heading: 'أكواد الاشتراك', admin_redemption_desc: 'كل كود 10 خانات، يُستخدم مرة واحدة وتنتهي صلاحيته بعد سنة.', admin_generate_code: 'إنشاء الكود',
     admin_discounts_heading: 'أكواد الخصم', admin_discounts_desc: 'حدد النسبة والصلاحية والحد الإجمالي للاستخدام ثم انشر الكود.', admin_publish_discount: 'نشر الكود', th_code: 'الكود', th_expiry: 'الصلاحية', th_discount: 'الخصم', th_usage: 'الاستخدام',
+    admin_code_usage_heading: 'سجل استخدام الأكواد', admin_code_usage_desc: 'يعرض صاحب العملية والمبلغ الفعلي بعد الخصم، أو مجاني عند استخدام كود اشتراك.', code_usage_redemption: 'كود اشتراك', code_usage_discount: 'كود خصم {percent}٪', code_amount_free: 'مجاني', admin_no_code_usages: 'لم يُستخدم أي كود حتى الآن.',
     period_monthly: 'شهري', period_annual: 'سنوي',
     plan_free: 'المجاني', plan_plus: 'بلس', plan_pro: 'برو', plan_ultimate: 'ألتميت', plan_national_day: 'عرض اليوم الوطني',
     national_day_occasion: 'اليوم الوطني السعودي',
@@ -6862,7 +6869,7 @@ const I18N = {
     th_plan: 'Plan', th_subscribers: 'Subscribers', th_share: 'Share', th_trial_starts: 'Trial starts', th_trial_converted: 'Converted to paid', th_conversion: 'Conversion',
     admin_funnel_heading: 'Conversion Funnel', admin_funnel_desc: 'From platform usage to a paid subscriber.', funnel_users: 'Users in period', funnel_viewed: 'Viewed trial offer', funnel_card: 'Added a card', funnel_started: 'Started trial', funnel_converted: 'Converted to paid', funnel_period_users: 'Selected-period base', from_previous: 'from previous', from_total: 'from start',
     admin_recent_heading: 'Recent Subscription Activity', admin_recent_desc: 'Latest subscriptions, renewals, trials, and renewal cancellations.', th_user: 'User', th_operation: 'Operation', th_period: 'Term', th_amount: 'Amount', th_date: 'Date', admin_no_operations: 'No operations yet',
-    operation_new_subscription: 'New subscription', operation_renewal: 'Renewal', operation_trial: 'Free trial', operation_cancel_renewal: 'Renewal turned off', status_paid: 'Paid', status_pending: 'Pending', status_failed: 'Failed', status_trial: 'Trial', status_cancelled_renewal: 'Renewal off',
+    operation_new_subscription: 'New subscription', operation_renewal: 'Renewal', operation_trial: 'Free trial', operation_cancel_renewal: 'Renewal turned off', operation_discount_code: 'Discount-code subscription', operation_redemption_code: 'Free subscription code', status_paid: 'Paid', status_pending: 'Pending', status_failed: 'Failed', status_trial: 'Trial', status_cancelled_renewal: 'Renewal off',
     admin_platform_settings_heading: 'Platform & School Settings', admin_expand_hint: 'Click to expand',
     admin_free_access_heading: '🎁 Platform-wide free access',
     admin_free_access_desc: 'When enabled, all limits are removed on web, iOS, and Android while subscriptions remain available in Settings.',
@@ -7099,6 +7106,7 @@ const I18N = {
     admin_catalog_heading: 'Plans and pricing', admin_catalog_desc: 'Edit prices and limits, or add a new web plan.', admin_add_plan: '➕ Add plan', admin_publish_plan: 'Publish plan',
     admin_redemption_heading: 'Subscription codes', admin_redemption_desc: 'Each 10-character code is single-use and expires after one year.', admin_generate_code: 'Generate code',
     admin_discounts_heading: 'Discount codes', admin_discounts_desc: 'Set the percentage, expiry, and total usage limit, then publish.', admin_publish_discount: 'Publish code', th_code: 'Code', th_expiry: 'Expiry', th_discount: 'Discount', th_usage: 'Usage',
+    admin_code_usage_heading: 'Code usage log', admin_code_usage_desc: 'Shows the user and final amount after discount, or Free for subscription codes.', code_usage_redemption: 'Subscription code', code_usage_discount: '{percent}% discount code', code_amount_free: 'Free', admin_no_code_usages: 'No code has been used yet.',
     period_monthly: 'Monthly', period_annual: 'Yearly',
     plan_free: 'Free', plan_plus: 'Plus', plan_pro: 'Pro', plan_ultimate: 'Ultimate', plan_national_day: 'Saudi National Day Offer',
     national_day_occasion: 'Saudi National Day',
@@ -11669,7 +11677,7 @@ function renderAdminAnalytics(data) {
   document.getElementById('trialConversionRate').textContent = `${adminNumber(trialTotal ? convertedTotal / trialTotal * 100 : 0,1)}%`;
   document.getElementById('adminPlanBreakdownBody').innerHTML = data.plans.breakdown.map(row => `<tr><td><strong>${adminPlanName(row.plan)}</strong></td><td>${adminNumber(row.subscribers)}</td><td>${adminNumber(row.share,1)}%</td><td>${adminNumber(row.trial_starts)}</td><td>${adminNumber(row.trial_conversions)}</td><td>${adminNumber(row.trial_starts ? row.trial_conversions / row.trial_starts * 100 : 0,1)}%</td></tr>`).join('');
 
-  const operationLabels = { new_subscription:t('operation_new_subscription'), renewal:t('operation_renewal'), trial_started:t('operation_trial'), auto_renew_cancelled:t('operation_cancel_renewal') };
+  const operationLabels = { new_subscription:t('operation_new_subscription'), renewal:t('operation_renewal'), trial_started:t('operation_trial'), auto_renew_cancelled:t('operation_cancel_renewal'), discount_code:t('operation_discount_code'), redemption_code:t('operation_redemption_code') };
   const statusLabels = { paid:t('status_paid'), pending:t('status_pending'), failed:t('status_failed'), trial_started:t('status_trial'), auto_renew_cancelled:t('status_cancelled_renewal') };
   const recentBody = document.getElementById('adminRecentOperationsBody');
   recentBody.innerHTML = data.recent_operations.length ? data.recent_operations.map(row => `<tr><td><strong>${escapeHtml(row.user)}</strong></td><td>${operationLabels[row.kind] || escapeHtml(row.kind)}</td><td>${adminPlanName(row.plan)}</td><td>${adminPeriodName(row.period)}</td><td>${row.amount === null ? '—' : adminCurrency(row.amount)}</td><td><span class="admin-status-pill ${row.status === 'paid' ? 'paid' : row.status === 'failed' ? 'failed' : row.status === 'trial_started' ? 'trial' : ''}">${statusLabels[row.status] || escapeHtml(row.status)}</span></td><td>${row.date ? new Date(row.date).toLocaleString(currentLang === 'en' ? 'en-US' : 'ar-SA') : '—'}</td></tr>`).join('') : `<tr><td colspan="7">${t('admin_no_operations')}</td></tr>`;
@@ -19068,6 +19076,12 @@ function adminCommerceDate(value) {
 
 function adminPlanDisplayName(plan) { return currentLang === 'en' ? plan.name_en : plan.name_ar; }
 
+function adminCodeUsageAmount(row) {
+  if (row.is_free || Number(row.amount) <= 0) return `<span class="admin-code-payment free">${escapeHtml(t('code_amount_free'))}</span>`;
+  const amount = typeof adminCurrency === 'function' ? adminCurrency(row.amount) : `${Number(row.amount).toFixed(2)} SAR`;
+  return `<span class="admin-code-payment paid">${escapeHtml(amount)}</span>`;
+}
+
 function renderAdminCommerce(data) {
   adminCommerceCache = data;
   const editor = document.getElementById('adminPlansEditor');
@@ -19091,6 +19105,14 @@ function renderAdminCommerce(data) {
   }).join('') : '<tr><td colspan="5">لا توجد أكواد بعد</td></tr>';
 
   document.getElementById('adminDiscountCodesBody').innerHTML = data.discount_codes.length ? data.discount_codes.map(row => `<tr><td><code>${escapeHtml(row.code)}</code></td><td>${row.discount_percent}%</td><td>${row.usage_count} / ${row.usage_limit}</td><td>${adminCommerceDate(row.expires_at)}</td><td><span class="admin-code-state ${row.is_active ? 'available' : 'expired'}">${row.is_active ? 'فعال' : 'موقوف'}</span></td><td>${row.is_active ? `<button class="ghost" data-disable-discount="${escapeHtml(row.code)}">إيقاف</button>` : '—'}</td></tr>`).join('') : '<tr><td colspan="6">لا توجد أكواد خصم بعد</td></tr>';
+  const usages = data.code_usages || [];
+  document.getElementById('adminCodeUsagesBody').innerHTML = usages.length ? usages.map(row => {
+    const type = row.type === 'redemption'
+      ? t('code_usage_redemption')
+      : t('code_usage_discount', { percent: Number(row.discount_percent || 0) });
+    const plan = data.plans.find(item => item.plan_key === row.plan);
+    return `<tr><td><strong>${escapeHtml(row.user || '—')}</strong></td><td>${escapeHtml(type)}</td><td><code>${escapeHtml(row.code || '—')}</code></td><td>${escapeHtml(plan ? adminPlanDisplayName(plan) : row.plan || '—')}</td><td>${adminPeriodName(row.period)}</td><td>${adminCodeUsageAmount(row)}</td><td>${adminCommerceDate(row.date)}</td></tr>`;
+  }).join('') : `<tr><td colspan="7">${escapeHtml(t('admin_no_code_usages'))}</td></tr>`;
   document.querySelectorAll('[data-disable-discount]').forEach(button => button.addEventListener('click', () => disableAdminDiscount(button.dataset.disableDiscount)));
 }
 

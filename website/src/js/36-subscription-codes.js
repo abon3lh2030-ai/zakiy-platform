@@ -92,6 +92,12 @@ function adminCommerceDate(value) {
 
 function adminPlanDisplayName(plan) { return currentLang === 'en' ? plan.name_en : plan.name_ar; }
 
+function adminCodeUsageAmount(row) {
+  if (row.is_free || Number(row.amount) <= 0) return `<span class="admin-code-payment free">${escapeHtml(t('code_amount_free'))}</span>`;
+  const amount = typeof adminCurrency === 'function' ? adminCurrency(row.amount) : `${Number(row.amount).toFixed(2)} SAR`;
+  return `<span class="admin-code-payment paid">${escapeHtml(amount)}</span>`;
+}
+
 function renderAdminCommerce(data) {
   adminCommerceCache = data;
   const editor = document.getElementById('adminPlansEditor');
@@ -115,6 +121,14 @@ function renderAdminCommerce(data) {
   }).join('') : '<tr><td colspan="5">لا توجد أكواد بعد</td></tr>';
 
   document.getElementById('adminDiscountCodesBody').innerHTML = data.discount_codes.length ? data.discount_codes.map(row => `<tr><td><code>${escapeHtml(row.code)}</code></td><td>${row.discount_percent}%</td><td>${row.usage_count} / ${row.usage_limit}</td><td>${adminCommerceDate(row.expires_at)}</td><td><span class="admin-code-state ${row.is_active ? 'available' : 'expired'}">${row.is_active ? 'فعال' : 'موقوف'}</span></td><td>${row.is_active ? `<button class="ghost" data-disable-discount="${escapeHtml(row.code)}">إيقاف</button>` : '—'}</td></tr>`).join('') : '<tr><td colspan="6">لا توجد أكواد خصم بعد</td></tr>';
+  const usages = data.code_usages || [];
+  document.getElementById('adminCodeUsagesBody').innerHTML = usages.length ? usages.map(row => {
+    const type = row.type === 'redemption'
+      ? t('code_usage_redemption')
+      : t('code_usage_discount', { percent: Number(row.discount_percent || 0) });
+    const plan = data.plans.find(item => item.plan_key === row.plan);
+    return `<tr><td><strong>${escapeHtml(row.user || '—')}</strong></td><td>${escapeHtml(type)}</td><td><code>${escapeHtml(row.code || '—')}</code></td><td>${escapeHtml(plan ? adminPlanDisplayName(plan) : row.plan || '—')}</td><td>${adminPeriodName(row.period)}</td><td>${adminCodeUsageAmount(row)}</td><td>${adminCommerceDate(row.date)}</td></tr>`;
+  }).join('') : `<tr><td colspan="7">${escapeHtml(t('admin_no_code_usages'))}</td></tr>`;
   document.querySelectorAll('[data-disable-discount]').forEach(button => button.addEventListener('click', () => disableAdminDiscount(button.dataset.disableDiscount)));
 }
 

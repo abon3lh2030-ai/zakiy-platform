@@ -60,6 +60,33 @@ class SubscriptionCodeTests(unittest.TestCase):
         self.assertEqual(status, 400)
         self.assertFalse(database.calls)
 
+    def test_admin_code_usage_log_shows_free_redemption_and_user_name(self):
+        rows = app._subscription_code_usage_rows(
+            [{"code": "ABCD234567", "plan_key": "pro", "period": "annual", "used_by": "u1", "used_at": "2026-09-21T10:00:00Z"}],
+            [],
+            [{"user_id": "u1", "username": "student", "full_name": "عبدالله"}],
+        )
+        self.assertEqual(rows[0]["user"], "عبدالله")
+        self.assertEqual(rows[0]["type"], "redemption")
+        self.assertTrue(rows[0]["is_free"])
+        self.assertEqual(rows[0]["amount"], 0)
+
+    def test_admin_code_usage_log_shows_final_discounted_amount(self):
+        rows = app._subscription_code_usage_rows(
+            [],
+            [{
+                "id": "o1", "user_id": "u2", "plan": "plus", "period": "monthly",
+                "status": "paid", "discount_code": "SAVE25", "discount_percent": 25,
+                "base_amount": 19.99, "amount": 14.99, "currency": "SAR",
+                "created_at": "2026-09-21T09:00:00Z", "paid_at": "2026-09-21T09:01:00Z",
+            }],
+            [{"user_id": "u2", "username": "fahad", "full_name": None}],
+        )
+        self.assertEqual(rows[0]["user"], "fahad")
+        self.assertEqual(rows[0]["type"], "discount")
+        self.assertEqual(rows[0]["amount"], 14.99)
+        self.assertFalse(rows[0]["is_free"])
+
 
 if __name__ == "__main__":
     unittest.main()

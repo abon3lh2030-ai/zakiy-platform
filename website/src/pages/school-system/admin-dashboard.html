@@ -93,6 +93,11 @@
           <div class="data-table-wrap"><table class="data-table"><thead><tr><th data-i18n="th_code">الكود</th><th data-i18n="th_discount">الخصم</th><th data-i18n="th_usage">الاستخدام</th><th data-i18n="th_expiry">الصلاحية</th><th data-i18n="th_status">الحالة</th><th data-i18n="th_actions">إجراء</th></tr></thead><tbody id="adminDiscountCodesBody"></tbody></table></div>
         </section>
 
+        <section class="admin-commerce-section">
+          <div class="admin-section-heading"><div><span>🧾</span><div><h3 data-i18n="admin_code_usage_heading">سجل استخدام الأكواد</h3><p data-i18n="admin_code_usage_desc">يعرض صاحب العملية والمبلغ الفعلي بعد الخصم، أو مجاني عند استخدام كود اشتراك.</p></div></div></div>
+          <div class="data-table-wrap"><table class="data-table"><thead><tr><th data-i18n="th_user">المستخدم</th><th data-i18n="th_operation">النوع</th><th data-i18n="th_code">الكود</th><th data-i18n="th_plan">الباقة</th><th data-i18n="th_period">المدة</th><th data-i18n="th_amount">المبلغ</th><th data-i18n="th_date">التاريخ</th></tr></thead><tbody id="adminCodeUsagesBody"></tbody></table></div>
+        </section>
+
         <h3 class="sub-heading" data-i18n="admin_add_school_heading">➕ إضافة مدرسة جديدة</h3>
         <div class="actions" style="flex-wrap:wrap;"><input type="text" id="newSchoolName" class="text-input" placeholder="اسم المدرسة" data-i18n-ph="ph_school_name"><input type="email" id="newSchoolAdminEmail" class="text-input" placeholder="إيميل مدير المدرسة" data-i18n-ph="ph_school_admin_email"><input type="number" id="newSchoolMaxAccounts" class="text-input" placeholder="الحد الأقصى للحسابات" data-i18n-ph="ph_max_accounts" min="0" style="max-width:160px;"><button class="primary" id="createSchoolBtn" data-i18n="btn_create_school">إنشاء المدرسة</button></div>
         <div id="createSchoolError"></div><div id="createSchoolResult" class="credential-reveal hidden"></div>

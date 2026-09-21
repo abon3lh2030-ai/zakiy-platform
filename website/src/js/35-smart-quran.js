@@ -215,13 +215,28 @@ function smartQuranWords(text) {
   return smartQuranNormalize(text).split(' ').filter(Boolean);
 }
 
+function smartQuranTargetWordVariants(word) {
+  const withDaggerAlif = smartQuranNormalize(word);
+  // بعض الكلمات ذات الألف الخنجرية يكتبها محرك الصوت بدون ألف (الرَّحْمَٰن ←
+  // الرحمن)، بينما كلمات أخرى يكتبها بألف (مَٰلِك ← مالك). نقبل الصيغتين
+  // بدل اعتبار الألف الخنجرية خطأً إملائيًا على القارئ.
+  const withoutDaggerAlif = smartQuranNormalize(String(word || '').replace(/\u0670/g, ''));
+  return [...new Set([withDaggerAlif, withoutDaggerAlif].filter(Boolean))];
+}
+
+function smartQuranWordsEqual(targetVariants, spokenWord) {
+  return Array.isArray(targetVariants)
+    ? targetVariants.includes(spokenWord)
+    : targetVariants === spokenWord;
+}
+
 function smartQuranLcsMatches(target, spoken) {
   const rows = target.length + 1;
   const cols = spoken.length + 1;
   const table = Array.from({ length: rows }, () => new Uint16Array(cols));
   for (let i = 1; i < rows; i += 1) {
     for (let j = 1; j < cols; j += 1) {
-      table[i][j] = target[i - 1] === spoken[j - 1]
+      table[i][j] = smartQuranWordsEqual(target[i - 1], spoken[j - 1])
         ? table[i - 1][j - 1] + 1
         : Math.max(table[i - 1][j], table[i][j - 1]);
     }
@@ -230,7 +245,7 @@ function smartQuranLcsMatches(target, spoken) {
   let i = target.length;
   let j = spoken.length;
   while (i > 0 && j > 0) {
-    if (target[i - 1] === spoken[j - 1]) {
+    if (smartQuranWordsEqual(target[i - 1], spoken[j - 1])) {
       matched.add(i - 1); i -= 1; j -= 1;
     } else if (table[i - 1][j] >= table[i][j - 1]) i -= 1;
     else j -= 1;
@@ -241,7 +256,7 @@ function smartQuranLcsMatches(target, spoken) {
 function smartQuranEvaluatePractice() {
   const selected = smartQuranSelectedVerses();
   const originalWords = selected.flatMap(verse => String(verse.text || '').split(/\s+/).filter(Boolean));
-  const targetWords = originalWords.map(smartQuranNormalize).filter(Boolean);
+  const targetWords = originalWords.map(smartQuranTargetWordVariants).filter(variants => variants.length);
   const spokenWords = smartQuranWords(smartQuranState.transcript);
   const result = smartQuranEl('quranPracticeResult');
   if (!spokenWords.length) {

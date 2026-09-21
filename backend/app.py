@@ -3690,7 +3690,22 @@ def admin_platform_analytics():
         return max([d for d in (profile_dt, sign_in_dt) if d], default=None)
 
     activity_dates = [last_activity(u) for u in user_created]
-    active_now = sum(bool(d and d >= now - timedelta(minutes=15)) for d in activity_dates)
+    active_now_cutoff = now - timedelta(minutes=15)
+    active_now_users = []
+    for user in user_created:
+        active_at = last_activity(user)
+        if not active_at or active_at < active_now_cutoff:
+            continue
+        profile = profile_by_user.get(user["user_id"]) or {}
+        active_now_users.append({
+            "user_id": user["user_id"],
+            "name": profile.get("full_name") or profile.get("username") or user.get("email") or user["user_id"][:8],
+            "email": user.get("email"),
+            "role": profile.get("role") or "personal",
+            "last_active_at": active_at.isoformat(),
+        })
+    active_now_users.sort(key=lambda item: item["last_active_at"], reverse=True)
+    active_now = len(active_now_users)
     active_today = sum(bool(d and d >= now - timedelta(days=1)) for d in activity_dates)
     active_7d = sum(bool(d and d >= now - timedelta(days=7)) for d in activity_dates)
     active_30d = sum(bool(d and d >= now - timedelta(days=30)) for d in activity_dates)
@@ -3840,6 +3855,7 @@ def admin_platform_analytics():
             "period_revenue": round(period_revenue, 2),
             "average_revenue_per_payer": round(total_revenue / len(payer_ids), 2) if payer_ids else 0,
         },
+        "active_now_users": active_now_users,
         "plans": {
             "most_popular_plan": most_plan, "most_popular_period": most_period,
             "breakdown": plan_breakdown,

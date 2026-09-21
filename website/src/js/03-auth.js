@@ -66,6 +66,20 @@ function refreshAccountUI() {
   greeting.textContent = t('greeting_prefix', { name: currentUsername });
 }
 
+let activeHeartbeatTimer = null;
+function pingActiveAccount() {
+  if (!currentAccessToken) return Promise.resolve();
+  return fetch(`${API_BASE}/api/ping-active`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${currentAccessToken}` },
+  }).catch(() => {});
+}
+
+function startActiveHeartbeat() {
+  if (activeHeartbeatTimer) clearInterval(activeHeartbeatTimer);
+  activeHeartbeatTimer = setInterval(pingActiveAccount, 5 * 60 * 1000);
+}
+
 async function promptForUsername(initialMessage) {
   const newName = prompt(initialMessage, currentUsername || '');
   if (!newName || !newName.trim()) return;
@@ -214,10 +228,7 @@ function onAuthSuccess(session) {
   // أكثر من نداء بنفس اليوم (تسجيل دخول ثم تسجيل حساب مثلًا). لازم تخلص
   // قبل ما نجيب الأداء عشان الستريك يشمل زيارة اليوم فورًا، مو بعد أول
   // اختبار يحله المستخدم
-  fetch(`${API_BASE}/api/ping-active`, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${currentAccessToken}` },
-  }).catch(() => {}).finally(() => {
+  pingActiveAccount().finally(() => {
     // شارة الستريك بالشاشة الرئيسية - تظهر بس من ٣ أيام متتالية فأكثر
     fetch(`${API_BASE}/api/performance`, { headers: { 'Authorization': `Bearer ${currentAccessToken}` } })
       .then(res => res.json())
@@ -229,6 +240,7 @@ function onAuthSuccess(session) {
       })
       .catch(() => {});
   });
+  startActiveHeartbeat();
 
   // نموذج ميسر المدمج يتطلب callback_url صالح (حتى بدون إعادة توجيه فعلية
   // ملموسة بأغلب الحالات) - فلو المستخدم رجع فعليًا لصفحتنا بعد تدفّق دفع

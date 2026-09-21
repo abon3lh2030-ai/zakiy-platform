@@ -74,6 +74,9 @@ class AdminAnalyticsHelpersTests(unittest.TestCase):
         self.assertEqual(payload["metrics"]["current_subscribers"], 1)
         self.assertEqual(payload["metrics"]["total_revenue"], 39.99)
         self.assertEqual(payload["metrics"]["new_subscriptions"], 1)
+        self.assertEqual(payload["metrics"]["active_now"], 1)
+        self.assertEqual(payload["active_now_users"][0]["name"], "طالب")
+        self.assertEqual(payload["active_now_users"][0]["email"], "user@example.com")
 
 
 if __name__ == "__main__":

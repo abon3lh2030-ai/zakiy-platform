@@ -102,6 +102,10 @@ function renderAdminAnalytics(data) {
   document.getElementById('metricTotalUsers').textContent = adminNumber(m.total_users);
   document.getElementById('metricNewUsers').textContent = t('metric_new_users_value', { n: adminNumber(m.new_users) });
   document.getElementById('metricActiveNow').textContent = adminNumber(m.active_now);
+  const activeUsers = data.active_now_users || [];
+  document.getElementById('adminActiveNowUsers').innerHTML = activeUsers.length
+    ? activeUsers.map(user => `<div class="admin-active-user" title="${escapeHtml(user.email || '')}"><i></i><span>${escapeHtml(user.name)}</span><time>${new Date(user.last_active_at).toLocaleTimeString(currentLang === 'en' ? 'en-US' : 'ar-SA', { hour: '2-digit', minute: '2-digit' })}</time></div>`).join('')
+    : `<p>${t('metric_active_now_empty')}</p>`;
   document.getElementById('metricActiveToday').textContent = adminNumber(m.active_today);
   document.getElementById('metricActiveRanges').textContent = t('metric_active_ranges_value', { d7: adminNumber(m.active_7d), d30: adminNumber(m.active_30d) });
   document.getElementById('metricSubscribers').textContent = adminNumber(m.current_subscribers);

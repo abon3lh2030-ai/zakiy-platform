@@ -2076,6 +2076,13 @@
 .admin-metric-card.primary em { opacity:.75; }
 .admin-metric-card.primary > span { background:rgba(255,255,255,.15); color:white; }
 .admin-metric-card.live > span { color:#23aa71; }
+.admin-active-now-card { grid-row:span 2; min-height:298px; }
+.admin-active-users { position:relative; z-index:1; display:grid; gap:7px; max-height:160px; overflow:auto; margin-top:12px; padding-top:10px; border-top:1px solid var(--line); }
+.admin-active-users > p { margin:0; color:var(--ink-soft); font-size:11px; }
+.admin-active-user { display:grid; grid-template-columns:8px minmax(0,1fr) auto; align-items:center; gap:7px; padding:7px 8px; border-radius:10px; background:var(--paper-dim); color:var(--ink); }
+.admin-active-user i { width:8px; height:8px; border-radius:50%; background:#23aa71; box-shadow:0 0 0 3px rgba(35,170,113,.12); }
+.admin-active-user span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; font-weight:800; }
+.admin-active-user time { color:var(--ink-soft); font-size:10px; direction:ltr; }
 .admin-metric-card.warning > span { color:#d88714; }
 .admin-metric-card.revenue > span { color:#199678; background:#e9f8f3; }
 .admin-section-heading { display:flex; align-items:end; justify-content:space-between; gap:16px; margin:38px 0 14px; }
@@ -2430,7 +2437,7 @@
 
     <div class="admin-metrics-grid" id="adminMetricsGrid" aria-live="polite">
       <article class="admin-metric-card primary"><span>👥</span><small data-i18n="metric_total_users">إجمالي المستخدمين</small><strong id="metricTotalUsers">—</strong><em id="metricNewUsers">—</em></article>
-      <article class="admin-metric-card live"><span>●</span><small data-i18n="metric_active_now">نشطون الآن</small><strong id="metricActiveNow">—</strong><em data-i18n="metric_active_now_hint">آخر 15 دقيقة</em></article>
+      <article class="admin-metric-card live admin-active-now-card"><span>●</span><small data-i18n="metric_active_now">نشطون الآن</small><strong id="metricActiveNow">—</strong><em data-i18n="metric_active_now_hint">آخر 15 دقيقة</em><div class="admin-active-users" id="adminActiveNowUsers"></div></article>
       <article class="admin-metric-card"><span>☀️</span><small data-i18n="metric_active_today">نشطون اليوم</small><strong id="metricActiveToday">—</strong><em id="metricActiveRanges">—</em></article>
       <article class="admin-metric-card"><span>⭐</span><small data-i18n="metric_subscribers">المشتركون حاليًا</small><strong id="metricSubscribers">—</strong><em id="metricSubscriberRate">—</em></article>
       <article class="admin-metric-card"><span>🎁</span><small data-i18n="metric_trials">في تجربة مجانية</small><strong id="metricTrials">—</strong><em data-i18n="metric_trials_hint">تجارب فعالة الآن</em></article>
@@ -5429,7 +5436,7 @@ const I18N = {
     admin_dash_desc: 'الأرقام الحقيقية التي توضح نمو المستخدمين والاشتراكات والإيرادات.',
     period_today: 'اليوم', period_7d: '7 أيام', period_30d: '30 يوم', period_3m: '3 شهور', period_1y: 'سنة', period_all: 'كل الوقت',
     admin_analytics_loading: 'جاري تجهيز أرقام المنصة…', admin_no_data_period: 'لا توجد بيانات في هذه الفترة',
-    metric_total_users: 'إجمالي المستخدمين', metric_active_now: 'نشطون الآن', metric_active_now_hint: 'آخر 15 دقيقة',
+    metric_total_users: 'إجمالي المستخدمين', metric_active_now: 'نشطون الآن', metric_active_now_hint: 'آخر 15 دقيقة', metric_active_now_empty: 'لا يوجد حساب نشط الآن',
     metric_active_today: 'نشطون اليوم', metric_subscribers: 'المشتركون حاليًا', metric_trials: 'في تجربة مجانية', metric_trials_hint: 'تجارب فعالة الآن',
     metric_new_subscriptions: 'اشتراكات جديدة', metric_selected_period: 'ضمن الفترة المحددة', metric_cancelled_renewal: 'أوقفوا التجديد', metric_still_active: 'اشتراكهم ما زال فعالًا',
     metric_expired: 'اشتراكات منتهية', metric_expired_hint: 'انتهت أو أُلغيت', metric_total_revenue: 'إجمالي الإيرادات', metric_recorded_payments: 'دفعات مسجلة ومؤكدة',
@@ -6575,7 +6582,7 @@ const I18N = {
     admin_dash_desc: 'Real platform data for user growth, subscriptions, and revenue.',
     period_today: 'Today', period_7d: '7 days', period_30d: '30 days', period_3m: '3 months', period_1y: '1 year', period_all: 'All time',
     admin_analytics_loading: 'Preparing platform metrics…', admin_no_data_period: 'No data in this period',
-    metric_total_users: 'Total users', metric_active_now: 'Active now', metric_active_now_hint: 'Last 15 minutes',
+    metric_total_users: 'Total users', metric_active_now: 'Active now', metric_active_now_hint: 'Last 15 minutes', metric_active_now_empty: 'No active accounts right now',
     metric_active_today: 'Active today', metric_subscribers: 'Current subscribers', metric_trials: 'On free trial', metric_trials_hint: 'Active trials now',
     metric_new_subscriptions: 'New subscriptions', metric_selected_period: 'Within selected period', metric_cancelled_renewal: 'Renewal turned off', metric_still_active: 'Subscriptions remain active',
     metric_expired: 'Expired subscriptions', metric_expired_hint: 'Expired or cancelled', metric_total_revenue: 'Total revenue', metric_recorded_payments: 'Recorded, confirmed payments',
@@ -7441,6 +7448,20 @@ function refreshAccountUI() {
   greeting.textContent = t('greeting_prefix', { name: currentUsername });
 }
 
+let activeHeartbeatTimer = null;
+function pingActiveAccount() {
+  if (!currentAccessToken) return Promise.resolve();
+  return fetch(`${API_BASE}/api/ping-active`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${currentAccessToken}` },
+  }).catch(() => {});
+}
+
+function startActiveHeartbeat() {
+  if (activeHeartbeatTimer) clearInterval(activeHeartbeatTimer);
+  activeHeartbeatTimer = setInterval(pingActiveAccount, 5 * 60 * 1000);
+}
+
 async function promptForUsername(initialMessage) {
   const newName = prompt(initialMessage, currentUsername || '');
   if (!newName || !newName.trim()) return;
@@ -7589,10 +7610,7 @@ function onAuthSuccess(session) {
   // أكثر من نداء بنفس اليوم (تسجيل دخول ثم تسجيل حساب مثلًا). لازم تخلص
   // قبل ما نجيب الأداء عشان الستريك يشمل زيارة اليوم فورًا، مو بعد أول
   // اختبار يحله المستخدم
-  fetch(`${API_BASE}/api/ping-active`, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${currentAccessToken}` },
-  }).catch(() => {}).finally(() => {
+  pingActiveAccount().finally(() => {
     // شارة الستريك بالشاشة الرئيسية - تظهر بس من ٣ أيام متتالية فأكثر
     fetch(`${API_BASE}/api/performance`, { headers: { 'Authorization': `Bearer ${currentAccessToken}` } })
       .then(res => res.json())
@@ -7604,6 +7622,7 @@ function onAuthSuccess(session) {
       })
       .catch(() => {});
   });
+  startActiveHeartbeat();
 
   // نموذج ميسر المدمج يتطلب callback_url صالح (حتى بدون إعادة توجيه فعلية
   // ملموسة بأغلب الحالات) - فلو المستخدم رجع فعليًا لصفحتنا بعد تدفّق دفع
@@ -11399,6 +11418,10 @@ function renderAdminAnalytics(data) {
   document.getElementById('metricTotalUsers').textContent = adminNumber(m.total_users);
   document.getElementById('metricNewUsers').textContent = t('metric_new_users_value', { n: adminNumber(m.new_users) });
   document.getElementById('metricActiveNow').textContent = adminNumber(m.active_now);
+  const activeUsers = data.active_now_users || [];
+  document.getElementById('adminActiveNowUsers').innerHTML = activeUsers.length
+    ? activeUsers.map(user => `<div class="admin-active-user" title="${escapeHtml(user.email || '')}"><i></i><span>${escapeHtml(user.name)}</span><time>${new Date(user.last_active_at).toLocaleTimeString(currentLang === 'en' ? 'en-US' : 'ar-SA', { hour: '2-digit', minute: '2-digit' })}</time></div>`).join('')
+    : `<p>${t('metric_active_now_empty')}</p>`;
   document.getElementById('metricActiveToday').textContent = adminNumber(m.active_today);
   document.getElementById('metricActiveRanges').textContent = t('metric_active_ranges_value', { d7: adminNumber(m.active_7d), d30: adminNumber(m.active_30d) });
   document.getElementById('metricSubscribers').textContent = adminNumber(m.current_subscribers);

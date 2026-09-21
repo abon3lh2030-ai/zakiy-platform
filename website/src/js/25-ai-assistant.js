@@ -132,9 +132,11 @@ async function sendAiPayload(payload, userBubbleText) {
     appendAiBubble('assistant', data.reply);
     scrollAiMessagesToBottom();
     if (data.title) document.getElementById('aiChatTitle').textContent = data.title;
+    return data.reply;
   } catch (e) {
     removeAiTypingIndicator();
     showError('aiChatError2', e.message);
+    return null;
   }
 }
 

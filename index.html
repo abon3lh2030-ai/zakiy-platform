@@ -2174,6 +2174,7 @@
 <link rel="stylesheet" href="website/src/css/42-handwriting.css">
 <link rel="stylesheet" href="website/src/css/43-mobile-app.css">
 <link rel="stylesheet" href="website/src/css/44-national-day-offer.css">
+<link rel="stylesheet" href="website/src/css/45-ai-voice.css">
 </head>
 <body class="with-sidebar">
 <script>
@@ -3319,7 +3320,11 @@
       <div class="ai-chat-header">
         <button class="ai-chat-back-btn" id="aiChatBackBtn" title="الرجوع لقائمة المحادثات">⋮</button>
         <span class="ai-chat-title" id="aiChatTitle" data-i18n="ai_new_chat_title">محادثة جديدة</span>
+        <button class="ai-voice-toggle" id="aiConversationVoiceBtn" type="button" aria-pressed="false">
+          <span aria-hidden="true">🎙️</span><span data-i18n="ai_voice_start">محادثة صوتية</span>
+        </button>
       </div>
+      <div class="ai-voice-status hidden" id="aiConversationVoiceStatus" role="status" aria-live="polite"></div>
       <div class="ai-chat-messages" id="aiConversationMessages"></div>
       <div id="aiChatError2"></div>
       <div class="ai-chat-inputbar">
@@ -4476,7 +4481,11 @@
     <h2 data-i18n="chat_heading">عندك سؤال عن الملف؟</h2>
     <p class="desc" data-i18n="chat_desc">اسأل أي سؤال عن محتوى الملف اللي رفعته وبيجاوبك ذكيّ</p>
     <div class="chat-messages" id="aiChatMessages"></div>
+    <div class="ai-voice-status hidden" id="aiStudyVoiceStatus" role="status" aria-live="polite"></div>
     <div class="actions">
+      <button class="ai-voice-toggle" id="aiStudyVoiceBtn" type="button" aria-pressed="false">
+        <span aria-hidden="true">🎙️</span><span data-i18n="ai_voice_start">محادثة صوتية</span>
+      </button>
       <input type="text" id="aiChatInput" class="text-input" placeholder="اكتب سؤالك..." data-i18n-ph="ph_ask_question">
       <button class="primary" id="aiChatSendBtn" data-i18n="btn_send">إرسال</button>
     </div>
@@ -5010,6 +5019,13 @@ const I18N = {
     ai_new_chat_title: 'محادثة جديدة',
     ai_book_btn_title: 'لخّص كتاب',
     ph_ai_message: 'اكتب رسالتك...',
+    ai_voice_start: 'محادثة صوتية',
+    ai_voice_stop: 'إنهاء الصوت',
+    ai_voice_listening: 'أسمعك… تكلم الآن',
+    ai_voice_thinking: 'ذكيّ يفكر في ردك…',
+    ai_voice_speaking: 'ذكيّ يرد عليك…',
+    ai_voice_unsupported: 'المحادثة الصوتية غير مدعومة في هذا المتصفح. جرّب Safari أو Chrome محدثًا.',
+    ai_voice_permission: 'اسمح للمتصفح باستخدام المايك حتى تبدأ المحادثة الصوتية.',
     ai_book_scope_step_label: '📖 تلخيص',
     ai_book_scope_hint: 'لخّص الكتاب كامل زي ما هو، أو احذف أي جزء ما تبيه بالتلخيص (مثلاً خله على وحدة معيّنة بس) قبل ما تضغط لخّص.',
     err_text_required: 'النص فاضي - لازم تسيب شي يتلخّص',
@@ -6132,6 +6148,13 @@ const I18N = {
     ai_new_chat_title: 'New conversation',
     ai_book_btn_title: 'Summarize a book',
     ph_ai_message: 'Type your message...',
+    ai_voice_start: 'Voice conversation',
+    ai_voice_stop: 'End voice chat',
+    ai_voice_listening: 'I’m listening… speak now',
+    ai_voice_thinking: 'Zakiy is thinking…',
+    ai_voice_speaking: 'Zakiy is replying…',
+    ai_voice_unsupported: 'Voice conversation is not supported in this browser. Try an updated Safari or Chrome.',
+    ai_voice_permission: 'Allow microphone access to start the voice conversation.',
     ai_book_scope_step_label: '📖 Summarize',
     ai_book_scope_hint: 'Summarize the whole book as-is, or delete any part you don\'t want summarized (e.g. keep just one unit/chapter) before hitting Summarize.',
     err_text_required: 'The text is empty - leave something to summarize',
@@ -10034,16 +10057,17 @@ document.getElementById('aiChatInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') sendAIChat();
 });
 
-async function sendAIChat() {
+async function sendAIChat(options = {}) {
+  if (!options || options instanceof Event) options = {};
   const input = document.getElementById('aiChatInput');
-  const message = input.value.trim();
-  if (!message) return;
+  const message = (options.message || input.value).trim();
+  if (!message) return null;
   clearError('aiChatError');
   appendChatBubble('aiChatMessages', t('chat_you'), message, 'me');
   input.value = '';
 
   try {
-    const body = { message, lang: currentLang };
+    const body = { message, lang: currentLang, voice_mode: Boolean(options.voiceMode) };
     if (chatInteractionId) {
       body.interaction_id = chatInteractionId;
     } else {
@@ -10061,8 +10085,10 @@ async function sendAIChat() {
 
     chatInteractionId = data.interaction_id;
     appendChatBubble('aiChatMessages', t('chat_zakiy'), data.reply, 'ai');
+    return data.reply;
   } catch (err) {
     showError('aiChatError', err.message || t('err_unexpected'));
+    return null;
   }
 }
 
@@ -13361,9 +13387,11 @@ async function sendAiPayload(payload, userBubbleText) {
     appendAiBubble('assistant', data.reply);
     scrollAiMessagesToBottom();
     if (data.title) document.getElementById('aiChatTitle').textContent = data.title;
+    return data.reply;
   } catch (e) {
     removeAiTypingIndicator();
     showError('aiChatError2', e.message);
+    return null;
   }
 }
 
@@ -18167,5 +18195,6 @@ if (new URLSearchParams(window.location.search).get('showcase') === 'lab') {
 <script src="website/src/js/31-school-documents.js"></script>
 <script src="website/src/js/32-handwriting.js"></script>
 <script src="website/src/js/33-mobile-app.js"></script>
+<script src="website/src/js/34-ai-voice.js"></script>
 </body>
 </html>

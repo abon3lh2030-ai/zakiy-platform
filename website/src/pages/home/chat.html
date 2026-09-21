@@ -4,7 +4,11 @@
     <h2 data-i18n="chat_heading">عندك سؤال عن الملف؟</h2>
     <p class="desc" data-i18n="chat_desc">اسأل أي سؤال عن محتوى الملف اللي رفعته وبيجاوبك ذكيّ</p>
     <div class="chat-messages" id="aiChatMessages"></div>
+    <div class="ai-voice-status hidden" id="aiStudyVoiceStatus" role="status" aria-live="polite"></div>
     <div class="actions">
+      <button class="ai-voice-toggle" id="aiStudyVoiceBtn" type="button" aria-pressed="false">
+        <span aria-hidden="true">🎙️</span><span data-i18n="ai_voice_start">محادثة صوتية</span>
+      </button>
       <input type="text" id="aiChatInput" class="text-input" placeholder="اكتب سؤالك..." data-i18n-ph="ph_ask_question">
       <button class="primary" id="aiChatSendBtn" data-i18n="btn_send">إرسال</button>
     </div>

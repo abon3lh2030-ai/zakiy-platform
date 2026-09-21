@@ -1120,6 +1120,7 @@ def chat():
     context = data.get("context")
     name = data.get("name")
     lang = data.get("lang", "ar")
+    voice_mode = bool(data.get("voice_mode"))
 
     if not message:
         return jsonify({"error": "لازم ترسل رسالة"}), 400
@@ -1140,10 +1141,16 @@ def chat():
                 f"سؤال الطالب: {message}"
             )
 
+        if voice_mode:
+            input_text += (
+                "\nهذا حوار صوتي مباشر: جاوب بأسلوب طبيعي وبجمل قصيرة وسهلة للنطق. "
+                "اختصر قدر الإمكان، إلا إذا كان السؤال يحتاج شرحًا لفهمه."
+            )
+
         kwargs = {
             "model": GEMINI_MODEL,
             "input": input_text,
-            "generation_config": {"max_output_tokens": 800, "thinking_level": "minimal"},
+            "generation_config": {"max_output_tokens": 260 if voice_mode else 800, "thinking_level": "minimal"},
         }
         if interaction_id:
             kwargs["previous_interaction_id"] = interaction_id
@@ -1243,6 +1250,7 @@ def send_ai_message(conversation_id):
 
     data = request.get_json(silent=True) or {}
     lang = data.get("lang", "ar")
+    voice_mode = bool(data.get("voice_mode"))
     book_title = (data.get("book_title") or "").strip()
     book_text = data.get("book_text") or ""
 
@@ -1258,6 +1266,12 @@ def send_ai_message(conversation_id):
     if not display_message:
         return jsonify({"error": "لازم ترسل رسالة"}), 400
 
+    if voice_mode:
+        prompt_message += (
+            "\nهذا حوار صوتي مباشر: جاوب بأسلوب طبيعي وبجمل قصيرة وسهلة للنطق. "
+            "اختصر قدر الإمكان، إلا إذا كان السؤال يحتاج شرحًا لفهمه."
+        )
+
     allowed, reject_msg = _check_and_record_daily_action(request.user_id, "ai_assistant_message")
     if not allowed:
         return jsonify({"error": reject_msg}), 402
@@ -1271,7 +1285,7 @@ def send_ai_message(conversation_id):
         kwargs = {
             "model": GEMINI_MODEL,
             "input": input_text,
-            "generation_config": {"max_output_tokens": 800, "thinking_level": "minimal"},
+            "generation_config": {"max_output_tokens": 260 if voice_mode else 800, "thinking_level": "minimal"},
         }
         if convo.get("last_interaction_id"):
             kwargs["previous_interaction_id"] = convo["last_interaction_id"]

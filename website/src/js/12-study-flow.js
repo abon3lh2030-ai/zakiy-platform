@@ -91,16 +91,17 @@ document.getElementById('aiChatInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') sendAIChat();
 });
 
-async function sendAIChat() {
+async function sendAIChat(options = {}) {
+  if (!options || options instanceof Event) options = {};
   const input = document.getElementById('aiChatInput');
-  const message = input.value.trim();
-  if (!message) return;
+  const message = (options.message || input.value).trim();
+  if (!message) return null;
   clearError('aiChatError');
   appendChatBubble('aiChatMessages', t('chat_you'), message, 'me');
   input.value = '';
 
   try {
-    const body = { message, lang: currentLang };
+    const body = { message, lang: currentLang, voice_mode: Boolean(options.voiceMode) };
     if (chatInteractionId) {
       body.interaction_id = chatInteractionId;
     } else {
@@ -118,8 +119,10 @@ async function sendAIChat() {
 
     chatInteractionId = data.interaction_id;
     appendChatBubble('aiChatMessages', t('chat_zakiy'), data.reply, 'ai');
+    return data.reply;
   } catch (err) {
     showError('aiChatError', err.message || t('err_unexpected'));
+    return null;
   }
 }
 

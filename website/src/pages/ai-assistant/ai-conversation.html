@@ -4,7 +4,11 @@
       <div class="ai-chat-header">
         <button class="ai-chat-back-btn" id="aiChatBackBtn" title="الرجوع لقائمة المحادثات">⋮</button>
         <span class="ai-chat-title" id="aiChatTitle" data-i18n="ai_new_chat_title">محادثة جديدة</span>
+        <button class="ai-voice-toggle" id="aiConversationVoiceBtn" type="button" aria-pressed="false">
+          <span aria-hidden="true">🎙️</span><span data-i18n="ai_voice_start">محادثة صوتية</span>
+        </button>
       </div>
+      <div class="ai-voice-status hidden" id="aiConversationVoiceStatus" role="status" aria-live="polite"></div>
       <div class="ai-chat-messages" id="aiConversationMessages"></div>
       <div id="aiChatError2"></div>
       <div class="ai-chat-inputbar">

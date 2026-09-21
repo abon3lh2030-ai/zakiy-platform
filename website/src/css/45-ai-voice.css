@@ -1,0 +1,74 @@
+/* محادثة صوتية مع ذكيّ — للمساعد المستقل والمذاكرة الفردية */
+.ai-chat-title { flex: 1; min-width: 0; }
+.ai-voice-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 8px 13px;
+  border: 1px solid var(--teal);
+  border-radius: 12px;
+  background: var(--teal-dim);
+  color: var(--teal);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform .15s ease, background .15s ease, color .15s ease, box-shadow .15s ease;
+}
+.ai-voice-toggle:hover { transform: translateY(-1px); }
+.ai-voice-toggle.is-active {
+  background: var(--teal);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(24, 145, 118, .22);
+}
+.ai-voice-toggle.is-listening { animation: ai-voice-pulse 1.35s ease-in-out infinite; }
+.ai-voice-toggle:disabled { cursor: wait; opacity: .72; transform: none; }
+
+.ai-voice-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 10px;
+  padding: 7px 11px;
+  border: 1px solid color-mix(in srgb, var(--teal) 35%, transparent);
+  border-radius: 999px;
+  background: var(--teal-dim);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+.ai-voice-status::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+  background: var(--teal);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--teal) 15%, transparent);
+}
+.ai-voice-status.is-thinking::before { animation: ai-voice-dot 1s ease-in-out infinite; }
+.ai-voice-status.is-speaking::before { background: var(--highlighter); }
+
+@keyframes ai-voice-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(24, 145, 118, .25); }
+  50% { box-shadow: 0 0 0 7px rgba(24, 145, 118, 0); }
+}
+@keyframes ai-voice-dot { 50% { opacity: .35; transform: scale(.78); } }
+
+@media (max-width: 680px) {
+  .ai-chat-header { flex-wrap: wrap; }
+  .ai-chat-header .ai-voice-toggle { margin-inline-start: auto; }
+  #step-chat .actions { align-items: stretch; }
+  #step-chat .ai-voice-toggle { flex: 0 0 44px; width: 44px; padding: 8px; }
+  #step-chat .ai-voice-toggle span:last-child { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-voice-toggle.is-listening,
+  .ai-voice-status.is-thinking::before { animation: none; }
+}

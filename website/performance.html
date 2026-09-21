@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ذكيّ</title></head>
+<body><p style="font-family:sans-serif;text-align:center;margin-top:20vh">جاري فتح ذكيّ…</p>
+<script>
+(async()=>{
+  const route='performance';
+  try {
+    const response=await fetch('index.html',{cache:'no-store'});
+    if(!response.ok) throw new Error('load failed');
+    let html=await response.text();
+    const marker='<script>window.ZAKIY_ENTRY_ROUTE='+JSON.stringify(route)+';<\/script>';
+    html=html.replace('</head>',marker+'</head>');
+    document.open('text/html','replace'); document.write(html); document.close();
+  } catch (_) { location.replace('index.html?entry='+encodeURIComponent(route)); }
+})();
+</script></body></html>

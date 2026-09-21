@@ -43,7 +43,7 @@ JS_ORDER = [
     "17-admin-dashboard", "18-school-admin-dashboard", "19-teacher-dashboard",
     "20-student-schedule", "21-messages", "22-broadcast-attendance",
     "23-notes", "24-assignments", "25-ai-assistant", "26-quizzes", "27-gradesheet", "28-madrasati",
-    "29-robotics-lab", "30-science-lab", "31-school-documents", "32-handwriting", "33-mobile-app", "34-ai-voice", "35-smart-quran", "36-subscription-codes",
+    "29-robotics-lab", "30-science-lab", "31-school-documents", "32-handwriting", "33-mobile-app", "34-ai-voice", "35-smart-quran", "36-subscription-codes", "37-multipage-routing",
 ]
 
 

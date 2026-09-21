@@ -197,7 +197,10 @@ function smartQuranStopAudio() {
 function smartQuranNormalize(text) {
   return String(text || '')
     .normalize('NFKD')
-    .replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
+    // الألف الخنجرية في الرسم العثماني تُنطق ألفًا، بينما محرك تحويل
+    // الصوت يكتبها ألفًا عادية (مَٰلِك ← مالك، الْعَٰلَمِينَ ← العالمين).
+    .replace(/\u0670/g, 'ا')
+    .replace(/[\u0610-\u061A\u064B-\u065F\u06D6-\u06ED]/g, '')
     .replace(/ـ/g, '')
     .replace(/[أإآٱ]/g, 'ا')
     .replace(/ى/g, 'ي')

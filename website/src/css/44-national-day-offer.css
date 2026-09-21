@@ -52,21 +52,6 @@
   border-radius: 12px;
   box-shadow: 0 12px 32px rgba(0, 24, 18, .28);
 }
-.national-day-ribbon {
-  position: absolute;
-  top: 17px;
-  inset-inline-end: -40px;
-  width: 175px;
-  padding: 5px 12px;
-  transform: rotate(35deg);
-  background: #ead08a;
-  color: #064d2f;
-  text-align: center;
-  font-size: 10px;
-  font-weight: 800;
-  box-shadow: 0 4px 14px rgba(0,0,0,.18);
-}
-[dir="ltr"] .national-day-ribbon { transform: rotate(-35deg); }
 .national-day-plan .plan-name {
   color: #f6e8bf;
   font-size: 16px;
@@ -118,5 +103,4 @@
   }
   .national-day-plan .national-day-heading { min-height: 112px; }
   .national-day-plan .plan-price { font-size: 30px; }
-  .national-day-ribbon { top: 12px; inset-inline-end: -48px; }
 }

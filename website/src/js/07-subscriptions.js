@@ -94,8 +94,7 @@ function renderSubscriptionPlans() {
     const nationalDayHeader = isNationalDay ? `
       <div class="national-day-heading">
         <img class="national-day-logo" src="/assets/izzna-bitabana-logo.png" alt="${t('national_day_slogan')}" loading="lazy">
-      </div>
-      <div class="national-day-ribbon">${t('national_day_annual_badge')}</div>` : '';
+      </div>` : '';
     return `<div class="plan-card ${isCurrent ? 'current-plan' : ''} ${isNationalDay ? 'national-day-plan' : ''}">
       ${nationalDayHeader}
       <div class="plan-name">${t(`plan_${key}`)}</div>

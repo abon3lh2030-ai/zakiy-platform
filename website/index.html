@@ -2631,30 +2631,53 @@
 .quran-hero h2 { margin:8px 0 5px; color:#fff; font-size:clamp(24px,3vw,38px); }
 .quran-hero p { max-width:650px; color:rgba(255,255,255,.8); font-size:14px; }
 .quran-hero-mark { display:grid; place-items:center; width:82px; height:82px; flex:0 0 82px; border:1px solid rgba(244,223,170,.45); border-radius:24px; background:rgba(255,255,255,.08); color:#f4dfaa; font:700 47px/1 'Amiri',serif; transform:rotate(5deg); }
-.quran-controls { display:grid; grid-template-columns:1.2fr 1fr .8fr; gap:12px; padding:18px 22px; border-bottom:1px solid var(--line); background:var(--paper-dim); }
+.quran-controls { display:grid; grid-template-columns:1.35fr 1fr .9fr .75fr; gap:12px; padding:18px 22px; border-bottom:1px solid var(--line); background:var(--paper-dim); }
 .quran-controls label { display:flex; flex-direction:column; gap:5px; color:var(--ink-soft); font-size:11px; font-weight:700; }
-.quran-controls select { width:100%; min-height:43px; padding:8px 11px; border:1px solid var(--line); border-radius:11px; background:var(--surface); color:var(--ink); font:inherit; font-size:13px; }
+.quran-controls select,.quran-controls input { width:100%; min-height:43px; padding:8px 11px; border:1px solid var(--line); border-radius:11px; background:var(--surface); color:var(--ink); font:inherit; font-size:13px; }
+.quran-surah-search { position:relative; display:flex; flex-direction:column; gap:5px; color:var(--ink-soft); font-size:11px; font-weight:700; }
+.quran-search-field { position:relative; }
+.quran-search-field > span { position:absolute; inset-inline-start:12px; top:50%; z-index:1; transform:translateY(-50%); color:var(--quran-green); font-size:20px; }
+.quran-search-field input { padding-inline-start:38px; }
+.quran-search-results { position:absolute; inset:calc(100% + 7px) 0 auto; z-index:40; max-height:300px; overflow:auto; padding:6px; border:1px solid var(--line); border-radius:13px; background:var(--surface); box-shadow:0 18px 42px rgba(20,44,37,.16); }
+.quran-search-results button { width:100%; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 10px; border:0; border-radius:9px; background:transparent; color:var(--ink); font:inherit; text-align:start; cursor:pointer; }
+.quran-search-results button:hover { background:var(--teal-dim); color:var(--quran-green); }
+.quran-search-results button small { color:var(--ink-soft); font-size:9px; direction:ltr; }
+.quran-search-empty { padding:16px; text-align:center; color:var(--ink-soft); font-weight:500; }
+.quran-page-control { display:flex; flex-direction:column; gap:5px; color:var(--ink-soft); font-size:11px; font-weight:700; }
+.quran-page-nav { display:grid; grid-template-columns:40px minmax(0,1fr) 40px; gap:5px; direction:ltr; }
+.quran-page-nav button { min-height:43px; border:1px solid var(--line); border-radius:10px; background:var(--surface); color:var(--quran-green); font-size:23px; cursor:pointer; }
+.quran-page-nav button:disabled { opacity:.35; cursor:not-allowed; }
+.quran-page-nav label { position:relative; display:block; }
+.quran-page-nav input { min-height:43px; padding-inline-end:55px; text-align:center; }
+.quran-page-nav label span { position:absolute; inset-inline-end:8px; top:50%; transform:translateY(-50%); color:var(--ink-soft); font-size:9px; white-space:nowrap; pointer-events:none; }
 .quran-selection-bar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 22px; border-bottom:1px solid var(--line); background:var(--surface); }
 .quran-selection-bar strong { color:var(--quran-green); font-size:20px; }
 .quran-selection-actions { display:flex; gap:7px; flex-wrap:wrap; }
 .quran-selection-actions button { min-height:38px; padding:7px 11px; font-size:11px; }
 .quran-workspace { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(280px,.75fr); min-height:610px; }
-.quran-reader-panel { min-width:0; padding:22px; border-inline-end:1px solid var(--line); }
+.quran-reader-panel { min-width:0; padding:22px; border-inline-end:1px solid var(--line); background:linear-gradient(150deg,rgba(216,186,114,.07),transparent 40%); }
 .quran-panel-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:17px; }
 .quran-panel-head small { color:var(--ink-soft); font-size:11px; }
 .quran-panel-head h3 { color:var(--quran-green); font:700 25px/1.5 'Amiri',serif; }
 .quran-reading-status { min-height:27px; color:var(--quran-green); font-size:11px; font-weight:700; }
 .quran-loading { padding:50px 15px; text-align:center; color:var(--ink-soft); }
-.quran-verses { display:flex; flex-direction:column; gap:10px; }
-.quran-verse { position:relative; display:grid; grid-template-columns:38px minmax(0,1fr) 34px; align-items:start; gap:11px; padding:15px 13px; border:1px solid var(--line); border-radius:16px; background:var(--surface); cursor:pointer; transition:border-color .15s,background .15s,transform .15s,box-shadow .15s; }
-.quran-verse:hover { transform:translateY(-1px); border-color:rgba(23,101,76,.5); }
-.quran-verse.selected { border-color:var(--quran-green); background:color-mix(in srgb,var(--teal-dim) 62%,var(--surface)); box-shadow:0 7px 22px rgba(13,69,52,.08); }
-.quran-verse.playing { border-color:var(--quran-gold); box-shadow:0 0 0 3px rgba(216,186,114,.18); }
-.quran-verse-check { width:21px; height:21px; margin-top:6px; accent-color:var(--quran-green); }
-.quran-verse-number { display:grid; place-items:center; width:34px; height:34px; border:1px solid rgba(23,101,76,.25); border-radius:50%; color:var(--quran-green); font:700 14px 'Amiri',serif; }
+.quran-mushaf { position:relative; width:min(100%,830px); min-height:760px; margin:0 auto; padding:28px 34px 22px; border:1px solid #c9ad68; border-radius:4px; background:#fffdf4; color:#152e27; box-shadow:inset 0 0 0 5px #fffdf4,inset 0 0 0 6px rgba(23,101,76,.25),0 15px 40px rgba(55,44,18,.1); }
+.quran-mushaf::before,.quran-mushaf::after { content:'❖'; position:absolute; top:12px; color:#b79549; font-size:14px; }
+.quran-mushaf::before { inset-inline-start:17px; }.quran-mushaf::after { inset-inline-end:17px; }
+.quran-page-ornament { margin-bottom:5px; color:#b79549; font:700 22px/1 'Amiri',serif; text-align:center; }
+.quran-page-text { color:#172f29; font:400 clamp(25px,2.4vw,34px)/2.35 'Amiri','Scheherazade New',serif; text-align:justify; text-align-last:center; }
+.quran-surah-banner { display:flex; align-items:center; justify-content:center; gap:14px; width:100%; margin:12px 0 14px; padding:7px 14px; border-block:1px solid rgba(23,101,76,.3); background:linear-gradient(90deg,transparent,rgba(23,101,76,.1),transparent); color:#145b45; font:700 24px/1.55 'Amiri',serif; text-align:center; }
+.quran-surah-banner span { color:#b79549; font-size:16px; }
+.quran-ayah { position:relative; display:inline; margin:0 2px; padding:2px 3px 5px; border-radius:6px; outline:none; cursor:pointer; transition:background .14s,color .14s,box-shadow .14s; -webkit-box-decoration-break:clone; box-decoration-break:clone; }
+.quran-ayah:hover { background:rgba(23,101,76,.08); }
+.quran-ayah:focus-visible { box-shadow:0 0 0 2px rgba(23,101,76,.42); }
+.quran-ayah.selected { background:rgba(31,132,97,.18); color:#0b503a; box-shadow:inset 0 -2px #238d68; }
+.quran-ayah.playing { background:rgba(216,186,114,.32); box-shadow:inset 0 -2px #b79549; }
+.quran-verse-number { display:inline-grid; place-items:center; min-width:30px; height:30px; margin:0 5px; padding:0 5px; border:1px solid rgba(23,101,76,.4); border-radius:50%; color:#17654c; font:700 13px/1 'Amiri',serif; vertical-align:middle; }
 .quran-verse-text { color:var(--ink); font:400 clamp(24px,2.5vw,31px)/2.05 'Amiri',serif; text-align:right; }
 .quran-word { padding:0 1px; border-radius:5px; cursor:help; transition:background .12s,color .12s; }
-.quran-word:hover,.quran-word.active { background:#f0d891; color:#143c31; }
+.quran-word:hover { color:#0b684b; }.quran-word.active { background:#f0d891; color:#143c31; }
+.quran-page-footer { display:flex; align-items:center; justify-content:center; gap:9px; margin-top:24px; color:#977b3d; font:700 14px 'Amiri',serif; }
 .quran-coach-panel { display:flex; flex-direction:column; min-width:0; padding:20px; background:var(--paper-dim); }
 .quran-coach-head { display:flex; align-items:center; gap:10px; margin-bottom:13px; }
 .quran-coach-avatar { display:grid; place-items:center; width:42px; height:42px; border-radius:14px; background:var(--quran-green); color:#fff; font:700 21px 'Amiri',serif; }
@@ -2687,8 +2710,9 @@
 .quran-accuracy-note { margin-top:8px; }
 .quran-attribution { padding:11px 22px 18px; color:var(--ink-soft); font-size:9px; text-align:center; }
 @keyframes quran-record-pulse { 50% { box-shadow:0 0 0 7px rgba(179,63,53,0); } 0%,100% { box-shadow:0 0 0 0 rgba(179,63,53,.28); } }
-@media (max-width:900px) { .quran-workspace{grid-template-columns:1fr}.quran-reader-panel{border-inline-end:0;border-bottom:1px solid var(--line)}.quran-coach-messages{min-height:240px;max-height:380px} }
-@media (max-width:650px) { .quran-hero{padding:22px 18px}.quran-hero-mark{width:58px;height:58px;flex-basis:58px;font-size:34px;border-radius:18px}.quran-controls{grid-template-columns:1fr;padding:14px}.quran-selection-bar,.quran-practice-head{align-items:stretch;flex-direction:column}.quran-selection-bar{padding:12px 14px}.quran-selection-actions{display:grid;grid-template-columns:1fr 1fr}.quran-reader-panel,.quran-coach-panel{padding:15px}.quran-practice{margin:12px 14px 0}.quran-verse{grid-template-columns:29px minmax(0,1fr) 30px;gap:7px;padding:13px 9px}.quran-verse-text{font-size:24px;line-height:2}.quran-verse-number{width:30px;height:30px} }
+@media (max-width:1150px) { .quran-controls{grid-template-columns:1fr 1fr}.quran-surah-search{z-index:2} }
+@media (max-width:900px) { .quran-workspace{grid-template-columns:1fr}.quran-reader-panel{border-inline-end:0;border-bottom:1px solid var(--line)}.quran-coach-messages{min-height:240px;max-height:380px}.quran-mushaf{min-height:650px} }
+@media (max-width:650px) { .quran-hero{padding:22px 18px}.quran-hero-mark{width:58px;height:58px;flex-basis:58px;font-size:34px;border-radius:18px}.quran-controls{grid-template-columns:1fr;padding:14px}.quran-selection-bar,.quran-practice-head{align-items:stretch;flex-direction:column}.quran-selection-bar{padding:12px 14px}.quran-selection-actions{display:grid;grid-template-columns:1fr 1fr}.quran-reader-panel,.quran-coach-panel{padding:13px}.quran-practice{margin:12px 14px 0}.quran-mushaf{min-height:560px;padding:22px 18px 18px}.quran-page-text{font-size:24px;line-height:2.25}.quran-surah-banner{font-size:21px}.quran-verse-number{min-width:27px;height:27px;font-size:12px} }
 @media (prefers-reduced-motion:reduce) { .quran-record-btn.recording{animation:none} }
 /* أكواد الاشتراك والخصم + إدارة كتالوج الباقات */
 .subscription-code-panel,.subscription-discount-panel{display:grid;gap:10px;margin:14px 0;padding:15px;border:1px solid var(--line);border-radius:16px;background:var(--paper-dim)}
@@ -3950,10 +3974,22 @@
       </header>
 
       <div class="quran-controls">
-        <label>
-          <span data-i18n="quran_surah_label">السورة</span>
-          <select id="quranChapterSelect" aria-label="السورة"></select>
-        </label>
+        <div class="quran-surah-search">
+          <label for="quranSurahSearch" data-i18n="quran_surah_search_label">ابحث عن سورة</label>
+          <div class="quran-search-field">
+            <span aria-hidden="true">⌕</span>
+            <input id="quranSurahSearch" type="search" autocomplete="off" data-i18n-ph="quran_surah_search_placeholder" placeholder="اكتب اسم السورة...">
+          </div>
+          <div class="quran-search-results hidden" id="quranSurahResults"></div>
+        </div>
+        <div class="quran-page-control">
+          <span data-i18n="quran_page_label">صفحة المصحف</span>
+          <div class="quran-page-nav">
+            <button id="quranPrevPageBtn" type="button" aria-label="الصفحة السابقة">‹</button>
+            <label><input id="quranPageInput" type="number" min="1" max="604" value="1" inputmode="numeric"><span data-i18n="quran_page_of">من 604</span></label>
+            <button id="quranNextPageBtn" type="button" aria-label="الصفحة التالية">›</button>
+          </div>
+        </div>
         <label>
           <span data-i18n="quran_reciter_label">القارئ</span>
           <select id="quranReciterSelect">
@@ -3998,13 +4034,13 @@
         <main class="quran-reader-panel">
           <div class="quran-panel-head">
             <div>
-              <small data-i18n="quran_reader_label">صفحة القراءة</small>
+              <small data-i18n="quran_reader_label">صفحة المصحف</small>
               <h3 id="quranChapterTitle">—</h3>
             </div>
             <span class="quran-reading-status" id="quranReadingStatus"></span>
           </div>
           <div class="quran-loading" id="quranLoading" data-i18n="loading">جاري التحميل...</div>
-          <div class="quran-verses" id="quranVerses"></div>
+          <div class="quran-mushaf" id="quranVerses" lang="ar" dir="rtl"></div>
           <div id="quranError"></div>
         </main>
 
@@ -5103,15 +5139,15 @@ const I18N = {
     nav_ai_help: 'مساعد ذكيّ',
     nav_smart_quran: 'المصحف الذكي',
     quran_kicker: 'المصحف الذكي', quran_heading: 'اقرأ، اسمع، واحفظ بثقة', quran_desc: 'اختر آياتك، استمع لها بصوت قارئك، واستعن بذكيّ في خطة الحفظ والنطق والتسميع.',
-    quran_surah_label: 'السورة', quran_reciter_label: 'القارئ', quran_reciter_dosari: 'ياسر الدوسري', quran_reciter_sudais: 'عبدالرحمن السديس',
+    quran_surah_label: 'السورة', quran_surah_search_label: 'ابحث عن سورة', quran_surah_search_placeholder: 'اكتب اسم السورة...', quran_search_empty: 'لم نجد سورة بهذا الاسم', quran_page_label: 'صفحة المصحف', quran_page_of: 'من 604', quran_page_number: 'صفحة {n}', quran_select_ayah: 'حدد الآية {n}', quran_reciter_label: 'القارئ', quran_reciter_dosari: 'ياسر الدوسري', quran_reciter_sudais: 'عبدالرحمن السديس',
     quran_repeat_label: 'تكرار كل آية', quran_repeat_once: 'مرة واحدة', quran_repeat_three: '3 مرات', quran_repeat_five: '5 مرات',
     quran_selected_count: 'آية محددة', quran_play_selected: '▶ استمع للمحدد', quran_stop_audio: '■ إيقاف', quran_start_practice: '🎙️ ابدأ التسميع', quran_clear_selection: 'إلغاء التحديد',
     quran_practice_heading: 'التسميع الذكي', quran_practice_desc: 'سمّع الآيات المحددة، وسنقارن الكلمات بالنص آليًا.', quran_record_start: '🎙️ ابدأ التسجيل', quran_record_stop: '■ إنهاء التسميع',
     quran_practice_ready: 'جاهز لسماع تلاوتك.', quran_practice_listening: 'أسمعك… ابدأ التسميع الآن.', quran_practice_no_speech: 'لم نلتقط كلامًا واضحًا. قرّب المايك وحاول مرة ثانية.',
-    quran_accuracy_note: 'التقييم مقارنة نصية آلية وقد يخطئ بسبب المايك أو المتصفح، ولا يُعد حكمًا على التجويد.', quran_reader_label: 'صفحة القراءة',
+    quran_accuracy_note: 'التقييم مقارنة نصية آلية وقد يخطئ بسبب المايك أو المتصفح، ولا يُعد حكمًا على التجويد.', quran_reader_label: 'صفحة المصحف',
     quran_coach_heading: 'ذكيّ — مدرب الحفظ', quran_coach_subtitle: 'اسأله عن الحفظ أو نطق كلمة', quran_prompt_plan: 'خطة لحفظ المحدد', quran_prompt_split: 'قسّمها لي', quran_prompt_quiz: 'اختبرني',
     quran_coach_welcome: 'حدد آيات من المصحف، وأنا أجهز لك طريقة تحفظها أو أساعدك في نطق أي كلمة.', quran_coach_placeholder: 'اسأل عن الحفظ أو النطق...',
-    quran_attribution: 'النص العثماني: Tanzil عبر Quran JSON — التلاوات: EveryAyah.', quran_select_first: 'حدد آية واحدة على الأقل أولًا.', quran_playing_verse: 'يُقرأ الآن: الآية {n}',
+    quran_attribution: 'صفحات المصحف بالنص العثماني عبر Al Quran Cloud — التلاوات: EveryAyah.', quran_select_first: 'حدد آية واحدة على الأقل أولًا.', quran_playing_verse: 'يُقرأ الآن: الآية {n}',
     quran_selected_word: 'الكلمة المحددة: {word} — اضغط إرسال واسأل عن نطقها.', quran_plan_question: 'أعطني خطة سهلة لحفظ الآيات المحددة.', quran_split_question: 'قسّم الآيات المحددة إلى مقاطع حفظ قصيرة واربط بينها.',
     quran_quiz_question: 'اختبرني في الآيات المحددة بسؤال إكمال، ولا تعطِ الإجابة مباشرة.', quran_practice_result: 'مطابقة الكلمات: {score}٪', quran_practice_missing: 'راجع الكلمات المظللة ثم اسمع الآيات مرة أخرى.',
     quran_voice_unsupported: 'التسميع الصوتي غير مدعوم في هذا المتصفح. استخدم Safari أو Chrome محدثًا.',
@@ -6245,15 +6281,15 @@ const I18N = {
     nav_ai_help: 'Site Assistant',
     nav_smart_quran: 'Smart Quran',
     quran_kicker: 'Smart Quran', quran_heading: 'Read, listen, and memorize with confidence', quran_desc: 'Select verses, listen to your reciter, and let Zakiy help with memorization, pronunciation, and recitation practice.',
-    quran_surah_label: 'Surah', quran_reciter_label: 'Reciter', quran_reciter_dosari: 'Yasser Al-Dosari', quran_reciter_sudais: 'Abdulrahman Al-Sudais',
+    quran_surah_label: 'Surah', quran_surah_search_label: 'Find a surah', quran_surah_search_placeholder: 'Type a surah name...', quran_search_empty: 'No matching surah found', quran_page_label: 'Mushaf page', quran_page_of: 'of 604', quran_page_number: 'Page {n}', quran_select_ayah: 'Select verse {n}', quran_reciter_label: 'Reciter', quran_reciter_dosari: 'Yasser Al-Dosari', quran_reciter_sudais: 'Abdulrahman Al-Sudais',
     quran_repeat_label: 'Repeat each verse', quran_repeat_once: 'Once', quran_repeat_three: '3 times', quran_repeat_five: '5 times',
     quran_selected_count: 'verses selected', quran_play_selected: '▶ Play selection', quran_stop_audio: '■ Stop', quran_start_practice: '🎙️ Recite from memory', quran_clear_selection: 'Clear selection',
     quran_practice_heading: 'Smart recitation practice', quran_practice_desc: 'Recite the selected verses and we will compare the words automatically.', quran_record_start: '🎙️ Start recording', quran_record_stop: '■ Finish recitation',
     quran_practice_ready: 'Ready to hear your recitation.', quran_practice_listening: 'I’m listening… start reciting now.', quran_practice_no_speech: 'We could not hear clear speech. Move closer to the microphone and try again.',
-    quran_accuracy_note: 'This is an automated text comparison and may be affected by the microphone or browser. It is not a Tajweed assessment.', quran_reader_label: 'Reader',
+    quran_accuracy_note: 'This is an automated text comparison and may be affected by the microphone or browser. It is not a Tajweed assessment.', quran_reader_label: 'Mushaf page',
     quran_coach_heading: 'Zakiy — Memorization coach', quran_coach_subtitle: 'Ask about memorization or pronunciation', quran_prompt_plan: 'Memorization plan', quran_prompt_split: 'Split into sections', quran_prompt_quiz: 'Quiz me',
     quran_coach_welcome: 'Select verses and I can build a memorization plan or help you pronounce a word.', quran_coach_placeholder: 'Ask about memorization or pronunciation...',
-    quran_attribution: 'Uthmani text: Tanzil via Quran JSON — recitations: EveryAyah.', quran_select_first: 'Select at least one verse first.', quran_playing_verse: 'Now playing verse {n}',
+    quran_attribution: 'Uthmani Mushaf pages via Al Quran Cloud — recitations: EveryAyah.', quran_select_first: 'Select at least one verse first.', quran_playing_verse: 'Now playing verse {n}',
     quran_selected_word: 'Selected word: {word} — send to ask how to pronounce it.', quran_plan_question: 'Give me a simple plan to memorize the selected verses.', quran_split_question: 'Split the selected verses into short memorization sections and connect them.',
     quran_quiz_question: 'Quiz me on the selected verses with a completion question. Do not give the answer immediately.', quran_practice_result: 'Word match: {score}%', quran_practice_missing: 'Review the highlighted words, then listen to the verses again.',
     quran_voice_unsupported: 'Voice recitation is not supported in this browser. Use an updated Safari or Chrome.',
@@ -18447,7 +18483,7 @@ const SMART_QURAN_RECITERS = {
 
 const smartQuranState = {
   chapters: [],
-  chapter: null,
+  page: null,
   selected: new Set(),
   selectedWord: '',
   audioQueue: [],
@@ -18462,16 +18498,16 @@ const smartQuranState = {
 function smartQuranEl(id) { return document.getElementById(id); }
 function smartQuranPad(value) { return String(value).padStart(3, '0'); }
 
-function smartQuranAudioUrl(chapterId, verseId) {
+function smartQuranAudioUrl(verse) {
   const reciter = smartQuranEl('quranReciterSelect').value;
-  return `${SMART_QURAN_RECITERS[reciter]}/${smartQuranPad(chapterId)}${smartQuranPad(verseId)}.mp3`;
+  return `${SMART_QURAN_RECITERS[reciter]}/${smartQuranPad(verse.surah_id)}${smartQuranPad(verse.id)}.mp3`;
 }
 
+function smartQuranVerseKey(verse) { return `${Number(verse.surah_id)}:${Number(verse.id)}`; }
+
 function smartQuranSelectedVerses() {
-  if (!smartQuranState.chapter) return [];
-  return smartQuranState.chapter.verses
-    .filter(verse => smartQuranState.selected.has(Number(verse.id)))
-    .sort((a, b) => Number(a.id) - Number(b.id));
+  if (!smartQuranState.page) return [];
+  return smartQuranState.page.ayahs.filter(verse => smartQuranState.selected.has(smartQuranVerseKey(verse)));
 }
 
 function smartQuranSetError(targetId, message) {
@@ -18481,44 +18517,45 @@ function smartQuranSetError(targetId, message) {
 
 async function loadSmartQuranChapters() {
   if (smartQuranState.chapters.length) return;
-  const select = smartQuranEl('quranChapterSelect');
-  select.disabled = true;
   try {
     const response = await fetch(`${API_BASE}/api/quran/chapters`);
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || t('err_unexpected'));
     smartQuranState.chapters = data.chapters || [];
-    select.innerHTML = smartQuranState.chapters.map(chapter =>
-      `<option value="${Number(chapter.id)}">${Number(chapter.id)}. ${escapeHtml(chapter.name)} — ${escapeHtml(chapter.transliteration || '')}</option>`
-    ).join('');
-    const saved = Number(localStorage.getItem('zakiy-quran-chapter')) || 1;
-    if (smartQuranState.chapters.some(chapter => Number(chapter.id) === saved)) select.value = String(saved);
-  } finally {
-    select.disabled = false;
-  }
+  } finally { smartQuranRenderSearchResults(''); }
 }
 
-async function loadSmartQuranChapter(chapterId) {
+function smartQuranClearSelection() {
+  smartQuranState.selected.clear();
+  document.querySelectorAll('.quran-ayah.selected').forEach(row => row.classList.remove('selected'));
+  smartQuranUpdateSelection();
+}
+
+async function loadSmartQuranPage(pageNumber) {
+  const page = Math.max(1, Math.min(604, Number(pageNumber) || 1));
   const loading = smartQuranEl('quranLoading');
   const versesEl = smartQuranEl('quranVerses');
   smartQuranStopAudio();
   smartQuranStopRecognition(false);
-  smartQuranState.selected.clear();
+  smartQuranClearSelection();
   smartQuranState.selectedWord = '';
-  smartQuranUpdateSelection();
   versesEl.innerHTML = '';
   smartQuranSetError('quranError', '');
   loading.classList.remove('hidden');
   try {
-    const response = await fetch(`${API_BASE}/api/quran/chapters/${Number(chapterId)}`);
+    const response = await fetch(`${API_BASE}/api/quran/pages/${page}`);
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || t('err_unexpected'));
-    smartQuranState.chapter = data.chapter;
-    localStorage.setItem('zakiy-quran-chapter', String(chapterId));
-    smartQuranEl('quranChapterTitle').textContent = `${data.chapter.name} — ${data.chapter.transliteration || ''}`;
+    smartQuranState.page = data.page;
+    localStorage.setItem('zakiy-quran-page', String(page));
+    smartQuranEl('quranPageInput').value = String(page);
+    smartQuranEl('quranPrevPageBtn').disabled = page <= 1;
+    smartQuranEl('quranNextPageBtn').disabled = page >= 604;
+    const surahNames = (data.page.surahs || []).map(surah => surah.name).join(' · ');
+    smartQuranEl('quranChapterTitle').textContent = `${t('quran_page_number', { n: page })}${surahNames ? ` — ${surahNames}` : ''}`;
     smartQuranRenderVerses();
   } catch (error) {
-    smartQuranState.chapter = null;
+    smartQuranState.page = null;
     smartQuranSetError('quranError', error.message || t('err_unexpected'));
   } finally {
     loading.classList.add('hidden');
@@ -18527,27 +18564,28 @@ async function loadSmartQuranChapter(chapterId) {
 
 function smartQuranRenderVerses() {
   const versesEl = smartQuranEl('quranVerses');
-  const verses = smartQuranState.chapter?.verses || [];
-  versesEl.innerHTML = verses.map(verse => {
+  const verses = smartQuranState.page?.ayahs || [];
+  const content = verses.map(verse => {
+    const key = smartQuranVerseKey(verse);
+    let heading = '';
+    if (Number(verse.id) === 1) {
+      heading = `<div class="quran-surah-banner"><span>۞</span><strong>${escapeHtml(verse.surah_name)}</strong><span>۞</span></div>`;
+    }
     const words = String(verse.text || '').split(/\s+/).filter(Boolean).map(word =>
       `<span class="quran-word" data-quran-word="${escapeHtml(word)}">${escapeHtml(word)}</span>`
     ).join(' ');
-    return `<article class="quran-verse" data-verse-id="${Number(verse.id)}">
-      <input class="quran-verse-check" type="checkbox" aria-label="${escapeHtml(t('quran_selected_count'))} ${Number(verse.id)}">
-      <div class="quran-verse-text" lang="ar" dir="rtl">${words}</div>
-      <span class="quran-verse-number">${Number(verse.id)}</span>
-    </article>`;
+    return `${heading}<span class="quran-ayah" data-verse-key="${key}" tabindex="0" role="button" aria-pressed="false" aria-label="${escapeHtml(t('quran_select_ayah', { n: Number(verse.id) }))}">${words}<span class="quran-verse-number">${Number(verse.id)}</span></span>`;
   }).join('');
+  versesEl.innerHTML = `<div class="quran-page-ornament" aria-hidden="true">۞</div><div class="quran-page-text">${content}</div><div class="quran-page-footer"><span>﴿</span><strong>${Number(smartQuranState.page?.number || 1)}</strong><span>﴾</span></div>`;
 }
 
-function smartQuranToggleVerse(verseId, selected) {
-  const id = Number(verseId);
-  if (selected) smartQuranState.selected.add(id);
-  else smartQuranState.selected.delete(id);
-  const row = smartQuranEl('quranVerses').querySelector(`[data-verse-id="${id}"]`);
+function smartQuranToggleVerse(verseKey, selected) {
+  if (selected) smartQuranState.selected.add(verseKey);
+  else smartQuranState.selected.delete(verseKey);
+  const row = smartQuranEl('quranVerses').querySelector(`[data-verse-key="${verseKey}"]`);
   if (row) {
     row.classList.toggle('selected', selected);
-    row.querySelector('.quran-verse-check').checked = selected;
+    row.setAttribute('aria-pressed', selected ? 'true' : 'false');
   }
   smartQuranUpdateSelection();
 }
@@ -18570,10 +18608,10 @@ function smartQuranSelectWord(word, element) {
   smartQuranEl('quranCoachInput').focus();
 }
 
-function smartQuranHighlightPlaying(verseId) {
-  document.querySelectorAll('.quran-verse.playing').forEach(row => row.classList.remove('playing'));
-  if (!verseId) return;
-  const row = smartQuranEl('quranVerses').querySelector(`[data-verse-id="${Number(verseId)}"]`);
+function smartQuranHighlightPlaying(verse) {
+  document.querySelectorAll('.quran-ayah.playing').forEach(row => row.classList.remove('playing'));
+  if (!verse) return;
+  const row = smartQuranEl('quranVerses').querySelector(`[data-verse-key="${smartQuranVerseKey(verse)}"]`);
   if (row) {
     row.classList.add('playing');
     row.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -18582,11 +18620,11 @@ function smartQuranHighlightPlaying(verseId) {
 
 function smartQuranPlayCurrent() {
   const verse = smartQuranState.audioQueue[smartQuranState.audioIndex];
-  if (!verse || !smartQuranState.chapter) return smartQuranStopAudio();
+  if (!verse) return smartQuranStopAudio();
   const audio = smartQuranEl('quranAudio');
-  smartQuranHighlightPlaying(verse.id);
+  smartQuranHighlightPlaying(verse);
   smartQuranEl('quranReadingStatus').textContent = t('quran_playing_verse', { n: verse.id });
-  audio.src = smartQuranAudioUrl(smartQuranState.chapter.id, verse.id);
+  audio.src = smartQuranAudioUrl(verse);
   audio.play().catch(error => {
     smartQuranSetError('quranError', error.message || t('err_unexpected'));
     smartQuranStopAudio();
@@ -18782,8 +18820,8 @@ async function smartQuranAskCoach(questionOverride) {
   try {
     const data = await apiCall('POST', '/api/quran/coach', {
       question,
-      chapter_name: smartQuranState.chapter?.name || '',
-      verses: smartQuranSelectedVerses().map(verse => ({ id: Number(verse.id), text: verse.text })),
+      chapter_name: (smartQuranState.page?.surahs || []).map(surah => surah.name).join('، '),
+      verses: smartQuranSelectedVerses().map(verse => ({ id: `${verse.surah_id}:${verse.id}`, text: verse.text })),
     });
     thinking.textContent = data.reply || t('err_unexpected');
     thinking.classList.remove('thinking');
@@ -18801,13 +18839,51 @@ function smartQuranQuickPrompt(kind) {
   smartQuranAskCoach(t(key));
 }
 
+function smartQuranSearchText(value) {
+  return smartQuranNormalize(value).replace(/^سوره\s*/, '').toLowerCase();
+}
+
+function smartQuranRenderSearchResults(query) {
+  const results = smartQuranEl('quranSurahResults');
+  if (!results) return;
+  const term = smartQuranSearchText(query);
+  const matches = smartQuranState.chapters.filter(chapter => {
+    if (!term) return Number(chapter.id) <= 8;
+    const haystack = `${smartQuranSearchText(chapter.name)} ${String(chapter.transliteration || '').toLowerCase()} ${Number(chapter.id)}`;
+    return haystack.includes(term);
+  }).slice(0, 10);
+  results.innerHTML = matches.length ? matches.map(chapter =>
+    `<button type="button" data-quran-chapter="${Number(chapter.id)}"><span>${escapeHtml(chapter.name)}</span><small>${Number(chapter.id)} · ${escapeHtml(chapter.transliteration || '')}</small></button>`
+  ).join('') : `<div class="quran-search-empty">${escapeHtml(t('quran_search_empty'))}</div>`;
+}
+
+async function smartQuranOpenChapter(chapterId) {
+  smartQuranSetError('quranError', '');
+  try {
+    const response = await fetch(`${API_BASE}/api/quran/chapters/${Number(chapterId)}/start-page`);
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || t('err_unexpected'));
+    const chapter = smartQuranState.chapters.find(item => Number(item.id) === Number(chapterId));
+    smartQuranEl('quranSurahSearch').value = chapter?.name || '';
+    smartQuranEl('quranSurahResults').classList.add('hidden');
+    await loadSmartQuranPage(data.page);
+  } catch (error) {
+    smartQuranSetError('quranError', error.message || t('err_unexpected'));
+  }
+}
+
+function smartQuranGoToPage(value) {
+  const page = Math.max(1, Math.min(604, Number(value) || 1));
+  return loadSmartQuranPage(page);
+}
+
 async function loadSmartQuranScreen() {
   smartQuranSetError('quranError', '');
   try {
     await loadSmartQuranChapters();
-    const selectedId = Number(smartQuranEl('quranChapterSelect').value) || 1;
-    if (!smartQuranState.chapter || Number(smartQuranState.chapter.id) !== selectedId) {
-      await loadSmartQuranChapter(selectedId);
+    const page = Number(localStorage.getItem('zakiy-quran-page')) || 1;
+    if (!smartQuranState.page || Number(smartQuranState.page.number) !== page) {
+      await loadSmartQuranPage(page);
     }
   } catch (error) {
     smartQuranEl('quranLoading').classList.add('hidden');
@@ -18824,31 +18900,53 @@ function smartQuranInit() {
     updateGlobalBackButton();
     loadSmartQuranScreen();
   });
-  smartQuranEl('quranChapterSelect').addEventListener('change', event => loadSmartQuranChapter(event.target.value));
+  const searchInput = smartQuranEl('quranSurahSearch');
+  searchInput.addEventListener('focus', () => {
+    smartQuranRenderSearchResults(searchInput.value);
+    smartQuranEl('quranSurahResults').classList.remove('hidden');
+  });
+  searchInput.addEventListener('input', () => {
+    smartQuranRenderSearchResults(searchInput.value);
+    smartQuranEl('quranSurahResults').classList.remove('hidden');
+  });
+  smartQuranEl('quranSurahResults').addEventListener('click', event => {
+    const button = event.target.closest('[data-quran-chapter]');
+    if (button) smartQuranOpenChapter(button.dataset.quranChapter);
+  });
+  document.addEventListener('click', event => {
+    if (!event.target.closest('.quran-surah-search')) smartQuranEl('quranSurahResults').classList.add('hidden');
+  });
+  smartQuranEl('quranPrevPageBtn').addEventListener('click', () => smartQuranGoToPage((smartQuranState.page?.number || 1) - 1));
+  smartQuranEl('quranNextPageBtn').addEventListener('click', () => smartQuranGoToPage((smartQuranState.page?.number || 1) + 1));
+  smartQuranEl('quranPageInput').addEventListener('change', event => smartQuranGoToPage(event.target.value));
+  smartQuranEl('quranPageInput').addEventListener('keydown', event => {
+    if (event.key === 'Enter') { event.preventDefault(); smartQuranGoToPage(event.target.value); }
+  });
   smartQuranEl('quranReciterSelect').addEventListener('change', event => localStorage.setItem('zakiy-quran-reciter', event.target.value));
   smartQuranEl('quranRepeatSelect').addEventListener('change', event => localStorage.setItem('zakiy-quran-repeat', event.target.value));
   smartQuranEl('quranReciterSelect').value = localStorage.getItem('zakiy-quran-reciter') || 'dosari';
   smartQuranEl('quranRepeatSelect').value = localStorage.getItem('zakiy-quran-repeat') || '1';
-  smartQuranEl('quranVerses').addEventListener('click', event => {
+  smartQuranEl('quranVerses').addEventListener('dblclick', event => {
     const word = event.target.closest('[data-quran-word]');
-    if (word) {
-      event.stopPropagation();
-      return smartQuranSelectWord(word.dataset.quranWord, word);
-    }
-    const row = event.target.closest('[data-verse-id]');
+    if (word) { event.preventDefault(); event.stopPropagation(); smartQuranSelectWord(word.dataset.quranWord, word); }
+  });
+  smartQuranEl('quranVerses').addEventListener('click', event => {
+    const row = event.target.closest('[data-verse-key]');
     if (!row) return;
-    smartQuranToggleVerse(row.dataset.verseId, !smartQuranState.selected.has(Number(row.dataset.verseId)));
+    smartQuranToggleVerse(row.dataset.verseKey, !smartQuranState.selected.has(row.dataset.verseKey));
+  });
+  smartQuranEl('quranVerses').addEventListener('keydown', event => {
+    const row = event.target.closest('[data-verse-key]');
+    if (row && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault();
+      smartQuranToggleVerse(row.dataset.verseKey, !smartQuranState.selected.has(row.dataset.verseKey));
+    }
   });
   smartQuranEl('quranPlaySelectedBtn').addEventListener('click', smartQuranPlaySelected);
   smartQuranEl('quranStopAudioBtn').addEventListener('click', smartQuranStopAudio);
   smartQuranEl('quranStartPracticeBtn').addEventListener('click', smartQuranOpenPractice);
   smartQuranEl('quranClearSelectionBtn').addEventListener('click', () => {
-    smartQuranState.selected.clear();
-    document.querySelectorAll('.quran-verse.selected').forEach(row => {
-      row.classList.remove('selected');
-      row.querySelector('.quran-verse-check').checked = false;
-    });
-    smartQuranUpdateSelection();
+    smartQuranClearSelection();
   });
   smartQuranEl('quranRecordBtn').addEventListener('click', smartQuranStartRecognition);
   smartQuranEl('quranAudio').addEventListener('ended', smartQuranAdvanceAudio);

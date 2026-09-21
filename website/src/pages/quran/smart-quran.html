@@ -11,10 +11,22 @@
       </header>
 
       <div class="quran-controls">
-        <label>
-          <span data-i18n="quran_surah_label">السورة</span>
-          <select id="quranChapterSelect" aria-label="السورة"></select>
-        </label>
+        <div class="quran-surah-search">
+          <label for="quranSurahSearch" data-i18n="quran_surah_search_label">ابحث عن سورة</label>
+          <div class="quran-search-field">
+            <span aria-hidden="true">⌕</span>
+            <input id="quranSurahSearch" type="search" autocomplete="off" data-i18n-ph="quran_surah_search_placeholder" placeholder="اكتب اسم السورة...">
+          </div>
+          <div class="quran-search-results hidden" id="quranSurahResults"></div>
+        </div>
+        <div class="quran-page-control">
+          <span data-i18n="quran_page_label">صفحة المصحف</span>
+          <div class="quran-page-nav">
+            <button id="quranPrevPageBtn" type="button" aria-label="الصفحة السابقة">‹</button>
+            <label><input id="quranPageInput" type="number" min="1" max="604" value="1" inputmode="numeric"><span data-i18n="quran_page_of">من 604</span></label>
+            <button id="quranNextPageBtn" type="button" aria-label="الصفحة التالية">›</button>
+          </div>
+        </div>
         <label>
           <span data-i18n="quran_reciter_label">القارئ</span>
           <select id="quranReciterSelect">
@@ -59,13 +71,13 @@
         <main class="quran-reader-panel">
           <div class="quran-panel-head">
             <div>
-              <small data-i18n="quran_reader_label">صفحة القراءة</small>
+              <small data-i18n="quran_reader_label">صفحة المصحف</small>
               <h3 id="quranChapterTitle">—</h3>
             </div>
             <span class="quran-reading-status" id="quranReadingStatus"></span>
           </div>
           <div class="quran-loading" id="quranLoading" data-i18n="loading">جاري التحميل...</div>
-          <div class="quran-verses" id="quranVerses"></div>
+          <div class="quran-mushaf" id="quranVerses" lang="ar" dir="rtl"></div>
           <div id="quranError"></div>
         </main>
 

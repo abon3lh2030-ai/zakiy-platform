@@ -47,6 +47,54 @@ class SmartQuranTests(unittest.TestCase):
         self.assertEqual(chapter["name"], "الفاتحة")
         self.assertEqual(chapter["verses"][0]["text"], "بِسْمِ اللَّهِ")
 
+    def test_invalid_mushaf_page_is_rejected_without_external_request(self):
+        client = app.app.test_client()
+        with patch.object(app, "_fetch_quran_page_content") as fetch:
+            response = client.get("/api/quran/pages/605")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.get_json()["error"], "رقم صفحة المصحف غير صالح")
+        fetch.assert_not_called()
+
+    def test_mushaf_page_normalizes_ayah_and_surah_metadata(self):
+        client = app.app.test_client()
+        source = {
+            "number": 2,
+            "ayahs": [
+                {
+                    "number": 8,
+                    "numberInSurah": 1,
+                    "text": "الٓمٓ",
+                    "surah": {"number": 2, "name": "سُورَةُ البَقَرَةِ", "englishName": "Al-Baqara"},
+                },
+                {
+                    "number": 9,
+                    "numberInSurah": 2,
+                    "text": "ذَٰلِكَ الْكِتَابُ",
+                    "surah": {"number": 2, "name": "سُورَةُ البَقَرَةِ", "englishName": "Al-Baqara"},
+                },
+            ],
+        }
+        with patch.object(app, "_fetch_quran_page_content", return_value=source) as fetch:
+            response = client.get("/api/quran/pages/2")
+
+        self.assertEqual(response.status_code, 200)
+        page = response.get_json()["page"]
+        self.assertEqual(page["number"], 2)
+        self.assertEqual(page["surahs"], [{"id": 2, "name": "سُورَةُ البَقَرَةِ", "transliteration": "Al-Baqara"}])
+        self.assertEqual(page["ayahs"][0]["surah_id"], 2)
+        self.assertEqual(page["ayahs"][0]["id"], 1)
+        fetch.assert_called_once_with("page/2/quran-uthmani")
+
+    def test_chapter_start_page_uses_first_ayah(self):
+        client = app.app.test_client()
+        with patch.object(app, "_fetch_quran_page_content", return_value={"page": 49}) as fetch:
+            response = client.get("/api/quran/chapters/3/start-page")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), {"chapter_id": 3, "page": 49})
+        fetch.assert_called_once_with("ayah/3:1/quran-uthmani")
+
 
 if __name__ == "__main__":
     unittest.main()

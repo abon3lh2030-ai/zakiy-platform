@@ -1316,6 +1316,7 @@ def send_ai_message(conversation_id):
 # ---------- المصحف الذكي (نص عثماني + مدرب حفظ بالذكاء الاصطناعي) ----------
 # ============================================================================
 QURAN_CONTENT_BASE_URL = "https://quran-json.risanb.com"
+QURAN_PAGE_BASE_URL = "https://api.alquran.cloud/v1"
 _quran_content_cache = {}
 
 
@@ -1331,6 +1332,23 @@ def _fetch_quran_content(path, ttl_seconds=86400):
     payload = response.json()
     _quran_content_cache[path] = {"at": now, "data": payload}
     return payload
+
+
+def _fetch_quran_page_content(path, ttl_seconds=86400):
+    """يجلب صفحة مصحف أو موضع آية من المصدر العام ويعيد حقل data فقط."""
+    cache_key = f"alquran-cloud:{path.lstrip('/')}"
+    now = time.time()
+    cached = _quran_content_cache.get(cache_key)
+    if cached and now - cached["at"] < ttl_seconds:
+        return cached["data"]
+    response = requests.get(f"{QURAN_PAGE_BASE_URL}/{path.lstrip('/')}", timeout=15)
+    response.raise_for_status()
+    payload = response.json()
+    if payload.get("code") != 200 or not payload.get("data"):
+        raise ValueError("invalid quran page response")
+    data = payload["data"]
+    _quran_content_cache[cache_key] = {"at": now, "data": data}
+    return data
 
 
 @app.route("/api/quran/chapters", methods=["GET"])
@@ -1353,6 +1371,49 @@ def quran_chapter(chapter_id):
         return jsonify({"chapter": {**metadata, **chapter}}), 200
     except Exception:
         return jsonify({"error": "تعذّر تحميل السورة الآن، حاول مرة ثانية"}), 502
+
+
+@app.route("/api/quran/pages/<int:page_number>", methods=["GET"])
+def quran_page(page_number):
+    if page_number < 1 or page_number > 604:
+        return jsonify({"error": "رقم صفحة المصحف غير صالح"}), 400
+    try:
+        page = _fetch_quran_page_content(f"page/{page_number}/quran-uthmani")
+        ayahs = []
+        surahs = []
+        seen_surahs = set()
+        for ayah in page.get("ayahs") or []:
+            surah = ayah.get("surah") or {}
+            surah_id = int(surah.get("number") or 0)
+            if surah_id and surah_id not in seen_surahs:
+                seen_surahs.add(surah_id)
+                surahs.append({
+                    "id": surah_id,
+                    "name": surah.get("name") or "",
+                    "transliteration": surah.get("englishName") or "",
+                })
+            ayahs.append({
+                "global_number": ayah.get("number"),
+                "id": ayah.get("numberInSurah"),
+                "text": ayah.get("text") or "",
+                "surah_id": surah_id,
+                "surah_name": surah.get("name") or "",
+                "surah_transliteration": surah.get("englishName") or "",
+            })
+        return jsonify({"page": {"number": page_number, "ayahs": ayahs, "surahs": surahs}}), 200
+    except Exception:
+        return jsonify({"error": "تعذّر تحميل صفحة المصحف الآن، حاول مرة ثانية"}), 502
+
+
+@app.route("/api/quran/chapters/<int:chapter_id>/start-page", methods=["GET"])
+def quran_chapter_start_page(chapter_id):
+    if chapter_id < 1 or chapter_id > 114:
+        return jsonify({"error": "رقم السورة غير صالح"}), 400
+    try:
+        ayah = _fetch_quran_page_content(f"ayah/{chapter_id}:1/quran-uthmani")
+        return jsonify({"chapter_id": chapter_id, "page": int(ayah.get("page") or 1)}), 200
+    except Exception:
+        return jsonify({"error": "تعذّر تحديد صفحة السورة الآن، حاول مرة ثانية"}), 502
 
 
 @app.route("/api/quran/coach", methods=["POST"])

@@ -1120,6 +1120,52 @@
   .ai-book-source-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
   .ai-book-source-tabs button.ghost.active { background: var(--teal); color: #fff; border-color: var(--teal); }
 
+  .ai-book-scope-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin: 18px 0;
+  }
+  .ai-book-scope-option {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 58px;
+    padding: 11px 14px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+    transition: border-color .15s, background .15s, transform .15s;
+  }
+  .ai-book-scope-option:hover { border-color: var(--teal); transform: translateY(-1px); }
+  .ai-book-scope-option.active {
+    border-color: var(--teal);
+    background: var(--teal-dim);
+    color: var(--teal);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--teal) 14%, transparent);
+  }
+  .ai-book-scope-icon { font-size: 20px; }
+  .ai-book-section-picker {
+    margin-bottom: 14px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--paper);
+  }
+  .ai-book-section-picker label { display: block; margin-bottom: 8px; font-weight: 800; }
+  .ai-book-section-picker select { width: 100%; }
+  .ai-book-section-hint { margin: 8px 0 0 !important; }
+
+  @media (max-width: 720px) {
+    .ai-book-scope-options { grid-template-columns: 1fr; gap: 8px; }
+    .ai-book-scope-option { justify-content: flex-start; min-height: 52px; }
+  }
+
   /* ---------- دفتر الاختبارات (معلم/طالب) ---------- */
   .quiz-timer-badge {
     display: inline-block; background: var(--emphasis-bg); color: var(--emphasis-text);
@@ -2318,7 +2364,7 @@
 
   /* العناصر العائمة لا تغطي المحتوى أو شريط التنقل */
   .global-back-btn {
-    top: calc(9px + env(safe-area-inset-top)) !important;
+    top: calc(70px + env(safe-area-inset-top)) !important;
     left: 12px !important;
     width: 42px;
     height: 42px;
@@ -3958,7 +4004,28 @@
   <section class="card hidden" id="step-ai-book-scope">
     <span class="step-label" data-i18n="ai_book_scope_step_label">📖 تلخيص</span>
     <h2 id="aiBookScopeTitle"></h2>
-    <p class="desc" data-i18n="ai_book_scope_hint">لخّص الكتاب كامل زي ما هو، أو احذف أي جزء ما تبيه بالتلخيص (مثلاً خله على وحدة معيّنة بس) قبل ما تضغط لخّص.</p>
+    <p class="desc" data-i18n="ai_book_scope_hint">اختر بوضوح: تلخيص الكتاب كامل، أو وحدة، أو فصل محدد.</p>
+
+    <div class="ai-book-scope-options" role="radiogroup" aria-label="نطاق التلخيص" data-i18n-aria="ai_book_scope_aria">
+      <button type="button" class="ai-book-scope-option active" data-ai-book-scope="full" aria-pressed="true">
+        <span class="ai-book-scope-icon">📚</span>
+        <span data-i18n="ai_book_scope_full">الكتاب كامل</span>
+      </button>
+      <button type="button" class="ai-book-scope-option" data-ai-book-scope="unit" aria-pressed="false">
+        <span class="ai-book-scope-icon">📖</span>
+        <span data-i18n="ai_book_scope_unit">وحدة محددة</span>
+      </button>
+      <button type="button" class="ai-book-scope-option" data-ai-book-scope="chapter" aria-pressed="false">
+        <span class="ai-book-scope-icon">📄</span>
+        <span data-i18n="ai_book_scope_chapter">فصل محدد</span>
+      </button>
+    </div>
+
+    <div class="ai-book-section-picker hidden" id="aiBookSectionPicker">
+      <label for="aiBookScopeSectionSelect" data-i18n="ai_book_scope_choose_section">اختر الجزء الذي تريد تلخيصه</label>
+      <select id="aiBookScopeSectionSelect" class="text-input"></select>
+      <p class="desc ai-book-section-hint" id="aiBookScopeDetectionHint"></p>
+    </div>
 
     <textarea id="aiBookScopeText" class="text-input" style="min-height:320px; font-family:'IBM Plex Sans Arabic',sans-serif; line-height:1.8;"></textarea>
 
@@ -5502,7 +5569,15 @@ const I18N = {
     ai_voice_unsupported: 'المحادثة الصوتية غير مدعومة في هذا المتصفح. جرّب Safari أو Chrome محدثًا.',
     ai_voice_permission: 'اسمح للمتصفح باستخدام المايك حتى تبدأ المحادثة الصوتية.',
     ai_book_scope_step_label: '📖 تلخيص',
-    ai_book_scope_hint: 'لخّص الكتاب كامل زي ما هو، أو احذف أي جزء ما تبيه بالتلخيص (مثلاً خله على وحدة معيّنة بس) قبل ما تضغط لخّص.',
+    ai_book_scope_hint: 'اختر بوضوح: تلخيص الكتاب كامل، أو وحدة، أو فصل محدد.',
+    ai_book_scope_aria: 'نطاق التلخيص',
+    ai_book_scope_full: 'الكتاب كامل',
+    ai_book_scope_unit: 'وحدة محددة',
+    ai_book_scope_chapter: 'فصل محدد',
+    ai_book_scope_choose_section: 'اختر الجزء الذي تريد تلخيصه',
+    ai_book_scope_no_units: 'ما قدرنا نكتشف عناوين الوحدات تلقائيًا. تقدر تحدد نص الوحدة يدويًا في المربع أدناه.',
+    ai_book_scope_no_chapters: 'ما قدرنا نكتشف عناوين الفصول تلقائيًا. تقدر تحدد نص الفصل يدويًا في المربع أدناه.',
+    ai_book_scope_detected: 'اختر من الأجزاء المكتشفة، وتقدر تعدّل النص قبل التلخيص.',
     err_text_required: 'النص فاضي - لازم تسيب شي يتلخّص',
     ai_book_picker_step_label: '📚 لخّص كتاب',
     ai_book_picker_heading: 'اختر كتاب يلخّصه لك ذكيّ',
@@ -6645,7 +6720,15 @@ const I18N = {
     ai_voice_unsupported: 'Voice conversation is not supported in this browser. Try an updated Safari or Chrome.',
     ai_voice_permission: 'Allow microphone access to start the voice conversation.',
     ai_book_scope_step_label: '📖 Summarize',
-    ai_book_scope_hint: 'Summarize the whole book as-is, or delete any part you don\'t want summarized (e.g. keep just one unit/chapter) before hitting Summarize.',
+    ai_book_scope_hint: 'Choose clearly: summarize the whole book, a specific unit, or a specific chapter.',
+    ai_book_scope_aria: 'Summary scope',
+    ai_book_scope_full: 'Whole book',
+    ai_book_scope_unit: 'Specific unit',
+    ai_book_scope_chapter: 'Specific chapter',
+    ai_book_scope_choose_section: 'Choose the section you want summarized',
+    ai_book_scope_no_units: 'No unit headings were detected automatically. You can select the unit text manually in the box below.',
+    ai_book_scope_no_chapters: 'No chapter headings were detected automatically. You can select the chapter text manually in the box below.',
+    ai_book_scope_detected: 'Choose a detected section, and edit its text before summarizing if needed.',
     err_text_required: 'The text is empty - leave something to summarize',
     ai_book_picker_step_label: '📚 Summarize a book',
     ai_book_picker_heading: 'Pick a book for Zakiy to summarize',
@@ -7682,7 +7765,10 @@ function proceedToApp() {
   }
 }
 
-let passwordRecoveryActive = location.hash.includes('type=recovery');
+const passwordRecoveryParams = new URLSearchParams(location.search);
+let passwordRecoveryActive = location.hash.includes('type=recovery')
+  || passwordRecoveryParams.get('type') === 'recovery'
+  || passwordRecoveryParams.get('password_recovery') === '1';
 
 function showPasswordRecoveryForm(session) {
   passwordRecoveryActive = true;
@@ -7883,7 +7969,7 @@ function onAuthSuccess(session) {
 // مختلف) نعيد تحميل الصفحة كاملة بدل ما نكمل بحالة قديمة (دور/توكن ما
 // يطابقون الحساب الفعلي الحين، يسبب أخطاء "ما عندك صلاحية" مربكة)
 supabaseClient.auth.onAuthStateChange((event, session) => {
-  if (event === 'PASSWORD_RECOVERY' && session) {
+  if (session && (event === 'PASSWORD_RECOVERY' || passwordRecoveryActive)) {
     showPasswordRecoveryForm(session);
     return;
   }
@@ -7897,7 +7983,9 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
 });
 
 supabaseClient.auth.getSession().then(({ data }) => {
-  if (data.session && !passwordRecoveryActive) onAuthSuccess(data.session);
+  if (!data.session) return;
+  if (passwordRecoveryActive) showPasswordRecoveryForm(data.session);
+  else onAuthSuccess(data.session);
 });
 
 document.getElementById('goToSignupBtn').addEventListener('click', () => {
@@ -7918,8 +8006,9 @@ document.getElementById('passwordResetBackBtn').addEventListener('click', () => 
   show('login-form');
 });
 function passwordResetRedirectUrl() {
-  const isLocal = ['localhost', '127.0.0.1'].includes(location.hostname);
-  return isLocal ? `${location.origin}${location.pathname}` : 'https://zakiy.tech/';
+  // رابط الاستعادة لازم يرجع دائمًا للدومين الفعلي، حتى لو أُرسل الطلب من
+  // نسخة تطوير محلية؛ وإلا Supabase يحفظ localhost داخل رسالة المستخدم.
+  return 'https://zakiy.tech/?password_recovery=1';
 }
 document.getElementById('passwordResetSendBtn').addEventListener('click', async () => {
   const btn = document.getElementById('passwordResetSendBtn');
@@ -13956,20 +14045,104 @@ async function pickLibraryBookForAiSummary(bookId) {
 
 // ---------- اختيار نطاق التلخيص (الكتاب كامل أو جزء منه) قبل الإرسال ----------
 let aiBookScopeBookTitle = '';
+let aiBookScopeFullText = '';
+let aiBookScopeMode = 'full';
+let aiBookScopeSections = { unit: [], chapter: [] };
+
+function detectAiBookSections(fullText, type) {
+  const lines = String(fullText || '').replace(/\r/g, '').split('\n');
+  const headingPattern = type === 'unit'
+    ? /^\s*(?:(?:الوحدة|الوحده)(?:\s+|[:：\-–—]|$)|unit\b)/i
+    : /^\s*(?:الفصل(?:\s+|[:：\-–—]|$)|chapter\b)/i;
+  const starts = [];
+  lines.forEach((line, index) => {
+    const cleaned = line.replace(/\s+/g, ' ').trim();
+    if (cleaned && cleaned.length <= 140 && headingPattern.test(cleaned)) {
+      starts.push({ index, label: cleaned });
+    }
+  });
+  return starts.map((start, index) => {
+    const end = starts[index + 1]?.index ?? lines.length;
+    return {
+      label: start.label,
+      text: lines.slice(start.index, end).join('\n').trim(),
+    };
+  }).filter(section => section.text);
+}
+
+function setAiBookScopeMode(mode) {
+  aiBookScopeMode = mode;
+  document.querySelectorAll('.ai-book-scope-option').forEach(btn => {
+    const active = btn.dataset.aiBookScope === mode;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+
+  const picker = document.getElementById('aiBookSectionPicker');
+  const select = document.getElementById('aiBookScopeSectionSelect');
+  const hint = document.getElementById('aiBookScopeDetectionHint');
+  if (mode === 'full') {
+    picker.classList.add('hidden');
+    document.getElementById('aiBookScopeText').value = aiBookScopeFullText;
+    return;
+  }
+
+  picker.classList.remove('hidden');
+  const sections = aiBookScopeSections[mode];
+  select.innerHTML = '';
+  if (!sections.length) {
+    const option = document.createElement('option');
+    option.textContent = t(mode === 'unit' ? 'ai_book_scope_no_units' : 'ai_book_scope_no_chapters');
+    option.disabled = true;
+    option.selected = true;
+    select.appendChild(option);
+    select.disabled = true;
+    hint.textContent = option.textContent;
+    document.getElementById('aiBookScopeText').value = aiBookScopeFullText;
+    return;
+  }
+
+  select.disabled = false;
+  sections.forEach((section, index) => {
+    const option = document.createElement('option');
+    option.value = String(index);
+    option.textContent = section.label;
+    select.appendChild(option);
+  });
+  hint.textContent = t('ai_book_scope_detected');
+  document.getElementById('aiBookScopeText').value = sections[0].text;
+}
 
 function openAiBookScopeScreen(bookTitle, fullText) {
   showAccountScreen('step-ai-book-scope');
   clearError('aiBookScopeError');
   aiBookScopeBookTitle = bookTitle;
+  aiBookScopeFullText = String(fullText || '').trim();
+  aiBookScopeSections = {
+    unit: detectAiBookSections(aiBookScopeFullText, 'unit'),
+    chapter: detectAiBookSections(aiBookScopeFullText, 'chapter'),
+  };
   document.getElementById('aiBookScopeTitle').textContent = bookTitle;
-  document.getElementById('aiBookScopeText').value = fullText;
+  setAiBookScopeMode('full');
 }
+
+document.querySelectorAll('.ai-book-scope-option').forEach(btn => {
+  btn.addEventListener('click', () => setAiBookScopeMode(btn.dataset.aiBookScope));
+});
+
+document.getElementById('aiBookScopeSectionSelect').addEventListener('change', (event) => {
+  const section = aiBookScopeSections[aiBookScopeMode]?.[Number(event.target.value)];
+  if (section) document.getElementById('aiBookScopeText').value = section.text;
+});
 
 document.getElementById('aiBookScopeSummarizeBtn').addEventListener('click', async () => {
   const text = document.getElementById('aiBookScopeText').value.trim();
   clearError('aiBookScopeError');
   if (!text) { showError('aiBookScopeError', t('err_text_required')); return; }
-  const title = aiBookScopeBookTitle;
+  const selectedSection = aiBookScopeMode === 'full'
+    ? ''
+    : aiBookScopeSections[aiBookScopeMode]?.[Number(document.getElementById('aiBookScopeSectionSelect').value)]?.label;
+  const title = selectedSection ? `${aiBookScopeBookTitle} — ${selectedSection}` : aiBookScopeBookTitle;
   // نرجع خطوتين (صفحة اختيار النطاق ← صفحة اختيار الكتاب ← المحادثة) قبل
   // ما نرسل، عشان المستخدم يشوف الرد يتكون بصفحة المحادثة نفسها
   document.getElementById('globalBackBtn').click();

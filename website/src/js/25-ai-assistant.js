@@ -215,20 +215,104 @@ async function pickLibraryBookForAiSummary(bookId) {
 
 // ---------- اختيار نطاق التلخيص (الكتاب كامل أو جزء منه) قبل الإرسال ----------
 let aiBookScopeBookTitle = '';
+let aiBookScopeFullText = '';
+let aiBookScopeMode = 'full';
+let aiBookScopeSections = { unit: [], chapter: [] };
+
+function detectAiBookSections(fullText, type) {
+  const lines = String(fullText || '').replace(/\r/g, '').split('\n');
+  const headingPattern = type === 'unit'
+    ? /^\s*(?:(?:الوحدة|الوحده)(?:\s+|[:：\-–—]|$)|unit\b)/i
+    : /^\s*(?:الفصل(?:\s+|[:：\-–—]|$)|chapter\b)/i;
+  const starts = [];
+  lines.forEach((line, index) => {
+    const cleaned = line.replace(/\s+/g, ' ').trim();
+    if (cleaned && cleaned.length <= 140 && headingPattern.test(cleaned)) {
+      starts.push({ index, label: cleaned });
+    }
+  });
+  return starts.map((start, index) => {
+    const end = starts[index + 1]?.index ?? lines.length;
+    return {
+      label: start.label,
+      text: lines.slice(start.index, end).join('\n').trim(),
+    };
+  }).filter(section => section.text);
+}
+
+function setAiBookScopeMode(mode) {
+  aiBookScopeMode = mode;
+  document.querySelectorAll('.ai-book-scope-option').forEach(btn => {
+    const active = btn.dataset.aiBookScope === mode;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+
+  const picker = document.getElementById('aiBookSectionPicker');
+  const select = document.getElementById('aiBookScopeSectionSelect');
+  const hint = document.getElementById('aiBookScopeDetectionHint');
+  if (mode === 'full') {
+    picker.classList.add('hidden');
+    document.getElementById('aiBookScopeText').value = aiBookScopeFullText;
+    return;
+  }
+
+  picker.classList.remove('hidden');
+  const sections = aiBookScopeSections[mode];
+  select.innerHTML = '';
+  if (!sections.length) {
+    const option = document.createElement('option');
+    option.textContent = t(mode === 'unit' ? 'ai_book_scope_no_units' : 'ai_book_scope_no_chapters');
+    option.disabled = true;
+    option.selected = true;
+    select.appendChild(option);
+    select.disabled = true;
+    hint.textContent = option.textContent;
+    document.getElementById('aiBookScopeText').value = aiBookScopeFullText;
+    return;
+  }
+
+  select.disabled = false;
+  sections.forEach((section, index) => {
+    const option = document.createElement('option');
+    option.value = String(index);
+    option.textContent = section.label;
+    select.appendChild(option);
+  });
+  hint.textContent = t('ai_book_scope_detected');
+  document.getElementById('aiBookScopeText').value = sections[0].text;
+}
 
 function openAiBookScopeScreen(bookTitle, fullText) {
   showAccountScreen('step-ai-book-scope');
   clearError('aiBookScopeError');
   aiBookScopeBookTitle = bookTitle;
+  aiBookScopeFullText = String(fullText || '').trim();
+  aiBookScopeSections = {
+    unit: detectAiBookSections(aiBookScopeFullText, 'unit'),
+    chapter: detectAiBookSections(aiBookScopeFullText, 'chapter'),
+  };
   document.getElementById('aiBookScopeTitle').textContent = bookTitle;
-  document.getElementById('aiBookScopeText').value = fullText;
+  setAiBookScopeMode('full');
 }
+
+document.querySelectorAll('.ai-book-scope-option').forEach(btn => {
+  btn.addEventListener('click', () => setAiBookScopeMode(btn.dataset.aiBookScope));
+});
+
+document.getElementById('aiBookScopeSectionSelect').addEventListener('change', (event) => {
+  const section = aiBookScopeSections[aiBookScopeMode]?.[Number(event.target.value)];
+  if (section) document.getElementById('aiBookScopeText').value = section.text;
+});
 
 document.getElementById('aiBookScopeSummarizeBtn').addEventListener('click', async () => {
   const text = document.getElementById('aiBookScopeText').value.trim();
   clearError('aiBookScopeError');
   if (!text) { showError('aiBookScopeError', t('err_text_required')); return; }
-  const title = aiBookScopeBookTitle;
+  const selectedSection = aiBookScopeMode === 'full'
+    ? ''
+    : aiBookScopeSections[aiBookScopeMode]?.[Number(document.getElementById('aiBookScopeSectionSelect').value)]?.label;
+  const title = selectedSection ? `${aiBookScopeBookTitle} — ${selectedSection}` : aiBookScopeBookTitle;
   // نرجع خطوتين (صفحة اختيار النطاق ← صفحة اختيار الكتاب ← المحادثة) قبل
   // ما نرسل، عشان المستخدم يشوف الرد يتكون بصفحة المحادثة نفسها
   document.getElementById('globalBackBtn').click();

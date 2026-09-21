@@ -3,7 +3,28 @@
   <section class="card hidden" id="step-ai-book-scope">
     <span class="step-label" data-i18n="ai_book_scope_step_label">📖 تلخيص</span>
     <h2 id="aiBookScopeTitle"></h2>
-    <p class="desc" data-i18n="ai_book_scope_hint">لخّص الكتاب كامل زي ما هو، أو احذف أي جزء ما تبيه بالتلخيص (مثلاً خله على وحدة معيّنة بس) قبل ما تضغط لخّص.</p>
+    <p class="desc" data-i18n="ai_book_scope_hint">اختر بوضوح: تلخيص الكتاب كامل، أو وحدة، أو فصل محدد.</p>
+
+    <div class="ai-book-scope-options" role="radiogroup" aria-label="نطاق التلخيص" data-i18n-aria="ai_book_scope_aria">
+      <button type="button" class="ai-book-scope-option active" data-ai-book-scope="full" aria-pressed="true">
+        <span class="ai-book-scope-icon">📚</span>
+        <span data-i18n="ai_book_scope_full">الكتاب كامل</span>
+      </button>
+      <button type="button" class="ai-book-scope-option" data-ai-book-scope="unit" aria-pressed="false">
+        <span class="ai-book-scope-icon">📖</span>
+        <span data-i18n="ai_book_scope_unit">وحدة محددة</span>
+      </button>
+      <button type="button" class="ai-book-scope-option" data-ai-book-scope="chapter" aria-pressed="false">
+        <span class="ai-book-scope-icon">📄</span>
+        <span data-i18n="ai_book_scope_chapter">فصل محدد</span>
+      </button>
+    </div>
+
+    <div class="ai-book-section-picker hidden" id="aiBookSectionPicker">
+      <label for="aiBookScopeSectionSelect" data-i18n="ai_book_scope_choose_section">اختر الجزء الذي تريد تلخيصه</label>
+      <select id="aiBookScopeSectionSelect" class="text-input"></select>
+      <p class="desc ai-book-section-hint" id="aiBookScopeDetectionHint"></p>
+    </div>
 
     <textarea id="aiBookScopeText" class="text-input" style="min-height:320px; font-family:'IBM Plex Sans Arabic',sans-serif; line-height:1.8;"></textarea>
 

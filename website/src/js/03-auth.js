@@ -42,7 +42,10 @@ function proceedToApp() {
   }
 }
 
-let passwordRecoveryActive = location.hash.includes('type=recovery');
+const passwordRecoveryParams = new URLSearchParams(location.search);
+let passwordRecoveryActive = location.hash.includes('type=recovery')
+  || passwordRecoveryParams.get('type') === 'recovery'
+  || passwordRecoveryParams.get('password_recovery') === '1';
 
 function showPasswordRecoveryForm(session) {
   passwordRecoveryActive = true;
@@ -243,7 +246,7 @@ function onAuthSuccess(session) {
 // مختلف) نعيد تحميل الصفحة كاملة بدل ما نكمل بحالة قديمة (دور/توكن ما
 // يطابقون الحساب الفعلي الحين، يسبب أخطاء "ما عندك صلاحية" مربكة)
 supabaseClient.auth.onAuthStateChange((event, session) => {
-  if (event === 'PASSWORD_RECOVERY' && session) {
+  if (session && (event === 'PASSWORD_RECOVERY' || passwordRecoveryActive)) {
     showPasswordRecoveryForm(session);
     return;
   }
@@ -257,7 +260,9 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
 });
 
 supabaseClient.auth.getSession().then(({ data }) => {
-  if (data.session && !passwordRecoveryActive) onAuthSuccess(data.session);
+  if (!data.session) return;
+  if (passwordRecoveryActive) showPasswordRecoveryForm(data.session);
+  else onAuthSuccess(data.session);
 });
 
 document.getElementById('goToSignupBtn').addEventListener('click', () => {
@@ -278,8 +283,9 @@ document.getElementById('passwordResetBackBtn').addEventListener('click', () => 
   show('login-form');
 });
 function passwordResetRedirectUrl() {
-  const isLocal = ['localhost', '127.0.0.1'].includes(location.hostname);
-  return isLocal ? `${location.origin}${location.pathname}` : 'https://zakiy.tech/';
+  // رابط الاستعادة لازم يرجع دائمًا للدومين الفعلي، حتى لو أُرسل الطلب من
+  // نسخة تطوير محلية؛ وإلا Supabase يحفظ localhost داخل رسالة المستخدم.
+  return 'https://zakiy.tech/?password_recovery=1';
 }
 document.getElementById('passwordResetSendBtn').addEventListener('click', async () => {
   const btn = document.getElementById('passwordResetSendBtn');

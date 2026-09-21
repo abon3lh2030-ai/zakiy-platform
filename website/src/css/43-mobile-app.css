@@ -311,7 +311,7 @@
 
   /* العناصر العائمة لا تغطي المحتوى أو شريط التنقل */
   .global-back-btn {
-    top: calc(9px + env(safe-area-inset-top)) !important;
+    top: calc(70px + env(safe-area-inset-top)) !important;
     left: 12px !important;
     width: 42px;
     height: 42px;

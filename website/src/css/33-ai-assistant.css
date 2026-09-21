@@ -76,3 +76,49 @@
 
   .ai-book-source-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
   .ai-book-source-tabs button.ghost.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+
+  .ai-book-scope-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin: 18px 0;
+  }
+  .ai-book-scope-option {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 58px;
+    padding: 11px 14px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+    transition: border-color .15s, background .15s, transform .15s;
+  }
+  .ai-book-scope-option:hover { border-color: var(--teal); transform: translateY(-1px); }
+  .ai-book-scope-option.active {
+    border-color: var(--teal);
+    background: var(--teal-dim);
+    color: var(--teal);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--teal) 14%, transparent);
+  }
+  .ai-book-scope-icon { font-size: 20px; }
+  .ai-book-section-picker {
+    margin-bottom: 14px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--paper);
+  }
+  .ai-book-section-picker label { display: block; margin-bottom: 8px; font-weight: 800; }
+  .ai-book-section-picker select { width: 100%; }
+  .ai-book-section-hint { margin: 8px 0 0 !important; }
+
+  @media (max-width: 720px) {
+    .ai-book-scope-options { grid-template-columns: 1fr; gap: 8px; }
+    .ai-book-scope-option { justify-content: flex-start; min-height: 52px; }
+  }

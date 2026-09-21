@@ -8300,7 +8300,6 @@ function renderSubscriptionPlans() {
       <button class="primary" data-subscribe-plan="${key}" data-subscribe-period="${checkoutPeriod}" style="width:100%;">${isNationalDay ? t('national_day_subscribe') : t('btn_subscribe')}</button>
       ${subscriptionTrialOfferCache?.available && !isNationalDay ? `<button class="ghost plan-trial-btn" data-trial-plan="${key}">${t('btn_start_trial')}</button>` : ''}`;
     const nationalDayHeader = isNationalDay ? `
-      <div class="national-day-sparkles" aria-hidden="true"><span>✦</span><span>✦</span><span>✦</span></div>
       <div class="national-day-heading">
         <img class="national-day-logo" src="/assets/izzna-bitabana-logo.png" alt="${t('national_day_slogan')}" loading="lazy">
       </div>
@@ -8310,7 +8309,7 @@ function renderSubscriptionPlans() {
       <div class="plan-name">${t(`plan_${key}`)}</div>
       <div class="plan-price">${price > 0 ? `${price} ${t('sar_label')}<small> / ${isNationalDay ? t('national_day_full_year') : periodLabel}</small>` : t('free_label')}</div>
       ${isNationalDay ? `<div class="national-day-value"><span>${t('national_day_ultimate_features')}</span><b>${t('national_day_saving')}</b></div>` : ''}
-      <div class="plan-features">${renderPlanFeatures(plan)}</div>
+      ${isNationalDay ? '' : `<div class="plan-features">${renderPlanFeatures(plan)}</div>`}
       ${isCurrent ? `<div class="plan-current-badge">${t('current_plan_badge')}</div>` : buyButtons}
     </div>`;
   }).join('');

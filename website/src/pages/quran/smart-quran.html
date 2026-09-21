@@ -1,0 +1,100 @@
+  <!-- المصحف الذكي: قراءة، استماع، حفظ وتسميع -->
+  <section class="card hidden" id="step-smart-quran">
+    <div class="quran-shell">
+      <header class="quran-hero">
+        <div>
+          <span class="quran-kicker" data-i18n="quran_kicker">المصحف الذكي</span>
+          <h2 data-i18n="quran_heading">اقرأ، اسمع، واحفظ بثقة</h2>
+          <p data-i18n="quran_desc">اختر آياتك، استمع لها بصوت قارئك، واستعن بذكيّ في خطة الحفظ والنطق والتسميع.</p>
+        </div>
+        <div class="quran-hero-mark" aria-hidden="true">۞</div>
+      </header>
+
+      <div class="quran-controls">
+        <label>
+          <span data-i18n="quran_surah_label">السورة</span>
+          <select id="quranChapterSelect" aria-label="السورة"></select>
+        </label>
+        <label>
+          <span data-i18n="quran_reciter_label">القارئ</span>
+          <select id="quranReciterSelect">
+            <option value="dosari" data-i18n="quran_reciter_dosari">ياسر الدوسري</option>
+            <option value="sudais" data-i18n="quran_reciter_sudais">عبدالرحمن السديس</option>
+          </select>
+        </label>
+        <label>
+          <span data-i18n="quran_repeat_label">تكرار كل آية</span>
+          <select id="quranRepeatSelect">
+            <option value="1" data-i18n="quran_repeat_once">مرة واحدة</option>
+            <option value="3" data-i18n="quran_repeat_three">3 مرات</option>
+            <option value="5" data-i18n="quran_repeat_five">5 مرات</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="quran-selection-bar">
+        <div><strong id="quranSelectionCount">0</strong> <span data-i18n="quran_selected_count">آية محددة</span></div>
+        <div class="quran-selection-actions">
+          <button class="primary" id="quranPlaySelectedBtn" type="button" data-i18n="quran_play_selected">▶ استمع للمحدد</button>
+          <button class="ghost" id="quranStopAudioBtn" type="button" data-i18n="quran_stop_audio">■ إيقاف</button>
+          <button class="ghost" id="quranStartPracticeBtn" type="button" data-i18n="quran_start_practice">🎙️ ابدأ التسميع</button>
+          <button class="ghost" id="quranClearSelectionBtn" type="button" data-i18n="quran_clear_selection">إلغاء التحديد</button>
+        </div>
+      </div>
+
+      <div class="quran-practice hidden" id="quranPracticePanel">
+        <div class="quran-practice-head">
+          <div>
+            <strong data-i18n="quran_practice_heading">التسميع الذكي</strong>
+            <p data-i18n="quran_practice_desc">سمّع الآيات المحددة، وسنقارن الكلمات بالنص آليًا.</p>
+          </div>
+          <button class="quran-record-btn" id="quranRecordBtn" type="button" data-i18n="quran_record_start">🎙️ ابدأ التسجيل</button>
+        </div>
+        <div class="quran-practice-live" id="quranPracticeLive" data-i18n="quran_practice_ready">جاهز لسماع تلاوتك.</div>
+        <div class="quran-practice-result hidden" id="quranPracticeResult"></div>
+        <p class="quran-accuracy-note" data-i18n="quran_accuracy_note">التقييم مقارنة نصية آلية وقد يخطئ بسبب المايك أو المتصفح، ولا يُعد حكمًا على التجويد.</p>
+      </div>
+
+      <div class="quran-workspace">
+        <main class="quran-reader-panel">
+          <div class="quran-panel-head">
+            <div>
+              <small data-i18n="quran_reader_label">صفحة القراءة</small>
+              <h3 id="quranChapterTitle">—</h3>
+            </div>
+            <span class="quran-reading-status" id="quranReadingStatus"></span>
+          </div>
+          <div class="quran-loading" id="quranLoading" data-i18n="loading">جاري التحميل...</div>
+          <div class="quran-verses" id="quranVerses"></div>
+          <div id="quranError"></div>
+        </main>
+
+        <aside class="quran-coach-panel">
+          <div class="quran-coach-head">
+            <span class="quran-coach-avatar">ذ</span>
+            <div>
+              <strong data-i18n="quran_coach_heading">ذكيّ — مدرب الحفظ</strong>
+              <small data-i18n="quran_coach_subtitle">اسأله عن الحفظ أو نطق كلمة</small>
+            </div>
+          </div>
+          <div class="quran-quick-actions">
+            <button type="button" data-quran-prompt="plan" data-i18n="quran_prompt_plan">خطة لحفظ المحدد</button>
+            <button type="button" data-quran-prompt="split" data-i18n="quran_prompt_split">قسّمها لي</button>
+            <button type="button" data-quran-prompt="quiz" data-i18n="quran_prompt_quiz">اختبرني</button>
+          </div>
+          <div class="quran-coach-messages" id="quranCoachMessages">
+            <div class="quran-coach-bubble ai" data-i18n="quran_coach_welcome">حدد آيات من المصحف، وأنا أجهز لك طريقة تحفظها أو أساعدك في نطق أي كلمة.</div>
+          </div>
+          <div class="quran-coach-word hidden" id="quranSelectedWord"></div>
+          <div class="quran-coach-input">
+            <input class="text-input" id="quranCoachInput" data-i18n-ph="quran_coach_placeholder" placeholder="اسأل عن الحفظ أو النطق...">
+            <button class="primary" id="quranCoachSendBtn" type="button" data-i18n="btn_send">إرسال</button>
+          </div>
+          <div id="quranCoachError"></div>
+        </aside>
+      </div>
+
+      <audio id="quranAudio" preload="none"></audio>
+      <p class="quran-attribution" data-i18n="quran_attribution">النص العثماني: Tanzil عبر Quran JSON — التلاوات: EveryAyah.</p>
+    </div>
+  </section>

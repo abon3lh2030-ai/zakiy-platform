@@ -6,7 +6,7 @@ const TOP_LEVEL_SCREENS = [
   'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary',
   'step-quiz', 'step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings',
   'step-profile', 'step-notes', 'step-note-editor', 'step-assignments', 'step-assignment-detail',
-  'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker', 'step-ai-book-scope',
+  'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker', 'step-ai-book-scope', 'step-smart-quran',
   'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take', 'step-gradesheet',
   'step-madrasati', 'step-lesson-prep', 'step-enrichment', 'step-results-analysis',
   'step-homework-help', 'step-study-plan', 'step-robotics-lab', 'step-science-lab',

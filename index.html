@@ -33,7 +33,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="/assets/icon-192.png">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
 <!-- نموذج دفع ميسر المدمج (بطاقة/مدى/Apple Pay) - بيانات البطاقة تروح لميسر
      مباشرة من المتصفح، ما تلمس سيرفرنا إطلاقًا -->
 <link rel="stylesheet" href="https://cdn.moyasar.com/mpf/1.15.0/moyasar.css">
@@ -2175,6 +2175,7 @@
 <link rel="stylesheet" href="website/src/css/43-mobile-app.css">
 <link rel="stylesheet" href="website/src/css/44-national-day-offer.css">
 <link rel="stylesheet" href="website/src/css/45-ai-voice.css">
+<link rel="stylesheet" href="website/src/css/46-smart-quran.css">
 </head>
 <body class="with-sidebar">
 <script>
@@ -2210,6 +2211,7 @@
     <button class="sidebar-btn" id="sidebarLibraryBtn"><span class="sidebar-icon">📚</span><span class="label" data-i18n="nav_library">مكتبتي</span></button>
     <button class="sidebar-btn hidden" id="notesBtn"><span class="sidebar-icon">📝</span><span class="label" data-i18n="nav_notes">ملاحظاتي</span></button>
     <button class="sidebar-btn" id="sidebarAiHelpBtn"><span class="sidebar-icon">🤖</span><span class="label" data-i18n="nav_ai_help">مساعد ذكيّ</span></button>
+    <button class="sidebar-btn" id="smartQuranBtn"><span class="sidebar-icon">📖</span><span class="label" data-i18n="nav_smart_quran">المصحف الذكي</span></button>
     <button class="sidebar-btn" id="sidebarHandwritingBtn"><span class="sidebar-icon">✍️</span><span class="label" data-i18n="handwriting_title">التعرّف على خط اليد</span></button>
     <button class="sidebar-btn" id="madrasatiBtn"><span class="sidebar-icon">🎓</span><span class="label" data-i18n="nav_madrasati">مدرستي</span></button>
     <button class="sidebar-btn" id="roboticsLabBtn"><span class="sidebar-icon">🦾</span><span class="label" data-i18n="nav_robotics_lab">معمل الروبوتات</span></button>
@@ -3383,6 +3385,93 @@
       <button class="primary" id="aiBookScopeSummarizeBtn" data-i18n="ai_summarize_btn">لخّص</button>
     </div>
     <div id="aiBookScopeError"></div>
+  </section>
+
+  <!-- المصحف الذكي: قراءة، استماع، حفظ وتسميع -->
+  <section class="card hidden" id="step-smart-quran">
+    <div class="quran-shell">
+      <header class="quran-hero">
+        <div>
+          <span class="quran-kicker" data-i18n="quran_kicker">المصحف الذكي</span>
+          <h2 data-i18n="quran_heading">اقرأ، اسمع، واحفظ بثقة</h2>
+          <p data-i18n="quran_desc">اختر آياتك، استمع لها بصوت قارئك، واستعن بذكيّ في خطة الحفظ والنطق والتسميع.</p>
+        </div>
+        <div class="quran-hero-mark" aria-hidden="true">۞</div>
+      </header>
+
+      <div class="quran-controls">
+        <label><span data-i18n="quran_surah_label">السورة</span><select id="quranChapterSelect" aria-label="السورة"></select></label>
+        <label>
+          <span data-i18n="quran_reciter_label">القارئ</span>
+          <select id="quranReciterSelect">
+            <option value="dosari" data-i18n="quran_reciter_dosari">ياسر الدوسري</option>
+            <option value="sudais" data-i18n="quran_reciter_sudais">عبدالرحمن السديس</option>
+          </select>
+        </label>
+        <label>
+          <span data-i18n="quran_repeat_label">تكرار كل آية</span>
+          <select id="quranRepeatSelect">
+            <option value="1" data-i18n="quran_repeat_once">مرة واحدة</option>
+            <option value="3" data-i18n="quran_repeat_three">3 مرات</option>
+            <option value="5" data-i18n="quran_repeat_five">5 مرات</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="quran-selection-bar">
+        <div><strong id="quranSelectionCount">0</strong> <span data-i18n="quran_selected_count">آية محددة</span></div>
+        <div class="quran-selection-actions">
+          <button class="primary" id="quranPlaySelectedBtn" type="button" data-i18n="quran_play_selected">▶ استمع للمحدد</button>
+          <button class="ghost" id="quranStopAudioBtn" type="button" data-i18n="quran_stop_audio">■ إيقاف</button>
+          <button class="ghost" id="quranStartPracticeBtn" type="button" data-i18n="quran_start_practice">🎙️ ابدأ التسميع</button>
+          <button class="ghost" id="quranClearSelectionBtn" type="button" data-i18n="quran_clear_selection">إلغاء التحديد</button>
+        </div>
+      </div>
+
+      <div class="quran-practice hidden" id="quranPracticePanel">
+        <div class="quran-practice-head">
+          <div><strong data-i18n="quran_practice_heading">التسميع الذكي</strong><p data-i18n="quran_practice_desc">سمّع الآيات المحددة، وسنقارن الكلمات بالنص آليًا.</p></div>
+          <button class="quran-record-btn" id="quranRecordBtn" type="button" data-i18n="quran_record_start">🎙️ ابدأ التسجيل</button>
+        </div>
+        <div class="quran-practice-live" id="quranPracticeLive" data-i18n="quran_practice_ready">جاهز لسماع تلاوتك.</div>
+        <div class="quran-practice-result hidden" id="quranPracticeResult"></div>
+        <p class="quran-accuracy-note" data-i18n="quran_accuracy_note">التقييم مقارنة نصية آلية وقد يخطئ بسبب المايك أو المتصفح، ولا يُعد حكمًا على التجويد.</p>
+      </div>
+
+      <div class="quran-workspace">
+        <main class="quran-reader-panel">
+          <div class="quran-panel-head">
+            <div><small data-i18n="quran_reader_label">صفحة القراءة</small><h3 id="quranChapterTitle">—</h3></div>
+            <span class="quran-reading-status" id="quranReadingStatus"></span>
+          </div>
+          <div class="quran-loading" id="quranLoading" data-i18n="loading">جاري التحميل...</div>
+          <div class="quran-verses" id="quranVerses"></div>
+          <div id="quranError"></div>
+        </main>
+
+        <aside class="quran-coach-panel">
+          <div class="quran-coach-head">
+            <span class="quran-coach-avatar">ذ</span>
+            <div><strong data-i18n="quran_coach_heading">ذكيّ — مدرب الحفظ</strong><small data-i18n="quran_coach_subtitle">اسأله عن الحفظ أو نطق كلمة</small></div>
+          </div>
+          <div class="quran-quick-actions">
+            <button type="button" data-quran-prompt="plan" data-i18n="quran_prompt_plan">خطة لحفظ المحدد</button>
+            <button type="button" data-quran-prompt="split" data-i18n="quran_prompt_split">قسّمها لي</button>
+            <button type="button" data-quran-prompt="quiz" data-i18n="quran_prompt_quiz">اختبرني</button>
+          </div>
+          <div class="quran-coach-messages" id="quranCoachMessages"><div class="quran-coach-bubble ai" data-i18n="quran_coach_welcome">حدد آيات من المصحف، وأنا أجهز لك طريقة تحفظها أو أساعدك في نطق أي كلمة.</div></div>
+          <div class="quran-coach-word hidden" id="quranSelectedWord"></div>
+          <div class="quran-coach-input">
+            <input class="text-input" id="quranCoachInput" data-i18n-ph="quran_coach_placeholder" placeholder="اسأل عن الحفظ أو النطق...">
+            <button class="primary" id="quranCoachSendBtn" type="button" data-i18n="btn_send">إرسال</button>
+          </div>
+          <div id="quranCoachError"></div>
+        </aside>
+      </div>
+
+      <audio id="quranAudio" preload="none"></audio>
+      <p class="quran-attribution" data-i18n="quran_attribution">النص العثماني: Tanzil عبر Quran JSON — التلاوات: EveryAyah.</p>
+    </div>
   </section>
 
   <!-- مدرستي: قسمين (واجهة طالب/واجهة معلم)، كل قسم فيه روابط مدرستي
@@ -4683,6 +4772,14 @@ const I18N = {
     nav_friends: 'الأصدقاء',
     nav_library: 'مكتبتي',
     nav_ai_help: 'مساعد ذكيّ',
+    nav_smart_quran: 'المصحف الذكي',
+    quran_kicker: 'المصحف الذكي', quran_heading: 'اقرأ، اسمع، واحفظ بثقة', quran_desc: 'اختر آياتك، استمع لها بصوت قارئك، واستعن بذكيّ في خطة الحفظ والنطق والتسميع.',
+    quran_surah_label: 'السورة', quran_reciter_label: 'القارئ', quran_reciter_dosari: 'ياسر الدوسري', quran_reciter_sudais: 'عبدالرحمن السديس', quran_repeat_label: 'تكرار كل آية', quran_repeat_once: 'مرة واحدة', quran_repeat_three: '3 مرات', quran_repeat_five: '5 مرات',
+    quran_selected_count: 'آية محددة', quran_play_selected: '▶ استمع للمحدد', quran_stop_audio: '■ إيقاف', quran_start_practice: '🎙️ ابدأ التسميع', quran_clear_selection: 'إلغاء التحديد',
+    quran_practice_heading: 'التسميع الذكي', quran_practice_desc: 'سمّع الآيات المحددة، وسنقارن الكلمات بالنص آليًا.', quran_record_start: '🎙️ ابدأ التسجيل', quran_record_stop: '■ إنهاء التسميع', quran_practice_ready: 'جاهز لسماع تلاوتك.', quran_practice_listening: 'أسمعك… ابدأ التسميع الآن.', quran_practice_no_speech: 'لم نلتقط كلامًا واضحًا. قرّب المايك وحاول مرة ثانية.',
+    quran_accuracy_note: 'التقييم مقارنة نصية آلية وقد يخطئ بسبب المايك أو المتصفح، ولا يُعد حكمًا على التجويد.', quran_reader_label: 'صفحة القراءة', quran_coach_heading: 'ذكيّ — مدرب الحفظ', quran_coach_subtitle: 'اسأله عن الحفظ أو نطق كلمة', quran_prompt_plan: 'خطة لحفظ المحدد', quran_prompt_split: 'قسّمها لي', quran_prompt_quiz: 'اختبرني',
+    quran_coach_welcome: 'حدد آيات من المصحف، وأنا أجهز لك طريقة تحفظها أو أساعدك في نطق أي كلمة.', quran_coach_placeholder: 'اسأل عن الحفظ أو النطق...', quran_attribution: 'النص العثماني: Tanzil عبر Quran JSON — التلاوات: EveryAyah.', quran_select_first: 'حدد آية واحدة على الأقل أولًا.', quran_playing_verse: 'يُقرأ الآن: الآية {n}',
+    quran_selected_word: 'الكلمة المحددة: {word} — اضغط إرسال واسأل عن نطقها.', quran_plan_question: 'أعطني خطة سهلة لحفظ الآيات المحددة.', quran_split_question: 'قسّم الآيات المحددة إلى مقاطع حفظ قصيرة واربط بينها.', quran_quiz_question: 'اختبرني في الآيات المحددة بسؤال إكمال، ولا تعطِ الإجابة مباشرة.', quran_practice_result: 'مطابقة الكلمات: {score}٪', quran_practice_missing: 'راجع الكلمات المظللة ثم اسمع الآيات مرة أخرى.', quran_voice_unsupported: 'التسميع الصوتي غير مدعوم في هذا المتصفح. استخدم Safari أو Chrome محدثًا.',
     nav_ai_short: 'ذكيّ',
     nav_more: 'المزيد',
     nav_settings: 'الإعدادات',
@@ -5812,6 +5909,13 @@ const I18N = {
     nav_friends: 'Friends',
     nav_library: 'My Library',
     nav_ai_help: 'Site Assistant',
+    nav_smart_quran: 'Smart Quran',
+    quran_kicker: 'Smart Quran', quran_heading: 'Read, listen, and memorize with confidence', quran_desc: 'Select verses, listen to your reciter, and let Zakiy help with memorization, pronunciation, and recitation practice.', quran_surah_label: 'Surah', quran_reciter_label: 'Reciter', quran_reciter_dosari: 'Yasser Al-Dosari', quran_reciter_sudais: 'Abdulrahman Al-Sudais',
+    quran_repeat_label: 'Repeat each verse', quran_repeat_once: 'Once', quran_repeat_three: '3 times', quran_repeat_five: '5 times', quran_selected_count: 'verses selected', quran_play_selected: '▶ Play selection', quran_stop_audio: '■ Stop', quran_start_practice: '🎙️ Recite from memory', quran_clear_selection: 'Clear selection',
+    quran_practice_heading: 'Smart recitation practice', quran_practice_desc: 'Recite the selected verses and we will compare the words automatically.', quran_record_start: '🎙️ Start recording', quran_record_stop: '■ Finish recitation', quran_practice_ready: 'Ready to hear your recitation.', quran_practice_listening: 'I’m listening… start reciting now.', quran_practice_no_speech: 'We could not hear clear speech. Move closer to the microphone and try again.',
+    quran_accuracy_note: 'This is an automated text comparison and may be affected by the microphone or browser. It is not a Tajweed assessment.', quran_reader_label: 'Reader', quran_coach_heading: 'Zakiy — Memorization coach', quran_coach_subtitle: 'Ask about memorization or pronunciation', quran_prompt_plan: 'Memorization plan', quran_prompt_split: 'Split into sections', quran_prompt_quiz: 'Quiz me',
+    quran_coach_welcome: 'Select verses and I can build a memorization plan or help you pronounce a word.', quran_coach_placeholder: 'Ask about memorization or pronunciation...', quran_attribution: 'Uthmani text: Tanzil via Quran JSON — recitations: EveryAyah.', quran_select_first: 'Select at least one verse first.', quran_playing_verse: 'Now playing verse {n}', quran_selected_word: 'Selected word: {word} — send to ask how to pronounce it.',
+    quran_plan_question: 'Give me a simple plan to memorize the selected verses.', quran_split_question: 'Split the selected verses into short memorization sections and connect them.', quran_quiz_question: 'Quiz me on the selected verses with a completion question. Do not give the answer immediately.', quran_practice_result: 'Word match: {score}%', quran_practice_missing: 'Review the highlighted words, then listen to the verses again.', quran_voice_unsupported: 'Voice recitation is not supported in this browser. Use an updated Safari or Chrome.',
     nav_ai_short: 'Zakiy',
     nav_more: 'More',
     nav_settings: 'Settings',
@@ -7034,7 +7138,7 @@ const TOP_LEVEL_SCREENS = [
   'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary',
   'step-quiz', 'step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings',
   'step-profile', 'step-notes', 'step-note-editor', 'step-assignments', 'step-assignment-detail',
-  'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker', 'step-ai-book-scope',
+  'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker', 'step-ai-book-scope', 'step-smart-quran',
   'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take', 'step-gradesheet',
   'step-madrasati', 'step-lesson-prep', 'step-enrichment', 'step-results-analysis',
   'step-homework-help', 'step-study-plan', 'step-robotics-lab', 'step-science-lab',
@@ -7594,7 +7698,7 @@ document.getElementById('guestLoginPromptBtn').addEventListener('click', () => {
 });
 // ---------- شاشات الحساب (أدائي / الأرشيف / الأصدقاء / مكتبتي) - كل وحدة
 // مستقلة بزر سايد بار خاص فيها، بدل ما تكون تبويبات جوا شاشة وحدة ----------
-const ACCOUNT_SCREENS = ['step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings', 'step-profile', 'step-notes', 'step-note-editor', 'step-assignments', 'step-assignment-detail', 'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker', 'step-ai-book-scope', 'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take', 'step-gradesheet', 'step-madrasati', 'step-lesson-prep', 'step-enrichment', 'step-results-analysis', 'step-homework-help', 'step-study-plan', 'step-robotics-lab', 'step-science-lab'];
+const ACCOUNT_SCREENS = ['step-performance', 'step-archive', 'step-friends', 'step-library', 'step-settings', 'step-profile', 'step-notes', 'step-note-editor', 'step-assignments', 'step-assignment-detail', 'step-ai-list', 'step-ai-conversation', 'step-ai-book-picker', 'step-ai-book-scope', 'step-smart-quran', 'step-quizzes', 'step-quiz-create', 'step-quiz-detail', 'step-quiz-take', 'step-gradesheet', 'step-madrasati', 'step-lesson-prep', 'step-enrichment', 'step-results-analysis', 'step-homework-help', 'step-study-plan', 'step-robotics-lab', 'step-science-lab'];
 function showAccountScreen(id) {
   ['login-form', 'signup-form', 'step-force-password-change', 'mode-select', 'room-mode-select', 'room-create-form',
    'room-join-form', 'step-room', 'step-classroom', 'step-upload', 'step-text', 'step-chat', 'step-summary', 'step-quiz',
@@ -7605,7 +7709,7 @@ function showAccountScreen(id) {
   // معمل الروبوتات يحتاج عرض أوسع بكثير من عمود المحتوى العادي (880px) عشان
   // مساحة الشغل تكون مريحة - نوسّع حاوية الصفحة نفسها بس وقت هذي الشاشة
   const wrapEl = document.querySelector('.wrap');
-  if (wrapEl) wrapEl.classList.toggle('wrap-wide', id === 'step-robotics-lab' || id === 'step-science-lab');
+  if (wrapEl) wrapEl.classList.toggle('wrap-wide', id === 'step-robotics-lab' || id === 'step-science-lab' || id === 'step-smart-quran');
 }
 function showPerformanceDashboard() { showAccountScreen('step-performance'); }
 function showLibraryScreen() { showAccountScreen('step-library'); }
@@ -18196,5 +18300,6 @@ if (new URLSearchParams(window.location.search).get('showcase') === 'lab') {
 <script src="website/src/js/32-handwriting.js"></script>
 <script src="website/src/js/33-mobile-app.js"></script>
 <script src="website/src/js/34-ai-voice.js"></script>
+<script src="website/src/js/35-smart-quran.js"></script>
 </body>
 </html>

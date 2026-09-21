@@ -133,6 +133,10 @@
   },
   {
     "type": "file",
+    "path": "pages/quran/smart-quran.html"
+  },
+  {
+    "type": "file",
     "path": "pages/madrasati/madrasati-hub.html"
   },
   {

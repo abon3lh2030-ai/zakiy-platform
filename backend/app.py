@@ -1312,6 +1312,91 @@ def send_ai_message(conversation_id):
     return jsonify({"reply": reply, "title": patch.get("title", convo.get("title"))}), 200
 
 
+# ============================================================================
+# ---------- المصحف الذكي (نص عثماني + مدرب حفظ بالذكاء الاصطناعي) ----------
+# ============================================================================
+QURAN_CONTENT_BASE_URL = "https://quran-json.risanb.com"
+_quran_content_cache = {}
+
+
+def _fetch_quran_content(path, ttl_seconds=86400):
+    """يجلب بيانات القرآن المرخصة ويحتفظ بها في الذاكرة لتقليل الاعتماد
+    على الشبكة. لا نخزن نصًا بديلًا؛ فشل المصدر يظهر للمستخدم بوضوح."""
+    now = time.time()
+    cached = _quran_content_cache.get(path)
+    if cached and now - cached["at"] < ttl_seconds:
+        return cached["data"]
+    response = requests.get(f"{QURAN_CONTENT_BASE_URL}/{path.lstrip('/')}", timeout=15)
+    response.raise_for_status()
+    payload = response.json()
+    _quran_content_cache[path] = {"at": now, "data": payload}
+    return payload
+
+
+@app.route("/api/quran/chapters", methods=["GET"])
+def quran_chapters():
+    try:
+        chapters = _fetch_quran_content("chapters.json")
+        return jsonify({"chapters": chapters}), 200
+    except Exception:
+        return jsonify({"error": "تعذّر تحميل قائمة السور الآن، حاول مرة ثانية"}), 502
+
+
+@app.route("/api/quran/chapters/<int:chapter_id>", methods=["GET"])
+def quran_chapter(chapter_id):
+    if chapter_id < 1 or chapter_id > 114:
+        return jsonify({"error": "رقم السورة غير صالح"}), 400
+    try:
+        chapter = _fetch_quran_content(f"text/uthmani/chapters/{chapter_id}.json")
+        chapters = _fetch_quran_content("chapters.json")
+        metadata = next((item for item in chapters if item.get("id") == chapter_id), {})
+        return jsonify({"chapter": {**metadata, **chapter}}), 200
+    except Exception:
+        return jsonify({"error": "تعذّر تحميل السورة الآن، حاول مرة ثانية"}), 502
+
+
+@app.route("/api/quran/coach", methods=["POST"])
+@require_auth
+def quran_ai_coach():
+    data = request.get_json(silent=True) or {}
+    question = (data.get("question") or "").strip()
+    chapter_name = (data.get("chapter_name") or "").strip()
+    selected_verses = data.get("verses") or []
+    if not question:
+        return jsonify({"error": "اكتب سؤالك لمدرب الحفظ"}), 400
+    if len(question) > 1200 or len(selected_verses) > 30:
+        return jsonify({"error": "اختصر السؤال أو اختر 30 آية كحد أقصى"}), 400
+
+    allowed, reject_msg = _check_and_record_daily_action(request.user_id, "ai_assistant_message")
+    if not allowed:
+        return jsonify({"error": reject_msg}), 402
+
+    verses_text = "\n".join(
+        f"الآية {verse.get('id')}: {str(verse.get('text') or '').strip()}"
+        for verse in selected_verses
+        if verse.get("id") and verse.get("text")
+    )
+    prompt = (
+        "أنت مدرب حفظ قرآن داخل منصة تعليمية. ساعد الطالب في الحفظ والمراجعة "
+        "وتقسيم الآيات والربط بينها. إذا سأل عن نطق كلمة، اشرحها اعتمادًا على "
+        "حركات الكلمة الظاهرة وقسّمها لمقاطع سهلة، واطلب منه سماع القارئ للتأكد؛ "
+        "لا تدّعي أنك شيخ أو أن تقييمك يغني عن معلم القرآن. لا تُنشئ آية من ذاكرتك "
+        "ولا تغيّر النص المرفق. اكتب بالعربية الواضحة، بدون Markdown، وباختصار مفيد.\n\n"
+        f"السورة: {chapter_name or 'غير محددة'}\n"
+        f"الآيات المختارة:\n{verses_text or 'لم يحدد الطالب آيات'}\n\n"
+        f"سؤال الطالب: {question}"
+    )
+    try:
+        interaction = create_interaction(
+            model=GEMINI_MODEL,
+            input=prompt,
+            generation_config={"max_output_tokens": 600, "thinking_level": "minimal"},
+        )
+        return jsonify({"reply": interaction.output_text}), 200
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+
 # ---------- تقييم تلقائي للجلسة + حساب سلسلة الأيام المتتالية ----------
 # صيغة حتمية بسيطة (مو استدعاء ذكاء اصطناعي) بناءً على نسبة الدرجة والوقت المستغرق
 def compute_session_rating(score, total, time_taken):

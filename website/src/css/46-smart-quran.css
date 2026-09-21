@@ -80,6 +80,7 @@
 .quran-record-btn.recording { background:#b33f35; animation:quran-record-pulse 1.2s ease-in-out infinite; }
 .quran-practice-live { min-height:45px; margin:12px 0 8px; padding:10px 12px; border:1px dashed var(--line); border-radius:11px; background:var(--surface); color:var(--ink-soft); font-size:13px; }
 .quran-practice-result { padding:12px; border-radius:12px; background:var(--surface); }
+.quran-practice-tolerated { padding:10px 12px; border:1px solid rgba(23,101,76,.22); border-radius:10px; background:rgba(23,101,76,.08); color:var(--quran-green); font-size:12px; font-weight:700; }
 .quran-practice-score { display:flex; align-items:center; gap:10px; margin-bottom:9px; }
 .quran-practice-score strong { color:var(--quran-green); font-size:24px; }
 .quran-word-ok { color:var(--quran-green); }

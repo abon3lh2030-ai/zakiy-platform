@@ -248,12 +248,13 @@ function smartQuranEvaluatePractice() {
   }
   const matches = smartQuranLcsMatches(targetWords, spokenWords);
   const score = targetWords.length ? Math.round(matches.size / targetWords.length * 100) : 0;
+  const errorCount = Math.max(0, targetWords.length + spokenWords.length - (matches.size * 2));
+  const shouldCorrect = errorCount > 3;
   const marked = originalWords.map((word, index) =>
     `<span class="${matches.has(index) ? 'quran-word-ok' : 'quran-word-missed'}">${escapeHtml(word)}</span>`
   ).join(' ');
   result.innerHTML = `<div class="quran-practice-score"><strong>${score}٪</strong><span>${escapeHtml(t('quran_practice_result', { score }))}</span></div>
-    <div class="quran-verse-text" lang="ar" dir="rtl">${marked}</div>
-    ${score < 100 ? `<p class="desc">${escapeHtml(t('quran_practice_missing'))}</p>` : ''}`;
+    ${shouldCorrect ? `<div class="quran-verse-text" lang="ar" dir="rtl">${marked}</div><p class="desc">${escapeHtml(t('quran_practice_missing'))}</p>` : `<p class="quran-practice-tolerated">${escapeHtml(t('quran_practice_tolerated', { count: errorCount }))}</p>`}`;
   result.classList.remove('hidden');
 }
 

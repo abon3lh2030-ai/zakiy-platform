@@ -6,7 +6,7 @@ let subscriptionPeriod = 'monthly';
 let moyasarPublishableKey = null;
 let pendingSubscriptionOrder = null;
 let pendingTrialChoice = null;
-const SUBSCRIPTION_PLAN_ORDER = ['national_day', 'free', 'plus', 'pro', 'ultimate'];
+let subscriptionDiscountCodeDetails = null;
 const PENDING_ORDER_STORAGE_KEY = 'zakiy_pending_subscription_order';
 const PENDING_TRIAL_STORAGE_KEY = 'zakiy_pending_subscription_trial';
 
@@ -71,7 +71,8 @@ function renderTrialOffer() {
 function renderSubscriptionPlans() {
   if (!subscriptionPlansCache) return;
   const currentTier = subscriptionMeCache?.tier || 'free';
-  document.getElementById('subscriptionCurrentPlan').textContent = t('current_plan_label', { plan: t(`plan_${currentTier}`) });
+  const currentPlan = subscriptionPlansCache[currentTier];
+  document.getElementById('subscriptionCurrentPlan').textContent = t('current_plan_label', { plan: currentPlan ? (currentLang === 'en' ? currentPlan.name_en : currentPlan.name_ar) : currentTier });
   const daysEl = document.getElementById('subscriptionDaysRemaining');
   const daysRemaining = subscriptionMeCache?.days_remaining;
   if (daysRemaining) { daysEl.textContent = t('days_remaining_label', { n: daysRemaining }); daysEl.classList.remove('hidden'); }
@@ -80,12 +81,14 @@ function renderSubscriptionPlans() {
   renderTrialOffer();
   const grid = document.getElementById('subscriptionPlansGrid');
   const checkoutLocked = currentTier !== 'free';
-  grid.innerHTML = SUBSCRIPTION_PLAN_ORDER.map(key => {
-    const plan = subscriptionPlansCache[key];
+  const orderedPlans = Object.entries(subscriptionPlansCache).sort((a,b) => Number(a[1].sort_order || 100) - Number(b[1].sort_order || 100));
+  grid.innerHTML = orderedPlans.map(([key, plan]) => {
     if (!plan) return '';
     const isNationalDay = key === 'national_day';
     const checkoutPeriod = isNationalDay ? 'annual' : subscriptionPeriod;
-    const price = checkoutPeriod === 'monthly' ? plan.price_monthly : plan.price_annual;
+    const basePrice = checkoutPeriod === 'monthly' ? plan.price_monthly : plan.price_annual;
+    const discountPercent = Number(subscriptionDiscountCodeDetails?.discount_percent || 0);
+    const price = key !== 'free' && discountPercent ? Math.round(basePrice * (100 - discountPercent)) / 100 : basePrice;
     const periodLabel = checkoutPeriod === 'monthly' ? t('period_monthly') : t('period_annual');
     const isCurrent = key === currentTier;
     const buyButtons = key === 'free' || checkoutLocked ? '' : `
@@ -97,8 +100,9 @@ function renderSubscriptionPlans() {
       </div>` : '';
     return `<div class="plan-card ${isCurrent ? 'current-plan' : ''} ${isNationalDay ? 'national-day-plan' : ''}">
       ${nationalDayHeader}
-      <div class="plan-name">${t(`plan_${key}`)}</div>
-      <div class="plan-price">${price > 0 ? `${price} ${t('sar_label')}<small> / ${isNationalDay ? t('national_day_full_year') : periodLabel}</small>` : t('free_label')}</div>
+      <div class="plan-name">${escapeHtml(currentLang === 'en' ? plan.name_en : plan.name_ar)}</div>
+      <div class="plan-price">${price > 0 ? `${price} ${t('sar_label')}<small> / ${isNationalDay ? t('national_day_full_year') : periodLabel}</small>${discountPercent ? `<span class="plan-old-price">${basePrice}</span>` : ''}` : t('free_label')}</div>
+      ${discountPercent && key !== 'free' ? `<span class="plan-discount-badge">-${discountPercent}% · ${escapeHtml(subscriptionDiscountCodeDetails.code)}</span>` : ''}
       ${isNationalDay ? `<div class="national-day-value"><span>${t('national_day_ultimate_features')}</span><b>${t('national_day_saving')}</b></div>` : ''}
       ${isNationalDay ? '' : `<div class="plan-features">${renderPlanFeatures(plan)}</div>`}
       ${isCurrent ? `<div class="plan-current-badge">${t('current_plan_badge')}</div>` : buyButtons}
@@ -144,9 +148,15 @@ async function startCheckout(plan, selectedPeriod = subscriptionPeriod) {
   }
   msg.textContent = t('loading');
   try {
-    const order = await apiCall('POST', '/api/subscription/checkout', { plan, period: selectedPeriod });
-    msg.textContent = '';
-    openPaymentModal(order);
+    const order = await apiCall('POST', '/api/subscription/checkout', { plan, period: selectedPeriod, discount_code: subscriptionDiscountCodeDetails?.code || null });
+    if (order.activated) {
+      subscriptionMeCache = await apiCall('GET', '/api/subscription/me');
+      msg.textContent = t('discount_free_activated');
+      renderSubscriptionPlans();
+    } else {
+      msg.textContent = '';
+      openPaymentModal(order);
+    }
   } catch (e) {
     msg.textContent = e.message;
   }
@@ -169,13 +179,16 @@ function openPaymentModal(order) {
     amount: order.amount,
     period: order.period === 'monthly' ? 'شهر' : 'سنة',
   });
+  if (order.discount_percent) {
+    document.getElementById('paymentRecurringDisclosure').textContent += ` ${t('discount_checkout_disclosure', { percent: order.discount_percent, base: order.base_amount })}`;
+  }
   show('paymentModalOverlay');
 
   Moyasar.init({
     element: '.mysr-form',
     amount: Math.round(order.amount * 100), // ميسر يتوقع المبلغ بالهللة
     currency: order.currency || 'SAR',
-    description: `ذكيّ - ${t('plan_' + order.plan)} (${order.period === 'monthly' ? t('period_monthly') : t('period_annual')})`,
+    description: `Zakiy - ${order.plan} (${order.period})`,
     publishable_api_key: moyasarPublishableKey,
     callback_url: window.location.origin + window.location.pathname,
     methods: ['creditcard', 'applepay'],

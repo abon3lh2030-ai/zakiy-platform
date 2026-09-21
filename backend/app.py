@@ -6672,6 +6672,62 @@ SUBSCRIPTION_PLANS = {
     },
 }
 
+PLAN_LIMIT_FIELDS = (
+    "library_limit", "solo_daily", "group_daily", "lesson_daily",
+    "ai_assistant_daily", "archive_limit", "performance_limit",
+)
+_subscription_catalog_cache = {"at": 0.0, "plans": None}
+
+
+def _default_subscription_catalog():
+    """نسخة متوافقة من الكتالوج القديم تعمل لو لم تُطبَّق migration 028 بعد."""
+    order = {"national_day": 5, "free": 10, "plus": 20, "pro": 30, "ultimate": 40, "owner": 999}
+    result = {}
+    for key, source in SUBSCRIPTION_PLANS.items():
+        plan = dict(source)
+        plan.update({
+            "plan_key": key, "is_active": True, "is_public": key != "owner",
+            "is_system": True, "sort_order": order.get(key, 100),
+            "trial_eligible": source.get("trial_eligible", key not in ("free", "owner", "national_day")),
+            "unlimited_access": key in ("ultimate", "national_day", "owner"),
+        })
+        result[key] = plan
+    return result
+
+
+def _normalize_catalog_plan(row):
+    plan = dict(row)
+    plan["plan_key"] = plan.get("plan_key") or plan.get("key")
+    for field in ("price_monthly", "price_annual"):
+        plan[field] = float(plan.get(field) or 0)
+    for field in PLAN_LIMIT_FIELDS:
+        plan[field] = None if plan.get(field) is None else int(plan[field])
+    plan["sort_order"] = int(plan.get("sort_order") or 100)
+    return plan
+
+
+def _subscription_catalog(include_inactive=False, public_only=False, refresh=False):
+    """مصدر الحقيقة للباقات. الكاش قصير لتحديث لوحة الأدمن بسرعة وتقليل طلبات DB."""
+    now = time.time()
+    cached = _subscription_catalog_cache.get("plans")
+    if refresh or not cached or now - _subscription_catalog_cache.get("at", 0) > 30:
+        try:
+            rows = supabase_admin.table("subscription_plan_catalog").select("*").execute().data
+            plans = {row["plan_key"]: _normalize_catalog_plan(row) for row in rows} if rows else _default_subscription_catalog()
+        except Exception:
+            plans = _default_subscription_catalog()
+        _subscription_catalog_cache.update({"at": now, "plans": plans})
+        cached = plans
+    return {
+        key: dict(plan) for key, plan in cached.items()
+        if (include_inactive or plan.get("is_active", True))
+        and (not public_only or plan.get("is_public", True))
+    }
+
+
+def _invalidate_subscription_catalog():
+    _subscription_catalog_cache.update({"at": 0.0, "plans": None})
+
 # منتجات StoreKit بتطبيق iOS -> (باقة، دورة فوترة) - لازم تطابق ProductID.swift
 APPLE_PRODUCT_PLAN_MAP = {
     "com.zakiy.plus.monthly": ("plus", "monthly"),
@@ -6722,7 +6778,7 @@ def _subscription_period_end(start, period):
 
 
 def _subscription_price(plan, period):
-    return SUBSCRIPTION_PLANS[plan]["price_monthly" if period == "monthly" else "price_annual"]
+    return _subscription_catalog(include_inactive=True)[plan]["price_monthly" if period == "monthly" else "price_annual"]
 
 
 def _billing_row(user_id):
@@ -6796,7 +6852,219 @@ def _get_moyasar_token(token_id):
 @app.route("/api/subscription/plans", methods=["GET"])
 def subscription_plans():
     """كتالوج الباقات - عام، بدون تسجيل دخول (تُستخدم بصفحة الأسعار قبل الدخول برضو)."""
-    return jsonify({"plans": SUBSCRIPTION_PLANS, "moyasar_publishable_key": MOYASAR_PUBLISHABLE_KEY}), 200
+    return jsonify({"plans": _subscription_catalog(public_only=True), "moyasar_publishable_key": MOYASAR_PUBLISHABLE_KEY}), 200
+
+
+def _clean_offer_code(value, min_length=3, max_length=20):
+    code = re.sub(r"\s+", "", str(value or "")).upper()
+    if not re.fullmatch(rf"[A-Z0-9]{{{min_length},{max_length}}}", code):
+        return None
+    return code
+
+
+def _generate_offer_code(length=10):
+    # نحذف الأحرف المتشابهة بصريًا لتقليل أخطاء النسخ (0/O و1/I).
+    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    return "".join(secrets.choice(alphabet) for _ in range(length))
+
+
+def _discounted_subscription_amount(base_amount, discount_percent):
+    return round(max(0.0, float(base_amount) * (100 - int(discount_percent or 0)) / 100), 2)
+
+
+def _discount_code_details(code):
+    clean = _clean_offer_code(code)
+    if not clean:
+        return None, "صيغة كود الخصم غير صحيحة"
+    rows = (
+        supabase_admin.table("subscription_discount_codes").select("*")
+        .eq("code", clean).limit(1).execute().data
+    )
+    if not rows:
+        return None, "كود الخصم غير صحيح"
+    row = rows[0]
+    try:
+        expired = _parse_utc_datetime(row.get("expires_at")) <= datetime.now(timezone.utc)
+    except (TypeError, ValueError):
+        expired = True
+    if not row.get("is_active"):
+        return None, "كود الخصم غير فعال"
+    if expired:
+        return None, "انتهت صلاحية كود الخصم"
+    if int(row.get("usage_count") or 0) >= int(row.get("usage_limit") or 0):
+        return None, "اكتمل حد استخدام كود الخصم"
+    return row, None
+
+
+@app.route("/api/subscription/discount/validate", methods=["POST"])
+@require_auth
+def subscription_validate_discount():
+    row, error = _discount_code_details((request.get_json(silent=True) or {}).get("code"))
+    if error:
+        return jsonify({"error": error}), 400
+    return jsonify({
+        "code": row["code"], "discount_percent": int(row["discount_percent"]),
+        "expires_at": row["expires_at"], "remaining_uses": max(0, int(row["usage_limit"]) - int(row.get("usage_count") or 0)),
+    }), 200
+
+
+@app.route("/api/subscription/redeem", methods=["POST"])
+@require_auth
+def subscription_redeem_code():
+    code = _clean_offer_code((request.get_json(silent=True) or {}).get("code"), 10, 10)
+    if not code:
+        return jsonify({"error": "كود الاشتراك لازم يكون 10 حروف وأرقام"}), 400
+    try:
+        result = supabase_admin.rpc("redeem_subscription_code", {"p_code": code, "p_user_id": request.user_id}).execute().data
+    except Exception:
+        return jsonify({"error": "تعذّر استرداد الكود. تأكد من تطبيق migration 028 ثم حاول مرة ثانية"}), 500
+    if not result or not result.get("ok"):
+        return jsonify({"error": (result or {}).get("error") or "تعذّر استرداد الكود"}), 400
+    _track_platform_event(request.user_id, "subscription_activated", result["plan"], result["period"], "redemption_code", {"code": code})
+    return jsonify(result), 200
+
+
+def _admin_plan_payload(data, key=None):
+    name_ar = str(data.get("name_ar") or "").strip()
+    name_en = str(data.get("name_en") or "").strip()
+    if not name_ar or not name_en:
+        raise ValueError("اسم الباقة بالعربي والإنجليزي مطلوب")
+    values = {"name_ar": name_ar[:80], "name_en": name_en[:80]}
+    for field in ("price_monthly", "price_annual"):
+        value = float(data.get(field, 0))
+        if value < 0 or value > 100000:
+            raise ValueError("سعر الباقة غير صالح")
+        values[field] = round(value, 2)
+    for field in PLAN_LIMIT_FIELDS:
+        raw = data.get(field)
+        if raw in (None, ""):
+            values[field] = None
+        else:
+            value = int(raw)
+            if value < 0 or value > 1000000:
+                raise ValueError("أحد حدود الباقة غير صالح")
+            values[field] = value
+    existing = _subscription_catalog(include_inactive=True).get(key, {}) if key else {}
+    promotional_period = data.get("promotional_period") if "promotional_period" in data else existing.get("promotional_period")
+    values.update({
+        "trial_eligible": bool(data.get("trial_eligible", True)),
+        "unlimited_access": bool(data.get("unlimited_access", False)),
+        "is_active": bool(data.get("is_active", True)),
+        "is_public": bool(data.get("is_public", True)),
+        "promotional_period": promotional_period if promotional_period in ("monthly", "annual") else None,
+        "sort_order": max(0, min(9999, int(data.get("sort_order") or 100))),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "updated_by": request.user_id,
+    })
+    if not key:
+        requested = re.sub(r"[^a-z0-9_]+", "_", str(data.get("plan_key") or "").strip().lower()).strip("_")
+        values["plan_key"] = requested if re.fullmatch(r"[a-z0-9_]{2,32}", requested) else f"plan_{secrets.token_hex(4)}"
+        values["is_system"] = False
+    return values
+
+
+@app.route("/api/admin/subscription-management", methods=["GET"])
+@require_role("admin")
+def admin_subscription_management():
+    plans = sorted(_subscription_catalog(include_inactive=True, refresh=True).values(), key=lambda item: item.get("sort_order", 100))
+    redemptions = supabase_admin.table("subscription_redemption_codes").select("*").order("created_at", desc=True).limit(100).execute().data
+    discounts = supabase_admin.table("subscription_discount_codes").select("*").order("created_at", desc=True).limit(100).execute().data
+    return jsonify({"plans": plans, "redemption_codes": redemptions, "discount_codes": discounts}), 200
+
+
+@app.route("/api/admin/subscription-plans", methods=["POST"])
+@require_role("admin")
+def admin_create_subscription_plan():
+    try:
+        values = _admin_plan_payload(request.get_json(silent=True) or {})
+        created = supabase_admin.table("subscription_plan_catalog").insert(values).execute().data[0]
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:
+        return jsonify({"error": f"تعذّر إضافة الباقة: {exc}"}), 400
+    _invalidate_subscription_catalog()
+    return jsonify({"plan": _normalize_catalog_plan(created)}), 201
+
+
+@app.route("/api/admin/subscription-plans/<plan_key>", methods=["PUT", "DELETE"])
+@require_role("admin")
+def admin_update_subscription_plan(plan_key):
+    plans = _subscription_catalog(include_inactive=True)
+    existing = plans.get(plan_key)
+    if not existing:
+        return jsonify({"error": "الباقة غير موجودة"}), 404
+    if request.method == "DELETE":
+        if plan_key in ("free", "owner"):
+            return jsonify({"error": "لا يمكن حذف الباقة المجانية أو باقة المالك"}), 400
+        supabase_admin.table("subscription_plan_catalog").update({
+            "is_active": False, "is_public": False,
+            "updated_at": datetime.now(timezone.utc).isoformat(), "updated_by": request.user_id,
+        }).eq("plan_key", plan_key).execute()
+        _invalidate_subscription_catalog()
+        return jsonify({"ok": True}), 200
+    try:
+        values = _admin_plan_payload(request.get_json(silent=True) or {}, key=plan_key)
+        updated = supabase_admin.table("subscription_plan_catalog").update(values).eq("plan_key", plan_key).execute().data
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:
+        return jsonify({"error": f"تعذّر حفظ الباقة: {exc}"}), 400
+    _invalidate_subscription_catalog()
+    return jsonify({"plan": _normalize_catalog_plan(updated[0] if updated else {**existing, **values})}), 200
+
+
+@app.route("/api/admin/redemption-codes", methods=["POST"])
+@require_role("admin")
+def admin_create_redemption_code():
+    data = request.get_json(silent=True) or {}
+    plans = _subscription_catalog()
+    plan, period = data.get("plan"), data.get("period")
+    if plan not in plans or plan in ("free", "owner") or period not in ("monthly", "annual"):
+        return jsonify({"error": "اختر باقة ومدة صحيحة"}), 400
+    if plans[plan].get("promotional_period"):
+        period = plans[plan]["promotional_period"]
+    for _ in range(8):
+        code = _generate_offer_code(10)
+        try:
+            row = supabase_admin.table("subscription_redemption_codes").insert({
+                "code": code, "plan_key": plan, "period": period,
+                "expires_at": (datetime.now(timezone.utc) + timedelta(days=365)).isoformat(),
+                "created_by": request.user_id,
+            }).execute().data[0]
+            return jsonify({"code": row}), 201
+        except Exception:
+            continue
+    return jsonify({"error": "تعذّر إنشاء كود فريد، حاول مرة ثانية"}), 500
+
+
+@app.route("/api/admin/discount-codes", methods=["POST"])
+@require_role("admin")
+def admin_create_discount_code():
+    data = request.get_json(silent=True) or {}
+    code = _clean_offer_code(data.get("code") or _generate_offer_code(10))
+    try:
+        percent = int(data.get("discount_percent"))
+        usage_limit = int(data.get("usage_limit"))
+        expires_at = _parse_utc_datetime(data.get("expires_at"))
+    except (TypeError, ValueError):
+        return jsonify({"error": "بيانات كود الخصم غير صحيحة"}), 400
+    if not code or not 1 <= percent <= 100 or usage_limit < 1 or not expires_at or expires_at <= datetime.now(timezone.utc):
+        return jsonify({"error": "تأكد من الكود والنسبة والصلاحية وحد الاستخدام"}), 400
+    try:
+        row = supabase_admin.table("subscription_discount_codes").insert({
+            "code": code, "discount_percent": percent, "usage_limit": usage_limit,
+            "expires_at": expires_at.isoformat(), "is_active": True, "created_by": request.user_id,
+        }).execute().data[0]
+    except Exception as exc:
+        return jsonify({"error": f"تعذّر نشر كود الخصم: {exc}"}), 400
+    return jsonify({"code": row}), 201
+
+
+@app.route("/api/admin/discount-codes/<code>", methods=["DELETE"])
+@require_role("admin")
+def admin_disable_discount_code(code):
+    supabase_admin.table("subscription_discount_codes").update({"is_active": False}).eq("code", str(code).upper()).execute()
+    return jsonify({"ok": True}), 200
 
 
 def _resolve_subscription(profile):
@@ -6826,7 +7094,8 @@ def _resolve_subscription(profile):
                 days_remaining = max(1, -(-int(remaining.total_seconds()) // 86400))
         except Exception:
             pass
-    subscription_unlimited = tier in ("ultimate", "national_day", "owner")
+    plan = _subscription_catalog(include_inactive=True).get(tier, {})
+    subscription_unlimited = bool(plan.get("unlimited_access"))
     return {
         "tier": tier,
         "period": profile.get("subscription_period"),
@@ -6876,8 +7145,9 @@ def _resolved_plan_for_user(user_id):
     ).data
     resolved = _resolve_subscription(rows[0] if rows else {})
     if resolved.get("unlimited"):
-        return SUBSCRIPTION_PLANS["owner"]
-    return SUBSCRIPTION_PLANS.get(resolved["tier"], SUBSCRIPTION_PLANS["free"])
+        return _subscription_catalog(include_inactive=True)["owner"]
+    plans = _subscription_catalog(include_inactive=True)
+    return plans.get(resolved["tier"], plans["free"])
 
 
 def _resolve_performance_limit(user_id):
@@ -6934,11 +7204,12 @@ def subscription_me():
     # نفس منطق _resolved_plan_for_user - tier="school" (حساب مؤسسي) مو مفتاح
     # موجود بـ SUBSCRIPTION_PLANS فعلًا، لازم نتحقق من unlimited صراحة وإلا
     # يرجع للمجاني بالغلط ويعرض حدود خاطئة بشاشة الإعدادات لحساب بلا حدود
-    plan_key = "owner" if resolved.get("unlimited") else (resolved["tier"] if resolved["tier"] in SUBSCRIPTION_PLANS else "free")
+    plans = _subscription_catalog(include_inactive=True)
+    plan_key = "owner" if resolved.get("unlimited") else (resolved["tier"] if resolved["tier"] in plans else "free")
     billing = _billing_row(request.user_id) if not profile.get("role") else None
     return jsonify({
         **resolved,
-        "limits": SUBSCRIPTION_PLANS[plan_key],
+        "limits": plans[plan_key],
         "billing": _safe_billing_details(billing),
     }), 200
 
@@ -6953,12 +7224,13 @@ def subscription_checkout():
     data = request.get_json(silent=True) or {}
     plan = data.get("plan")
     period = data.get("period")
-    if plan not in SUBSCRIPTION_PLANS or plan in ("free", "owner"):
+    plans = _subscription_catalog(public_only=True)
+    if plan not in plans or plan in ("free", "owner"):
         return jsonify({"error": "باقة غير صالحة"}), 400
     if period not in ("monthly", "annual"):
         return jsonify({"error": "دورة فوترة غير صالحة (monthly أو annual)"}), 400
-    if plan == "national_day":
-        period = "annual"
+    if plans[plan].get("promotional_period"):
+        period = plans[plan]["promotional_period"]
 
     profile_rows = (
         supabase_admin.table("profiles")
@@ -6971,16 +7243,37 @@ def subscription_checkout():
     if not _can_start_subscription_checkout(profile):
         return jsonify({"error": "لديك اشتراك فعال بالفعل، لا يمكن فتح صفحة دفع جديدة"}), 409
 
-    amount = _subscription_price(plan, period)
+    base_amount = _subscription_price(plan, period)
+    discount_row = None
+    discount_code = data.get("discount_code")
+    if discount_code:
+        discount_row, discount_error = _discount_code_details(discount_code)
+        if discount_error:
+            return jsonify({"error": discount_error}), 400
+    discount_percent = int(discount_row.get("discount_percent") or 0) if discount_row else 0
+    amount = _discounted_subscription_amount(base_amount, discount_percent)
+    order_values = {
+        "user_id": request.user_id, "plan": plan, "period": period,
+        "amount": amount, "base_amount": base_amount, "currency": "SAR",
+        "discount_code_id": discount_row.get("id") if discount_row else None,
+        "discount_code": discount_row.get("code") if discount_row else None,
+        "discount_percent": discount_percent or None,
+    }
     order = (
         supabase_admin.table("subscription_orders")
-        .insert({"user_id": request.user_id, "plan": plan, "period": period, "amount": amount, "currency": "SAR"})
+        .insert(order_values)
         .execute()
         .data[0]
     )
+    activated = amount == 0
+    if activated:
+        _activate_subscription_order(order, gateway_reference=f"discount:{discount_row['code']}")
     return jsonify({
         "order_id": order["id"], "plan": plan, "period": period,
-        "amount": amount, "currency": "SAR", "auto_renew": True,
+        "amount": amount, "base_amount": base_amount, "currency": "SAR",
+        "discount_code": discount_row.get("code") if discount_row else None,
+        "discount_percent": discount_percent, "auto_renew": not activated,
+        "requires_payment": not activated, "activated": activated,
     }), 200
 
 
@@ -7054,9 +7347,15 @@ def _activate_subscription_order(order, gateway_reference=None, payment=None):
             "subscription_source": "web",
         }
     ).eq("user_id", order["user_id"]).execute()
+    if order.get("discount_code_id") and order.get("status") != "paid":
+        try:
+            supabase_admin.rpc("consume_subscription_discount", {"p_discount_id": order["discount_code_id"]}).execute()
+        except Exception:
+            pass
     _track_platform_event(
         order["user_id"], "subscription_activated", order["plan"], order["period"], "web",
-        {"order_id": order.get("id"), "amount": float(order.get("amount") or 0), "from_trial": False},
+        {"order_id": order.get("id"), "amount": float(order.get("amount") or 0), "from_trial": False,
+         "discount_code": order.get("discount_code"), "discount_percent": order.get("discount_percent")},
     )
     return expires_at
 
@@ -7209,7 +7508,8 @@ def subscription_trial_offer():
 
 def _validate_trial_choice(data):
     plan, period = data.get("plan"), data.get("period")
-    if plan not in SUBSCRIPTION_PLANS or plan in ("free", "owner", "national_day"):
+    plans = _subscription_catalog(public_only=True)
+    if plan not in plans or not plans[plan].get("trial_eligible") or plan in ("free", "owner"):
         return None, None, "باقة غير صالحة"
     if period not in ("monthly", "annual"):
         return None, None, "دورة فوترة غير صالحة"
@@ -7272,7 +7572,7 @@ def subscription_trial_confirm():
         return jsonify({"error": "تم استخدام التجربة المجانية سابقًا"}), 409
     if not _trial_offer_payload(row)["available"]:
         return jsonify({"error": "انتهت صلاحية عرض التجربة"}), 403
-    if not token_id or plan not in SUBSCRIPTION_PLANS or period not in ("monthly", "annual"):
+    if not token_id or plan not in _subscription_catalog(include_inactive=True) or period not in ("monthly", "annual"):
         return jsonify({"error": "لا توجد تجربة معلقة"}), 404
     try:
         token = _get_moyasar_token(token_id)
@@ -7489,7 +7789,7 @@ def _complete_renewal_attempt(attempt, payment):
     }).eq("user_id", attempt["user_id"]).execute()
     _create_notification(
         attempt["user_id"], "subscription_renewed", "✅ تم تجديد اشتراكك",
-        f"تجدد اشتراك {SUBSCRIPTION_PLANS[attempt['plan']]['name_ar']} تلقائيًا حتى {new_end.date().isoformat()}",
+        f"تجدد اشتراك {_subscription_catalog(include_inactive=True).get(attempt['plan'], {}).get('name_ar', attempt['plan'])} تلقائيًا حتى {new_end.date().isoformat()}",
     )
     if converted_from_trial:
         _track_platform_event(
@@ -7546,6 +7846,12 @@ def _record_renewal_failure(billing, attempt, reason, uncertain=False):
 
 def _renew_web_subscription(billing, now=None):
     now = now or datetime.now(timezone.utc)
+    if billing.get("plan") not in _subscription_catalog():
+        supabase_admin.table("web_subscription_billing").update({
+            "auto_renew": False, "status": "cancel_at_period_end", "next_charge_at": None,
+            "updated_at": now.isoformat(),
+        }).eq("user_id", billing["user_id"]).execute()
+        return False
     due_at = _parse_utc_datetime(billing.get("next_charge_at") or billing.get("current_period_end"))
     if not due_at or due_at > now or not billing.get("auto_renew") or not billing.get("moyasar_token"):
         return False
@@ -7634,7 +7940,7 @@ def _check_expired_subscriptions_once():
         .execute()
     ).data
     for row in rows:
-        plan_name = SUBSCRIPTION_PLANS.get(row.get("subscription_tier"), {}).get("name_ar", "المدفوعة")
+        plan_name = _subscription_catalog(include_inactive=True).get(row.get("subscription_tier"), {}).get("name_ar", "المدفوعة")
         billing = _billing_row(row["user_id"])
         if billing and billing.get("auto_renew"):
             # عامل التجديد يعالج الدفعة/إعادة المحاولة. انتهاء الملف لا يمسح

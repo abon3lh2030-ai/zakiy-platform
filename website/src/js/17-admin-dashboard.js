@@ -205,6 +205,7 @@ function wireAdminSchoolBulkActions(tbody) {
 async function loadAdminDashboard() {
   loadPlatformFreeAccess();
   loadAdminAnalytics();
+  if (typeof loadAdminCommerceManagement === 'function') loadAdminCommerceManagement();
   const tbody = document.getElementById('adminSchoolsTableBody');
   document.getElementById('adminSchoolsBulkToolbar')?.classList.add('hidden');
   const selectAll = document.getElementById('adminSchoolsSelectAll');

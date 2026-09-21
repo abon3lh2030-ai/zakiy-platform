@@ -2690,6 +2690,18 @@
 @media (max-width:900px) { .quran-workspace{grid-template-columns:1fr}.quran-reader-panel{border-inline-end:0;border-bottom:1px solid var(--line)}.quran-coach-messages{min-height:240px;max-height:380px} }
 @media (max-width:650px) { .quran-hero{padding:22px 18px}.quran-hero-mark{width:58px;height:58px;flex-basis:58px;font-size:34px;border-radius:18px}.quran-controls{grid-template-columns:1fr;padding:14px}.quran-selection-bar,.quran-practice-head{align-items:stretch;flex-direction:column}.quran-selection-bar{padding:12px 14px}.quran-selection-actions{display:grid;grid-template-columns:1fr 1fr}.quran-reader-panel,.quran-coach-panel{padding:15px}.quran-practice{margin:12px 14px 0}.quran-verse{grid-template-columns:29px minmax(0,1fr) 30px;gap:7px;padding:13px 9px}.quran-verse-text{font-size:24px;line-height:2}.quran-verse-number{width:30px;height:30px} }
 @media (prefers-reduced-motion:reduce) { .quran-record-btn.recording{animation:none} }
+/* أكواد الاشتراك والخصم + إدارة كتالوج الباقات */
+.subscription-code-panel,.subscription-discount-panel{display:grid;gap:10px;margin:14px 0;padding:15px;border:1px solid var(--line);border-radius:16px;background:var(--paper-dim)}
+.subscription-code-panel strong,.subscription-discount-panel strong{display:block;color:var(--ink);font-size:14px}.subscription-code-panel small,.subscription-discount-panel small{display:block;margin-top:3px;color:var(--ink-soft);font-size:11px}
+.subscription-code-row{display:flex;gap:8px;align-items:center}.subscription-code-row .text-input{margin:0;min-width:0;flex:1}.offer-code-input{text-transform:uppercase;letter-spacing:.12em;direction:ltr;text-align:left;font-family:ui-monospace,SFMono-Regular,Menlo,monospace!important;font-weight:800}
+.subscription-discount-applied{color:var(--teal);font-size:12px;font-weight:800}.plan-old-price{margin-inline-start:6px;color:var(--ink-soft);font-size:12px;text-decoration:line-through}.plan-discount-badge{display:inline-flex;margin-top:7px;padding:4px 9px;border-radius:999px;background:var(--teal-dim);color:var(--teal);font-size:11px;font-weight:800}
+.admin-commerce-section{margin:22px 0;padding:18px;border:1px solid var(--line);border-radius:18px;background:var(--surface)}
+.admin-commerce-section>.admin-section-heading{margin-top:0}.admin-create-box{margin:12px 0;padding:13px;border:1px dashed var(--line);border-radius:14px}.admin-create-box summary{cursor:pointer;color:var(--teal);font-weight:800}
+.admin-plan-editor{margin-bottom:12px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--paper-dim)}.admin-plan-editor header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.admin-plan-editor header code{color:var(--ink-soft)}
+.admin-plan-form{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:9px;margin:12px 0}.admin-plan-form label{display:grid;gap:4px;color:var(--ink-soft);font-size:10px;font-weight:700}.admin-plan-form input{min-width:0;margin:0}.admin-plan-checks{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.admin-plan-checks label{display:flex;align-items:center;gap:5px;color:var(--ink);font-size:11px}
+.admin-code-create{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.admin-code-create select,.admin-code-create input{min-height:42px;padding:8px 11px;border:1px solid var(--line);border-radius:11px;background:var(--surface);color:var(--ink);font:inherit}.admin-discount-create input{flex:1;min-width:135px;margin:0}.admin-code-value{display:flex;align-items:center;justify-content:space-between;gap:12px}.admin-code-value code{font-size:20px;letter-spacing:.13em}.admin-code-state{font-size:11px;font-weight:800}.admin-code-state.available{color:var(--teal)}.admin-code-state.used,.admin-code-state.expired{color:var(--danger)}
+@media(max-width:760px){.subscription-code-row{align-items:stretch;flex-direction:column}.admin-plan-form{grid-template-columns:1fr 1fr}.admin-code-value{align-items:flex-start;flex-direction:column}.admin-commerce-section{padding:13px}}
+@media(max-width:480px){.admin-plan-form{grid-template-columns:1fr}}
 </style>
 </head>
 <body class="with-sidebar">
@@ -2973,6 +2985,27 @@
           </div>
           <div id="platformFreeAccessStatus" class="desc" style="margin-top:12px;"></div><div id="platformFreeAccessError"></div>
         </div>
+
+        <section class="admin-commerce-section">
+          <div class="admin-section-heading"><div><span>💎</span><div><h3 data-i18n="admin_catalog_heading">إدارة الباقات والأسعار</h3><p data-i18n="admin_catalog_desc">عدّل الأسعار والحدود، أو أضف باقة ويب جديدة.</p></div></div></div>
+          <div id="adminPlansEditor"></div>
+          <details class="admin-create-box"><summary data-i18n="admin_add_plan">➕ إضافة باقة جديدة</summary><div id="adminNewPlanForm" class="admin-plan-form"></div><button class="primary" id="adminCreatePlanBtn" type="button" data-i18n="admin_publish_plan">نشر الباقة</button></details>
+          <div id="adminPlansMsg"></div>
+        </section>
+
+        <section class="admin-commerce-section">
+          <div class="admin-section-heading"><div><span>🎟️</span><div><h3 data-i18n="admin_redemption_heading">أكواد الاشتراك</h3><p data-i18n="admin_redemption_desc">كل كود 10 خانات، يُستخدم مرة واحدة وتنتهي صلاحيته بعد سنة.</p></div></div></div>
+          <div class="admin-code-create"><select id="adminRedemptionPlan"></select><select id="adminRedemptionPeriod"><option value="monthly" data-i18n="period_monthly">شهري</option><option value="annual" data-i18n="period_annual">سنوي</option></select><button class="primary" id="adminGenerateRedemptionBtn" type="button" data-i18n="admin_generate_code">إنشاء الكود</button></div>
+          <div id="adminRedemptionResult" class="credential-reveal hidden"></div>
+          <div class="data-table-wrap"><table class="data-table"><thead><tr><th data-i18n="th_code">الكود</th><th data-i18n="th_plan">الباقة</th><th data-i18n="th_period">المدة</th><th data-i18n="th_status">الحالة</th><th data-i18n="th_expiry">الصلاحية</th></tr></thead><tbody id="adminRedemptionCodesBody"></tbody></table></div>
+        </section>
+
+        <section class="admin-commerce-section">
+          <div class="admin-section-heading"><div><span>🏷️</span><div><h3 data-i18n="admin_discounts_heading">أكواد الخصم</h3><p data-i18n="admin_discounts_desc">حدد النسبة والصلاحية والحد الإجمالي للاستخدام ثم انشر الكود.</p></div></div></div>
+          <div class="admin-code-create admin-discount-create"><input id="adminDiscountCode" class="text-input offer-code-input" maxlength="20" placeholder="اختياري: SAVE20"><input id="adminDiscountPercent" class="text-input" type="number" min="1" max="100" placeholder="النسبة %"><input id="adminDiscountExpiry" class="text-input" type="datetime-local"><input id="adminDiscountLimit" class="text-input" type="number" min="1" placeholder="حد الاستخدام"><button class="primary" id="adminCreateDiscountBtn" type="button" data-i18n="admin_publish_discount">نشر الكود</button></div>
+          <div id="adminDiscountMsg"></div>
+          <div class="data-table-wrap"><table class="data-table"><thead><tr><th data-i18n="th_code">الكود</th><th data-i18n="th_discount">الخصم</th><th data-i18n="th_usage">الاستخدام</th><th data-i18n="th_expiry">الصلاحية</th><th data-i18n="th_status">الحالة</th><th data-i18n="th_actions">إجراء</th></tr></thead><tbody id="adminDiscountCodesBody"></tbody></table></div>
+        </section>
 
         <h3 class="sub-heading" data-i18n="admin_add_school_heading">➕ إضافة مدرسة جديدة</h3>
         <div class="actions" style="flex-wrap:wrap;"><input type="text" id="newSchoolName" class="text-input" placeholder="اسم المدرسة" data-i18n-ph="ph_school_name"><input type="email" id="newSchoolAdminEmail" class="text-input" placeholder="إيميل مدير المدرسة" data-i18n-ph="ph_school_admin_email"><input type="number" id="newSchoolMaxAccounts" class="text-input" placeholder="الحد الأقصى للحسابات" data-i18n-ph="ph_max_accounts" min="0" style="max-width:160px;"><button class="primary" id="createSchoolBtn" data-i18n="btn_create_school">إنشاء المدرسة</button></div>
@@ -4534,10 +4567,20 @@
            بعضوية مدرستها، ما تشترك شخصيًا - هذا القسم يُخفى لها بالكامل عبر JS -->
       <div id="settingsSubscriptionSection">
         <h3 class="sub-heading" style="margin-top:22px;" data-i18n="settings_subscription_heading">👑 الاشتراك</h3>
+        <div class="subscription-code-panel">
+          <div><strong data-i18n="redeem_heading">🎟️ استرداد كود اشتراك</strong><small data-i18n="redeem_desc">أدخل الكود المكوّن من 10 حروف وأرقام لتفعيل الباقة المرتبطة به.</small></div>
+          <div class="subscription-code-row"><input id="subscriptionRedeemCode" class="text-input offer-code-input" maxlength="10" autocomplete="off" placeholder="XXXXXXXXXX"><button class="primary" id="subscriptionRedeemBtn" type="button" data-i18n="redeem_btn">استرداد</button></div>
+          <div id="subscriptionRedeemMsg"></div>
+        </div>
         <p class="desc" id="subscriptionCurrentPlan"></p>
         <p class="desc hidden" id="subscriptionDaysRemaining" style="color: var(--teal);"></p>
         <div id="subscriptionBillingPanel" class="subscription-billing-panel hidden"></div>
         <div id="subscriptionTrialOffer" class="subscription-trial-offer hidden"></div>
+        <div class="subscription-discount-panel">
+          <div><strong data-i18n="discount_heading">🏷️ عندك كود خصم؟</strong><small data-i18n="discount_desc">طبّقه قبل اختيار الباقة، ويُحسب السعر النهائي من السيرفر.</small></div>
+          <div class="subscription-code-row"><input id="subscriptionDiscountCode" class="text-input offer-code-input" maxlength="20" autocomplete="off" placeholder="DISCOUNT"><button class="ghost" id="subscriptionDiscountApplyBtn" type="button" data-i18n="discount_apply">تطبيق</button><button class="ghost hidden" id="subscriptionDiscountClearBtn" type="button" data-i18n="discount_clear">إزالة</button></div>
+          <div id="subscriptionDiscountMsg"></div>
+        </div>
         <div class="actions" style="margin-bottom:10px;">
           <button class="ghost sub-period-btn active" data-period="monthly" data-i18n="period_monthly">شهري</button>
           <button class="ghost sub-period-btn" data-period="annual" data-i18n="period_annual">سنوي</button>
@@ -5872,6 +5915,11 @@ const I18N = {
     ph_bio: 'اكتب نبذة قصيرة عنك...',
     ph_school: 'اسم مدرستك/جامعتك',
     settings_subscription_heading: '👑 الاشتراك',
+    redeem_heading: '🎟️ استرداد كود اشتراك', redeem_desc: 'أدخل الكود المكوّن من 10 حروف وأرقام لتفعيل الباقة المرتبطة به.', redeem_btn: 'استرداد', redeem_invalid: 'الكود لازم يكون 10 حروف وأرقام.', redeem_confirm: 'سيتم تفعيل الباقة والمدة المرتبطة بهذا الكود. هل تريد المتابعة؟', redeem_success: 'تم تفعيل الاشتراك حتى {date}.',
+    discount_heading: '🏷️ عندك كود خصم؟', discount_desc: 'طبّقه قبل اختيار الباقة، ويُحسب السعر النهائي من السيرفر.', discount_apply: 'تطبيق', discount_clear: 'إزالة', discount_invalid: 'اكتب كود خصم صحيحًا من حروف وأرقام.', discount_applied: 'تم تطبيق خصم {percent}٪ على عملية الدفع القادمة.', discount_free_activated: '✅ تم تفعيل الاشتراك كاملًا بواسطة كود الخصم.', discount_checkout_disclosure: 'طُبّق خصم {percent}٪ على الدفعة الأولى؛ التجديد التالي بالسعر الأساسي {base} ريال ما لم توقفه.',
+    admin_catalog_heading: 'إدارة الباقات والأسعار', admin_catalog_desc: 'عدّل الأسعار والحدود، أو أضف باقة ويب جديدة.', admin_add_plan: '➕ إضافة باقة جديدة', admin_publish_plan: 'نشر الباقة',
+    admin_redemption_heading: 'أكواد الاشتراك', admin_redemption_desc: 'كل كود 10 خانات، يُستخدم مرة واحدة وتنتهي صلاحيته بعد سنة.', admin_generate_code: 'إنشاء الكود',
+    admin_discounts_heading: 'أكواد الخصم', admin_discounts_desc: 'حدد النسبة والصلاحية والحد الإجمالي للاستخدام ثم انشر الكود.', admin_publish_discount: 'نشر الكود', th_code: 'الكود', th_expiry: 'الصلاحية', th_discount: 'الخصم', th_usage: 'الاستخدام',
     period_monthly: 'شهري', period_annual: 'سنوي',
     plan_free: 'المجاني', plan_plus: 'بلس', plan_pro: 'برو', plan_ultimate: 'ألتميت', plan_national_day: 'عرض اليوم الوطني',
     national_day_occasion: 'اليوم الوطني السعودي',
@@ -7009,6 +7057,11 @@ const I18N = {
     ph_bio: 'Write a short bio about yourself...',
     ph_school: 'Your school/university name',
     settings_subscription_heading: '👑 Subscription',
+    redeem_heading: '🎟️ Redeem subscription code', redeem_desc: 'Enter the 10-character code to activate its assigned plan.', redeem_btn: 'Redeem', redeem_invalid: 'The code must contain exactly 10 letters and numbers.', redeem_confirm: 'This will activate the plan and term assigned to this code. Continue?', redeem_success: 'Subscription activated until {date}.',
+    discount_heading: '🏷️ Have a discount code?', discount_desc: 'Apply it before selecting a plan. The final price is calculated securely by the server.', discount_apply: 'Apply', discount_clear: 'Remove', discount_invalid: 'Enter a valid letters-and-numbers discount code.', discount_applied: '{percent}% discount applied to your next checkout.', discount_free_activated: '✅ Subscription activated in full with the discount code.', discount_checkout_disclosure: '{percent}% applies to the first payment; the next renewal is at the base price of {base} SAR unless you stop renewal.',
+    admin_catalog_heading: 'Plans and pricing', admin_catalog_desc: 'Edit prices and limits, or add a new web plan.', admin_add_plan: '➕ Add plan', admin_publish_plan: 'Publish plan',
+    admin_redemption_heading: 'Subscription codes', admin_redemption_desc: 'Each 10-character code is single-use and expires after one year.', admin_generate_code: 'Generate code',
+    admin_discounts_heading: 'Discount codes', admin_discounts_desc: 'Set the percentage, expiry, and total usage limit, then publish.', admin_publish_discount: 'Publish code', th_code: 'Code', th_expiry: 'Expiry', th_discount: 'Discount', th_usage: 'Usage',
     period_monthly: 'Monthly', period_annual: 'Yearly',
     plan_free: 'Free', plan_plus: 'Plus', plan_pro: 'Pro', plan_ultimate: 'Ultimate', plan_national_day: 'Saudi National Day Offer',
     national_day_occasion: 'Saudi National Day',
@@ -8635,7 +8688,7 @@ let subscriptionPeriod = 'monthly';
 let moyasarPublishableKey = null;
 let pendingSubscriptionOrder = null;
 let pendingTrialChoice = null;
-const SUBSCRIPTION_PLAN_ORDER = ['national_day', 'free', 'plus', 'pro', 'ultimate'];
+let subscriptionDiscountCodeDetails = null;
 const PENDING_ORDER_STORAGE_KEY = 'zakiy_pending_subscription_order';
 const PENDING_TRIAL_STORAGE_KEY = 'zakiy_pending_subscription_trial';
 
@@ -8700,7 +8753,8 @@ function renderTrialOffer() {
 function renderSubscriptionPlans() {
   if (!subscriptionPlansCache) return;
   const currentTier = subscriptionMeCache?.tier || 'free';
-  document.getElementById('subscriptionCurrentPlan').textContent = t('current_plan_label', { plan: t(`plan_${currentTier}`) });
+  const currentPlan = subscriptionPlansCache[currentTier];
+  document.getElementById('subscriptionCurrentPlan').textContent = t('current_plan_label', { plan: currentPlan ? (currentLang === 'en' ? currentPlan.name_en : currentPlan.name_ar) : currentTier });
   const daysEl = document.getElementById('subscriptionDaysRemaining');
   const daysRemaining = subscriptionMeCache?.days_remaining;
   if (daysRemaining) { daysEl.textContent = t('days_remaining_label', { n: daysRemaining }); daysEl.classList.remove('hidden'); }
@@ -8709,12 +8763,14 @@ function renderSubscriptionPlans() {
   renderTrialOffer();
   const grid = document.getElementById('subscriptionPlansGrid');
   const checkoutLocked = currentTier !== 'free';
-  grid.innerHTML = SUBSCRIPTION_PLAN_ORDER.map(key => {
-    const plan = subscriptionPlansCache[key];
+  const orderedPlans = Object.entries(subscriptionPlansCache).sort((a,b) => Number(a[1].sort_order || 100) - Number(b[1].sort_order || 100));
+  grid.innerHTML = orderedPlans.map(([key, plan]) => {
     if (!plan) return '';
     const isNationalDay = key === 'national_day';
     const checkoutPeriod = isNationalDay ? 'annual' : subscriptionPeriod;
-    const price = checkoutPeriod === 'monthly' ? plan.price_monthly : plan.price_annual;
+    const basePrice = checkoutPeriod === 'monthly' ? plan.price_monthly : plan.price_annual;
+    const discountPercent = Number(subscriptionDiscountCodeDetails?.discount_percent || 0);
+    const price = key !== 'free' && discountPercent ? Math.round(basePrice * (100 - discountPercent)) / 100 : basePrice;
     const periodLabel = checkoutPeriod === 'monthly' ? t('period_monthly') : t('period_annual');
     const isCurrent = key === currentTier;
     const buyButtons = key === 'free' || checkoutLocked ? '' : `
@@ -8726,8 +8782,9 @@ function renderSubscriptionPlans() {
       </div>` : '';
     return `<div class="plan-card ${isCurrent ? 'current-plan' : ''} ${isNationalDay ? 'national-day-plan' : ''}">
       ${nationalDayHeader}
-      <div class="plan-name">${t(`plan_${key}`)}</div>
-      <div class="plan-price">${price > 0 ? `${price} ${t('sar_label')}<small> / ${isNationalDay ? t('national_day_full_year') : periodLabel}</small>` : t('free_label')}</div>
+      <div class="plan-name">${escapeHtml(currentLang === 'en' ? plan.name_en : plan.name_ar)}</div>
+      <div class="plan-price">${price > 0 ? `${price} ${t('sar_label')}<small> / ${isNationalDay ? t('national_day_full_year') : periodLabel}</small>${discountPercent ? `<span class="plan-old-price">${basePrice}</span>` : ''}` : t('free_label')}</div>
+      ${discountPercent && key !== 'free' ? `<span class="plan-discount-badge">-${discountPercent}% · ${escapeHtml(subscriptionDiscountCodeDetails.code)}</span>` : ''}
       ${isNationalDay ? `<div class="national-day-value"><span>${t('national_day_ultimate_features')}</span><b>${t('national_day_saving')}</b></div>` : ''}
       ${isNationalDay ? '' : `<div class="plan-features">${renderPlanFeatures(plan)}</div>`}
       ${isCurrent ? `<div class="plan-current-badge">${t('current_plan_badge')}</div>` : buyButtons}
@@ -8773,9 +8830,15 @@ async function startCheckout(plan, selectedPeriod = subscriptionPeriod) {
   }
   msg.textContent = t('loading');
   try {
-    const order = await apiCall('POST', '/api/subscription/checkout', { plan, period: selectedPeriod });
-    msg.textContent = '';
-    openPaymentModal(order);
+    const order = await apiCall('POST', '/api/subscription/checkout', { plan, period: selectedPeriod, discount_code: subscriptionDiscountCodeDetails?.code || null });
+    if (order.activated) {
+      subscriptionMeCache = await apiCall('GET', '/api/subscription/me');
+      msg.textContent = t('discount_free_activated');
+      renderSubscriptionPlans();
+    } else {
+      msg.textContent = '';
+      openPaymentModal(order);
+    }
   } catch (e) {
     msg.textContent = e.message;
   }
@@ -8798,13 +8861,16 @@ function openPaymentModal(order) {
     amount: order.amount,
     period: order.period === 'monthly' ? 'شهر' : 'سنة',
   });
+  if (order.discount_percent) {
+    document.getElementById('paymentRecurringDisclosure').textContent += ` ${t('discount_checkout_disclosure', { percent: order.discount_percent, base: order.base_amount })}`;
+  }
   show('paymentModalOverlay');
 
   Moyasar.init({
     element: '.mysr-form',
     amount: Math.round(order.amount * 100), // ميسر يتوقع المبلغ بالهللة
     currency: order.currency || 'SAR',
-    description: `ذكيّ - ${t('plan_' + order.plan)} (${order.period === 'monthly' ? t('period_monthly') : t('period_annual')})`,
+    description: `Zakiy - ${order.plan} (${order.period})`,
     publishable_api_key: moyasarPublishableKey,
     callback_url: window.location.origin + window.location.pathname,
     methods: ['creditcard', 'applepay'],
@@ -11639,6 +11705,7 @@ function wireAdminSchoolBulkActions(tbody) {
 async function loadAdminDashboard() {
   loadPlatformFreeAccess();
   loadAdminAnalytics();
+  if (typeof loadAdminCommerceManagement === 'function') loadAdminCommerceManagement();
   const tbody = document.getElementById('adminSchoolsTableBody');
   document.getElementById('adminSchoolsBulkToolbar')?.classList.add('hidden');
   const selectAll = document.getElementById('adminSchoolsSelectAll');
@@ -18804,6 +18871,194 @@ function smartQuranInit() {
 }
 
 smartQuranInit();
+// ============================================================================
+// ---------- أكواد الاشتراك والخصم + إدارة الباقات للأدمن العام ----------
+// ============================================================================
+let adminCommerceCache = null;
+
+function normalizeOfferCodeInput(input) {
+  input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+async function redeemSubscriptionCode() {
+  const input = document.getElementById('subscriptionRedeemCode');
+  const msg = document.getElementById('subscriptionRedeemMsg');
+  const button = document.getElementById('subscriptionRedeemBtn');
+  const code = input.value.trim().toUpperCase();
+  if (!/^[A-Z0-9]{10}$/.test(code)) { showError('subscriptionRedeemMsg', t('redeem_invalid')); return; }
+  if (!confirm(t('redeem_confirm'))) return;
+  button.disabled = true; msg.textContent = t('loading');
+  try {
+    const result = await apiCall('POST', '/api/subscription/redeem', { code });
+    subscriptionMeCache = await apiCall('GET', '/api/subscription/me');
+    input.value = '';
+    msg.innerHTML = `<div class="desc" style="color:var(--teal)">✅ ${escapeHtml(t('redeem_success', { date: formatSubscriptionDate(result.expires_at) }))}</div>`;
+    renderSubscriptionPlans();
+  } catch (error) { showError('subscriptionRedeemMsg', error.message); }
+  finally { button.disabled = false; }
+}
+
+async function applySubscriptionDiscount() {
+  const input = document.getElementById('subscriptionDiscountCode');
+  const button = document.getElementById('subscriptionDiscountApplyBtn');
+  const code = input.value.trim().toUpperCase();
+  if (!/^[A-Z0-9]{3,20}$/.test(code)) { showError('subscriptionDiscountMsg', t('discount_invalid')); return; }
+  button.disabled = true;
+  try {
+    subscriptionDiscountCodeDetails = await apiCall('POST', '/api/subscription/discount/validate', { code });
+    document.getElementById('subscriptionDiscountMsg').innerHTML = `<div class="subscription-discount-applied">✅ ${escapeHtml(t('discount_applied', { percent: subscriptionDiscountCodeDetails.discount_percent }))}</div>`;
+    document.getElementById('subscriptionDiscountClearBtn').classList.remove('hidden');
+    input.disabled = true; button.classList.add('hidden');
+    renderSubscriptionPlans();
+  } catch (error) { showError('subscriptionDiscountMsg', error.message); }
+  finally { button.disabled = false; }
+}
+
+function clearSubscriptionDiscount() {
+  subscriptionDiscountCodeDetails = null;
+  const input = document.getElementById('subscriptionDiscountCode');
+  input.value = ''; input.disabled = false;
+  document.getElementById('subscriptionDiscountApplyBtn').classList.remove('hidden');
+  document.getElementById('subscriptionDiscountClearBtn').classList.add('hidden');
+  clearError('subscriptionDiscountMsg');
+  renderSubscriptionPlans();
+}
+
+const ADMIN_PLAN_FIELDS = [
+  ['name_ar','الاسم بالعربي','text'], ['name_en','الاسم بالإنجليزي','text'],
+  ['price_monthly','السعر الشهري','number'], ['price_annual','السعر السنوي','number'],
+  ['library_limit','حد الكتب','number'], ['solo_daily','الجلسات الفردية/يوم','number'],
+  ['group_daily','الجلسات الجماعية/يوم','number'], ['lesson_daily','الدروس المباشرة/يوم','number'],
+  ['ai_assistant_daily','رسائل المساعد/يوم','number'], ['archive_limit','حد الأرشيف','number'],
+  ['performance_limit','حد نتائج الأداء','number'], ['sort_order','ترتيب العرض','number'],
+];
+
+function adminPlanFormHtml(plan = {}, prefix = 'admin-plan', isNew = false) {
+  const keyField = isNew ? `<label>المعرّف الإنجليزي (اختياري)<input class="text-input" data-plan-field="plan_key" value="" placeholder="starter"></label>` : '';
+  const fields = ADMIN_PLAN_FIELDS.map(([key,label,type]) => {
+    const value = plan[key] === null || plan[key] === undefined ? '' : plan[key];
+    const placeholder = key.includes('limit') || key.includes('daily') ? 'فارغ = بلا حدود' : '';
+    return `<label>${label}<input class="text-input" data-plan-field="${key}" type="${type}" min="0" value="${escapeHtml(value)}" placeholder="${placeholder}"></label>`;
+  }).join('');
+  return `<div class="admin-plan-form" data-plan-form="${escapeHtml(prefix)}">${keyField}${fields}</div>
+    <div class="admin-plan-checks">
+      <label><input type="checkbox" data-plan-field="is_active" ${plan.is_active !== false ? 'checked' : ''}> مفعّلة</label>
+      <label><input type="checkbox" data-plan-field="is_public" ${plan.is_public !== false ? 'checked' : ''}> تظهر للمستخدمين</label>
+      <label><input type="checkbox" data-plan-field="trial_eligible" ${plan.trial_eligible !== false ? 'checked' : ''}> تدعم التجربة</label>
+      <label><input type="checkbox" data-plan-field="unlimited_access" ${plan.unlimited_access ? 'checked' : ''}> وصول كامل بلا حدود</label>
+    </div>`;
+}
+
+function collectAdminPlanForm(container) {
+  const data = {};
+  container.querySelectorAll('[data-plan-field]').forEach(input => {
+    if (input.type === 'checkbox') data[input.dataset.planField] = input.checked;
+    else if (input.type === 'number') data[input.dataset.planField] = input.value === '' ? null : Number(input.value);
+    else data[input.dataset.planField] = input.value.trim();
+  });
+  return data;
+}
+
+function adminCommerceDate(value) {
+  return value ? new Date(value).toLocaleString(currentLang === 'en' ? 'en-US' : 'ar-SA') : '—';
+}
+
+function adminPlanDisplayName(plan) { return currentLang === 'en' ? plan.name_en : plan.name_ar; }
+
+function renderAdminCommerce(data) {
+  adminCommerceCache = data;
+  const editor = document.getElementById('adminPlansEditor');
+  editor.innerHTML = data.plans.map(plan => `<article class="admin-plan-editor" data-admin-plan="${escapeHtml(plan.plan_key)}">
+    <header><div><strong>${escapeHtml(adminPlanDisplayName(plan))}</strong> <code>${escapeHtml(plan.plan_key)}</code></div><span class="admin-code-state ${plan.is_active ? 'available' : 'expired'}">${plan.is_active ? 'فعال' : 'مخفي'}</span></header>
+    ${adminPlanFormHtml(plan, plan.plan_key)}
+    <div class="actions"><button class="primary" data-save-plan="${escapeHtml(plan.plan_key)}">حفظ التعديلات</button>${!['free','owner'].includes(plan.plan_key) ? `<button class="ghost" data-delete-plan="${escapeHtml(plan.plan_key)}" style="color:var(--danger)">حذف/إخفاء</button>` : ''}</div>
+  </article>`).join('');
+  document.getElementById('adminNewPlanForm').innerHTML = adminPlanFormHtml({ is_active:true,is_public:true,trial_eligible:true,sort_order:100 }, 'new', true);
+  document.getElementById('adminRedemptionPlan').innerHTML = data.plans.filter(plan => plan.is_active && plan.is_public && !['free','owner'].includes(plan.plan_key)).map(plan => `<option value="${escapeHtml(plan.plan_key)}">${escapeHtml(adminPlanDisplayName(plan))}</option>`).join('');
+
+  editor.querySelectorAll('[data-save-plan]').forEach(button => button.addEventListener('click', () => saveAdminPlan(button.dataset.savePlan)));
+  editor.querySelectorAll('[data-delete-plan]').forEach(button => button.addEventListener('click', () => deleteAdminPlan(button.dataset.deletePlan)));
+
+  document.getElementById('adminRedemptionCodesBody').innerHTML = data.redemption_codes.length ? data.redemption_codes.map(row => {
+    const expired = new Date(row.expires_at) <= new Date();
+    const state = row.used_at ? 'مستخدم' : expired ? 'منتهي' : 'متاح';
+    const cls = row.used_at ? 'used' : expired ? 'expired' : 'available';
+    const plan = data.plans.find(item => item.plan_key === row.plan_key);
+    return `<tr><td><code>${escapeHtml(row.code)}</code></td><td>${escapeHtml(plan ? adminPlanDisplayName(plan) : row.plan_key)}</td><td>${adminPeriodName(row.period)}</td><td><span class="admin-code-state ${cls}">${state}</span></td><td>${adminCommerceDate(row.expires_at)}</td></tr>`;
+  }).join('') : '<tr><td colspan="5">لا توجد أكواد بعد</td></tr>';
+
+  document.getElementById('adminDiscountCodesBody').innerHTML = data.discount_codes.length ? data.discount_codes.map(row => `<tr><td><code>${escapeHtml(row.code)}</code></td><td>${row.discount_percent}%</td><td>${row.usage_count} / ${row.usage_limit}</td><td>${adminCommerceDate(row.expires_at)}</td><td><span class="admin-code-state ${row.is_active ? 'available' : 'expired'}">${row.is_active ? 'فعال' : 'موقوف'}</span></td><td>${row.is_active ? `<button class="ghost" data-disable-discount="${escapeHtml(row.code)}">إيقاف</button>` : '—'}</td></tr>`).join('') : '<tr><td colspan="6">لا توجد أكواد خصم بعد</td></tr>';
+  document.querySelectorAll('[data-disable-discount]').forEach(button => button.addEventListener('click', () => disableAdminDiscount(button.dataset.disableDiscount)));
+}
+
+async function loadAdminCommerceManagement() {
+  if (!document.getElementById('adminPlansEditor') || currentUserRole !== 'admin') return;
+  try { renderAdminCommerce(await apiCall('GET', '/api/admin/subscription-management')); }
+  catch (error) { showError('adminPlansMsg', error.message); }
+}
+
+async function saveAdminPlan(key) {
+  const article = document.querySelector(`[data-admin-plan="${CSS.escape(key)}"]`);
+  try {
+    await apiCall('PUT', `/api/admin/subscription-plans/${encodeURIComponent(key)}`, collectAdminPlanForm(article));
+    document.getElementById('adminPlansMsg').innerHTML = '<div class="desc">✅ تم حفظ الباقة.</div>';
+    await loadAdminCommerceManagement();
+  } catch (error) { showError('adminPlansMsg', error.message); }
+}
+
+async function deleteAdminPlan(key) {
+  if (!confirm('سيتم إخفاء الباقة ومنع الاشتراكات الجديدة بها. هل تريد المتابعة؟')) return;
+  try { await apiCall('DELETE', `/api/admin/subscription-plans/${encodeURIComponent(key)}`); await loadAdminCommerceManagement(); }
+  catch (error) { showError('adminPlansMsg', error.message); }
+}
+
+async function createAdminPlan() {
+  try {
+    await apiCall('POST', '/api/admin/subscription-plans', collectAdminPlanForm(document.getElementById('adminNewPlanForm').parentElement));
+    document.getElementById('adminPlansMsg').innerHTML = '<div class="desc">✅ تم نشر الباقة الجديدة.</div>';
+    await loadAdminCommerceManagement();
+  } catch (error) { showError('adminPlansMsg', error.message); }
+}
+
+async function generateAdminRedemptionCode() {
+  const result = document.getElementById('adminRedemptionResult');
+  try {
+    const data = await apiCall('POST', '/api/admin/redemption-codes', { plan:document.getElementById('adminRedemptionPlan').value, period:document.getElementById('adminRedemptionPeriod').value });
+    result.innerHTML = `<div class="admin-code-value"><div><small>الكود الجديد — صالح سنة ولمرة واحدة</small><br><code>${escapeHtml(data.code.code)}</code></div><button class="ghost" id="copyNewRedemptionCode">نسخ</button></div>`;
+    result.classList.remove('hidden');
+    document.getElementById('copyNewRedemptionCode').onclick = async () => { await navigator.clipboard.writeText(data.code.code); document.getElementById('copyNewRedemptionCode').textContent='تم النسخ ✓'; };
+    await loadAdminCommerceManagement();
+  } catch (error) { result.classList.remove('hidden'); result.textContent = error.message; }
+}
+
+async function createAdminDiscount() {
+  const payload = {
+    code: document.getElementById('adminDiscountCode').value,
+    discount_percent: document.getElementById('adminDiscountPercent').value,
+    expires_at: localDatetimeToIso(document.getElementById('adminDiscountExpiry').value),
+    usage_limit: document.getElementById('adminDiscountLimit').value,
+  };
+  try {
+    const data = await apiCall('POST', '/api/admin/discount-codes', payload);
+    document.getElementById('adminDiscountMsg').innerHTML = `<div class="desc">✅ تم نشر الكود <code>${escapeHtml(data.code.code)}</code></div>`;
+    ['adminDiscountCode','adminDiscountPercent','adminDiscountExpiry','adminDiscountLimit'].forEach(id => { document.getElementById(id).value=''; });
+    await loadAdminCommerceManagement();
+  } catch (error) { showError('adminDiscountMsg', error.message); }
+}
+
+async function disableAdminDiscount(code) {
+  if (!confirm('إيقاف كود الخصم؟')) return;
+  try { await apiCall('DELETE', `/api/admin/discount-codes/${encodeURIComponent(code)}`); await loadAdminCommerceManagement(); }
+  catch (error) { showError('adminDiscountMsg', error.message); }
+}
+
+document.querySelectorAll('.offer-code-input').forEach(input => input.addEventListener('input', () => normalizeOfferCodeInput(input)));
+document.getElementById('subscriptionRedeemBtn')?.addEventListener('click', redeemSubscriptionCode);
+document.getElementById('subscriptionDiscountApplyBtn')?.addEventListener('click', applySubscriptionDiscount);
+document.getElementById('subscriptionDiscountClearBtn')?.addEventListener('click', clearSubscriptionDiscount);
+document.getElementById('adminCreatePlanBtn')?.addEventListener('click', createAdminPlan);
+document.getElementById('adminGenerateRedemptionBtn')?.addEventListener('click', generateAdminRedemptionCode);
+document.getElementById('adminCreateDiscountBtn')?.addEventListener('click', createAdminDiscount);
 </script>
 </body>
 </html>

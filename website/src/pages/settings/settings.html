@@ -77,10 +77,20 @@
            بعضوية مدرستها، ما تشترك شخصيًا - هذا القسم يُخفى لها بالكامل عبر JS -->
       <div id="settingsSubscriptionSection">
         <h3 class="sub-heading" style="margin-top:22px;" data-i18n="settings_subscription_heading">👑 الاشتراك</h3>
+        <div class="subscription-code-panel">
+          <div><strong data-i18n="redeem_heading">🎟️ استرداد كود اشتراك</strong><small data-i18n="redeem_desc">أدخل الكود المكوّن من 10 حروف وأرقام لتفعيل الباقة المرتبطة به.</small></div>
+          <div class="subscription-code-row"><input id="subscriptionRedeemCode" class="text-input offer-code-input" maxlength="10" autocomplete="off" placeholder="XXXXXXXXXX"><button class="primary" id="subscriptionRedeemBtn" type="button" data-i18n="redeem_btn">استرداد</button></div>
+          <div id="subscriptionRedeemMsg"></div>
+        </div>
         <p class="desc" id="subscriptionCurrentPlan"></p>
         <p class="desc hidden" id="subscriptionDaysRemaining" style="color: var(--teal);"></p>
         <div id="subscriptionBillingPanel" class="subscription-billing-panel hidden"></div>
         <div id="subscriptionTrialOffer" class="subscription-trial-offer hidden"></div>
+        <div class="subscription-discount-panel">
+          <div><strong data-i18n="discount_heading">🏷️ عندك كود خصم؟</strong><small data-i18n="discount_desc">طبّقه قبل اختيار الباقة، ويُحسب السعر النهائي من السيرفر.</small></div>
+          <div class="subscription-code-row"><input id="subscriptionDiscountCode" class="text-input offer-code-input" maxlength="20" autocomplete="off" placeholder="DISCOUNT"><button class="ghost" id="subscriptionDiscountApplyBtn" type="button" data-i18n="discount_apply">تطبيق</button><button class="ghost hidden" id="subscriptionDiscountClearBtn" type="button" data-i18n="discount_clear">إزالة</button></div>
+          <div id="subscriptionDiscountMsg"></div>
+        </div>
         <div class="actions" style="margin-bottom:10px;">
           <button class="ghost sub-period-btn active" data-period="monthly" data-i18n="period_monthly">شهري</button>
           <button class="ghost sub-period-btn" data-period="annual" data-i18n="period_annual">سنوي</button>

@@ -72,6 +72,27 @@
           <div id="platformFreeAccessStatus" class="desc" style="margin-top:12px;"></div><div id="platformFreeAccessError"></div>
         </div>
 
+        <section class="admin-commerce-section">
+          <div class="admin-section-heading"><div><span>💎</span><div><h3 data-i18n="admin_catalog_heading">إدارة الباقات والأسعار</h3><p data-i18n="admin_catalog_desc">عدّل الأسعار والحدود، أو أضف باقة ويب جديدة.</p></div></div></div>
+          <div id="adminPlansEditor"></div>
+          <details class="admin-create-box"><summary data-i18n="admin_add_plan">➕ إضافة باقة جديدة</summary><div id="adminNewPlanForm" class="admin-plan-form"></div><button class="primary" id="adminCreatePlanBtn" type="button" data-i18n="admin_publish_plan">نشر الباقة</button></details>
+          <div id="adminPlansMsg"></div>
+        </section>
+
+        <section class="admin-commerce-section">
+          <div class="admin-section-heading"><div><span>🎟️</span><div><h3 data-i18n="admin_redemption_heading">أكواد الاشتراك</h3><p data-i18n="admin_redemption_desc">كل كود 10 خانات، يُستخدم مرة واحدة وتنتهي صلاحيته بعد سنة.</p></div></div></div>
+          <div class="admin-code-create"><select id="adminRedemptionPlan"></select><select id="adminRedemptionPeriod"><option value="monthly" data-i18n="period_monthly">شهري</option><option value="annual" data-i18n="period_annual">سنوي</option></select><button class="primary" id="adminGenerateRedemptionBtn" type="button" data-i18n="admin_generate_code">إنشاء الكود</button></div>
+          <div id="adminRedemptionResult" class="credential-reveal hidden"></div>
+          <div class="data-table-wrap"><table class="data-table"><thead><tr><th data-i18n="th_code">الكود</th><th data-i18n="th_plan">الباقة</th><th data-i18n="th_period">المدة</th><th data-i18n="th_status">الحالة</th><th data-i18n="th_expiry">الصلاحية</th></tr></thead><tbody id="adminRedemptionCodesBody"></tbody></table></div>
+        </section>
+
+        <section class="admin-commerce-section">
+          <div class="admin-section-heading"><div><span>🏷️</span><div><h3 data-i18n="admin_discounts_heading">أكواد الخصم</h3><p data-i18n="admin_discounts_desc">حدد النسبة والصلاحية والحد الإجمالي للاستخدام ثم انشر الكود.</p></div></div></div>
+          <div class="admin-code-create admin-discount-create"><input id="adminDiscountCode" class="text-input offer-code-input" maxlength="20" placeholder="اختياري: SAVE20"><input id="adminDiscountPercent" class="text-input" type="number" min="1" max="100" placeholder="النسبة %"><input id="adminDiscountExpiry" class="text-input" type="datetime-local"><input id="adminDiscountLimit" class="text-input" type="number" min="1" placeholder="حد الاستخدام"><button class="primary" id="adminCreateDiscountBtn" type="button" data-i18n="admin_publish_discount">نشر الكود</button></div>
+          <div id="adminDiscountMsg"></div>
+          <div class="data-table-wrap"><table class="data-table"><thead><tr><th data-i18n="th_code">الكود</th><th data-i18n="th_discount">الخصم</th><th data-i18n="th_usage">الاستخدام</th><th data-i18n="th_expiry">الصلاحية</th><th data-i18n="th_status">الحالة</th><th data-i18n="th_actions">إجراء</th></tr></thead><tbody id="adminDiscountCodesBody"></tbody></table></div>
+        </section>
+
         <h3 class="sub-heading" data-i18n="admin_add_school_heading">➕ إضافة مدرسة جديدة</h3>
         <div class="actions" style="flex-wrap:wrap;"><input type="text" id="newSchoolName" class="text-input" placeholder="اسم المدرسة" data-i18n-ph="ph_school_name"><input type="email" id="newSchoolAdminEmail" class="text-input" placeholder="إيميل مدير المدرسة" data-i18n-ph="ph_school_admin_email"><input type="number" id="newSchoolMaxAccounts" class="text-input" placeholder="الحد الأقصى للحسابات" data-i18n-ph="ph_max_accounts" min="0" style="max-width:160px;"><button class="primary" id="createSchoolBtn" data-i18n="btn_create_school">إنشاء المدرسة</button></div>
         <div id="createSchoolError"></div><div id="createSchoolResult" class="credential-reveal hidden"></div>

@@ -62,6 +62,23 @@ class RecurringSubscriptionTests(unittest.TestCase):
         self.assertEqual(app._subscription_period_end(start, "monthly"), start + timedelta(days=30))
         self.assertEqual(app._subscription_period_end(start, "annual"), start + timedelta(days=365))
 
+    def test_national_day_offer_is_annual_ultimate_access_for_96_sar(self):
+        offer = app.SUBSCRIPTION_PLANS["national_day"]
+        ultimate = app.SUBSCRIPTION_PLANS["ultimate"]
+        self.assertEqual(offer["price_annual"], 96)
+        self.assertEqual(offer["promotional_period"], "annual")
+        for key in (
+            "library_limit", "solo_daily", "group_daily", "lesson_daily",
+            "ai_assistant_daily", "archive_limit", "performance_limit",
+        ):
+            self.assertEqual(offer[key], ultimate[key])
+
+    def test_national_day_offer_cannot_be_used_as_free_trial(self):
+        plan, period, error = app._validate_trial_choice({"plan": "national_day", "period": "annual"})
+        self.assertIsNone(plan)
+        self.assertIsNone(period)
+        self.assertEqual(error, "باقة غير صالحة")
+
     def test_trial_offer_expires_and_is_once_only(self):
         now = datetime(2026, 9, 17, tzinfo=timezone.utc)
         active = app._trial_offer_payload({

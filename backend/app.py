@@ -3596,7 +3596,7 @@ def admin_platform_analytics():
     )
     subscriber_total = len(subscribers)
     plan_breakdown = []
-    for plan in ("plus", "pro", "ultimate"):
+    for plan in ("plus", "pro", "ultimate", "national_day"):
         count = plan_counts.get(plan, 0)
         plan_breakdown.append({
             "plan": plan,
@@ -6521,7 +6521,7 @@ def submit_quiz_attempt(quiz_id):
 
 
 # ============================================================================
-# ---------- الاشتراكات (٤ باقات: مجاني/بلس/برو/ألتميت) ----------
+# ---------- الاشتراكات (الباقات الأساسية + العروض الموسمية) ----------
 # ============================================================================
 # الأرقام هنا لازم تبقى مطابقة تمامًا لـ ios/Zakiy/Subscriptions/PlanCatalog.swift
 # و UsageLimiter.swift - أي تعديل بالأسعار/الحدود لازم يصير بالمكانين مع بعض.
@@ -6547,6 +6547,16 @@ SUBSCRIPTION_PLANS = {
     "ultimate": {
         "name_ar": "ألتميت", "name_en": "Ultimate",
         "price_monthly": 59.99, "price_annual": 299.99,
+        "library_limit": 50, "solo_daily": None, "group_daily": None, "lesson_daily": 8, "ai_assistant_daily": None,
+        "archive_limit": None, "performance_limit": None,
+    },
+    # عرض ويب موسمي: سنة كاملة بسعر ثابت وبنفس صلاحيات ألتميت. نعيد دورة
+    # الفوترة السنوية من السيرفر حتى لو أرسل العميل monthly، فلا يمكن أن
+    # يتحول العرض بالخطأ إلى مدة 30 يومًا.
+    "national_day": {
+        "name_ar": "عرض اليوم الوطني", "name_en": "Saudi National Day Offer",
+        "price_monthly": 96, "price_annual": 96,
+        "promotional_period": "annual", "trial_eligible": False,
         "library_limit": 50, "solo_daily": None, "group_daily": None, "lesson_daily": 8, "ai_assistant_daily": None,
         "archive_limit": None, "performance_limit": None,
     },
@@ -6717,7 +6727,7 @@ def _resolve_subscription(profile):
                 days_remaining = max(1, -(-int(remaining.total_seconds()) // 86400))
         except Exception:
             pass
-    subscription_unlimited = tier in ("ultimate", "owner")
+    subscription_unlimited = tier in ("ultimate", "national_day", "owner")
     return {
         "tier": tier,
         "period": profile.get("subscription_period"),
@@ -6844,10 +6854,12 @@ def subscription_checkout():
     data = request.get_json(silent=True) or {}
     plan = data.get("plan")
     period = data.get("period")
-    if plan not in SUBSCRIPTION_PLANS or plan == "free":
+    if plan not in SUBSCRIPTION_PLANS or plan in ("free", "owner"):
         return jsonify({"error": "باقة غير صالحة"}), 400
     if period not in ("monthly", "annual"):
         return jsonify({"error": "دورة فوترة غير صالحة (monthly أو annual)"}), 400
+    if plan == "national_day":
+        period = "annual"
 
     profile_rows = (
         supabase_admin.table("profiles")
@@ -7098,7 +7110,7 @@ def subscription_trial_offer():
 
 def _validate_trial_choice(data):
     plan, period = data.get("plan"), data.get("period")
-    if plan not in SUBSCRIPTION_PLANS or plan in ("free", "owner"):
+    if plan not in SUBSCRIPTION_PLANS or plan in ("free", "owner", "national_day"):
         return None, None, "باقة غير صالحة"
     if period not in ("monthly", "annual"):
         return None, None, "دورة فوترة غير صالحة"

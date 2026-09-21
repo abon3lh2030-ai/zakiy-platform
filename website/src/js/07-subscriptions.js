@@ -6,7 +6,7 @@ let subscriptionPeriod = 'monthly';
 let moyasarPublishableKey = null;
 let pendingSubscriptionOrder = null;
 let pendingTrialChoice = null;
-const SUBSCRIPTION_PLAN_ORDER = ['free', 'plus', 'pro', 'ultimate'];
+const SUBSCRIPTION_PLAN_ORDER = ['national_day', 'free', 'plus', 'pro', 'ultimate'];
 const PENDING_ORDER_STORAGE_KEY = 'zakiy_pending_subscription_order';
 const PENDING_TRIAL_STORAGE_KEY = 'zakiy_pending_subscription_trial';
 
@@ -83,20 +83,32 @@ function renderSubscriptionPlans() {
   grid.innerHTML = SUBSCRIPTION_PLAN_ORDER.map(key => {
     const plan = subscriptionPlansCache[key];
     if (!plan) return '';
-    const price = subscriptionPeriod === 'monthly' ? plan.price_monthly : plan.price_annual;
-    const periodLabel = subscriptionPeriod === 'monthly' ? t('period_monthly') : t('period_annual');
+    const isNationalDay = key === 'national_day';
+    const checkoutPeriod = isNationalDay ? 'annual' : subscriptionPeriod;
+    const price = checkoutPeriod === 'monthly' ? plan.price_monthly : plan.price_annual;
+    const periodLabel = checkoutPeriod === 'monthly' ? t('period_monthly') : t('period_annual');
     const isCurrent = key === currentTier;
     const buyButtons = key === 'free' || checkoutLocked ? '' : `
-      <button class="primary" data-subscribe-plan="${key}" style="width:100%;">${t('btn_subscribe')}</button>
-      ${subscriptionTrialOfferCache?.available ? `<button class="ghost plan-trial-btn" data-trial-plan="${key}">${t('btn_start_trial')}</button>` : ''}`;
-    return `<div class="plan-card ${isCurrent ? 'current-plan' : ''}">
+      <button class="primary" data-subscribe-plan="${key}" data-subscribe-period="${checkoutPeriod}" style="width:100%;">${isNationalDay ? t('national_day_subscribe') : t('btn_subscribe')}</button>
+      ${subscriptionTrialOfferCache?.available && !isNationalDay ? `<button class="ghost plan-trial-btn" data-trial-plan="${key}">${t('btn_start_trial')}</button>` : ''}`;
+    const nationalDayHeader = isNationalDay ? `
+      <div class="national-day-sparkles" aria-hidden="true"><span>✦</span><span>✦</span><span>✦</span></div>
+      <div class="national-day-heading">
+        <div class="national-day-emblem" aria-hidden="true"><span>🌴</span><i></i></div>
+        <div><small>${t('national_day_occasion')}</small><strong>${t('national_day_slogan')}</strong></div>
+        <span class="national-day-year">95</span>
+      </div>
+      <div class="national-day-ribbon">${t('national_day_annual_badge')}</div>` : '';
+    return `<div class="plan-card ${isCurrent ? 'current-plan' : ''} ${isNationalDay ? 'national-day-plan' : ''}">
+      ${nationalDayHeader}
       <div class="plan-name">${t(`plan_${key}`)}</div>
-      <div class="plan-price">${price > 0 ? `${price} ${t('sar_label')}<small> / ${periodLabel}</small>` : t('free_label')}</div>
+      <div class="plan-price">${price > 0 ? `${price} ${t('sar_label')}<small> / ${isNationalDay ? t('national_day_full_year') : periodLabel}</small>` : t('free_label')}</div>
+      ${isNationalDay ? `<div class="national-day-value"><span>${t('national_day_ultimate_features')}</span><b>${t('national_day_saving')}</b></div>` : ''}
       <div class="plan-features">${renderPlanFeatures(plan)}</div>
       ${isCurrent ? `<div class="plan-current-badge">${t('current_plan_badge')}</div>` : buyButtons}
     </div>`;
   }).join('');
-  grid.querySelectorAll('[data-subscribe-plan]').forEach(btn => btn.addEventListener('click', () => startCheckout(btn.dataset.subscribePlan)));
+  grid.querySelectorAll('[data-subscribe-plan]').forEach(btn => btn.addEventListener('click', () => startCheckout(btn.dataset.subscribePlan, btn.dataset.subscribePeriod)));
   grid.querySelectorAll('[data-trial-plan]').forEach(btn => btn.addEventListener('click', () => openTrialModal(btn.dataset.trialPlan)));
 }
 
@@ -128,7 +140,7 @@ document.querySelectorAll('.sub-period-btn').forEach(btn => {
   });
 });
 
-async function startCheckout(plan) {
+async function startCheckout(plan, selectedPeriod = subscriptionPeriod) {
   const msg = document.getElementById('subscriptionMsg');
   if (hasActivePaidSubscription()) {
     msg.textContent = t('payment_active_subscription_msg');
@@ -136,7 +148,7 @@ async function startCheckout(plan) {
   }
   msg.textContent = t('loading');
   try {
-    const order = await apiCall('POST', '/api/subscription/checkout', { plan, period: subscriptionPeriod });
+    const order = await apiCall('POST', '/api/subscription/checkout', { plan, period: selectedPeriod });
     msg.textContent = '';
     openPaymentModal(order);
   } catch (e) {

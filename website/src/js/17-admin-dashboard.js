@@ -69,7 +69,7 @@ function renderAdminComparisonChart(newSeries, cancelledSeries) {
 }
 
 function renderAdminPlanCharts(plans) {
-  const colors = { plus:'#4d79e8', pro:'#17a884', ultimate:'#e5a43a' };
+  const colors = { plus:'#4d79e8', pro:'#17a884', ultimate:'#e5a43a', national_day:'#0b7a4b' };
   const breakdown = plans.breakdown || [];
   const total = breakdown.reduce((sum,row) => sum + Number(row.subscribers || 0), 0);
   let cursor = 0;

@@ -340,9 +340,6 @@ document.getElementById('passwordResetCompleteBtn').addEventListener('click', as
   passwordRecoveryActive = false;
   setTimeout(() => location.reload(), 900);
 });
-document.getElementById('guestFromLoginBtn').addEventListener('click', proceedToApp);
-document.getElementById('guestFromSignupBtn').addEventListener('click', proceedToApp);
-
 document.getElementById('loginSubmitBtn').addEventListener('click', async () => {
   clearError('loginError');
   const identifier = document.getElementById('loginEmail').value.trim();

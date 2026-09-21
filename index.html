@@ -2324,7 +2324,7 @@
     <div id="passwordResetCompleteMsg"></div>
   </section>
 
-  <!-- تسجيل الدخول: الشاشة الافتراضية عند الدخول، مع إمكانية التبديل لإنشاء حساب أو المتابعة بدون حساب -->
+  <!-- تسجيل الدخول: الشاشة الافتراضية، ولا يمكن دخول المنصة بدون حساب -->
   <section class="card auth-card" id="login-form">
     <span class="auth-logo">ذكيّ</span>
     <h2 data-i18n="login_title">تسجيل الدخول</h2>
@@ -2340,7 +2340,6 @@
     <div class="auth-switch">
       <button class="link-btn hidden" id="forgotPasswordBtn" data-i18n="link_forgot_password">نسيت كلمة المرور؟</button>
       <button class="link-btn" id="goToSignupBtn" data-i18n="link_go_signup">🆕 ما عندك حساب؟ أنشئ واحد</button>
-      <button class="link-btn" id="guestFromLoginBtn" data-i18n="link_continue_guest">➡️ استمر بدون حساب</button>
     </div>
   </section>
 
@@ -2389,7 +2388,6 @@
     <div id="signupError"></div>
     <div class="auth-switch">
       <button class="link-btn" id="goToLoginBtn" data-i18n="link_go_login">🔑 عندك حساب؟ سجّل دخولك</button>
-      <button class="link-btn" id="guestFromSignupBtn" data-i18n="link_continue_guest">➡️ استمر بدون حساب</button>
     </div>
   </section>
 
@@ -4912,7 +4910,6 @@ const I18N = {
     password_reset_school_blocked: 'حسابات المدارس لا يمكنها الاستعادة عبر البريد. تواصل مع مدير المدرسة أو إدارتها لإصدار كلمة مرور جديدة.',
     password_reset_saved: 'تم حفظ كلمة المرور الجديدة. يمكنك تسجيل الدخول الآن.',
     link_go_signup: '🆕 ما عندك حساب؟ أنشئ واحد',
-    link_continue_guest: '➡️ استمر بدون حساب',
     signup_title: 'إنشاء حساب جديد',
     signup_desc: 'يحفظ تقدمك ويحلل نقاط ضعفك بعد كل اختبار',
     ph_username: 'الأسم الكريم',
@@ -6059,7 +6056,6 @@ const I18N = {
     password_reset_school_blocked: 'School accounts cannot reset passwords by email. Contact the school manager or administration for a new password.',
     password_reset_saved: 'Your new password was saved. You can log in now.',
     link_go_signup: "🆕 Don't have an account? Create one",
-    link_continue_guest: '➡️ Continue without an account',
     signup_title: 'Create a New Account',
     signup_desc: 'Saves your progress and analyzes your weak points after every quiz',
     ph_username: 'Full Name',
@@ -7715,9 +7711,6 @@ document.getElementById('passwordResetCompleteBtn').addEventListener('click', as
   passwordRecoveryActive = false;
   setTimeout(() => location.reload(), 900);
 });
-document.getElementById('guestFromLoginBtn').addEventListener('click', proceedToApp);
-document.getElementById('guestFromSignupBtn').addEventListener('click', proceedToApp);
-
 document.getElementById('loginSubmitBtn').addEventListener('click', async () => {
   clearError('loginError');
   const identifier = document.getElementById('loginEmail').value.trim();

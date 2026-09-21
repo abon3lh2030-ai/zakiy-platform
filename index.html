@@ -8302,9 +8302,7 @@ function renderSubscriptionPlans() {
     const nationalDayHeader = isNationalDay ? `
       <div class="national-day-sparkles" aria-hidden="true"><span>✦</span><span>✦</span><span>✦</span></div>
       <div class="national-day-heading">
-        <div class="national-day-emblem" aria-hidden="true"><span>🌴</span><i></i></div>
-        <div><small>${t('national_day_occasion')}</small><strong>${t('national_day_slogan')}</strong></div>
-        <span class="national-day-year">95</span>
+        <img class="national-day-logo" src="/assets/izzna-bitabana-logo.png" alt="${t('national_day_slogan')}" loading="lazy">
       </div>
       <div class="national-day-ribbon">${t('national_day_annual_badge')}</div>` : '';
     return `<div class="plan-card ${isCurrent ? 'current-plan' : ''} ${isNationalDay ? 'national-day-plan' : ''}">

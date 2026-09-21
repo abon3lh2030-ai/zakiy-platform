@@ -2460,7 +2460,7 @@
   border: 1px solid rgba(218, 190, 116, .65);
   border-radius: 24px;
   background:
-    linear-gradient(120deg, rgba(5, 72, 43, .96), rgba(10, 103, 61, .9)),
+    linear-gradient(120deg, rgba(0, 44, 27, .38), rgba(4, 90, 53, .2)),
     url('/assets/national-day-pattern.png') center / cover;
   box-shadow: 0 18px 45px rgba(0, 76, 46, .23), inset 0 1px rgba(255, 255, 255, .14);
   color: #fff;
@@ -2489,65 +2489,24 @@
 .national-day-plan .national-day-heading {
   grid-area: identity;
   align-self: stretch;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-content: center;
+  display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 22px;
+  justify-content: center;
+  padding: 18px;
   border: 1px solid rgba(255,255,255,.18);
   border-radius: 20px;
-  background: rgba(0, 47, 29, .26);
+  background: rgba(0, 35, 27, .34);
   box-shadow: inset 0 1px rgba(255,255,255,.09);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(2px);
 }
-.national-day-emblem {
-  display: grid;
-  place-items: center;
-  width: 58px;
-  height: 58px;
-  border: 1px solid rgba(237, 210, 138, .65);
-  border-radius: 50%;
-  background: rgba(255,255,255,.08);
-  color: #efd58c;
-  font-size: 27px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.15);
-}
-.national-day-emblem i {
-  position: absolute;
-  width: 32px;
-  height: 2px;
-  margin-top: 31px;
-  border-radius: 5px;
-  background: #efd58c;
-  transform: rotate(-8deg);
-}
-.national-day-heading small {
+.national-day-logo {
   display: block;
-  margin-bottom: 2px;
-  color: #e9d69e;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: .2px;
-}
-.national-day-heading strong {
-  display: block;
-  color: #fff;
-  font-family: 'Almarai', sans-serif;
-  font-size: clamp(25px, 3.2vw, 39px);
-  font-weight: 800;
-  line-height: 1.25;
-  text-shadow: 0 4px 16px rgba(0,0,0,.18);
-}
-.national-day-year {
-  color: #efd58c;
-  font-family: 'Almarai', sans-serif;
-  font-size: 34px;
-  font-weight: 800;
-  line-height: 1;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  opacity: .95;
+  width: min(100%, 460px);
+  height: auto;
+  aspect-ratio: 2169 / 725;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 24, 18, .28);
 }
 .national-day-ribbon {
   position: absolute;
@@ -2643,8 +2602,8 @@
     gap: 10px;
     border-radius: 22px;
   }
-  .national-day-plan .national-day-heading { padding: 18px 14px; }
-  .national-day-heading strong { font-size: clamp(26px, 8vw, 34px); }
+  .national-day-plan .national-day-heading { min-height: 130px; padding: 15px 12px; }
+  .national-day-logo { width: 100%; }
   .national-day-plan .plan-price { font-size: 42px; }
   .national-day-plan .plan-features { columns: 1; }
   .national-day-ribbon { top: 12px; inset-inline-end: -48px; }
@@ -8534,9 +8493,7 @@ function renderSubscriptionPlans() {
     const nationalDayHeader = isNationalDay ? `
       <div class="national-day-sparkles" aria-hidden="true"><span>✦</span><span>✦</span><span>✦</span></div>
       <div class="national-day-heading">
-        <div class="national-day-emblem" aria-hidden="true"><span>🌴</span><i></i></div>
-        <div><small>${t('national_day_occasion')}</small><strong>${t('national_day_slogan')}</strong></div>
-        <span class="national-day-year">95</span>
+        <img class="national-day-logo" src="/assets/izzna-bitabana-logo.png" alt="${t('national_day_slogan')}" loading="lazy">
       </div>
       <div class="national-day-ribbon">${t('national_day_annual_badge')}</div>` : '';
     return `<div class="plan-card ${isCurrent ? 'current-plan' : ''} ${isNationalDay ? 'national-day-plan' : ''}">

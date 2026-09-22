@@ -3640,7 +3640,7 @@ def admin_platform_analytics():
         auth_users = _list_all_auth_users()
         profiles = _fetch_all_rows(
             "profiles",
-            "user_id,username,full_name,role,subscription_tier,subscription_period,subscription_expires_at,subscription_source,last_active_at",
+            "user_id,username,full_name,role,school_id,subscription_tier,subscription_period,subscription_expires_at,subscription_source,last_active_at",
         )
         orders = _fetch_all_rows(
             "subscription_orders", "id,user_id,plan,period,amount,base_amount,currency,status,discount_code,discount_percent,created_at,paid_at"
@@ -3702,6 +3702,7 @@ def admin_platform_analytics():
             "name": profile.get("full_name") or profile.get("username") or user.get("email") or user["user_id"][:8],
             "email": user.get("email"),
             "role": profile.get("role") or "personal",
+            "school_id": profile.get("school_id"),
             "last_active_at": active_at.isoformat(),
         })
     active_now_users.sort(key=lambda item: item["last_active_at"], reverse=True)

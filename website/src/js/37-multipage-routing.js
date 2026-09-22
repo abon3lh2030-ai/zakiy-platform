@@ -53,7 +53,8 @@ Object.entries(ZAKIY_PAGE_BY_BUTTON).forEach(([buttonId, page]) => {
     if (zakiyOpeningEntryPage) return;
     event.preventDefault();
     event.stopImmediatePropagation();
-    location.href = page;
+    const route = Object.entries(ZAKIY_ENTRY_BUTTON).find(([, id]) => id === buttonId)?.[0];
+    location.href = route ? `index.html?entry=${encodeURIComponent(route)}` : page;
   }, true);
 });
 
@@ -71,6 +72,10 @@ function openZakiyEntryPage() {
     || button.textContent?.trim();
   if (pageLabel) document.title = `${pageLabel} — ذكيّ`;
   document.querySelectorAll('.sidebar-btn').forEach(item => item.classList.toggle('page-active', item.id === buttonId));
+  const routePage = ZAKIY_PAGE_BY_BUTTON[buttonId];
+  if (routePage && location.pathname.split('/').pop() !== routePage) {
+    history.replaceState({ zakiyEntryRoute: zakiyRequestedEntryPage }, '', routePage);
+  }
   return true;
 }
 

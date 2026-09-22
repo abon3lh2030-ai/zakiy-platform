@@ -2082,7 +2082,10 @@
 .admin-active-users > p { margin:0; color:var(--ink-soft); font-size:11px; }
 .admin-active-user { display:grid; grid-template-columns:8px minmax(0,1fr) auto; align-items:center; gap:7px; padding:7px 8px; border-radius:10px; background:var(--paper-dim); color:var(--ink); }
 .admin-active-user i { width:8px; height:8px; border-radius:50%; background:#23aa71; box-shadow:0 0 0 3px rgba(35,170,113,.12); }
-.admin-active-user span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; font-weight:800; }
+.admin-active-user-identity { min-width:0; display:flex; align-items:center; gap:5px; }
+.admin-active-user-identity > span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; font-weight:800; }
+.admin-active-user-identity > small { display:inline-flex; flex:0 0 auto; padding:1px 6px; border-radius:999px; font-size:9px; line-height:1.6; font-weight:800; color:#1b6f5a; background:#dff4eb; }
+.admin-active-user-identity > small.school { color:#315dc7; background:#e7edff; }
 .admin-active-user time { color:var(--ink-soft); font-size:10px; direction:ltr; }
 .admin-metric-card.warning > span { color:#d88714; }
 .admin-metric-card.revenue > span { color:#199678; background:#e9f8f3; }
@@ -5437,7 +5440,7 @@ const I18N = {
     admin_dash_desc: 'الأرقام الحقيقية التي توضح نمو المستخدمين والاشتراكات والإيرادات.',
     period_today: 'اليوم', period_7d: '7 أيام', period_30d: '30 يوم', period_3m: '3 شهور', period_1y: 'سنة', period_all: 'كل الوقت',
     admin_analytics_loading: 'جاري تجهيز أرقام المنصة…', admin_no_data_period: 'لا توجد بيانات في هذه الفترة',
-    metric_total_users: 'إجمالي المستخدمين', metric_active_now: 'نشطون الآن', metric_active_now_hint: 'آخر 15 دقيقة', metric_active_now_empty: 'لا يوجد حساب نشط الآن',
+    metric_total_users: 'إجمالي المستخدمين', metric_active_now: 'نشطون الآن', metric_active_now_hint: 'آخر 15 دقيقة', metric_active_now_empty: 'لا يوجد حساب نشط الآن', account_type_personal: 'شخصي', account_type_school: 'مدرسي',
     metric_active_today: 'نشطون اليوم', metric_subscribers: 'المشتركون حاليًا', metric_trials: 'في تجربة مجانية', metric_trials_hint: 'تجارب فعالة الآن',
     metric_new_subscriptions: 'اشتراكات جديدة', metric_selected_period: 'ضمن الفترة المحددة', metric_cancelled_renewal: 'أوقفوا التجديد', metric_still_active: 'اشتراكهم ما زال فعالًا',
     metric_expired: 'اشتراكات منتهية', metric_expired_hint: 'انتهت أو أُلغيت', metric_total_revenue: 'إجمالي الإيرادات', metric_recorded_payments: 'دفعات مسجلة ومؤكدة',
@@ -6583,7 +6586,7 @@ const I18N = {
     admin_dash_desc: 'Real platform data for user growth, subscriptions, and revenue.',
     period_today: 'Today', period_7d: '7 days', period_30d: '30 days', period_3m: '3 months', period_1y: '1 year', period_all: 'All time',
     admin_analytics_loading: 'Preparing platform metrics…', admin_no_data_period: 'No data in this period',
-    metric_total_users: 'Total users', metric_active_now: 'Active now', metric_active_now_hint: 'Last 15 minutes', metric_active_now_empty: 'No active accounts right now',
+    metric_total_users: 'Total users', metric_active_now: 'Active now', metric_active_now_hint: 'Last 15 minutes', metric_active_now_empty: 'No active accounts right now', account_type_personal: 'Personal', account_type_school: 'School',
     metric_active_today: 'Active today', metric_subscribers: 'Current subscribers', metric_trials: 'On free trial', metric_trials_hint: 'Active trials now',
     metric_new_subscriptions: 'New subscriptions', metric_selected_period: 'Within selected period', metric_cancelled_renewal: 'Renewal turned off', metric_still_active: 'Subscriptions remain active',
     metric_expired: 'Expired subscriptions', metric_expired_hint: 'Expired or cancelled', metric_total_revenue: 'Total revenue', metric_recorded_payments: 'Recorded, confirmed payments',
@@ -11421,7 +11424,10 @@ function renderAdminAnalytics(data) {
   document.getElementById('metricActiveNow').textContent = adminNumber(m.active_now);
   const activeUsers = data.active_now_users || [];
   document.getElementById('adminActiveNowUsers').innerHTML = activeUsers.length
-    ? activeUsers.map(user => `<div class="admin-active-user" title="${escapeHtml(user.email || '')}"><i></i><span>${escapeHtml(user.name)}</span><time>${new Date(user.last_active_at).toLocaleTimeString(currentLang === 'en' ? 'en-US' : 'ar-SA', { hour: '2-digit', minute: '2-digit' })}</time></div>`).join('')
+    ? activeUsers.map(user => {
+      const schoolAccount = Boolean(user.school_id);
+      return `<div class="admin-active-user" title="${escapeHtml(user.email || '')}"><i></i><div class="admin-active-user-identity"><span>${escapeHtml(user.name)}</span><small class="${schoolAccount ? 'school' : 'personal'}">${t(schoolAccount ? 'account_type_school' : 'account_type_personal')}</small></div><time>${new Date(user.last_active_at).toLocaleTimeString(currentLang === 'en' ? 'en-US' : 'ar-SA', { hour: '2-digit', minute: '2-digit' })}</time></div>`;
+    }).join('')
     : `<p>${t('metric_active_now_empty')}</p>`;
   document.getElementById('metricActiveToday').textContent = adminNumber(m.active_today);
   document.getElementById('metricActiveRanges').textContent = t('metric_active_ranges_value', { d7: adminNumber(m.active_7d), d30: adminNumber(m.active_30d) });

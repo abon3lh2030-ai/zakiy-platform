@@ -18,8 +18,9 @@ class MultipageRoutesTest(unittest.TestCase):
                 page = directory / f"{route}.html"
                 self.assertTrue(page.is_file(), page)
                 content = page.read_text(encoding="utf-8")
-                self.assertIn(f"const route='{route}'", content)
-                self.assertIn("fetch('index.html'", content)
+                self.assertIn(f"index.html?entry={route}", content)
+                self.assertIn("location.replace('index.html?entry='", content)
+                self.assertNotIn('جاري فتح ذكيّ', content)
 
     def test_shared_router_maps_all_routes(self):
         router = (ROOT / "website/src/js/37-multipage-routing.js").read_text(encoding="utf-8")

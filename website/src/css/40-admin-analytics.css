@@ -26,7 +26,10 @@
 .admin-active-users > p { margin:0; color:var(--ink-soft); font-size:11px; }
 .admin-active-user { display:grid; grid-template-columns:8px minmax(0,1fr) auto; align-items:center; gap:7px; padding:7px 8px; border-radius:10px; background:var(--paper-dim); color:var(--ink); }
 .admin-active-user i { width:8px; height:8px; border-radius:50%; background:#23aa71; box-shadow:0 0 0 3px rgba(35,170,113,.12); }
-.admin-active-user span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; font-weight:800; }
+.admin-active-user-identity { min-width:0; display:flex; align-items:center; gap:5px; }
+.admin-active-user-identity > span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; font-weight:800; }
+.admin-active-user-identity > small { display:inline-flex; flex:0 0 auto; padding:1px 6px; border-radius:999px; font-size:9px; line-height:1.6; font-weight:800; color:#1b6f5a; background:#dff4eb; }
+.admin-active-user-identity > small.school { color:#315dc7; background:#e7edff; }
 .admin-active-user time { color:var(--ink-soft); font-size:10px; direction:ltr; }
 .admin-metric-card.warning > span { color:#d88714; }
 .admin-metric-card.revenue > span { color:#199678; background:#e9f8f3; }

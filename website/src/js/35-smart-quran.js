@@ -267,7 +267,7 @@ function smartQuranEvaluatePractice() {
   const matches = smartQuranLcsMatches(targetWords, spokenWords);
   const score = targetWords.length ? Math.round(matches.size / targetWords.length * 100) : 0;
   const errorCount = Math.max(0, targetWords.length + spokenWords.length - (matches.size * 2));
-  const shouldCorrect = errorCount > 3;
+  const shouldCorrect = errorCount > 0;
   const marked = originalWords.map((word, index) =>
     `<span class="${matches.has(index) ? 'quran-word-ok' : 'quran-word-missed'}">${escapeHtml(word)}</span>`
   ).join(' ');

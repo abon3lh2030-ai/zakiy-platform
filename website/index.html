@@ -1127,7 +1127,7 @@
     gap: 10px;
     margin: 18px 0;
   }
-  .ai-book-scope-option {
+  .ai-book-scope-option, .ai-scope-look {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1143,8 +1143,8 @@
     cursor: pointer;
     transition: border-color .15s, background .15s, transform .15s;
   }
-  .ai-book-scope-option:hover { border-color: var(--teal); transform: translateY(-1px); }
-  .ai-book-scope-option.active {
+  .ai-book-scope-option:hover, .ai-scope-look:hover { border-color: var(--teal); transform: translateY(-1px); }
+  .ai-book-scope-option.active, .ai-scope-look.active {
     border-color: var(--teal);
     background: var(--teal-dim);
     color: var(--teal);
@@ -1164,7 +1164,7 @@
 
   @media (max-width: 720px) {
     .ai-book-scope-options { grid-template-columns: 1fr; gap: 8px; }
-    .ai-book-scope-option { justify-content: flex-start; min-height: 52px; }
+    .ai-book-scope-option, .ai-scope-look { justify-content: flex-start; min-height: 52px; }
   }
 
   .study-scope { margin: 12px 0 16px; }
@@ -5000,9 +5000,9 @@
       <strong data-i18n="study_scope_title">🎯 اختر ما تحتاج مذاكرته</strong>
       <p class="desc" data-i18n="study_scope_hint">التلخيص والاختبار والمحادثة ستكون على الجزء المحدد فقط.</p>
       <div class="ai-book-scope-options" role="radiogroup">
-        <button type="button" class="ai-book-scope-option active" data-study-scope="full" aria-pressed="true"><span class="ai-book-scope-icon">📚</span><span data-i18n="study_scope_full">الكتاب كامل</span></button>
-        <button type="button" class="ai-book-scope-option" data-study-scope="unit" aria-pressed="false"><span class="ai-book-scope-icon">📖</span><span data-i18n="study_scope_units">وحدات</span></button>
-        <button type="button" class="ai-book-scope-option" data-study-scope="chapter" aria-pressed="false"><span class="ai-book-scope-icon">📄</span><span data-i18n="study_scope_chapters">فصول</span></button>
+        <button type="button" class="study-scope-option ai-scope-look active" data-study-scope="full" aria-pressed="true"><span class="ai-book-scope-icon">📚</span><span data-i18n="study_scope_full">الكتاب كامل</span></button>
+        <button type="button" class="study-scope-option ai-scope-look" data-study-scope="unit" aria-pressed="false"><span class="ai-book-scope-icon">📖</span><span data-i18n="study_scope_units">وحدات</span></button>
+        <button type="button" class="study-scope-option ai-scope-look" data-study-scope="chapter" aria-pressed="false"><span class="ai-book-scope-icon">📄</span><span data-i18n="study_scope_chapters">فصول</span></button>
       </div>
       <div class="study-scope-sections hidden" id="studyScopeSections">
         <button type="button" class="ghost" id="studyScopeToggleAllBtn" data-i18n="study_scope_select_all">تحديد الكل</button>

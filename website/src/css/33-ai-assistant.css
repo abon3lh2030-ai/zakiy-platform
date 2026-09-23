@@ -83,7 +83,7 @@
     gap: 10px;
     margin: 18px 0;
   }
-  .ai-book-scope-option {
+  .ai-book-scope-option, .ai-scope-look {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -99,8 +99,8 @@
     cursor: pointer;
     transition: border-color .15s, background .15s, transform .15s;
   }
-  .ai-book-scope-option:hover { border-color: var(--teal); transform: translateY(-1px); }
-  .ai-book-scope-option.active {
+  .ai-book-scope-option:hover, .ai-scope-look:hover { border-color: var(--teal); transform: translateY(-1px); }
+  .ai-book-scope-option.active, .ai-scope-look.active {
     border-color: var(--teal);
     background: var(--teal-dim);
     color: var(--teal);
@@ -120,7 +120,7 @@
 
   @media (max-width: 720px) {
     .ai-book-scope-options { grid-template-columns: 1fr; gap: 8px; }
-    .ai-book-scope-option { justify-content: flex-start; min-height: 52px; }
+    .ai-book-scope-option, .ai-scope-look { justify-content: flex-start; min-height: 52px; }
   }
 
   .study-scope { margin: 12px 0 16px; }

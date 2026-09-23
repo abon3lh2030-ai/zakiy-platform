@@ -16,9 +16,14 @@ function proceedToApp() {
   hide('login-form'); hide('signup-form'); hide('step-force-password-change');
   hide('step-password-reset-request'); hide('step-password-reset-complete');
   show('sidebar');
-  show('mode-select');
-  navHistory = [];
-  updateGlobalBackButton();
+  // /api/me قد يرجع بعد ما فتحت صفحة قسم مستقلة (performance.html وغيرها)؛
+  // عندها لا نعيد إظهار الرئيسية ونمسح التنقل فوق القسم المفتوح.
+  const sectionAlreadyOpen = typeof zakiyEntryPageOpened !== 'undefined' && zakiyEntryPageOpened;
+  if (!sectionAlreadyOpen) {
+    show('mode-select');
+    navHistory = [];
+    updateGlobalBackButton();
+  }
 
   // انضمام سريع عبر رابط QR (?join=CODE) - نعبّي فورم الانضمام تلقائيًا أول
   // ما يوصل المستخدم للواجهة الرئيسية (بعد الدخول أو المتابعة كضيف)

@@ -1220,6 +1220,12 @@
     .ai-book-scope-option { justify-content: flex-start; min-height: 52px; }
   }
 
+  .study-scope { margin: 12px 0 16px; }
+  .study-scope-sections { margin-top: 12px; }
+  #studyScopeList { display: grid; gap: 6px; margin-top: 8px; max-height: 260px; overflow-y: auto; }
+  #studyScopeList label { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border, rgba(255,255,255,.15)); border-radius: 10px; cursor: pointer; }
+  #studyScopeList input { width: 18px; height: 18px; flex: none; }
+
   /* ---------- دفتر الاختبارات (معلم/طالب) ---------- */
   .quiz-timer-badge {
     display: inline-block; background: var(--emphasis-bg); color: var(--emphasis-text);
@@ -4661,6 +4667,20 @@
     <span class="step-label" data-i18n="text_step_label">٢ — النص المستخرج</span>
     <h2 data-i18n="text_heading">محتوى الملف</h2>
     <p class="desc" data-i18n="text_desc">هذا النص المستخرج من الملف قبل التلخيص</p>
+    <div class="study-scope hidden" id="studyScopePanel">
+      <strong data-i18n="study_scope_title">🎯 اختر ما تحتاج مذاكرته</strong>
+      <p class="desc" data-i18n="study_scope_hint">التلخيص والاختبار والمحادثة ستكون على الجزء المحدد فقط.</p>
+      <div class="ai-book-scope-options" role="radiogroup">
+        <button type="button" class="ai-book-scope-option active" data-study-scope="full" aria-pressed="true"><span class="ai-book-scope-icon">📚</span><span data-i18n="study_scope_full">الكتاب كامل</span></button>
+        <button type="button" class="ai-book-scope-option" data-study-scope="unit" aria-pressed="false"><span class="ai-book-scope-icon">📖</span><span data-i18n="study_scope_units">وحدات</span></button>
+        <button type="button" class="ai-book-scope-option" data-study-scope="chapter" aria-pressed="false"><span class="ai-book-scope-icon">📄</span><span data-i18n="study_scope_chapters">فصول</span></button>
+      </div>
+      <div class="study-scope-sections hidden" id="studyScopeSections">
+        <button type="button" class="ghost" id="studyScopeToggleAllBtn" data-i18n="study_scope_select_all">تحديد الكل</button>
+        <div id="studyScopeList"></div>
+      </div>
+      <p class="desc" id="studyScopeStatus"></p>
+    </div>
     <div class="blur-wrap">
       <div class="text-block blur-target" id="extractedText"></div>
       <div class="exam-overlay hidden" id="extractedTextOverlay"><button data-target="extractedText" data-i18n="exam_overlay_btn">🔒 أنت في اختبار</button></div>
@@ -5239,6 +5259,14 @@ const I18N = {
     ai_book_scope_choose_section: 'اختر الجزء الذي تريد تلخيصه',
     ai_book_scope_no_units: 'ما قدرنا نكتشف عناوين الوحدات تلقائيًا. تقدر تحدد نص الوحدة يدويًا في المربع أدناه.',
     ai_book_scope_no_chapters: 'ما قدرنا نكتشف عناوين الفصول تلقائيًا. تقدر تحدد نص الفصل يدويًا في المربع أدناه.',
+    study_scope_title: '🎯 اختر ما تحتاج مذاكرته',
+    study_scope_hint: 'التلخيص والاختبار والمحادثة ستكون على الجزء المحدد فقط.',
+    study_scope_full: 'الكتاب كامل',
+    study_scope_units: 'وحدات',
+    study_scope_chapters: 'فصول',
+    study_scope_select_all: 'تحديد الكل',
+    study_scope_pick_one: 'اختر جزءًا واحدًا على الأقل للمتابعة.',
+    study_scope_selected: 'تم تحديد {n} — التلخيص والاختبار سيكونان عليها فقط.',
     ai_book_scope_detected: 'اختر من الأجزاء المكتشفة، وتقدر تعدّل النص قبل التلخيص.',
     err_text_required: 'النص فاضي - لازم تسيب شي يتلخّص',
     ai_book_picker_step_label: '📚 لخّص كتاب',
@@ -6385,6 +6413,14 @@ const I18N = {
     ai_book_scope_choose_section: 'Choose the section you want summarized',
     ai_book_scope_no_units: 'No unit headings were detected automatically. You can select the unit text manually in the box below.',
     ai_book_scope_no_chapters: 'No chapter headings were detected automatically. You can select the chapter text manually in the box below.',
+    study_scope_title: '🎯 Choose what you need to study',
+    study_scope_hint: 'Summary, quiz and chat will cover only the selected part.',
+    study_scope_full: 'Whole book',
+    study_scope_units: 'Units',
+    study_scope_chapters: 'Chapters',
+    study_scope_select_all: 'Select all',
+    study_scope_pick_one: 'Select at least one part to continue.',
+    study_scope_selected: '{n} selected — the summary and quiz will cover only these.',
     ai_book_scope_detected: 'Choose a detected section, and edit its text before summarizing if needed.',
     err_text_required: 'The text is empty - leave something to summarize',
     ai_book_picker_step_label: '📚 Summarize a book',
@@ -7402,9 +7438,14 @@ function proceedToApp() {
   hide('login-form'); hide('signup-form'); hide('step-force-password-change');
   hide('step-password-reset-request'); hide('step-password-reset-complete');
   show('sidebar');
-  show('mode-select');
-  navHistory = [];
-  updateGlobalBackButton();
+  // /api/me قد يرجع بعد ما فتحت صفحة قسم مستقلة (performance.html وغيرها)؛
+  // عندها لا نعيد إظهار الرئيسية ونمسح التنقل فوق القسم المفتوح.
+  const sectionAlreadyOpen = typeof zakiyEntryPageOpened !== 'undefined' && zakiyEntryPageOpened;
+  if (!sectionAlreadyOpen) {
+    show('mode-select');
+    navHistory = [];
+    updateGlobalBackButton();
+  }
 
   // انضمام سريع عبر رابط QR (?join=CODE) - نعبّي فورم الانضمام تلقائيًا أول
   // ما يوصل المستخدم للواجهة الرئيسية (بعد الدخول أو المتابعة كضيف)
@@ -9356,8 +9397,7 @@ async function useLibraryBookForSession(bookId) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || t('err_fetch_book'));
 
-    extractedText = data.extracted_text;
-    document.getElementById('extractedText').textContent = extractedText;
+    setStudyText(data.extracted_text);
     show('step-text');
     if (appMode === 'solo') show('step-chat');
     hide('saveToLibraryBtn'); // موجود بالمكتبة أصلًا، ما يحتاج حفظ من جديد
@@ -9382,7 +9422,7 @@ document.getElementById('saveToLibraryBtn').addEventListener('click', async () =
     const res = await fetch(`${API_BASE}/api/library`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentAccessToken}` },
-      body: JSON.stringify({ title: title.trim(), extracted_text: extractedText }),
+      body: JSON.stringify({ title: title.trim(), extracted_text: fullExtractedText }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || t('err_library_save_failed'));
@@ -10355,8 +10395,7 @@ uploadBtn.addEventListener('click', async () => {
     const extractData = await extractRes.json();
     if (!extractRes.ok) throw new Error(extractData.error || t('err_extract_failed'));
 
-    extractedText = extractData.text;
-    document.getElementById('extractedText').textContent = extractedText || t('err_no_text_extracted');
+    setStudyText(extractData.text);
     show('step-text');
     if (appMode === 'solo') show('step-chat');
     if (currentAccessToken) show('saveToLibraryBtn');
@@ -10388,6 +10427,7 @@ async function sendAIChat(options = {}) {
     if (chatInteractionId) {
       body.interaction_id = chatInteractionId;
     } else {
+      if (!extractedText) throw new Error(t('study_scope_pick_one'));
       body.context = extractedText;
       if (currentUsername) body.name = currentUsername;
     }
@@ -10640,6 +10680,77 @@ document.getElementById('checkBtn').addEventListener('click', finishQuiz);
 
 // ---------- Restart ----------
 document.getElementById('restartBtn').addEventListener('click', () => location.reload());
+
+// ---------- نطاق المذاكرة: الكتاب كامل أو وحدات/فصول يختارها الطالب ----------
+let fullExtractedText = '';
+let studyScopeMode = 'full';
+let studyScopeSections = { unit: [], chapter: [] };
+
+function setStudyText(text) {
+  fullExtractedText = text || '';
+  studyScopeSections = {
+    unit: detectAiBookSections(fullExtractedText, 'unit'),
+    chapter: detectAiBookSections(fullExtractedText, 'chapter'),
+  };
+  const hasSections = studyScopeSections.unit.length || studyScopeSections.chapter.length;
+  document.getElementById('studyScopePanel').classList.toggle('hidden', !hasSections);
+  setStudyScopeMode('full');
+}
+
+function setStudyScopeMode(mode) {
+  studyScopeMode = mode;
+  document.querySelectorAll('[data-study-scope]').forEach(btn => {
+    const active = btn.dataset.studyScope === mode;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+  const box = document.getElementById('studyScopeSections');
+  const list = document.getElementById('studyScopeList');
+  const sections = mode === 'full' ? [] : studyScopeSections[mode];
+  box.classList.toggle('hidden', !sections.length);
+  list.innerHTML = '';
+  sections.forEach((section, index) => {
+    const label = document.createElement('label');
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.value = String(index);
+    input.addEventListener('change', applyStudyScope);
+    label.append(input, document.createTextNode(section.label));
+    list.appendChild(label);
+  });
+  applyStudyScope();
+}
+
+function applyStudyScope() {
+  const previous = extractedText;
+  const sections = studyScopeMode === 'full' ? [] : studyScopeSections[studyScopeMode];
+  const status = document.getElementById('studyScopeStatus');
+  let blocked = false;
+  if (!sections.length) {
+    extractedText = fullExtractedText;
+    status.textContent = studyScopeMode === 'full' ? '' : t(studyScopeMode === 'unit' ? 'ai_book_scope_no_units' : 'ai_book_scope_no_chapters');
+  } else {
+    const picked = [...document.querySelectorAll('#studyScopeList input:checked')].map(input => sections[Number(input.value)]);
+    extractedText = picked.map(section => section.text).join('\n\n');
+    blocked = !picked.length;
+    status.textContent = blocked ? t('study_scope_pick_one') : t('study_scope_selected', { n: picked.length });
+  }
+  document.getElementById('extractedText').textContent = extractedText || t('err_no_text_extracted');
+  summarizeBtn.disabled = blocked;
+  quizBtn.disabled = blocked;
+  // محادثة بدأت على نطاق سابق ما تصلح للنطاق الجديد
+  if (previous !== extractedText) chatInteractionId = null;
+}
+
+document.querySelectorAll('[data-study-scope]').forEach(btn => {
+  btn.addEventListener('click', () => setStudyScopeMode(btn.dataset.studyScope));
+});
+document.getElementById('studyScopeToggleAllBtn').addEventListener('click', () => {
+  const boxes = [...document.querySelectorAll('#studyScopeList input')];
+  const check = boxes.some(box => !box.checked);
+  boxes.forEach(box => { box.checked = check; });
+  applyStudyScope();
+});
 // ---------- الصوت الجماعي (WebRTC، صوت مباشر بين المتصفحات) ----------
 // السيرفر ما يمر عليه أي صوت - يسوي بس "إشارة" (signaling): تبادل عروض SDP
 // ومرشحات ICE بين المتصفحات عشان تكوّن اتصال مباشر مع بعض. يشتغل بنمط mesh

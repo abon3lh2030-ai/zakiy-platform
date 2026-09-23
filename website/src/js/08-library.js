@@ -345,8 +345,7 @@ async function useLibraryBookForSession(bookId) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || t('err_fetch_book'));
 
-    extractedText = data.extracted_text;
-    document.getElementById('extractedText').textContent = extractedText;
+    setStudyText(data.extracted_text);
     show('step-text');
     if (appMode === 'solo') show('step-chat');
     hide('saveToLibraryBtn'); // موجود بالمكتبة أصلًا، ما يحتاج حفظ من جديد
@@ -371,7 +370,7 @@ document.getElementById('saveToLibraryBtn').addEventListener('click', async () =
     const res = await fetch(`${API_BASE}/api/library`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentAccessToken}` },
-      body: JSON.stringify({ title: title.trim(), extracted_text: extractedText }),
+      body: JSON.stringify({ title: title.trim(), extracted_text: fullExtractedText }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || t('err_library_save_failed'));

@@ -72,8 +72,7 @@ uploadBtn.addEventListener('click', async () => {
     const extractData = await extractRes.json();
     if (!extractRes.ok) throw new Error(extractData.error || t('err_extract_failed'));
 
-    extractedText = extractData.text;
-    document.getElementById('extractedText').textContent = extractedText || t('err_no_text_extracted');
+    setStudyText(extractData.text);
     show('step-text');
     if (appMode === 'solo') show('step-chat');
     if (currentAccessToken) show('saveToLibraryBtn');
@@ -105,6 +104,7 @@ async function sendAIChat(options = {}) {
     if (chatInteractionId) {
       body.interaction_id = chatInteractionId;
     } else {
+      if (!extractedText) throw new Error(t('study_scope_pick_one'));
       body.context = extractedText;
       if (currentUsername) body.name = currentUsername;
     }
@@ -357,3 +357,74 @@ document.getElementById('checkBtn').addEventListener('click', finishQuiz);
 
 // ---------- Restart ----------
 document.getElementById('restartBtn').addEventListener('click', () => location.reload());
+
+// ---------- نطاق المذاكرة: الكتاب كامل أو وحدات/فصول يختارها الطالب ----------
+let fullExtractedText = '';
+let studyScopeMode = 'full';
+let studyScopeSections = { unit: [], chapter: [] };
+
+function setStudyText(text) {
+  fullExtractedText = text || '';
+  studyScopeSections = {
+    unit: detectAiBookSections(fullExtractedText, 'unit'),
+    chapter: detectAiBookSections(fullExtractedText, 'chapter'),
+  };
+  const hasSections = studyScopeSections.unit.length || studyScopeSections.chapter.length;
+  document.getElementById('studyScopePanel').classList.toggle('hidden', !hasSections);
+  setStudyScopeMode('full');
+}
+
+function setStudyScopeMode(mode) {
+  studyScopeMode = mode;
+  document.querySelectorAll('[data-study-scope]').forEach(btn => {
+    const active = btn.dataset.studyScope === mode;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+  const box = document.getElementById('studyScopeSections');
+  const list = document.getElementById('studyScopeList');
+  const sections = mode === 'full' ? [] : studyScopeSections[mode];
+  box.classList.toggle('hidden', !sections.length);
+  list.innerHTML = '';
+  sections.forEach((section, index) => {
+    const label = document.createElement('label');
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.value = String(index);
+    input.addEventListener('change', applyStudyScope);
+    label.append(input, document.createTextNode(section.label));
+    list.appendChild(label);
+  });
+  applyStudyScope();
+}
+
+function applyStudyScope() {
+  const previous = extractedText;
+  const sections = studyScopeMode === 'full' ? [] : studyScopeSections[studyScopeMode];
+  const status = document.getElementById('studyScopeStatus');
+  let blocked = false;
+  if (!sections.length) {
+    extractedText = fullExtractedText;
+    status.textContent = studyScopeMode === 'full' ? '' : t(studyScopeMode === 'unit' ? 'ai_book_scope_no_units' : 'ai_book_scope_no_chapters');
+  } else {
+    const picked = [...document.querySelectorAll('#studyScopeList input:checked')].map(input => sections[Number(input.value)]);
+    extractedText = picked.map(section => section.text).join('\n\n');
+    blocked = !picked.length;
+    status.textContent = blocked ? t('study_scope_pick_one') : t('study_scope_selected', { n: picked.length });
+  }
+  document.getElementById('extractedText').textContent = extractedText || t('err_no_text_extracted');
+  summarizeBtn.disabled = blocked;
+  quizBtn.disabled = blocked;
+  // محادثة بدأت على نطاق سابق ما تصلح للنطاق الجديد
+  if (previous !== extractedText) chatInteractionId = null;
+}
+
+document.querySelectorAll('[data-study-scope]').forEach(btn => {
+  btn.addEventListener('click', () => setStudyScopeMode(btn.dataset.studyScope));
+});
+document.getElementById('studyScopeToggleAllBtn').addEventListener('click', () => {
+  const boxes = [...document.querySelectorAll('#studyScopeList input')];
+  const check = boxes.some(box => !box.checked);
+  boxes.forEach(box => { box.checked = check; });
+  applyStudyScope();
+});

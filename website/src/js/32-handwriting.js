@@ -113,9 +113,8 @@ document.getElementById('handwritingUseBtn').addEventListener('click', async () 
     addRecognizedTextToBoard(text);
     return;
   }
-  extractedText = text;
+  setStudyText(text);
   uploadedFilename = handwritingOriginalName || t('handwriting_default_title');
-  document.getElementById('extractedText').textContent = text;
   if (handwritingDestination === 'standalone') {
     pushNavSnapshot();
     TOP_LEVEL_SCREENS.forEach(hide);

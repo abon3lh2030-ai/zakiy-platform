@@ -4725,7 +4725,7 @@
   <div class="payment-modal-overlay hidden" id="trialModalOverlay">
     <div class="payment-modal-box trial-modal-box">
       <button class="payment-modal-close" id="trialModalCloseBtn">✕</button>
-      <h3>تجربة مجانية لمدة 3 أيام</h3>
+      <h3 id="trialModalTitle">تجربة مجانية لمدة 3 أيام</h3>
       <div id="trialDisclosure" class="trial-disclosure"></div>
       <form id="trialCardForm" autocomplete="on">
         <label>الاسم على البطاقة<input id="trialCardName" autocomplete="cc-name" required></label>
@@ -4735,7 +4735,7 @@
           <label>السنة<input id="trialCardYear" inputmode="numeric" autocomplete="cc-exp-year" maxlength="4" required></label>
           <label>رمز CVC<input id="trialCardCvc" type="password" inputmode="numeric" autocomplete="cc-csc" maxlength="4" required></label>
         </div>
-        <label class="trial-consent"><input type="checkbox" id="trialConsent" required> أفهم أن التجربة 3 أيام، وبعدها يُخصم سعر الباقة المختارة ويبدأ التجديد التلقائي ما لم ألغِ قبل انتهائها.</label>
+        <label class="trial-consent"><input type="checkbox" id="trialConsent" required> <span id="trialConsentText">أفهم أن التجربة 3 أيام، وبعدها يُخصم سعر الباقة المختارة ويبدأ التجديد التلقائي ما لم ألغِ قبل انتهائها.</span></label>
         <button type="submit" class="primary" id="trialStartBtn">إضافة البطاقة وبدء التجربة</button>
       </form>
       <div id="trialModalMsg"></div>
@@ -8838,9 +8838,11 @@ let subscriptionPeriod = 'monthly';
 let moyasarPublishableKey = null;
 let pendingSubscriptionOrder = null;
 let pendingTrialChoice = null;
+let cardModalMode = 'trial';
 let subscriptionDiscountCodeDetails = null;
 const PENDING_ORDER_STORAGE_KEY = 'zakiy_pending_subscription_order';
 const PENDING_TRIAL_STORAGE_KEY = 'zakiy_pending_subscription_trial';
+const PENDING_CARD_STORAGE_KEY = 'zakiy_pending_renewal_card';
 
 function hasActivePaidSubscription() {
   return Boolean(subscriptionMeCache?.tier && subscriptionMeCache.tier !== 'free');
@@ -8884,11 +8886,15 @@ function renderBillingPanel() {
     <div>${billing.auto_renew
       ? `موعد ${billing.is_trial ? 'أول خصم' : 'التجديد القادم'}: ${endDate}`
       : `اشتراكك يظل شغالًا حتى ${endDate} ولن يُخصم مبلغ جديد.`}</div>
+    ${billing.has_card ? '' : `<div>لا توجد بطاقة محفوظة للتجديد التلقائي. أضف بطاقة ليتجدد اشتراكك تلقائيًا بعد ${endDate}.</div>`}
     <div class="subscription-billing-actions">
-      <button class="${billing.auto_renew ? 'danger' : 'primary'}" id="toggleAutoRenewBtn">${billing.auto_renew ? t('btn_cancel_auto_renew') : t('btn_resume_auto_renew')}</button>
+      ${billing.has_card
+        ? `<button class="${billing.auto_renew ? 'danger' : 'primary'}" id="toggleAutoRenewBtn">${billing.auto_renew ? t('btn_cancel_auto_renew') : t('btn_resume_auto_renew')}</button>`
+        : `<button class="primary" id="addRenewalCardBtn">إضافة بطاقة للتجديد التلقائي</button>`}
     </div>`;
   panel.classList.remove('hidden');
-  document.getElementById('toggleAutoRenewBtn').addEventListener('click', () => setAutoRenew(!billing.auto_renew));
+  document.getElementById('toggleAutoRenewBtn')?.addEventListener('click', () => setAutoRenew(!billing.auto_renew));
+  document.getElementById('addRenewalCardBtn')?.addEventListener('click', () => openRenewalCardModal(endDate));
 }
 
 function renderTrialOffer() {
@@ -9058,6 +9064,7 @@ document.getElementById('paymentModalCloseBtn').addEventListener('click', closeP
 // تحميل الصفحة كاملة (Apple Pay/3D Secure) - يُستدعى بعد كل نجاح دخول
 async function resumePendingSubscriptionCheck() {
   await resumePendingTrialCheck();
+  await resumePendingRenewalCardCheck();
   const raw = localStorage.getItem(PENDING_ORDER_STORAGE_KEY);
   if (!raw) return;
   // ننظّف أي معطيات رجّعها ميسر بالرابط (id/status/message) عشان يبقى نظيف
@@ -9137,13 +9144,29 @@ async function openTrialModal(plan) {
     pendingTrialChoice = await apiCall('POST', '/api/subscription/trial/prepare', { plan, period: subscriptionPeriod });
     const periodLabel = subscriptionPeriod === 'monthly' ? 'شهريًا' : 'سنويًا';
     document.getElementById('trialDisclosure').innerHTML = `لن يُحصّل سعر الباقة الآن. تبدأ تجربة <b>3 أيام</b>، ثم في ${formatSubscriptionDate(pendingTrialChoice.trial_ends_at)} يُخصم <b>${pendingTrialChoice.amount} ريال ${periodLabel}</b> ويبدأ التجديد التلقائي. تقدر تلغي قبلها بلا خصم. قد يظهر تفويض مؤقت بقيمة ريال واحد من البنك للتحقق من البطاقة ثم يُفك تلقائيًا؛ ليس رسومًا للمنصة.`;
+    cardModalMode = 'trial';
+    document.getElementById('trialModalTitle').textContent = 'تجربة مجانية لمدة 3 أيام';
+    document.getElementById('trialConsentText').textContent = 'أفهم أن التجربة 3 أيام، وبعدها يُخصم سعر الباقة المختارة ويبدأ التجديد التلقائي ما لم ألغِ قبل انتهائها.';
+    document.getElementById('trialStartBtn').textContent = 'إضافة البطاقة وبدء التجربة';
     document.getElementById('trialModalMsg').textContent = '';
     document.getElementById('trialConsent').checked = false;
     show('trialModalOverlay');
   } catch (e) { document.getElementById('subscriptionMsg').textContent = e.message; }
 }
 
-function closeTrialModal() { hide('trialModalOverlay'); pendingTrialChoice = null; }
+function openRenewalCardModal(endDate) {
+  if (!moyasarPublishableKey) { document.getElementById('subscriptionMsg').textContent = t('payment_not_ready_msg'); return; }
+  cardModalMode = 'renewal';
+  document.getElementById('trialModalTitle').textContent = 'إضافة بطاقة للتجديد التلقائي';
+  document.getElementById('trialDisclosure').textContent = `لن يُخصم شيء الآن. سيُجدَّد اشتراكك تلقائيًا من هذه البطاقة بعد ${endDate}، وتقدر تلغي التجديد في أي وقت قبلها. قد يظهر تفويض مؤقت بقيمة ريال واحد للتحقق من البطاقة ثم يُفك تلقائيًا.`;
+  document.getElementById('trialConsentText').textContent = 'أوافق على تجديد اشتراكي تلقائيًا من هذه البطاقة ما لم ألغِ التجديد قبل موعده.';
+  document.getElementById('trialStartBtn').textContent = 'حفظ البطاقة';
+  document.getElementById('trialModalMsg').textContent = '';
+  document.getElementById('trialConsent').checked = false;
+  show('trialModalOverlay');
+}
+
+function closeTrialModal() { hide('trialModalOverlay'); pendingTrialChoice = null; cardModalMode = 'trial'; }
 document.getElementById('trialModalCloseBtn').addEventListener('click', closeTrialModal);
 
 document.getElementById('trialCardNumber').addEventListener('input', e => {
@@ -9152,7 +9175,8 @@ document.getElementById('trialCardNumber').addEventListener('input', e => {
 
 document.getElementById('trialCardForm').addEventListener('submit', async e => {
   e.preventDefault();
-  if (!pendingTrialChoice || !document.getElementById('trialConsent').checked) return;
+  const renewalMode = cardModalMode === 'renewal';
+  if ((!renewalMode && !pendingTrialChoice) || !document.getElementById('trialConsent').checked) return;
   const button = document.getElementById('trialStartBtn');
   const msg = document.getElementById('trialModalMsg');
   button.disabled = true; msg.textContent = 'جاري توثيق البطاقة بأمان عبر ميسر...';
@@ -9162,7 +9186,7 @@ document.getElementById('trialCardForm').addEventListener('submit', async e => {
     month: document.getElementById('trialCardMonth').value.trim(),
     year: document.getElementById('trialCardYear').value.trim().slice(-2),
     cvc: document.getElementById('trialCardCvc').value.trim(),
-    callback_url: pendingTrialChoice.callback_url,
+    callback_url: renewalMode ? `${window.location.origin}/?subscription_card=return` : pendingTrialChoice.callback_url,
   });
   try {
     const response = await fetch('https://api.moyasar.com/v1/tokens', {
@@ -9172,6 +9196,14 @@ document.getElementById('trialCardForm').addEventListener('submit', async e => {
     });
     const token = await response.json().catch(() => ({}));
     if (!response.ok || !token.id) throw new Error(token.message || 'تعذر توثيق البطاقة');
+    if (renewalMode) {
+      localStorage.setItem(PENDING_CARD_STORAGE_KEY, token.id);
+      const attached = await apiCall('POST', '/api/subscription/payment-method/attach', { token_id: token.id });
+      if (attached.status === 'active') await finishRenewalCard();
+      else if (attached.verification_url) location.href = attached.verification_url;
+      else throw new Error('لم يصل رابط توثيق البطاقة من ميسر');
+      return;
+    }
     const pending = { token_id: token.id, plan: pendingTrialChoice.plan, period: pendingTrialChoice.period };
     localStorage.setItem(PENDING_TRIAL_STORAGE_KEY, JSON.stringify(pending));
     const attached = await apiCall('POST', '/api/subscription/trial/attach-token', pending);
@@ -9204,6 +9236,31 @@ async function confirmPendingTrial(attempt = 0) {
     const msg = document.getElementById('trialModalMsg');
     if (msg) msg.textContent = e.message;
     return false;
+  }
+}
+
+async function finishRenewalCard() {
+  localStorage.removeItem(PENDING_CARD_STORAGE_KEY);
+  hide('trialModalOverlay');
+  cardModalMode = 'trial';
+  subscriptionMeCache = await apiCall('GET', '/api/subscription/me');
+  showSettingsScreen();
+  document.getElementById('subscriptionMsg').textContent = '✅ تم حفظ البطاقة وتفعيل التجديد التلقائي.';
+  renderSubscriptionPlans();
+}
+
+async function resumePendingRenewalCardCheck() {
+  const tokenId = localStorage.getItem(PENDING_CARD_STORAGE_KEY);
+  if (!tokenId) return;
+  if (window.location.search.includes('subscription_card')) history.replaceState(null, '', window.location.pathname);
+  try {
+    const attached = await apiCall('POST', '/api/subscription/payment-method/attach', { token_id: tokenId });
+    if (attached.status === 'active') await finishRenewalCard();
+    else localStorage.removeItem(PENDING_CARD_STORAGE_KEY);
+  } catch (e) {
+    localStorage.removeItem(PENDING_CARD_STORAGE_KEY);
+    showSettingsScreen();
+    document.getElementById('subscriptionMsg').textContent = e.message;
   }
 }
 

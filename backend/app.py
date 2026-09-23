@@ -6886,6 +6886,7 @@ def _safe_billing_details(row):
         "current_period_end": row.get("current_period_end"),
         "trial_ends_at": row.get("trial_ends_at"),
         "is_trial": row.get("status") == "trialing",
+        "has_card": bool(row.get("moyasar_token")),
         "payment_brand": row.get("payment_brand"),
         "payment_last_four": row.get("payment_last_four"),
     }
@@ -7418,6 +7419,17 @@ def subscription_checkout():
     }), 200
 
 
+def _attach_renewal_card(user_id, billing, token, source=None):
+    """يربط بطاقة محفوظة باشتراك ويب فعّال ويشغّل التجديد التلقائي عليها."""
+    period_end = _parse_utc_datetime(billing.get("current_period_end"))
+    extra = {}
+    if period_end and period_end > datetime.now(timezone.utc):
+        extra = {"auto_renew": True, "next_charge_at": period_end.isoformat(), "retry_count": 0}
+        if billing.get("status") in (None, "pending", "cancel_at_period_end", "past_due"):
+            extra["status"] = "active"
+    _store_web_payment_method(user_id, token, source, **extra)
+
+
 @app.route("/api/subscription/orders/<order_id>/payment-method", methods=["POST"])
 @require_auth
 def subscription_save_payment_method(order_id):
@@ -7568,6 +7580,9 @@ def subscription_webhook_moyasar():
         billing = _billing_row(order["user_id"])
         if not billing and _extract_moyasar_token(payment):
             _activate_subscription_order(order, gateway_reference=payment_id, payment=payment)
+        elif billing and not billing.get("moyasar_token") and _extract_moyasar_token(payment):
+            # رجوع العميل سبق الـ webhook وفعّل الاشتراك بدون token؛ نكمل التجديد الآن.
+            _attach_renewal_card(order["user_id"], billing, _extract_moyasar_token(payment), payment.get("source"))
         return jsonify({"ok": True, "already_confirmed": True}), 200
 
     # المبلغ المدفوع فعليًا (بالهللة) لازم يطابق مبلغ الطلب - يمنع أي تلاعب
@@ -7737,6 +7752,35 @@ def subscription_trial_confirm():
     }).eq("user_id", request.user_id).execute()
     _track_platform_event(request.user_id, "trial_started", plan, period, "web_trial")
     return jsonify({"ok": True, "tier": plan, "period": period, "trial_ends_at": trial_end.isoformat()}), 200
+
+
+@app.route("/api/subscription/payment-method/attach", methods=["POST"])
+@require_auth
+def subscription_attach_renewal_card():
+    """يسمح للمشترك الحالي (مثلًا من اشتراك قديم بلا token) بإضافة بطاقة
+    للتجديد. نتحقق من الرمز مباشرة مع ميسر، ولا نستقبل بيانات بطاقة."""
+    token_id = (request.get_json(silent=True) or {}).get("token_id")
+    if not isinstance(token_id, str) or not token_id.startswith("token_"):
+        return jsonify({"error": "رمز البطاقة غير صالح"}), 400
+    row = _billing_row(request.user_id)
+    try:
+        period_end = _parse_utc_datetime((row or {}).get("current_period_end"))
+    except (TypeError, ValueError):
+        period_end = None
+    if not row or not period_end or period_end <= datetime.now(timezone.utc):
+        return jsonify({"error": "لا يوجد اشتراك ويب فعال"}), 404
+    try:
+        token = _get_moyasar_token(token_id)
+    except (requests.RequestException, RuntimeError):
+        return jsonify({"error": "تعذّر التحقق من البطاقة لدى ميسر"}), 502
+    status = token.get("status")
+    if status == "active":
+        _attach_renewal_card(request.user_id, row, token_id, token.get("creditcard") or token.get("source") or token)
+        _track_platform_event(request.user_id, "payment_method_added", row.get("plan"), row.get("period"), "web")
+        return jsonify({"ok": True, "status": "active"}), 200
+    if status == "initiated" and token.get("verification_url"):
+        return jsonify({"ok": True, "status": "initiated", "verification_url": token["verification_url"]}), 200
+    return jsonify({"error": "لم يكتمل توثيق البطاقة"}), 409
 
 
 @app.route("/api/subscription/auto-renew", methods=["POST"])

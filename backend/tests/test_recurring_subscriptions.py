@@ -139,6 +139,21 @@ class RecurringSubscriptionTests(unittest.TestCase):
         self.assertEqual(post.call_args.kwargs["data"]["amount"], 1999)
         self.assertEqual(database.inserted["attempt_number"], 1)
 
+    def test_attaching_card_to_legacy_subscription_enables_renewal(self):
+        end = datetime.now(timezone.utc) + timedelta(days=10)
+        billing = {"current_period_end": end.isoformat(), "status": "active"}
+        with patch.object(app, "_store_web_payment_method") as store:
+            app._attach_renewal_card("user-1", billing, "token_safe", {"company": "visa", "number": "4242"})
+        extra = store.call_args.kwargs
+        self.assertTrue(extra["auto_renew"])
+        self.assertEqual(extra["next_charge_at"], end.isoformat())
+
+    def test_attaching_card_to_expired_subscription_does_not_enable_renewal(self):
+        end = datetime.now(timezone.utc) - timedelta(days=1)
+        with patch.object(app, "_store_web_payment_method") as store:
+            app._attach_renewal_card("user-1", {"current_period_end": end.isoformat()}, "token_safe")
+        self.assertNotIn("auto_renew", store.call_args.kwargs)
+
 
 if __name__ == "__main__":
     unittest.main()

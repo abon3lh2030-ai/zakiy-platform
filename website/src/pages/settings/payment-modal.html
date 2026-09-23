@@ -13,7 +13,7 @@
   <div class="payment-modal-overlay hidden" id="trialModalOverlay">
     <div class="payment-modal-box trial-modal-box">
       <button class="payment-modal-close" id="trialModalCloseBtn">✕</button>
-      <h3>تجربة مجانية لمدة 3 أيام</h3>
+      <h3 id="trialModalTitle">تجربة مجانية لمدة 3 أيام</h3>
       <div id="trialDisclosure" class="trial-disclosure"></div>
       <form id="trialCardForm" autocomplete="on">
         <label>الاسم على البطاقة<input id="trialCardName" autocomplete="cc-name" required></label>
@@ -23,7 +23,7 @@
           <label>السنة<input id="trialCardYear" inputmode="numeric" autocomplete="cc-exp-year" maxlength="4" required></label>
           <label>رمز CVC<input id="trialCardCvc" type="password" inputmode="numeric" autocomplete="cc-csc" maxlength="4" required></label>
         </div>
-        <label class="trial-consent"><input type="checkbox" id="trialConsent" required> أفهم أن التجربة 3 أيام، وبعدها يُخصم سعر الباقة المختارة ويبدأ التجديد التلقائي ما لم ألغِ قبل انتهائها.</label>
+        <label class="trial-consent"><input type="checkbox" id="trialConsent" required> <span id="trialConsentText">أفهم أن التجربة 3 أيام، وبعدها يُخصم سعر الباقة المختارة ويبدأ التجديد التلقائي ما لم ألغِ قبل انتهائها.</span></label>
         <button type="submit" class="primary" id="trialStartBtn">إضافة البطاقة وبدء التجربة</button>
       </form>
       <div id="trialModalMsg"></div>

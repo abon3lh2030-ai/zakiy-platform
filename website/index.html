@@ -1172,6 +1172,7 @@
   #studyScopeList { display: grid; gap: 6px; margin-top: 8px; max-height: 260px; overflow-y: auto; }
   #studyScopeList label { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border, rgba(255,255,255,.15)); border-radius: 10px; cursor: pointer; }
   #studyScopeList input { width: 18px; height: 18px; flex: none; }
+  .study-scope-two { grid-template-columns: repeat(2, 1fr); }
 
   /* ---------- دفتر الاختبارات (معلم/طالب) ---------- */
   .quiz-timer-badge {
@@ -4999,10 +5000,9 @@
     <div class="study-scope hidden" id="studyScopePanel">
       <strong data-i18n="study_scope_title">🎯 اختر ما تحتاج مذاكرته</strong>
       <p class="desc" data-i18n="study_scope_hint">التلخيص والاختبار والمحادثة ستكون على الجزء المحدد فقط.</p>
-      <div class="ai-book-scope-options" role="radiogroup">
+      <div class="ai-book-scope-options study-scope-two" role="radiogroup">
         <button type="button" class="study-scope-option ai-scope-look active" data-study-scope="full" aria-pressed="true"><span class="ai-book-scope-icon">📚</span><span data-i18n="study_scope_full">الكتاب كامل</span></button>
-        <button type="button" class="study-scope-option ai-scope-look" data-study-scope="unit" aria-pressed="false"><span class="ai-book-scope-icon">📖</span><span data-i18n="study_scope_units">وحدات</span></button>
-        <button type="button" class="study-scope-option ai-scope-look" data-study-scope="chapter" aria-pressed="false"><span class="ai-book-scope-icon">📄</span><span data-i18n="study_scope_chapters">فصول</span></button>
+        <button type="button" class="study-scope-option ai-scope-look" data-study-scope="parts" aria-pressed="false"><span class="ai-book-scope-icon">🔢</span><span data-i18n="study_scope_parts">اختيار وحدات / فصول</span></button>
       </div>
       <div class="study-scope-sections hidden" id="studyScopeSections">
         <button type="button" class="ghost" id="studyScopeToggleAllBtn" data-i18n="study_scope_select_all">تحديد الكل</button>
@@ -5608,8 +5608,9 @@ const I18N = {
     study_scope_title: '🎯 اختر ما تحتاج مذاكرته',
     study_scope_hint: 'التلخيص والاختبار والمحادثة ستكون على الجزء المحدد فقط.',
     study_scope_full: 'الكتاب كامل',
-    study_scope_units: 'وحدات',
-    study_scope_chapters: 'فصول',
+    study_scope_parts: 'اختيار وحدات / فصول',
+    study_scope_unit_n: 'الوحدة {n}',
+    study_scope_chapter_n: 'الفصل {n}',
     study_scope_select_all: 'تحديد الكل',
     study_scope_pick_one: 'اختر جزءًا واحدًا على الأقل للمتابعة.',
     study_scope_selected: 'تم تحديد {n} — التلخيص والاختبار سيكونان عليها فقط.',
@@ -6766,8 +6767,9 @@ const I18N = {
     study_scope_title: '🎯 Choose what you need to study',
     study_scope_hint: 'Summary, quiz and chat will cover only the selected part.',
     study_scope_full: 'Whole book',
-    study_scope_units: 'Units',
-    study_scope_chapters: 'Chapters',
+    study_scope_parts: 'Pick units / chapters',
+    study_scope_unit_n: 'Unit {n}',
+    study_scope_chapter_n: 'Chapter {n}',
     study_scope_select_all: 'Select all',
     study_scope_pick_one: 'Select at least one part to continue.',
     study_scope_selected: '{n} selected — the summary and quiz will cover only these.',
@@ -11011,19 +11013,76 @@ document.getElementById('checkBtn').addEventListener('click', finishQuiz);
 // ---------- Restart ----------
 document.getElementById('restartBtn').addEventListener('click', () => location.reload());
 
-// ---------- نطاق المذاكرة: الكتاب كامل أو وحدات/فصول يختارها الطالب ----------
+// ---------- نطاق المذاكرة: الطالب يختار الوحدات/الفصول بأرقامها قبل التلخيص ----------
 let fullExtractedText = '';
 let studyScopeMode = 'full';
-let studyScopeSections = { unit: [], chapter: [] };
+let studyScopeParts = [];
+
+const STUDY_ORDINALS = {
+  'حادي عشر': 11, 'ثاني عشر': 12, 'اول': 1, 'اولي': 1, 'ول': 1, 'ولي': 1, 'ثاني': 2, 'ثانيه': 2, 'ثالث': 3, 'ثالثه': 3,
+  'رابع': 4, 'رابعه': 4, 'خامس': 5, 'خامسه': 5, 'سادس': 6, 'سادسه': 6, 'سابع': 7, 'سابعه': 7,
+  'ثامن': 8, 'ثامنه': 8, 'تاسع': 9, 'تاسعه': 9, 'عاشر': 10, 'عاشره': 10,
+};
+const STUDY_NUM = '(\\d{1,3}|(?:ال)?(?:حادي عشر|ثاني عشر|ولي|ول|اولي|اول|ثانيه|ثاني|ثالثه|ثالث|رابعه|رابع|خامسه|خامس|سادسه|سادس|سابعه|سابع|ثامنه|ثامن|تاسعه|تاسع|عاشره|عاشر))';
+const STUDY_KW = '(الوحده|الفصل|unit|chapter)';
+const STUDY_END = '(?=$|[\\s:：\\-–—.،,)\\]])';
+const STUDY_FORWARD = new RegExp(`^${STUDY_KW}\\s*(?:رقم\\s*)?[:：\\-–—.]?\\s*${STUDY_NUM}${STUDY_END}`, 'i');
+const STUDY_BACKWARD = new RegExp(`${STUDY_NUM}\\s*[:：\\-–—.]?\\s*${STUDY_KW}\\s*$`, 'i');
+
+function normalizeStudyLine(line) {
+  return String(line)
+    .replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
+    .replace(/[۰-۹]/g, d => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
+    .replace(/[ً-ٰٟـ]/g, '')
+    .replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي')
+    .replace(/\s+/g, ' ').trim();
+}
+
+function parseStudyHeading(line) {
+  const text = normalizeStudyLine(line);
+  if (!text || text.length > 90) return null;
+  let keyword, token;
+  const forward = STUDY_FORWARD.exec(text);
+  if (forward) [, keyword, token] = forward;
+  else {
+    const backward = STUDY_BACKWARD.exec(text);
+    if (!backward) return null;
+    [, token, keyword] = backward;
+  }
+  const word = token.replace(/^ال/, '');
+  const number = /^\d+$/.test(token) ? Number(token) : STUDY_ORDINALS[word];
+  if (!number) return null;
+  const type = /^(?:الوحده|unit)$/i.test(keyword) ? 'unit' : 'chapter';
+  return { type, number };
+}
+
+// يدوّر في النص عن «الوحدة/الفصل + رقم» بأي صيغة (1 أو ١ أو الأول)، ويرجع
+// قائمة موحدة مرقمة. عناوين الفهرس تتكرر مع عناوين المتن، فنأخذ الأطول نصًا.
+function detectStudyParts(fullText) {
+  const lines = String(fullText || '').replace(/\r/g, '').split('\n');
+  const headings = [];
+  lines.forEach((line, index) => {
+    const heading = parseStudyHeading(line);
+    if (heading) headings.push({ ...heading, index });
+  });
+  const best = new Map();
+  headings.forEach((heading, i) => {
+    // الوحدة تمتد لين الوحدة التالية (وتشمل فصولها)، والفصل لين أي عنوان بعده
+    const next = headings.slice(i + 1).find(other => heading.type === 'chapter' || other.type === 'unit');
+    const text = lines.slice(heading.index, next ? next.index : lines.length).join('\n').trim();
+    const key = `${heading.type}:${heading.number}`;
+    if (!best.has(key) || text.length > best.get(key).text.length) {
+      best.set(key, { type: heading.type, number: heading.number, text });
+    }
+  });
+  return [...best.values()].sort((a, b) =>
+    (a.type === b.type ? 0 : a.type === 'unit' ? -1 : 1) || a.number - b.number);
+}
 
 function setStudyText(text) {
   fullExtractedText = text || '';
-  studyScopeSections = {
-    unit: detectAiBookSections(fullExtractedText, 'unit'),
-    chapter: detectAiBookSections(fullExtractedText, 'chapter'),
-  };
-  const hasSections = studyScopeSections.unit.length || studyScopeSections.chapter.length;
-  document.getElementById('studyScopePanel').classList.toggle('hidden', !hasSections);
+  studyScopeParts = detectStudyParts(fullExtractedText);
+  document.getElementById('studyScopePanel').classList.toggle('hidden', !studyScopeParts.length);
   setStudyScopeMode('full');
 }
 
@@ -11036,32 +11095,32 @@ function setStudyScopeMode(mode) {
   });
   const box = document.getElementById('studyScopeSections');
   const list = document.getElementById('studyScopeList');
-  const sections = mode === 'full' ? [] : studyScopeSections[mode];
-  box.classList.toggle('hidden', !sections.length);
+  box.classList.toggle('hidden', mode === 'full');
   list.innerHTML = '';
-  sections.forEach((section, index) => {
-    const label = document.createElement('label');
-    const input = document.createElement('input');
-    input.type = 'checkbox';
-    input.value = String(index);
-    input.addEventListener('change', applyStudyScope);
-    label.append(input, document.createTextNode(section.label));
-    list.appendChild(label);
-  });
+  if (mode === 'parts') {
+    studyScopeParts.forEach((part, index) => {
+      const label = document.createElement('label');
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.value = String(index);
+      input.addEventListener('change', applyStudyScope);
+      label.append(input, document.createTextNode(t(part.type === 'unit' ? 'study_scope_unit_n' : 'study_scope_chapter_n', { n: part.number })));
+      list.appendChild(label);
+    });
+  }
   applyStudyScope();
 }
 
 function applyStudyScope() {
   const previous = extractedText;
-  const sections = studyScopeMode === 'full' ? [] : studyScopeSections[studyScopeMode];
   const status = document.getElementById('studyScopeStatus');
   let blocked = false;
-  if (!sections.length) {
+  if (studyScopeMode !== 'parts') {
     extractedText = fullExtractedText;
-    status.textContent = studyScopeMode === 'full' ? '' : t(studyScopeMode === 'unit' ? 'ai_book_scope_no_units' : 'ai_book_scope_no_chapters');
+    status.textContent = '';
   } else {
-    const picked = [...document.querySelectorAll('#studyScopeList input:checked')].map(input => sections[Number(input.value)]);
-    extractedText = picked.map(section => section.text).join('\n\n');
+    const picked = [...document.querySelectorAll('#studyScopeList input:checked')].map(input => studyScopeParts[Number(input.value)]);
+    extractedText = picked.map(part => part.text).join('\n\n');
     blocked = !picked.length;
     status.textContent = blocked ? t('study_scope_pick_one') : t('study_scope_selected', { n: picked.length });
   }
